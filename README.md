@@ -1,15 +1,15 @@
 <p align="center"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></p>
 
 <p align="center">
-<a href="https://github.com/yourusername/EduGen/actions"><img src="https://github.com/yourusername/EduGen/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/yourusername/edugen"><img src="https://img.shields.io/packagist/dt/yourusername/edugen" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/yourusername/edugen"><img src="https://img.shields.io/packagist/v/yourusername/edugen" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/yourusername/edugen"><img src="https://img.shields.io/packagist/l/yourusername/edugen" alt="License"></a>
+<a href="https://github.com/yourusername/GenTech/actions"><img src="https://github.com/yourusername/GenTech/workflows/tests/badge.svg" alt="Build Status"></a>
+<a href="https://packagist.org/packages/yourusername/GenTech"><img src="https://img.shields.io/packagist/dt/yourusername/GenTech" alt="Total Downloads"></a>
+<a href="https://packagist.org/packages/yourusername/GenTech"><img src="https://img.shields.io/packagist/v/yourusername/GenTech" alt="Latest Stable Version"></a>
+<a href="https://packagist.org/packages/yourusername/GenTech"><img src="https://img.shields.io/packagist/l/yourusername/GenTech" alt="License"></a>
 </p>
 
-## EduGen
+## GenTech   
 
-EduGen is a Laravel-based web application designed to streamline the creation and management of educational content. It provides tools for educators to generate, organize, and distribute learning materials efficiently.
+GenTech is a Laravel-based web application designed to streamline the creation and management of educational content. It provides tools for educators to generate, organize, and distribute learning materials efficiently.
 
 ### Features
 
@@ -22,11 +22,11 @@ EduGen is a Laravel-based web application designed to streamline the creation an
 
 ## Getting Started
 
-To get started with EduGen, clone the repository and follow the installation instructions:
+To get started with GenTech, clone the repository and follow the installation instructions:
 
 ```bash
-git clone https://github.com/yourusername/EduGen.git
-cd EduGen
+git clone https://github.com/yourusername/GenTech.git
+cd GenTech
 composer install
 cp .env.example .env
 php artisan key:generate
@@ -34,7 +34,7 @@ php artisan migrate
 php artisan serve
 ```
 
-For detailed documentation, see the [Wiki](https://github.com/yourusername/EduGen/wiki).
+For detailed documentation, see the [Wiki](https://github.com/yourusername/GenTech/wiki).
 
 ## Contributing
 
@@ -50,4 +50,4 @@ If you discover a security vulnerability, please email [maintainer@example.com](
 
 ## License
 
-EduGen is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
+GenTech is open-sourced software licensed under the [MIT license](https://opensource.org/licenses/MIT).
