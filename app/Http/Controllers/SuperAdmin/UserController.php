@@ -12,8 +12,10 @@ class UserController extends Controller
     //
     public function index()
     {
+        // Logic to list all users
         $roles = RoleAndPermission::all();
-        return view('superadmin.users.index',compact('roles'));
+        $permissions = RoleAndPermission::pluck('permissions')->toArray();
+        return view('superadmin.users.index', compact('roles', 'permissions'));
     }
     public function create()
     {
