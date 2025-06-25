@@ -3,15 +3,17 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
+use App\Models\RoleAndPermission;
 use Illuminate\Http\Request;
+
 
 class UserController extends Controller
 {
     //
     public function index()
     {
-        // Logic to list all users
-        return view('superadmin.users.index');
+        $roles = RoleAndPermission::all();
+        return view('superadmin.users.index',compact('roles'));
     }
     public function create()
     {
