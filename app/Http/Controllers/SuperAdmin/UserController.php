@@ -18,7 +18,9 @@ class UserController extends Controller
     }
     public function create()
     {
-        // Logic to show form for creating a new user
-        return view('superadmin.users.create');
+        $roles = RoleAndPermission::all(); // or your roles fetching logic
+        $permissions = RoleAndPermission::pluck('role_name'); // or your permissions fetching logic
+
+        return view('superadmin.users.create', compact('roles', 'permissions'));
     }
 }
