@@ -61,7 +61,7 @@
                                     <label for="role" class="form-label">Assign Role</label>
                                     <select class="form-select" id="role" name="role" required>
                                         <option value="">-- Select Role --</option>
-                                        @foreach ($roles as $role)
+                                        @foreach ($roles ?? [] as $role)
                                             <option value="{{ $role->id }}"
                                                 {{ old('role') == $role->id ? 'selected' : '' }}>
                                                 {{ $role->role_name }}
@@ -73,7 +73,7 @@
                                 <div class="mb-3">
                                     <label class="form-label">Additional Permissions</label>
                                     <div class="row">
-                                        @foreach ($permissions as $permission)
+                                        @forelse ($permissions ?? [] as $permission)
                                             <div class="col-md-4">
                                                 <div class="form-check">
                                                     <input class="form-check-input" type="checkbox" name="permissions[]"
@@ -84,7 +84,11 @@
                                                     </label>
                                                 </div>
                                             </div>
-                                        @endforeach
+                                        @empty
+                                            <div class="col-12">
+                                                <span class="text-muted">No permissions available.</span>
+                                            </div>
+                                        @endforelse
                                     </div>
                                 </div>
 

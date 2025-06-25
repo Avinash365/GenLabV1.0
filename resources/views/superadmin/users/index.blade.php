@@ -23,7 +23,7 @@
                     <div class="card">
                         <div class="card-header d-flex justify-content-between align-items-center">
                             <h3 class="card-title mb-0">User List</h3>
-                            <a href="{{ route('superadmin.roles.create') }}" class="btn btn-primary btn-sm">
+                            <a href="{{ route('superadmin.users.create') }}" class="btn btn-primary btn-sm">
                                 <i class="fa fa-plus"></i> Add New User
                             </a>
                         </div>
