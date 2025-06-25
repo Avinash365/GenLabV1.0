@@ -49,48 +49,13 @@
                                             </label>
                                         </div>
                                     </div>
-                                    <div class="col-6 text-end">
-                                        <a class="forgot-link" href="#">Forgot Password?</a>
-                                    </div>
+                                   
                                 </div>
                             </div>
                             <div class="form-login">
                                 <button type="submit" class="btn btn-login">Sign In</button>
                             </div>
-                            {{-- Optional: Registration and social login links can be removed or updated as needed --}}
-                            <div class="signinform">
-                                <h4>New on our platform?<a href="#" class="hover-a"> Create an account</a></h4>
-                            </div>
-                            <div class="form-setlogin or-text">
-                                <h4>OR</h4>
-                            </div>
-                            <div class="form-sociallink">
-                                <div class="d-flex align-items-center justify-content-center flex-wrap">
-                                    <div class="text-center me-2 flex-fill">
-                                        <a href="javascript:void(0);"
-                                            class="br-10 p-2 btn btn-info d-flex align-items-center justify-content-center">
-                                            <img class="img-fluid m-1" src="{{ asset('assets/img/icons/facebook-logo.svg') }}"
-                                                alt="Facebook">
-                                        </a>
-                                    </div>
-                                    <div class="text-center me-2 flex-fill">
-                                        <a href="javascript:void(0);"
-                                            class="btn btn-white br-10 p-2  border d-flex align-items-center justify-content-center">
-                                            <img class="img-fluid m-1" src="{{ asset('assets/img/icons/google-logo.svg') }}"
-                                                alt="Google">
-                                        </a>
-                                    </div>
-                                    <div class="text-center flex-fill">
-                                        <a href="javascript:void(0);"
-                                            class="bg-dark br-10 p-2 btn btn-dark d-flex align-items-center justify-content-center">
-                                            <img class="img-fluid m-1" src="{{ asset('assets/img/icons/apple-logo.svg') }}" alt="Apple">
-                                        </a>
-                                    </div>
-                                </div>
-                                <div class="my-4 d-flex justify-content-center align-items-center copyright-text">
-                                    <p>Copyright &copy; 2025 DreamsPOS</p>
-                                </div>
-                            </div>
+                            
                         </div>
                     </form>
                 </div>
