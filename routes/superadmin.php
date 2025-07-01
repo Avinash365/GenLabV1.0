@@ -5,6 +5,7 @@ use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\LoginController;
 use App\Http\Controllers\SuperAdmin\RoleAndPermissionController;
 use App\Http\Controllers\SuperAdmin\UserController;
+use App\Http\Controllers\SuperAdmin\NewBoookingController;
 
 // =======================
 // Super Admin Login Routes
@@ -44,4 +45,13 @@ Route::middleware(['auth:admin', 'role:super_admin'])->prefix('superadmin')->nam
         Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
         Route::get('{id}', [UserController::class, 'show'])->name('show');
     });
+
+
+
+    //All-Booking
+    Route::prefix('superadmin')->group(function () {
+    Route::get('/new-booking', [NewBoookingController::class, 'index'])->name('new-booking');
+    });
+
+   
 });

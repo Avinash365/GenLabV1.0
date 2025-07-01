@@ -27,14 +27,20 @@
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/bootstrap.min.css') }}">
 
+    <link rel="stylesheet" href="{{url('assets/plugins/summernote/summernote-bs4.min.css')}}">  
+
     <!-- Datetimepicker CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/bootstrap-datetimepicker.min.css') }}">
 
     <!-- animation CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/animate.css') }}">
-
+	<!-- Bootstrap Tagsinput CSS -->
+	<link rel="stylesheet" href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css">
     <!-- Select2 CSS -->
     <link rel="stylesheet" href="{{ url('assets/plugins/select2/css/select2.min.css') }}">
+
+    <!-- Datatable CSS -->
+	<link rel="stylesheet" href="assets/css/dataTables.bootstrap5.min.css">
 
     <!-- Daterangepikcer CSS -->
     <link rel="stylesheet" href="{{ url('assets/plugins/daterangepicker/daterangepicker.css') }}">
@@ -174,7 +180,7 @@
     <!-- Custom JS -->
     <script src="{{ url('assets/js/theme-colorpicker.js') }}"></script>
     <script src="{{ url('assets/js/script.js') }}"></script>
-
+    <script src="{{url('assets/plugins/summernote/summernote-bs4.min.js')}}" ></script>
 
 
 </body>
