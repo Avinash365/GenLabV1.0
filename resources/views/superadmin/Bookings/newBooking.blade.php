@@ -37,18 +37,64 @@
 								</h2>
 								<div id="SpacingOne" class="accordion-collapse collapse show" aria-labelledby="headingSpacingOne">
 									<div class="accordion-body border-top">
-										
 										<div class="row">
 											<div class="col-sm-6 col-12">
-												<div class="mb-3">
-													<label class="form-label">Client Name<span class="text-danger ms-1">*</span></label>
-													<input type="text" class="form-control">
-													<div class="add-newplus">
-															<a href="" data-bs-toggle="modal" data-bs-target="#add-product-category"><i data-feather="plus-circle" class="plus-down-add"></i><span>Add
-																	New</span></a>
-														</div>
-												</div>
+                                             <div class="mb-1 position-relative">
+											<label class="form-label">Client Name<span class="text-danger ms-1">*</span></label>
+											<input type="text" class="form-control" placeholder="Select or add a client">
+											<div class="add-newplus position-absolute end-0  ">
+											<a href="#" data-bs-toggle="modal" data-bs-target="#add-client-modal">
+												<i data-feather="plus-circle" class="plus-down-add"></i>
+												<span>Add New</span>
+											</a>
 											</div>
+										</div>
+									</div>
+
+
+<div class="modal fade" id="add-client-modal" tabindex="-1" aria-labelledby="addClientModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg">
+    <div class="modal-content shadow-lg border-0 rounded-4">
+      <div class="modal-header bg-primary text-white rounded-top-4">
+        <h5 class="modal-title" id="addClientModalLabel">Add New Client</h5>
+        <button type="button" class="btn-close btn-close-primary" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form>
+        <div class="modal-body p-4">
+          <div class="row g-3">
+            <div class="col-md-6">
+              <label class="form-label">Client Name<span class="text-danger ms-1">*</span></label>
+              <input type="text" class="form-control" placeholder="Enter client name" required>
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Client Email</label>
+              <input type="email" class="form-control" placeholder="example@email.com">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Phone Number</label>
+              <input type="tel" class="form-control" placeholder="Enter phone number">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label">Client Address</label>
+              <input type="text" class="form-control" placeholder="Enter address">
+            </div>
+            <div class="col-12">
+              <label class="form-label">Report Issue</label>
+              <textarea class="form-control" rows="3" placeholder="Describe the issue..."></textarea>
+            </div>
+          </div>
+        </div>
+        <div class="modal-footer bg-light rounded-bottom-4">
+  <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+  <button type="submit" class="btn btn-primary">Add Client</button>
+</div>
+
+      </form>
+    </div>
+  </div>
+</div>
+
+
 											<div class="col-sm-6 col-12">
   <div class="mb-3">
     <label for="clientAddress" class="form-label">
