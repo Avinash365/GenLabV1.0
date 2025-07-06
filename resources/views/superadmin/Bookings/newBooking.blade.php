@@ -3,6 +3,7 @@
 @section('content')
 
 
+
        
 			<div class="content">
 				<div class="page-header">
@@ -24,7 +25,7 @@
 						<a href="product-list.html" class="btn btn-secondary"><i data-feather="arrow-left" class="me-2"></i>Back to Dashboard</a>
 					</div>
 				</div>
-				<form action="" class="add-product-form">
+				<form action="" method="POST" enctype="multipart/form-data" class="add-product-form">
 					<div class="add-product">
 						<div class="accordions-items-seperate" id="accordionSpacingExample">
 							<div class="accordion-item border mb-4">
@@ -41,7 +42,7 @@
 											<div class="col-sm-6 col-12">
                                              <div class="mb-1 position-relative">
 											<label class="form-label">Client Name<span class="text-danger ms-1">*</span></label>
-											<input type="text" class="form-control" placeholder="Select or add a client">
+											<input type="text" class="form-control"  name="client_name" placeholder="Select or add a client">
 											<div class="add-newplus position-absolute end-0  ">
 											<a href="#" data-bs-toggle="modal" data-bs-target="#add-client-modal">
 												<i data-feather="plus-circle" class="plus-down-add"></i>
@@ -103,6 +104,7 @@
     <textarea
       id="clientAddress"
       class="form-control"
+      name="client_address"
       rows="3"
       placeholder="Enter client's full address"
       required
@@ -123,15 +125,16 @@
 												</div>
 											</div>
 											<div class="col-sm-6 col-12">
-												<div class="mb-3">
-													<label class="form-label">Report Issue To<span class="text-danger ms-1">*</span></label>
-													<select class="select">
-														<option>Select</option>
-														<option>Vender</option>
-														<option>Sales Team</option>
-														<option>Marketing Team</option>
-													</select>
-												</div>
+												<div class="mb-3 custom-select-wrapper">
+    <label class="form-label">Report Issue To <span class="text-danger ms-1">*</span></label>
+    <select class="form-control custom-select" name="reportIssueTo" required>
+        <option value="">Select</option>
+        <option value="vendor">Vendor</option>
+        <option value="sales">Sales Team</option>
+        <option value="marketing">Marketing Team</option>
+    </select>
+    
+</div>
 											</div>
 										</div>
 												
@@ -192,7 +195,7 @@
 												<div class="add-choosen">
 													<div class="mb-3">
 													<div class="image-upload image-upload-two">
-															<input type="file">
+															<input type="file" name="upload_letter">
 															<div class="image-uploads">
 																<i data-feather="plus-circle" class="plus-down-add me-0"></i>
 																<h4>Add Images</h4>
@@ -250,11 +253,14 @@
                                 </div>
                             </div>
                             <div class="col-lg-4 col-sm-6 col-12">
-                                <div class="mb-3">
-                                    <label class="form-label">Lab Expected Data<span class="text-danger ms-1">*</span></label>
-                                    <input type="text" class="form-control" name="labExpectedData[]" required>
-                                </div>
-                            </div>
+    <div class="mb-3">
+        <label class="form-label">Lab Expected Date
+            <span class="text-danger ms-1">*</span>
+        </label>
+        <input type="date" class="form-control" name="labExpectedData[]" required>
+    </div>
+</div>
+
                             <div class="col-lg-4 col-sm-6 col-12">
                                 <div class="mb-3">
                                     <label class="form-label">Amount<span class="text-danger ms-1">*</span></label>
@@ -262,15 +268,29 @@
                                 </div>
                             </div>
                             <div class="col-lg-4 col-sm-6 col-12">
-                                <div class="mb-3">
-                                    <label class="form-label">Lab Analysis<span class="text-danger ms-1">*</span></label>
-                                    <input type="text" class="form-control" name="labAnalysis[]" required>
-                                </div>
+                                <div class="mb-3 custom-select-wrapper">
+  <label class="form-label">Lab Analytics <span class="text-danger ms-1">*</span></label>
+  <select class="form-control custom-select" name="labAnalysis[]" required>
+    <option value="">Select</option>
+    <option value="1">Analytics 1</option>
+    <option value="2">Analytics 2</option>
+    <option value="3">Analytics 3</option>
+    <option value="4">Analytics 4</option>
+    <option value="5">Analytics 5</option>
+    <option value="6">Analytics 6</option>
+    <option value="7">Analytics 7</option>
+    <option value="8">Analytics 8</option>
+    <option value="9">Analytics 9</option>
+    <option value="10">Analytics 10</option>
+  </select>
+</div>
+
+
                             </div>
                             <div class="col-lg-4 col-sm-6 col-12">
                                 <div class="mb-3">
-                                    <label class="form-label">Job Order Name<span class="text-danger ms-1">*</span></label>
-                                    <input type="text" class="form-control" name="jobOrderName[]" required>
+                                    <label class="form-label">Job Order No<span class="text-danger ms-1">*</span></label>
+                                    <input type="text" class="form-control" name="jobOrderNo[]" required>
                                 </div>
                             </div>
                         </div>
@@ -297,7 +317,7 @@
 		
 
 <script>
-document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('DOMContentLoaded', function() {
     const addItemBtn = document.getElementById('addItemBtn');
     const itemsContainer = document.getElementById('itemsContainer');
     
@@ -338,7 +358,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         }
     });
-});
+    });
 </script>
 
 

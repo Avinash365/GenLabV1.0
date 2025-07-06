@@ -28,8 +28,10 @@
                         <li class="submenu">
                             <a href=""><i class="ti ti-calendar fs-16 me-2"></i><span>All Booking</span><span class="menu-arrow"></span></a>
                             <ul>
-                                <li><a href="{{ route('superadmin.new-booking') }}">New Booking</a></li>
+                                <li><a href="{{ route('superadmin.bookings.newbooking') }}">New Booking</a></li>
                                 <li><a href="#">Show Booking</a></li>
+                                 <li><a href="#">Department 1</a></li>
+                                  <li><a href="#">Department 2</a></li>
                             </ul>
                         </li>
                         <li class="submenu">
