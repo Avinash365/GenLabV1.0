@@ -4,10 +4,6 @@
 @section('title', 'Create New User')
 @section('content')
 
-
-
-
-
 				<div class="content">
 					<div class="page-header">
 						<div class="add-item d-flex">
@@ -31,8 +27,6 @@
 				<path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
 			</svg>
 		</div>
-
-
     </a>
   </li>
 </ul>

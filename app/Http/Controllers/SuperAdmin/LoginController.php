@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\SuperAdminLoginService;
 use App\Models\SuperAdmin;
+use App\Enums\Role; 
 
 class LoginController extends Controller
 {
@@ -34,11 +35,17 @@ class LoginController extends Controller
 
         $loginService = app(SuperAdminLoginService::class);
 
-        if ($loginService->login($request->only('email', 'password'))) {
-            return redirect()->route('superadmin.dashboard.index')->with('status', 'Logged in successfully');
-        }
+        $role = $loginService->login($request->only('email', 'password')); 
 
-        return redirect()->back()->withErrors(['email' => 'Invalid credentials'])->withInput();
+        return match ($role) {
+            Role::SUPER_ADMIN => redirect()->route('superadmin.dashboard.index')
+                ->with('status', 'Logged in successfully as Super Admin'),
+
+            Role::ADMIN => redirect()->route('admin.dashboard.index')
+                ->with('status', 'Logged in successfully as Admin'),
+
+            default => back()->withErrors(['email' => 'Invalid credentials'])->withInput(),
+        };
     }
 
     /**

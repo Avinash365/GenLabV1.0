@@ -4,6 +4,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Auth;
+use App\Enums\Role;
 
 class SuperAdminLoginService
 {
@@ -13,17 +14,20 @@ class SuperAdminLoginService
      * @param array $credentials
      * @return bool
      */
-    public function login(array $credentials): bool
+    public function login(array $credentials): ?Role
     {
         if (Auth::guard('admin')->attempt($credentials)) {
+            
             $user = Auth::guard('admin')->user();
-            if ($user->role === 'super_admin') {
-                return true;
+            
+            if (in_array($user->role, [Role::ADMIN->value, Role::SUPER_ADMIN->value])) {
+                return Role::from($user->role);
             }
+
             // Not a super admin, log out
             Auth::guard('admin')->logout();
         }
-        return false;
+        return null;
     }
 
     /**

@@ -28,6 +28,7 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
     Route::post('logout', [LoginController::class, 'logout'])->name('logout');
 });
 
+
 // ==============================
 // Super Admin Protected Routes
 // ==============================
@@ -124,3 +125,5 @@ Route::middleware(['auth:admin', 'role:super_admin'])->prefix('superadmin')->nam
             Route::get('/', [DepartmentController::class, 'index'])->name('Department');
         });
 });
+
+
