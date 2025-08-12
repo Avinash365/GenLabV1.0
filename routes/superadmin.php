@@ -6,6 +6,18 @@ use App\Http\Controllers\SuperAdmin\LoginController;
 use App\Http\Controllers\SuperAdmin\RoleAndPermissionController;
 use App\Http\Controllers\SuperAdmin\UserController;
 use App\Http\Controllers\BookingController;
+use App\Http\Controllers\SuperAdmin\ProductController;
+use App\Http\Controllers\SuperAdmin\ProductViewController;
+use App\Http\Controllers\SuperAdmin\CategoriesController;
+use App\Http\Controllers\SuperAdmin\StoreController;
+use App\Http\Controllers\SuperAdmin\SupplierController;
+use App\Http\Controllers\SuperAdmin\UnitController;
+use App\Http\Controllers\SuperAdmin\IssueController;
+use App\Http\Controllers\SuperAdmin\IssueViewController;
+use App\Http\Controllers\SuperAdmin\PurchaseListController;
+use App\Http\Controllers\SuperAdmin\PurchaseAddController;
+use App\Http\Controllers\SuperAdmin\ShowBookingController;
+use App\Http\Controllers\SuperAdmin\DepartmentController;
 
 // =======================
 // Super Admin Login Routes
@@ -49,7 +61,66 @@ Route::middleware(['auth:admin', 'role:super_admin'])->prefix('superadmin')->nam
     // Booking Management
     Route::prefix('bookings')->name('bookings.')->group(function () {
     Route::get('/',[BookingController::class,'index'])->name('newbooking');
-       
-       
+          
     });
+
+    //Product 
+     Route::prefix('products')->name('products.')->group(function () {
+        Route::get('/', [ProductController::class, 'index'])->name('addProduct');
+    });
+
+    //Product 
+     Route::prefix('viewproduct')->name('viewproduct.')->group(function () {
+        Route::get('/', [ProductViewController::class, 'index'])->name('viewProduct');
+    });
+
+   // Categories 
+        Route::prefix('categories')->name('categories.')->group(function () {
+            Route::get('/', [CategoriesController::class, 'index'])->name('Categories');
+        });
+
+        // Store
+        Route::prefix('store')->name('store.')->group(function () {
+            Route::get('/', [StoreController::class, 'index'])->name('Store');
+        });
+
+        // Supplier 
+        Route::prefix('supplier')->name('supplier.')->group(function () {
+            Route::get('/', [SupplierController::class, 'index'])->name('Supplier');
+        });
+
+        // Supplier 
+        Route::prefix('unit')->name('unit.')->group(function () {
+            Route::get('/', [UnitController::class, 'index'])->name('Unit');
+        });
+
+        // Supplier 
+        Route::prefix('issue')->name('issue.')->group(function () {
+            Route::get('/', [IssueController::class, 'index'])->name('Issue');
+        });
+
+        // Supplier 
+        Route::prefix('issueview')->name('issueview.')->group(function () {
+            Route::get('/', [IssueViewController::class, 'index'])->name('issueView');
+        });
+
+         // Purchase List 
+        Route::prefix('purchaselist')->name('purchaselist.')->group(function () {
+            Route::get('/', [PurchaseListController::class, 'index'])->name('purchaseList');
+        });
+
+         // Purchase List 
+        Route::prefix('purchaseadd')->name('purchaseadd.')->group(function () {
+            Route::get('/', [PurchaseAddController::class, 'index'])->name('purchaseAdd');
+        });
+
+         // ShowBooking List 
+        Route::prefix('showbooking')->name('showbooking.')->group(function () {
+            Route::get('/', [ShowBookingController::class, 'index'])->name('showBooking');
+        });
+
+         // ShowBooking List 
+        Route::prefix('department')->name('department.')->group(function () {
+            Route::get('/', [DepartmentController::class, 'index'])->name('Department');
+        });
 });

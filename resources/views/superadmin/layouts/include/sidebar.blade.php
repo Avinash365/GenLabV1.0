@@ -29,9 +29,21 @@
                             <a href=""><i class="ti ti-calendar fs-16 me-2"></i><span>All Booking</span><span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ route('superadmin.bookings.newbooking') }}">New Booking</a></li>
-                                <li><a href="#">Show Booking</a></li>
-                                 <li><a href="#">Department 1</a></li>
+                                <li><a href="{{ route('superadmin.showbooking.showBooking') }}">Show Booking</a></li>
+                                 <li><a href="{{ route('superadmin.department.Department') }}">Department 1</a></li>
                                   <li><a href="#">Department 2</a></li>
+                            </ul>
+                        </li>
+                        <li class="submenu">
+                            <a href=""><i class="ti ti-calendar fs-16 me-2"></i><span>Inventory</span><span class="menu-arrow"></span></a>
+                            <ul>
+                                <li><a href="{{ route('superadmin.products.addProduct') }}">Product</a></li>
+                                <li><a href="{{ route('superadmin.categories.Categories') }}">Category</a></li>
+                                 <li><a href="{{ route('superadmin.store.Store') }}">Store</a></li>
+                                  <li><a href="{{ route('superadmin.supplier.Supplier') }}">Supplier</a></li>
+                                  <li><a href="{{ route('superadmin.unit.Unit')}}">Unit</a></li>
+                                  <li><a href="{{ route('superadmin.purchaselist.purchaseList')}}">Purchase</a></li>
+                                  <li><a href="{{ route('superadmin.issue.Issue')}}">Issue</a></li>
                             </ul>
                         </li>
                         <li class="submenu">
@@ -67,7 +79,7 @@
                                 <li><a href="#">Purchase Bill</a></li>
                             </ul>
                         </li>
-                        <li><a href="#"><i class="ti ti-box fs-16 me-2"></i><span>Inventory</span></a></li>
+                        
                         <li><a href="#"><i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span></a></li>
                         <li><a href="#"><i class="ti ti-target fs-16 me-2"></i><span>Marketing</span></a></li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>

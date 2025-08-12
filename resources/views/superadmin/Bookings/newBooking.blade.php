@@ -41,8 +41,17 @@
 										<div class="row">
 											<div class="col-sm-6 col-12">
                                              <div class="mb-1 position-relative">
-											<label class="form-label">Client Name<span class="text-danger ms-1">*</span></label>
-											<input type="text" class="form-control"  name="client_name" placeholder="Select or add a client">
+											<div class="mb-3">
+  <label class="form-label">Client Name <span class="text-danger ms-1">*</span></label>
+  <div class="input-group">
+    <span class="input-group-text">👤</span>
+    <input type="text" class="form-control" name="client_name" placeholder="Select or add a client">
+     <!-- Unicode icon here -->
+  </div>
+</div>
+
+
+
 											<div class="add-newplus position-absolute end-0  ">
 											<a href="#" data-bs-toggle="modal" data-bs-target="#add-client-modal">
 												<i data-feather="plus-circle" class="plus-down-add"></i>
@@ -98,18 +107,19 @@
 
 											<div class="col-sm-6 col-12">
   <div class="mb-3">
-    <label for="clientAddress" class="form-label">
-      Client Address <span class="text-danger ms-1">*</span>
-    </label>
-    <textarea
-      id="clientAddress"
-      class="form-control"
-      name="client_address"
-      rows="3"
-      placeholder="Enter client's full address"
-      required
-    ></textarea>
-  </div>
+  <label for="clientAddress" class="form-label">
+    Client Address <span class="text-danger ms-1">*</span>
+  </label>
+  <textarea
+    id="clientAddress"
+    class="form-control"
+    name="client_address"
+    rows="3"
+    placeholder="📍 Enter client's full address"
+    required
+  ></textarea>
+</div>
+
 </div>
 
 										</div>
@@ -118,7 +128,7 @@
 												<div class="mb-3 list position-relative">
 													<label class="form-label">Job Order Date<span class="text-danger ms-1">*</span></label>
 													<div class="input-groupicon calender-input">
-															<i data-feather="calendar" class="info-img"></i>
+															<i data-feather="calendar" class="info-img" style="stroke-width:2.5;"></i>
 															<input type="text" class="datetimepicker form-control" placeholder="dd/mm/yyyy">
 														</div>
 
@@ -141,28 +151,38 @@
 										<div class="row">
 													<div class="col-lg-4 col-sm-6 col-12">
 														<div class="mb-3">
+                                                            
 															<label class="form-label">Refrence no<span class="text-danger ms-1">*</span></label>
+                                                            <div class="input-group">
+                                                            <span class="input-group-text">🔢</span>
 															<input type="text" class="form-control">
+</div>
 														</div>
 													</div>
 													<div class="col-lg-4 col-sm-6 col-12">
 														<div class="mb-3">
 															<label class="form-label">Marketing Code<span class="text-danger ms-1">*</span></label>
+                                                            <div class="input-group">
+                                                                <span class="input-group-text">🏷️</span>
 															<input type="text" class="form-control">
+</div>
 														</div>
 													</div>
 													
 									               <div class="col-lg-4 col-sm-6 col-12">
 														<div class="mb-3">
 															<label class="form-label">Contact no<span class="text-danger ms-1">*</span></label>
-															<input type="text" class="form-control">
+															<input type="text" class="form-control" placeholder="📞">
 														</div>
 													</div>
 													
 													<div class="col-lg-4 col-sm-6 col-12">
 														<div class="mb-3">
 															<label class="form-label">Contact email<span class="text-danger ms-1">*</span></label>
-															<input class="form-control" type="text">
+                                                            
+                            
+															<input class="form-control" type="text" placeholder="📧">
+                                                            
 														</div>
 													</div>
 													<div class="col-lg-4 col-sm-6 col-12">
