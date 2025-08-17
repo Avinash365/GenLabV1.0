@@ -98,10 +98,10 @@
                                 <td>{{ $products->firstItem() + $index }}</td>
                                 <td>{{ $product->product_name }}</td>
                                 <td>{{ $product->product_code }}</td>
-                                <td>{{ $product->product_category_id ?? 'N/A' }}</td>
+                                <td>{{ $product->category->name?? 'N/A' }}</td>
                                 <td>{{ $product->purchase_unit }}</td>
                                 <td>{{ $product->purchase_price }}</td>
-                                <td>{{ $product->unit }}</td>
+                                <td>{{ $product->unit }}</td>    
                                 <td>{{ $product->invoice_no }}</td>
                                 <td>{{ $product->remark }}</td>
                                 <td class="d-flex">
@@ -175,11 +175,11 @@
                             <label class="form-label">Purchase Category</label>
                             <select class="form-select" name="product_category_id" id="edit_product_category_id" required>
                                 <option value="">Select</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Groceries">Groceries</option>
-                                <option value="Clothing">Clothing</option>
-                                <option value="Stationery">Stationery</option>
-                                <option value="Furniture">Furniture</option>
+                                @foreach($productCategories as $category)
+                                    <option value="{{ $category->id }}">
+                                        {{ $category->name }}
+                                    </option>
+                                @endforeach
                             </select>
                         </div>
                         <div class="col-md-6">
