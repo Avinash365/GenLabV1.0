@@ -35,17 +35,11 @@ class LoginController extends Controller
 
         $loginService = app(SuperAdminLoginService::class);
 
-        $role = $loginService->login($request->only('email', 'password')); 
+        if ($loginService->login($request->only('email', 'password'))) {
+            return redirect()->route('superadmin.dashboard.index')->with('status', 'Logged in successfully');
+        }
 
-        return match ($role) {
-            Role::SUPER_ADMIN => redirect()->route('superadmin.dashboard.index')
-                ->with('status', 'Logged in successfully as Super Admin'),
-
-            Role::ADMIN => redirect()->route('admin.dashboard.index')
-                ->with('status', 'Logged in successfully as Admin'),
-
-            default => back()->withErrors(['email' => 'Invalid credentials'])->withInput(),
-        };
+        return redirect()->back()->withErrors(['email' => 'Invalid credentials'])->withInput();
     }
 
     /**
@@ -58,8 +52,7 @@ class LoginController extends Controller
         $loginService = app(SuperAdminLoginService::class);
         $loginService->logout();
 
-        return redirect()->route('superadmin.login')->with('status', 'Logged out successfully');
-    }
-
+        return redirect()->route('login')->with('status', 'Logged out successfully');
+    }   
    
 }

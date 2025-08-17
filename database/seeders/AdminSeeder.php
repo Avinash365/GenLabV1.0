@@ -8,23 +8,37 @@ use App\Models\Admin;
 
 class AdminSeeder extends Seeder
 {
-    
     public function run(): void
     {
-        // Super Admin
-        Admin::create([
-            'name' => 'Super Admin',
-            'email' => 'superadmin@gmail.com',
-            'password' => Hash::make('superadmin@123'),
-            'role' => 'super_admin',
-        ]);
+        $admins = [
+            [
+                'name' => 'Super Admin 1',
+                'email' => 'superadmin1@example.com',
+                'password' => Hash::make('password123'),
+                'role' => 'super_admin'
+            ],
+            [
+                'name' => 'Super Admin 2',
+                'email' => 'superadmin2@example.com',
+                'password' => Hash::make('password123'),
+                'role' => 'super_admin'
+            ],
+            [
+                'name' => 'Admin 1',
+                'email' => 'admin1@example.com',
+                'password' => Hash::make('password123'),
+                'role' => 'admin'
+            ],
+            [
+                'name' => 'Admin 2',
+                'email' => 'admin2@example.com',
+                'password' => Hash::make('password123'),
+                'role' => 'admin'
+            ]
+        ];
 
-        // Admin
-        Admin::create([
-            'name' => 'Admin',
-            'email' => 'admin@gmail.com',
-            'password' => Hash::make('admin@123'),
-            'role' => 'admin',
-        ]);
+        foreach ($admins as $admin) {
+            Admin::create($admin);
+        }
     }
 }

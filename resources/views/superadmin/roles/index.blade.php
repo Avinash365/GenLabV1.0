@@ -7,9 +7,7 @@
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2">
                 <div class="mb-3">
                     <h1 class="mb-1">Roles and Permissions List</h1>
-
                 </div>
-
             </div>
 
             @if (session('success'))
@@ -18,6 +16,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
             @endif
+
             <div class="row">
                 <div class="col-md-12">
                     <div class="card">
@@ -42,9 +41,9 @@
                                             <tr>
                                                 <td>
                                                     <strong>{{ ucfirst(str_replace('_', ' ', $role->role_name)) }}</strong>
-                                                    @if (!$role->is_active)
+                                                    <!-- @if (!$role->is_active)
                                                         <span class="badge bg-secondary ms-1">Inactive</span>
-                                                    @endif
+                                                    @endif -->
                                                     @if ($role->description)
                                                         <div class="text-muted small">{{ $role->description }}</div>
                                                     @endif
@@ -58,18 +57,15 @@
                                                             'role.manage' => 'Manage Roles',
                                                             'content.edit' => 'Edit Content',
                                                             'settings.update' => 'Update Settings',
-                                                            // Add more as needed
                                                         ];
-                                                        $permissions = is_array($role->permissions)
-                                                            ? $role->permissions
-                                                            : json_decode($role->permissions, true);
                                                     @endphp
-                                                    @if (empty($permissions))
+
+                                                    @if ($role->permissions->isEmpty())
                                                         <span class="text-muted">No permissions</span>
                                                     @else
-                                                        @foreach ($permissions as $permission)
+                                                        @foreach ($role->permissions as $permission)
                                                             <span class="badge bg-info text-light mb-1">
-                                                                {{ $permissionLabels[$permission] ?? ucfirst(str_replace(['.', '_'], ' ', $permission)) }}
+                                                                {{ $permissionLabels[$permission->permission_name] ?? ucfirst(str_replace(['.', '_'], ' ', $permission->permission_name)) }}
                                                             </span>
                                                         @endforeach
                                                     @endif
@@ -100,8 +96,8 @@
                             </div>
                         </div>
                         {{-- <div class="card-footer">
-                        {{ $roles->links() }}
-                    </div> --}}
+                            {{ $roles->links() }}
+                        </div> --}}
                     </div>
                 </div>
             </div>

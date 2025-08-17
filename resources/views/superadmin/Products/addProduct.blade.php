@@ -2,6 +2,21 @@
 @section('title', 'Create New Product')
 @section('content')
 
+
+@if (session('success'))
+  <div class="alert alert-success">{{ session('success') }}</div>
+@endif
+
+@if ($errors->any())
+  <div class="alert alert-danger">
+      <ul class="mb-0">
+          @foreach ($errors->all() as $error)
+              <li>{{ $error }}</li>
+          @endforeach
+      </ul>
+  </div>
+@endif
+
 <div class="row">
     <div class="col-md-12">
         <div class="card">
@@ -9,7 +24,7 @@
                 <h5 class="card-title">Inventory - Create Product</h5>
             </div>
             <div class="card-body">
-                <form action="#" method="POST">
+                <form action="{{route('superadmin.products.store')}}" method="POST">
                     {{-- CSRF Token --}}
                     @csrf
 
@@ -37,11 +52,11 @@
                             <div class="row mb-3">
                                 <label class="col-lg-3 col-form-label">Purchase Category*</label>
                                 <div class="col-lg-9">
-                                    <select class="form-select" name="purchase_unit" required>
+                                    <select class="form-select" name="product_category_id" required>
                                         <option value="">Select</option>
-                                        <option value="1">California</option>
-                                        <option value="2">Texas</option>
-                                        <option value="3">Florida</option>
+                                        @foreach($categories as $category)
+                                            <option value="{{ $category->id }}">{{ $category->name }}</option>
+                                        @endforeach
                                     </select>
                                 </div>
                             </div>
@@ -52,55 +67,42 @@
                                 <div class="col-lg-9">
                                     <select class="form-select" name="purchase_unit" required>
                                         <option value="">Select Unit</option>
-                                        <option value="1">California</option>
-                                        <option value="2">Texas</option>
-                                        <option value="3">Florida</option>
+                                        <option value="Kg">Kg</option>
+                                        <option value="Gram">Gram</option>
+                                        <option value="Piece">Piece</option>
+                                        <option value="Dozen">Dozen</option>
                                     </select>
                                 </div>
                             </div>
 
-                            <!-- Sales Unit -->
-                            <div class="row mb-3">
-                                <label class="col-lg-3 col-form-label">Sales Unit*</label>
-                                <div class="col-lg-9">
-                                    <select class="form-select" name="sales_unit" required> 
-                                        <option value="">Select Unit</option>
-                                        <option value="1">California</option>
-                                        <option value="2">Texas</option>
-                                        <option value="3">Florida</option>
-                                    </select>
-                                </div>
-                            </div>
                         </div>
 
                         <div class="col-xl-6">
                             <a href="{{ route('superadmin.viewproduct.viewProduct') }}" class="btn btn-primary mb-3">
                                 View Product List
                             </a>
-
-
-
-                            <!-- Unit Ratio -->
+                            <!-- Unit  -->
                             <div class="row mb-3">
-                                <label class="col-lg-3 col-form-label">Unit Ratio*</label>
+                                <label class="col-lg-3 col-form-label">Unit*</label>
                                 <div class="col-lg-9">
-                                    <input type="number" class="form-control" name="sales_price" placeholder="Eg. Purchase Unit : KG & Sales Unit : Gram = Ratio : 1000" required>
+                                    <input type="number" class="form-control" name="unit" placeholder="" required>
                                 </div>
                             </div>
 
                             <!-- Sales Price -->
                             <div class="row mb-3">
-                                <label class="col-lg-3 col-form-label">Sales Price*</label>
+                                <label class="col-lg-3 col-form-label">Purchase price*</label>
                                 <div class="col-lg-9">
-                                    <input type="number" class="form-control" name="sales_price" required>
+                                    <input type="number" class="form-control" name="purchase_price" required>
                                 </div>
-                            </div>
+                            </div> 
+
 
                             <!-- Remarks -->
                             <div class="row mb-3">
                                 <label class="col-lg-3 col-form-label">Remarks</label>
                                 <div class="col-lg-9">
-                                    <textarea class="form-control" name="remarks" rows="4" placeholder="Enter remarks here..."></textarea>
+                                    <textarea class="form-control" name="remark" rows="4" placeholder="Enter remarks here..."></textarea>
                                 </div>
                             </div>
 

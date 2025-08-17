@@ -6,37 +6,28 @@ use Illuminate\Support\Facades\Schema;
 
 return new class extends Migration
 {
-    /**
-     * Run the migrations.
-     */
     public function up(): void
     {
         Schema::create('booking_items', function (Blueprint $table) {
             $table->id();
-            
-            // Foreign key to new_bookings table
             $table->foreignId('new_booking_id')
                   ->constrained('new_bookings')
-                  ->onDelete('cascade');
-            
-            // Item fields
-            $table->string('sample_description');
-            $table->string('sample_quality');
+                  ->cascadeOnDelete()
+                  ->cascadeOnUpdate();
+
+            $table->string('sample_description', 255);
+            $table->string('sample_quality', 100);
             $table->date('lab_expected_date');
             $table->decimal('amount', 10, 2);
-            $table->string('lab_analysis');
-            $table->string('job_order_no');
-            
+            $table->string('lab_analysis', 255);
+            $table->string('job_order_no', 50);
+
             $table->timestamps();
-            
-            // Optional: Add index for better performance
+            $table->softDeletes();
             $table->index('new_booking_id');
         });
     }
 
-    /**
-     * Reverse the migrations.
-     */
     public function down(): void
     {
         Schema::dropIfExists('booking_items');

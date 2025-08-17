@@ -43,11 +43,14 @@
                                         @foreach ($permissions as $permission)
                                             <div class="col-md-4">
                                                 <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="permissions[]"
-                                                        id="permission_{{ $loop->index }}" value="{{ $permission }}"
-                                                        {{ collect(old('permissions'))->contains($permission) ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="permission_{{ $loop->index }}">
-                                                        {{ $permission }}
+                                                    <input class="form-check-input" type="checkbox" 
+                                                        name="permissions[]"
+                                                        id="permission_{{ $permission->id }}" 
+                                                        value="{{$permission->id}}"
+                                                        {{ collect(old('permissions', []))->contains($permission->id) ? 'checked' : '' }}>
+
+                                                     <label class="form-check-label" for="permission_{{ $permission->id }}">
+                                                        {{ $permission->name ?? $permission->permission_name }}
                                                     </label>
                                                 </div>
                                             </div>

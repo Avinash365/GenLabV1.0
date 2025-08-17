@@ -1,7 +1,8 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-
+use App\Http\Controllers\User\UserLoginController;
+use App\Http\Controllers\SuperAdmin\DashboardController;
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -13,8 +14,15 @@ use Illuminate\Support\Facades\Route;
 |
 */
 
-Route::get('/', function () {
-    return view('welcome');
-});
 
+
+Route::get('/',[UserLoginController::class, 'index'])->name('login');
+Route::post('/', [UserLoginController::class, 'login'])->name('login.submit'); 
+
+
+Route::middleware(['multi_auth:web,admin'])->prefix('user')->name('user.')->group(function () {
+    
+    // Dashboard
+    Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+});
 

@@ -4,25 +4,17 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+
 
 class NewBooking extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 'new_bookings';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
-        'booking_name',
+        'admin_id',
         'client_name',
         'client_address',
         'client_email',
@@ -35,24 +27,27 @@ class NewBooking extends Model
         'contact_email',
         'contractor_name',
         'hold_status',
-        'upload_letter_path'
+        'upload_letter_path',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
         'job_order_date' => 'date',
-        'hold_status' => 'boolean'
+        'hold_status' => 'boolean',
     ];
 
     /**
-     * Get the booking items for the booking.
+     * Relationship: NewBooking belongs to an Admin
+     */
+    public function admin()
+    {
+        return $this->belongsTo(Admin::class);
+    }
+
+    /**
+     * Relationship: NewBooking has many BookingItems
      */
     public function items()
     {
-        return $this->hasMany(BookingItem::class);
+        return $this->hasMany(BookingItem::class, 'new_booking_id');
     }
 }

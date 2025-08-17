@@ -2,25 +2,28 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use HasApiTokens, HasFactory, Notifiable;
+    use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
 
-    /**
+    /** 
      * The attributes that are mass assignable.
      *
      * @var array<int, string>
      */
     protected $fillable = [
         'name',
-        'email',
+        'user_code',
         'password',
+        'role_id',
+        'created_by',
+        'updated_by',
     ];
 
     /**
@@ -39,6 +42,48 @@ class User extends Authenticatable
      * @var array<string, string>
      */
     protected $casts = [
-        'email_verified_at' => 'datetime',
-    ];
+        'user_verified_at' => 'datetime',
+    ]; 
+
+    
+    /**
+     * Relationship: User ↔ Role (one-to-Many)
+     */
+    
+    public function role()
+    {
+        return $this->belongsTo(Role::class);
+       
+    }
+
+
+    public function products()
+    {
+        return $this->morphMany(Product::class, 'created_by');
+    }
+
+    /**
+     * Relationship: User created by an Admin
+     */
+    public function createdBy()
+    {
+        return $this->belongsTo(Admin::class, 'created_by');
+    }
+
+    /**
+     * Relationship: User updated by an Admin
+     */
+    public function updatedBy()
+    {
+        return $this->belongsTo(Admin::class, 'updated_by');
+    } 
+
+
+    public function hasPermission($permissionName)
+    {
+        return $this->role
+            ->permissions()
+            ->where('permission_name', $permissionName)
+            ->exists();
+    } 
 }

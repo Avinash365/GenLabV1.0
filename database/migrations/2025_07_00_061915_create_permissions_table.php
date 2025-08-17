@@ -11,18 +11,19 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('new_booking', function (Blueprint $table) {
+        Schema::create('permissions', function (Blueprint $table) {
             $table->id();
-            $table->string('booking_name');
+            $table->string('permission_name')->unique(); 
+            $table->text('description')->nullable(); 
             $table->timestamps();
         });
     }
-    
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('new_booking');
-    }
+        Schema::dropIfExists('permissions');
+    } 
 };

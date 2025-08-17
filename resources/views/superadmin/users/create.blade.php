@@ -41,9 +41,9 @@
                                 </div>
 
                                 <div class="mb-3">
-                                    <label for="email" class="form-label">Email Address</label>
-                                    <input type="email" class="form-control" id="email" name="email"
-                                        value="{{ old('email') }}" required>
+                                    <label for="text" class="form-label">User code</label>
+                                    <input type="text" class="form-control" id="email" name="user_code"
+                                        value="{{ old('user_code') }}" required>
                                 </div>
 
                                 <div class="mb-3">
@@ -76,15 +76,19 @@
                                 <div class="mb-3">
                                     <label class="form-label">Additional Permissions</label>
                                     <div class="row">
-                                        @if (!empty($permissions) && count($permissions))
+                                        @if (!empty($permissions) && $permissions->count())
                                             @foreach ($permissions as $permission)
                                                 <div class="col-md-4">
                                                     <div class="form-check">
-                                                        <input class="form-check-input" type="checkbox" name="permissions[]"
-                                                            id="permission_{{ $loop->index }}" value="{{ $permission }}"
-                                                            {{ collect(old('permissions'))->contains($permission) ? 'checked' : '' }}>
-                                                        <label class="form-check-label" for="permission_{{ $loop->index }}">
-                                                            {{ $permission }}
+                                                        <input class="form-check-input"
+                                                            type="checkbox"
+                                                            name="permissions[]"
+                                                            id="permission_{{ $permission->id }}"
+                                                            value="{{ $permission->id }}"
+                                                            {{ collect(old('permissions', $rolePermissions ?? []))->contains($permission->id) ? 'checked' : '' }}>
+                                                        
+                                                        <label class="form-check-label" for="permission_{{ $permission->id }}">
+                                                            {{ $permission->name ?? $permission->permission_name }}
                                                         </label>
                                                     </div>
                                                 </div>
@@ -94,7 +98,6 @@
                                         @endif
                                     </div>
                                 </div>
-
                                 <button type="submit" class="btn btn-primary">Create User</button>
                                 <a href="{{ route('superadmin.users.index') }}" class="btn btn-secondary ms-2">Cancel</a>
                             </form>

@@ -106,7 +106,7 @@
                         </span>
                         <div>
                             <h6 class="fw-medium">{{ auth()->user()->name }}</h6>
-                            <p>{{ auth()->user()->role }}</p>
+                            <p>{{ auth('web')->user()->role->role_name ?? auth()->user()->role }}</p>
                         </div>
                     </div>
                     <a class="dropdown-item" href="#"><i class="ti ti-user-circle me-2"></i>Profile</a>

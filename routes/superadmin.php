@@ -32,13 +32,16 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 // ==============================
 // Super Admin Protected Routes
 // ==============================
-Route::middleware(['auth:admin', 'role:super_admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
     // Role & Permission Management
-    Route::prefix('role-and-permissions')->name('roles.')->group(function () {
+    Route::prefix('role-and-permissions')
+        ->name('roles.')
+        ->middleware('permission:role.manage')
+        ->group(function () {
         Route::get('/', [RoleAndPermissionController::class, 'index'])->name('index');
         Route::get('create', [RoleAndPermissionController::class, 'create'])->name('create');
         Route::post('/', [RoleAndPermissionController::class, 'store'])->name('store');
@@ -48,26 +51,49 @@ Route::middleware(['auth:admin', 'role:super_admin'])->prefix('superadmin')->nam
         Route::get('{id}', [RoleAndPermissionController::class, 'show'])->name('show');
     });
 
+
     // User Management
-    Route::prefix('users')->name('users.')->group(function () {
-        Route::get('/list', [UserController::class, 'index'])->name('index');
-        Route::get('create', [UserController::class, 'create'])->name('create');
-        Route::post('/', [UserController::class, 'store'])->name('store');
-        Route::get('{id}/edit', [UserController::class, 'edit'])->name('edit');
-        Route::put('{id}', [UserController::class, 'update'])->name('update');
-        Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
-        Route::get('{id}', [UserController::class, 'show'])->name('show');
+    Route::prefix('users')
+        ->name('users.')
+        ->middleware('permission:user.manage')
+        ->group(function () {
+            Route::get('/list', [UserController::class, 'index'])->name('index');
+            Route::get('create', [UserController::class, 'create'])->name('create');
+            Route::post('/', [UserController::class, 'store'])->name('store');
+
+            Route::put('{id}', [UserController::class, 'update'])->name('update');
+            Route::delete('{id}', [UserController::class, 'destroy'])->name('destroy');
     });
 
     // Booking Management
-    Route::prefix('bookings')->name('bookings.')->group(function () {
-    Route::get('/',[BookingController::class,'index'])->name('newbooking');
-          
+    Route::prefix('bookings')
+        ->name('bookings.')
+        ->middleware('permission:booking.manage')
+        ->group(function () {
+            Route::get('/',[BookingController::class,'index'])->name('newbooking'); 
+            Route::post('/', [BookingController::class, 'store'])->name('newbooking.store');
+            Route::delete('{id}', [BookingController::class, 'destroy'])->name('destroy');
+            Route::put('{id}', [BookingController::class, 'update'])->name('update');
     });
 
+
     //Product 
-     Route::prefix('products')->name('products.')->group(function () {
+     Route::prefix('products')
+        ->name('products.')
+        ->middleware('permission:product.manage')
+        ->group(function () {
+        
         Route::get('/', [ProductController::class, 'index'])->name('addProduct');
+        Route::post('/', [ProductController::class, 'store'])->name('store');
+        
+
+        // Update existing product
+        Route::put('/{product}', [ProductController::class, 'update'])->name('update');
+
+        // Delete product
+        Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
+        
+
     });
 
     //Product 

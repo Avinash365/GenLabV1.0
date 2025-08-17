@@ -4,23 +4,14 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BookingItem extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
-    /**
-     * The table associated with the model.
-     *
-     * @var string
-     */
     protected $table = 'booking_items';
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array
-     */
     protected $fillable = [
         'new_booking_id',
         'sample_description',
@@ -28,21 +19,16 @@ class BookingItem extends Model
         'lab_expected_date',
         'amount',
         'lab_analysis',
-        'job_order_no'
+        'job_order_no',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array
-     */
     protected $casts = [
         'lab_expected_date' => 'date',
-        'amount' => 'decimal:2'
+        'amount' => 'decimal:2',
     ];
 
     /**
-     * Get the booking that owns this item.
+     * Relationship: BookingItem belongs to a NewBooking
      */
     public function booking()
     {

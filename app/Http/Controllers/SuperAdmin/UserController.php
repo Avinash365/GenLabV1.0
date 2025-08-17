@@ -3,25 +3,45 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\RoleAndPermission;
+use App\Models\Role;
+use App\Models\Permission; 
 use Illuminate\Http\Request;
+use App\Services\UserRegistroService; 
 
 
 class UserController extends Controller
 {
-    //
+    
+    protected UserRegistroService $service;
+
+    public function __construct(UserRegistroService $service)
+    {
+        $this->service = $service;
+    }
+
     public function index()
     {
-        // Logic to list all users
-        $roles = RoleAndPermission::all();
-        $permissions = RoleAndPermission::pluck('permissions')->toArray();
-        return view('superadmin.users.index', compact('roles', 'permissions'));
+       return $this->service->index(); 
     }
+
     public function create()
     {
-        $roles = RoleAndPermission::all(); // or your roles fetching logic
-        $permissions = RoleAndPermission::pluck('role_name'); // or your permissions fetching logic
+       return $this->service->create(); 
+    }  
 
-        return view('superadmin.users.create', compact('roles', 'permissions'));
+    public function store(Request $request)
+    {
+        return $this->service->store($request);
+    }
+
+    
+    public function update(Request $request, $id)
+    {
+        return $this->service->update($request, $id);
+    }
+
+    public function destroy($id)
+    {
+        return $this->service->delete($id);
     }
 }

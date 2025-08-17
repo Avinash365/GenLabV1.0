@@ -21,5 +21,21 @@ class Admin extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
-    ];
+    ]; 
+
+    public function products()
+    {
+        return $this->morphMany(Product::class, 'created_by');
+    }
+
+    public function bookings()
+    {
+        return $this->hasMany(NewBooking::class, 'admin_id');
+    }
+    
+    public function hasPermission($permissionName)
+    {
+        return true;
+    } 
+    
 }
