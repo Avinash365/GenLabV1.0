@@ -30,7 +30,7 @@ class Admin extends Authenticatable
 
     public function bookings()
     {
-        return $this->hasMany(NewBooking::class, 'admin_id');
+        return $this->morphMany(NewBooking::class, 'created_by');
     }
     
     public function hasPermission($permissionName)

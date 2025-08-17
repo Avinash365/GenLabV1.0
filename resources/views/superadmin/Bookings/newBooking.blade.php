@@ -90,7 +90,7 @@
                                 </div>
                                 <div class="col-lg-4 col-sm-6 col-12">
                                     <label class="form-label">Marketing Code <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="marketing_code" value="{{ old('marketing_code') }}" required>
+                                    <input type="text" class="form-control" name="marketing_id" value="{{ old('marketing_code') }}" required>
                                 </div>
                                 <div class="col-lg-4 col-sm-6 col-12">
                                     <label class="form-label">Contact No <span class="text-danger">*</span></label>
@@ -113,12 +113,15 @@
                 <div class="accordion-item border mb-4">
                     <h2 class="accordion-header" id="headingUploadLetter">
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#uploadLetter" aria-expanded="true">
-                            <h5 class="d-flex align-items-center"><i data-feather="image" class="text-primary me-2"></i>Upload Letter</h5>
+                            <h5 class="d-flex align-items-center">
+                                <i data-feather="image" class="text-primary me-2"></i>Upload Letter
+                            </h5>
                         </div>
                     </h2>
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
-                            <input type="file" name="upload_letter_path" class="form-control">
+                            <input type="file" name="upload_letter_path" class="form-control" 
+                                accept="image/*,.pdf">
                         </div>
                     </div>
                 </div>

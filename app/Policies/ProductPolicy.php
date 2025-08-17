@@ -43,7 +43,7 @@ class ProductPolicy
         }
 
         if ($user instanceof User) {
-            return $user->id === $product->created_by;
+            return $user->id === $product->created_by_id;
         }
 
         return false;
@@ -60,7 +60,7 @@ class ProductPolicy
         }
 
         if ($user instanceof User) {
-            return $user->id === $product->created_by;
+            return $user->id === $product->created_by_id;
         }
 
         return false;

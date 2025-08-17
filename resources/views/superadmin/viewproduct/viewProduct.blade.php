@@ -54,95 +54,130 @@
     </div>
 
     <!-- /product list -->
-    <div class="card">
-        <div class="card-header d-flex align-items-center justify-content-between flex-wrap row-gap-3">
-            <div class="search-set">
-                <div class="input-group">
-                    <input type="text" class="form-control" placeholder="Search...">
-                    <button class="btn btn-outline-secondary" type="button">🔍</button>
-                </div>
+    <div class="card shadow-sm border-0">
+            <!-- Header -->
+            <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <!-- Search -->
+                <form method="GET" action="{{ route('superadmin.viewproduct.viewProduct', $categoryId ?? null) }}" class="d-flex flex-grow-1" style="max-width: 400px;">
+                    <div class="input-group">
+                        <input type="text" 
+                            name="search" 
+                            value="{{ request('search') }}" 
+                            class="form-control" 
+                            placeholder="Search by name or code...">
+                        <button class="btn btn-primary" type="submit">
+                            <i class="fa fa-search"></i>
+                        </button>
+                    </div>
+                </form>
             </div>
-        </div>
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table datatable">
-                    <thead class="thead-light">
-                        <tr>
-                            <th class="no-sort">
-                                <label class="checkboxs">
-                                    <input type="checkbox" id="select-all">
-                                    <span class="checkmarks"></span>
-                                </label>
-                            </th>
-                            <th>SL</th>
-                            <th>Name</th>
-                            <th>Product Code</th>
-                            <th>Purchase Category</th>
-                            <th>Purchase Unit</th>
-                            <th>Purchase Price</th>
-                            <th>Unit</th>
-                            <th>Invoice no</th>
-                            <th>Remark</th>
-                            <th>Action</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach ($products as $index => $product)
+            <div class="card-body p-3">
+                <!-- Category Filter -->
+                <div class="mb-4">
+                    <div class="d-flex flex-wrap gap-2">
+                        {{-- All Products --}}
+                        <a href="{{ route('superadmin.viewproduct.viewProduct') }}"
+                        class="btn btn-sm {{ empty($categoryId) ? 'btn-primary' : 'btn-outline-primary' }}">
+                            All
+                        </a>
+
+                        {{-- Categories --}}
+                        @foreach($productCategories as $category)
+                            <a href="{{ route('superadmin.viewproduct.viewProduct', $category->id) }}?search={{ request('search') }}"
+                            class="btn btn-sm {{ $categoryId == $category->id ? 'btn-primary' : 'btn-outline-primary' }}">
+                                {{ $category->name }}
+                            </a>
+                        @endforeach
+                    </div>
+                </div>
+
+                <!-- Table -->
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <td>
+                                <th>
                                     <label class="checkboxs">
-                                        <input type="checkbox">
+                                        <input type="checkbox" id="select-all">
                                         <span class="checkmarks"></span>
                                     </label>
-                                </td>
-                                <td>{{ $products->firstItem() + $index }}</td>
-                                <td>{{ $product->product_name }}</td>
-                                <td>{{ $product->product_code }}</td>
-                                <td>{{ $product->category->name?? 'N/A' }}</td>
-                                <td>{{ $product->purchase_unit }}</td>
-                                <td>{{ $product->purchase_price }}</td>
-                                <td>{{ $product->unit }}</td>    
-                                <td>{{ $product->invoice_no }}</td>
-                                <td>{{ $product->remark }}</td>
-                                <td class="d-flex">
-                                    <div class="d-flex align-items-center edit-delete-action">
-                                        @can('update', $product)
-                                            <a href="javascript:void(0);" 
-                                            class="me-2 border rounded d-flex align-items-center p-2 edit-product-btn"
-                                            data-id="{{ $product->id }}"
-                                            data-name="{{ $product->product_name }}"
-                                            data-code="{{ $product->product_code }}"
-                                            data-category="{{ $product->product_category_id }}"
-                                            data-purchase-unit="{{ $product->purchase_unit }}"
-                                            data-unit="{{ $product->unit }}"
-                                            data-price="{{ $product->purchase_price }}"
-                                            data-remarks="{{ $product->remark }}"> 
-                                                <i data-feather="edit" class="feather-edit"></i>
-                                            </a> 
-                                        @endcan
-                                        @can('delete', $product)
-                                        <a class="p-2 border rounded d-flex align-items-center delete-product-btn"
-                                            href="javascript:void(0);"
-                                            data-id="{{ $product->id }}"
-                                            data-bs-toggle="modal"
-                                            data-bs-target="#delete">
-                                                <i data-feather="trash-2" class="feather-trash-2"></i>
-                                        </a> 
-                                        @endcan                    
-                                    </div>
-                                </td>
+                                </th>
+                                <th>#</th>
+                                <th>Name</th>
+                                <th>Product Code</th>
+                                <th>Category</th>
+                                <th>Purchase Unit</th>
+                                <th>Purchase Price</th>
+                                <th>Unit</th>
+                                <th>Invoice No</th>
+                                <th>Remark</th>
+                                <th class="text-center">Action</th>
                             </tr>
-                        @endforeach
-                    </tbody>
-                </table>
-            </div>
+                        </thead>
+                        <tbody>
+                            @forelse ($products as $index => $product)
+                                <tr>
+                                    <td>
+                                        <label class="checkboxs">
+                                            <input type="checkbox">
+                                            <span class="checkmarks"></span>
+                                        </label>
+                                    </td>
+                                    <td>{{ $products->firstItem() + $index }}</td>
+                                    <td>{{ $product->product_name }}</td>
+                                    <td>{{ $product->product_code }}</td>
+                                    <td>{{ $product->category->name ?? 'N/A' }}</td>
+                                    <td>{{ $product->purchase_unit }}</td>
+                                    <td>{{ number_format($product->purchase_price, 2) }}</td>
+                                    <td>{{ $product->unit }}</td>
+                                    <td>{{ $product->invoice_no }}</td>
+                                    <td>{{ $product->remark }}</td>
+                                    <td class="text-center">
+                                        <div class="d-flex justify-content-center gap-2">
+                                            @can('update', $product)
+                                                <a href="javascript:void(0);" 
+                                                class="btn btn-sm  edit-product-btn"
+                                                data-id="{{ $product->id }}"
+                                                data-name="{{ $product->product_name }}"
+                                                data-code="{{ $product->product_code }}"
+                                                data-category="{{ $product->product_category_id }}"
+                                                data-purchase-unit="{{ $product->purchase_unit }}"
+                                                data-unit="{{ $product->unit }}"
+                                                data-price="{{ $product->purchase_price }}"
+                                                data-remarks="{{ $product->remark }}"> 
+                                                    <i data-feather="edit"></i>
+                                                </a> 
+                                            @endcan
+                                            @can('delete', $product)
+                                                <a href="javascript:void(0);" 
+                                                class="btn btn-sm btn-outline-danger delete-product-btn"
+                                                data-id="{{ $product->id }}"
+                                                data-bs-toggle="modal"
+                                                data-bs-target="#delete">
+                                                    <i data-feather="trash-2"></i>
+                                                </a>
+                                            @endcan
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="11" class="text-center text-muted">
+                                        No products found.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
 
-            <!-- Pagination -->
-            <div class="p-3">
-                {{ $products->links('pagination::bootstrap-5') }}
+                <!-- Pagination -->
+                <div class="d-flex justify-content-end mt-3">
+                    {{ $products->appends(['search' => request('search')])->links('pagination::bootstrap-5') }}
+                </div>
             </div>
-        </div>
     </div>
+
     <!-- /product list -->
 </div>
 

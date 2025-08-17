@@ -22,23 +22,36 @@ class BookingController extends Controller
         try { 
             dd($request->all()); 
             exit; 
+            // Determine the creator dynamically
+                if (auth('admin')->check()) {
+                    $creatorId = auth('admin')->id();
+                    $creatorType = 'App\\Models\\Admin';
+                } elseif (auth('web')->check()) {
+                    $creatorId = auth('web')->id();
+                    $creatorType = 'App\\Models\\User';
+                } else {
+                    abort(403, 'Unauthorized');
+                }
+
+
             DB::transaction(function () use ($request) {
-                // Prepare booking data
+    
                 $bookingData = $request->only([
                     'client_name',
                     'client_address',
-                    'client_email',
-                    'client_phone',
                     'job_order_date',
                     'report_issue_to',
                     'reference_no',
-                    'marketing_code',
+                    'marketing_id',
                     'contact_no',
                     'contact_email',
                     'contractor_name',
-                    'hold_status'
+                    'hold_status',
+                    'upload_letter_path', 
+                    'created_by_id'       =>$creatorId,
+                    'created_by_type'     =>$creatorType
                 ]);
-                $bookingData['admin_id'] = auth()->id(); 
+ 
 
                 // Handle file upload
                 // if ($request->hasFile('upload_letter_path')) {

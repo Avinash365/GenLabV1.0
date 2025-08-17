@@ -62,6 +62,11 @@ class User extends Authenticatable
         return $this->morphMany(Product::class, 'created_by');
     }
 
+
+    public function bookings(){
+        return $this->morphMany(NewBooking::class, 'created_by');
+    }
+
     /**
      * Relationship: User created by an Admin
      */

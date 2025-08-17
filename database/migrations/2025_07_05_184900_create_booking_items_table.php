@@ -15,11 +15,17 @@ return new class extends Migration
                   ->cascadeOnDelete()
                   ->cascadeOnUpdate();
 
+            $table->string('lab_analysis_code');
+            $table->foreign('lab_analysis_code')
+                    ->references('user_code')
+                    ->on('users')
+                    ->cascadeOnDelete()
+                    ->cascadeOnUpdate();
+           
             $table->string('sample_description', 255);
             $table->string('sample_quality', 100);
             $table->date('lab_expected_date');
             $table->decimal('amount', 10, 2);
-            $table->string('lab_analysis', 255);
             $table->string('job_order_no', 50);
 
             $table->timestamps();

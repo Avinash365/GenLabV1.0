@@ -20,8 +20,6 @@ class StoreBookingRequest extends FormRequest
         return [
             'client_name'        => 'required|string|max:255',
             'client_address'     => 'nullable|string',
-            'client_email'       => 'nullable|email|max:255',
-            'client_phone'       => 'nullable|string|max:20',
             'job_order_date'     => 'required|date',
             'report_issue_to'    => 'required|string|max:255',
 
@@ -35,7 +33,7 @@ class StoreBookingRequest extends FormRequest
                     : 'unique:new_bookings,reference_no',
             ],
 
-            'marketing_code'     => 'required|string|max:255',
+            'marketing_id'       => 'required|exists:users,user_code',
             'contact_no'         => 'required|string|max:20',
             'contact_email'      => 'required|email|max:255',
             'contractor_name'    => 'required|string|max:255',
@@ -48,7 +46,7 @@ class StoreBookingRequest extends FormRequest
             'booking_items.*.sample_quality'          => 'required|string|max:255',
             'booking_items.*.lab_expected_date'       => 'required|date',
             'booking_items.*.amount'                  => 'required|numeric|min:0',
-            'booking_items.*.lab_analysis'            => 'required|string|max:255',
+            'booking_items.*.lab_analysis_code'       => 'required|exists:users,user_code',
             'booking_items.*.job_order_no'            => 'required|string|max:255',
         ];
     }

@@ -18,7 +18,7 @@ class BookingItem extends Model
         'sample_quality',
         'lab_expected_date',
         'amount',
-        'lab_analysis',
+        'lab_analysis_code',
         'job_order_no',
     ];
 

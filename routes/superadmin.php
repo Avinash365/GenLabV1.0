@@ -42,13 +42,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         ->name('roles.')
         ->middleware('permission:role.manage')
         ->group(function () {
-        Route::get('/', [RoleAndPermissionController::class, 'index'])->name('index');
-        Route::get('create', [RoleAndPermissionController::class, 'create'])->name('create');
-        Route::post('/', [RoleAndPermissionController::class, 'store'])->name('store');
-        Route::get('{id}/edit', [RoleAndPermissionController::class, 'edit'])->name('edit');
-        Route::put('{id}', [RoleAndPermissionController::class, 'update'])->name('update');
-        Route::delete('{id}', [RoleAndPermissionController::class, 'destroy'])->name('destroy');
-        Route::get('{id}', [RoleAndPermissionController::class, 'show'])->name('show');
+            Route::get('/', [RoleAndPermissionController::class, 'index'])->name('index');
+            Route::get('create', [RoleAndPermissionController::class, 'create'])->name('create');
+            Route::post('/', [RoleAndPermissionController::class, 'store'])->name('store');
+            Route::get('{id}/edit', [RoleAndPermissionController::class, 'edit'])->name('edit');
+            Route::put('{id}', [RoleAndPermissionController::class, 'update'])->name('update');
+            Route::delete('{id}', [RoleAndPermissionController::class, 'destroy'])->name('destroy');
+            Route::get('{id}', [RoleAndPermissionController::class, 'show'])->name('show');
     });
 
 
@@ -83,22 +83,21 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         ->middleware('permission:product.manage')
         ->group(function () {
         
-        Route::get('/', [ProductController::class, 'index'])->name('addProduct');
-        Route::post('/', [ProductController::class, 'store'])->name('store');
+            Route::get('/', [ProductController::class, 'index'])->name('addProduct');
+            Route::post('/', [ProductController::class, 'store'])->name('store');
+            
+
+            // Update existing product
+            Route::put('/{product}', [ProductController::class, 'update'])->name('update');
+
+            // Delete product
+            Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
         
-
-        // Update existing product
-        Route::put('/{product}', [ProductController::class, 'update'])->name('update');
-
-        // Delete product
-        Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
-        
-
     });
 
     //Product 
      Route::prefix('viewproduct')->name('viewproduct.')->group(function () {
-        Route::get('/', [ProductViewController::class, 'index'])->name('viewProduct');
+        Route::get('/{categoryId?}', [ProductViewController::class, 'index'])->name('viewProduct');
     });
 
    // Categories 
