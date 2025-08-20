@@ -18,6 +18,9 @@ use App\Http\Controllers\SuperAdmin\PurchaseListController;
 use App\Http\Controllers\SuperAdmin\PurchaseAddController;
 use App\Http\Controllers\SuperAdmin\ShowBookingController;
 use App\Http\Controllers\SuperAdmin\DepartmentController;
+use App\Http\Controllers\SuperAdmin\IsCodesController;
+use App\Http\Controllers\SuperAdmin\CalibrationController;
+use App\Http\Controllers\SuperAdmin\LeaveController;
 
 // =======================
 // Super Admin Login Routes
@@ -148,6 +151,18 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
          // ShowBooking List 
         Route::prefix('department')->name('department.')->group(function () {
             Route::get('/', [DepartmentController::class, 'index'])->name('Department');
+        });
+        // IsCode List 
+        Route::prefix('iscodes')->name('iscode.')->group(function () {
+            Route::get('/', [IsCodesController::class, 'index'])->name('Iscode');
+        });
+        // Caqlibration List 
+        Route::prefix('calibrations')->name('calibration.')->group(function () {
+            Route::get('/', [CalibrationController::class, 'index'])->name('Calibration');
+        });
+        // Caqlibration List 
+        Route::prefix('leaves')->name('leave.')->group(function () {
+            Route::get('/', [LeaveController::class, 'index'])->name('Leave');
         });
 });
 
