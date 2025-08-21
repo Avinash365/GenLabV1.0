@@ -35,8 +35,8 @@
                             <ul>
                                 <li><a href="{{ route('superadmin.bookings.newbooking') }}" class="{{ Request::routeIs('superadmin.bookings.newbooking') ? 'active' : '' }}">New Booking</a></li>
                                 <li><a href="{{ route('superadmin.showbooking.showBooking') }}" class="{{ Request::routeIs('superadmin.showbooking.showBooking') ? 'active' : '' }}">Show Booking</a></li>
-                                <li><a href="{{ route('superadmin.department.Department') }}" class="{{ Request::routeIs('superadmin.department.Department') ? 'active' : '' }}">Department 1</a></li>
-                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Department 2</a></li>
+                                <li><a href="{{ route('superadmin.departments.index') }}" class="{{ Request::routeIs('superadmin.departments.index') ? 'active' : '' }}">Department</a></li>
+                                <!-- <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Department 2</a></li> -->
                             </ul>
                         </li>
 
@@ -45,7 +45,7 @@
                             <a href="#"><i class="ti ti-calendar fs-16 me-2"></i><span>Inventory</span><span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ route('superadmin.products.addProduct') }}" class="{{ Request::routeIs('superadmin.products.addProduct') ? 'active' : '' }}">Product</a></li>
-                                <li><a href="{{ route('superadmin.categories.Categories') }}" class="{{ Request::routeIs('superadmin.categories.Categories') ? 'active' : '' }}">Category</a></li>
+                                <li><a href="{{ route('superadmin.categories.index') }}" class="{{ Request::routeIs('superadmin.categories.index') ? 'active' : '' }}">Category</a></li>
                                 <li><a href="{{ route('superadmin.store.Store') }}" class="{{ Request::routeIs('superadmin.store.Store') ? 'active' : '' }}">Store</a></li>
                                 <li><a href="{{ route('superadmin.supplier.Supplier') }}" class="{{ Request::routeIs('superadmin.supplier.Supplier') ? 'active' : '' }}">Supplier</a></li>
                                 <li><a href="{{ route('superadmin.unit.Unit') }}" class="{{ Request::routeIs('superadmin.unit.Unit') ? 'active' : '' }}">Unit</a></li>
@@ -113,13 +113,23 @@
                         </li>
 
                         <li class="submenu {{ Request::routeIs('superadmin.users.*') ? 'submenu-open' : '' }}">
-                            <a href="#"><i class="ti ti-brand-apple-arcade fs-16 me-2"></i><span>User Management</span><span class="menu-arrow"></span></a>
-                            <ul>
-                                <li><a href="{{ route('superadmin.users.create') }}" class="{{ Request::routeIs('superadmin.users.create') ? 'active' : '' }}">Create</a></li>
-                                <li><a href="{{ route('superadmin.users.index') }}" class="{{ Request::routeIs('superadmin.users.index') ? 'active' : '' }}">View</a></li>
-                            </ul>
-                        </li>
+                            @if(auth()->user()->hasPermission('user.view') || auth()->user()->hasPermission('user.create') || auth()->user() instanceof Admin)
+                                <a href="#"><i class="ti ti-brand-apple-arcade fs-16 me-2"></i><span>User Management</span><span class="menu-arrow"></span></a>
+                                <ul>
+                                    @if(auth()->user()->hasPermission('user.create') || auth()->user() instanceof Admin)
+                                        <li>
+                                            <a href="{{ route('superadmin.users.create') }}" class="{{ Request::routeIs('superadmin.users.create') ? 'active' : '' }}">Create</a>
+                                        </li>
+                                    @endif
 
+                                    @if(auth()->user()->hasPermission('user.view') || auth()->user() instanceof Admin)
+                                        <li>
+                                            <a href="{{ route('superadmin.users.index') }}" class="{{ Request::routeIs('superadmin.users.index') ? 'active' : '' }}">View</a>
+                                        </li>
+                                    @endif
+                                </ul>
+                            @endif
+                        </li>
                     </ul>
                 </li>
             </ul>

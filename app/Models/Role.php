@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
 
 class Role extends Model
 {
@@ -13,10 +14,21 @@ class Role extends Model
     // Mass assignable fields
     protected $fillable = [
         'role_name',
-        'description',
+        'slug',
         'created_by',
         'updated_by',
     ];
+
+
+    protected static function boot()
+    {
+        parent::boot();
+
+        static::creating(function ($role) {
+            $role->slug = Str::slug($role->role_name, '_');   // e.g. "Tech Manager" -> "tech_manager"
+        });
+    }
+
 
     /**
      * A role can belong to many users.

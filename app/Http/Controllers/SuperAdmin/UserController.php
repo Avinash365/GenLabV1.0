@@ -7,6 +7,7 @@ use App\Models\Role;
 use App\Models\Permission; 
 use Illuminate\Http\Request;
 use App\Services\UserRegistroService; 
+use App\Models\User;
 
 
 class UserController extends Controller
@@ -17,6 +18,7 @@ class UserController extends Controller
     public function __construct(UserRegistroService $service)
     {
         $this->service = $service;
+        $this->authorizeResource(User::class, 'user');
     }
 
     public function index()
@@ -35,13 +37,19 @@ class UserController extends Controller
     }
 
     
-    public function update(Request $request, $id)
+    public function update(Request $request, User $user)
     {
-        return $this->service->update($request, $id);
+        return $this->service->update($request, $user);
     }
 
-    public function destroy($id)
+    public function updatePermissions(Request $request, User $user){
+        
+        $this->authorize('update', $user);
+        return $this->service->updatePermissions($request, $user);
+    }
+
+    public function destroy(User $user)
     {
-        return $this->service->delete($id);
+        return $this->service->delete($user);
     }
 }

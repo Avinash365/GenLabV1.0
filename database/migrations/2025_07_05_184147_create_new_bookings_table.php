@@ -11,8 +11,8 @@ return new class extends Migration
         Schema::create('new_bookings', function (Blueprint $table) {
             $table->id();
 
-            // foreign key to users table
-            $table->unsignedBigInteger('marketing_id'); 
+            // foreign key to users table (using user_code)
+            $table->string('marketing_id', 50); // match length/type of user_code
 
             $table->string('client_name', 150);
             $table->text('client_address')->nullable();
@@ -21,10 +21,9 @@ return new class extends Migration
             $table->string('reference_no', 50)->unique();
             $table->string('contact_no', 20);
             $table->string('contact_email', 150);
-            $table->string('contractor_name', 150);
+
 
             $table->boolean('hold_status')->default(false);
-
             $table->string('upload_letter_path', 255)->nullable();
 
             // Polymorphic relation: either admin or user
@@ -36,14 +35,13 @@ return new class extends Migration
 
             // Add foreign key
             $table->foreign('marketing_id')
-                ->references('id')
+                ->references('user_code')
                 ->on('users')
                 ->onDelete('cascade'); 
 
             $table->index(['created_by_id', 'created_by_type', 'client_name']);
         });
     }
-
 
     public function down(): void
     {

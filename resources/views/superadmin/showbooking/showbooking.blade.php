@@ -59,16 +59,14 @@
                     <thead class="thead-light">
                         <tr>
                             <th class="no-sort"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                            <th>Admin</th>
                             <th>Client Name</th>
                             <th>Client Address</th>
-                            <th>Client Email</th>
-                            <th>Client Phone</th>
                             <th>Job Order Date</th>
                             <th>Report Issue To</th>
                             <th>Reference No</th>
                             <th>Marketing Code</th>
-                            <th>Contractor</th>
+                            <th>Contact Email</th>
+                            <th>Contact no</th>
                             <th>Hold Status</th>
                             <th>Upload Letter</th>
                             <th>Items</th>
@@ -79,16 +77,16 @@
                         @foreach($bookings as $booking)
                         <tr>
                             <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                            <td>{{ $booking->admin->name ?? '-' }}</td>
+
                             <td>{{ $booking->client_name }}</td>
                             <td>{{ $booking->client_address }}</td>
-                            <td>{{ $booking->client_email }}</td>
-                            <td>{{ $booking->client_phone }}</td>
+                         
                             <td>{{ $booking->job_order_date }}</td>
                             <td>{{ $booking->report_issue_to }}</td>
                             <td>{{ $booking->reference_no }}</td>
-                            <td>{{ $booking->marketing_code }}</td>
-                            <td>{{ $booking->contractor_name }}</td>
+                            <td>{{ $booking->marketing_id }}</td>
+                            <td>{{ $booking->contact_email }}</td>
+                            <td>{{ $booking->contact_no }}</td>
                             <td>{{ $booking->hold_status ? 'Yes' : 'No' }}</td>
                             <td>
                                 @if($booking->upload_letter_path)
@@ -109,7 +107,9 @@
                                         <div class="modal-content">
                                             <div class="modal-header">
                                                 <h5 class="modal-title">Booking Items for {{ $booking->client_name }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span> 
+                                                </button>
                                             </div>
                                             <div class="modal-body">
                                                 <div class="table-responsive">
@@ -151,29 +151,26 @@
                                 </button>
 
                                 <!-- Edit Modal -->
+                                <!-- Edit Modal -->
                                 <div class="modal fade" id="editModal-{{ $booking->id }}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered modal-lg">
                                         <div class="modal-content">
                                             <div class="modal-header">
                                                 <h5 class="modal-title">Edit Booking: {{ $booking->client_name }}</h5>
-                                                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                                                <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span> 
+                                                </button>
+                                                
                                             </div>
                                             <form action="{{ route('superadmin.bookings.update', $booking->id) }}" method="POST" enctype="multipart/form-data">
                                                 @csrf
                                                 @method('PUT')
                                                 <div class="modal-body">
                                                     <div class="row g-3">
+                                                        <!-- Booking Info -->
                                                         <div class="col-md-6">
                                                             <label>Client Name</label>
                                                             <input type="text" name="client_name" class="form-control" value="{{ $booking->client_name }}">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label>Client Email</label>
-                                                            <input type="email" name="client_email" class="form-control" value="{{ $booking->client_email }}">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label>Client Phone</label>
-                                                            <input type="text" name="client_phone" class="form-control" value="{{ $booking->client_phone }}">
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label>Client Address</label>
@@ -181,23 +178,15 @@
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label>Job Order Date</label>
-                                                            <input 
-                                                                type="date" 
-                                                                name="job_order_date" 
-                                                                class="form-control" 
-                                                                value="{{ old('job_order_date', $booking->job_order_date ? $booking->job_order_date->format('Y-m-d') : '') }}"
-                                                            >
+                                                            <input type="date" name="job_order_date" class="form-control" value="{{ old('job_order_date', $booking->job_order_date ? $booking->job_order_date->format('Y-m-d') : '') }}">
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label>Report Issue To</label>
                                                             <select class="form-control" name="report_issue_to" required>
                                                                 <option value="">Select</option>
-
-                                                                <!-- Show current value as selected if it's not in predefined options -->
                                                                 @if(!in_array($booking->report_issue_to, ['vendor', 'sales', 'marketing']) && $booking->report_issue_to)
                                                                     <option value="{{ $booking->report_issue_to }}" selected>{{ ucfirst($booking->report_issue_to) }}</option>
                                                                 @endif
-
                                                                 <option value="vendor" {{ $booking->report_issue_to == 'vendor' ? 'selected' : '' }}>Vendor</option>
                                                                 <option value="sales" {{ $booking->report_issue_to == 'sales' ? 'selected' : '' }}>Sales Team</option>
                                                                 <option value="marketing" {{ $booking->report_issue_to == 'marketing' ? 'selected' : '' }}>Marketing Team</option>
@@ -209,21 +198,16 @@
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label>Marketing Code</label>
-                                                            <input type="text" name="marketing_code" class="form-control" value="{{ $booking->marketing_code }}">
-                                                        </div>
-                                                        <div class="col-md-6">
-                                                            <label>Contractor Name</label>
-                                                            <input type="text" name="contractor_name" class="form-control" value="{{ $booking->contractor_name }}">
+                                                            <input type="text" name="marketing_id" class="form-control" value="{{ $booking->marketing_id }}">
                                                         </div>
                                                         <div class="col-md-6">
                                                             <label>Contact No</label>
                                                             <input type="text" name="contact_no" class="form-control" value="{{ $booking->contact_no }}">
                                                         </div>
                                                         <div class="col-md-6">
-                                                            <label>Contact email</label>
+                                                            <label>Contact Email</label>
                                                             <input type="text" name="contact_email" class="form-control" value="{{ $booking->contact_email }}">
                                                         </div>
-
                                                         <div class="col-md-6">
                                                             <label>Hold Status</label>
                                                             <select name="hold_status" class="form-control">
@@ -238,47 +222,45 @@
                                                                 <small>Current: <a href="{{ asset('storage/'.$booking->upload_letter_path) }}" target="_blank">View</a></small>
                                                             @endif
                                                         </div>
-
-                                                        <!-- Editable Items -->
+                                                        <h6>Booking Items 
+                                                                <button type="button" class="btn btn-sm btn-success float-end" id="addItemBtn">+ Add Item</button>
+                                                        </h6>
+                                                        <!-- Booking Items -->
                                                         <div class="col-12 mt-3">
-                                                            <h6>Booking Items</h6>
-                                                            @foreach($booking->items as $item)
-                                                            <div class="row g-2 mb-2 border p-2 rounded">
-                                                                <div class="col-md-4">
-                                                                    <label>Sample Description</label>
-                                                                    <input type="text" name="booking_items[{{ $item->id }}][sample_description]" class="form-control" value="{{ $item->sample_description }}">
+                                                            
+                                                            <div id="bookingItemsWrapper">
+                                                                @foreach($booking->items as $item)
+                                                                <div class="row g-2 mb-2 border p-2 rounded booking-item-row">
+                                                                    <div class="col-md-4">
+                                                                        <label>Sample Description</label>
+                                                                        <input type="text" name="booking_items[{{ $item->id }}][sample_description]" class="form-control" value="{{ $item->sample_description }}">
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <label>Sample Quality</label>
+                                                                        <input type="text" name="booking_items[{{ $item->id }}][sample_quality]" class="form-control" value="{{ $item->sample_quality }}">
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <label>Lab Analysis</label>
+                                                                        <input type="text" name="booking_items[{{ $item->id }}][lab_analysis_code]" class="form-control" value="{{ $item->lab_analysis_code }}">
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <label>Expected Date</label>
+                                                                        <input type="date" name="booking_items[{{ $item->id }}][lab_expected_date]" class="form-control" value="{{ old('booking_items.'.$item->id.'.lab_expected_date', $item->lab_expected_date ? $item->lab_expected_date->format('Y-m-d') : '') }}">
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <label>Amount</label>
+                                                                        <input type="number" name="booking_items[{{ $item->id }}][amount]" class="form-control" value="{{ $item->amount }}" step="0.01">
+                                                                    </div>
+                                                                    <div class="col-md-4">
+                                                                        <label>Job Order No</label>
+                                                                        <input type="text" name="booking_items[{{ $item->id }}][job_order_no]" class="form-control" value="{{ $item->job_order_no }}" readonly>
+                                                                    </div>
+                                                                    <div class="col-12 mt-2">
+                                                                        <button type="button" class="btn btn-sm btn-danger removeItemBtn">Delete</button>
+                                                                    </div>
                                                                 </div>
-                                                                <div class="col-md-4">
-                                                                    <label>Sample Quality</label>
-                                                                    <input type="text" name="booking_items[{{ $item->id }}][sample_quality]" class="form-control" value="{{ $item->sample_quality }}">
-                                                                </div>
-                                                                <div class="col-md-4">
-                                                                    <label>Lab Analysis</label>
-                                                                    <input type="text" name="booking_items[{{ $item->id }}][lab_analysis]" class="form-control" value="{{ $item->lab_analysis }}">
-                                                                </div>
-                                                                <div class="col-md-4">
-                                                                    <label>Expected Date</label>
-                                                                    <input 
-                                                                        type="date" 
-                                                                        name="booking_items[{{ $item->id }}][lab_expected_date]" 
-                                                                        class="form-control" 
-                                                                        value="{{ old('booking_items.'.$item->id.'.lab_expected_date', $item->lab_expected_date ? $item->lab_expected_date->format('Y-m-d') : '') }}"
-                                                                    >
-                                                                </div>
-                                                                <div class="col-md-4">
-                                                                    <label>Amount</label>
-                                                                    <input type="number" 
-                                                                        name="booking_items[{{ $item->id }}][amount]" 
-                                                                        class="form-control" 
-                                                                        value="{{ $item->amount }}"
-                                                                        step="0.01">
-                                                                </div>
-                                                                <div class="col-md-4">
-                                                                    <label>Job Order No</label>
-                                                                    <input type="text" name="booking_items[{{ $item->id }}][job_order_no]" class="form-control" value="{{ $item->job_order_no }}">
-                                                                </div>
+                                                                @endforeach
                                                             </div>
-                                                            @endforeach
                                                         </div>
 
                                                     </div>

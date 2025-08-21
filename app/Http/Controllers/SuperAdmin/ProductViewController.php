@@ -4,7 +4,7 @@ namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
-use App\Models\ProductCategories;
+use App\Models\ProductCategory;
 use Illuminate\Http\Request;
 
 
@@ -12,6 +12,8 @@ class ProductViewController extends Controller
 {
     public function index(Request $request, $categoryId = null)
     {
+        $this->authorize('view', Product::class);
+       
         $search = $request->input('search');
 
         $products = Product::with('category')
@@ -24,7 +26,7 @@ class ProductViewController extends Controller
             })
             ->paginate(10);
 
-        $productCategories = ProductCategories::all();
+        $productCategories = ProductCategory::all();
 
         return view('superadmin.viewproduct.viewProduct', compact('products', 'productCategories', 'categoryId', 'search'));
     }   

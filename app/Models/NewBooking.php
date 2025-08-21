@@ -23,7 +23,6 @@ class NewBooking extends Model
         'marketing_id',
         'contact_no',
         'contact_email',
-        'contractor_name',
         'hold_status',
         'upload_letter_path', 
         'created_by_id',

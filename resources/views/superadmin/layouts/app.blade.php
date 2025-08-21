@@ -58,7 +58,37 @@
     <!-- Main CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/style.css') }}">
 
-</head>
+    <!--SweetAlert2 --> 
+    
+
+</head> 
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+{{-- Global SweetAlert --}}
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        @if (session('success'))
+            Swal.fire({
+                title: "Success!",
+                text: "{{ session('success') }}",
+                icon: "success",
+                confirmButtonColor: "#3085d6",
+                confirmButtonText: "OK"
+            });
+        @endif
+
+        @if ($errors->any())
+            Swal.fire({
+                title: "Error!",
+                html: `{!! implode('<br>', $errors->all()) !!}`,
+                icon: "error",
+                confirmButtonColor: "#d33",
+                confirmButtonText: "Close"
+            });
+        @endif
+    });
+</script>
 
 <body>
 
@@ -184,6 +214,5 @@
 
 
 </body>
-
 
 </html>

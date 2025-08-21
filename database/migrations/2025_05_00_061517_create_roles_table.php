@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::create('roles', function (Blueprint $table) {
             $table->id();
             $table->string('role_name')->unique(); 
-            $table->text('description')->nullable();
+            $table->string('slug')->unique();
             
             // Track which admin created/updated this user
             $table->foreignId('created_by')->nullable()->constrained('admins')->nullOnDelete();

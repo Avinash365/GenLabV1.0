@@ -13,8 +13,7 @@ class ProductRequest extends FormRequest
      */
     public function authorize(): bool
     {
-        // Must be logged-in admin. Adjust to your guard / attribute.
-        // return auth()->check() && auth()->user()->is_admin;
+        
 
         return true;
     }
@@ -26,8 +25,8 @@ class ProductRequest extends FormRequest
      */
     public function rules(): array
     {   
-        // If route-model binding exists, this is an update; else it's store.
-        $product = $this->route('product'); // Product|null
+       
+        $product = $this->route('product'); 
         $productId = $product?->id; 
 
        return [
@@ -38,9 +37,9 @@ class ProductRequest extends FormRequest
             ],
             'product_category_id'  => ['required','exists:product_categories,id'],  // foreign key validation
             'purchase_unit'        => ['required','string','max:50'],               // unit names as string
-            'unit'                 => ['required','integer','min:1'],               // numeric
-            'purchase_price'       => ['required','numeric','min:0'],
-            'unit'                 => ['required','numeric','min:1'],
+            
+            'purchase_price'       => ['nullable','numeric','min:0'],
+            'unit'                 => ['nullable','numeric','min:0'],
             'remark'               => ['nullable','string','max:500'],
         ];
     }  

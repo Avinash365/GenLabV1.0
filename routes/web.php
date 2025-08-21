@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\UserLoginController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
+use App\Http\Controllers\Product\ProductCategoryController;
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -26,3 +28,5 @@ Route::middleware(['multi_auth:web,admin'])->prefix('user')->name('user.')->grou
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 });
 
+
+Route::resource('categories', ProductCategoryController::class);

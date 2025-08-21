@@ -1,7 +1,8 @@
 @extends('superadmin.layouts.app')
-@section('title', 'Create New User')
-@section('content')
 
+@section('title', 'Create New User')
+
+@section('content')
 @if ($errors->any())
     <div class="alert alert-danger">
         <ul class="mb-0">
@@ -16,7 +17,7 @@
     <div class="alert alert-success">
         {{ session('success') }}
     </div>
-@endif 
+@endif
 
 <div class="content">
     <div class="page-header">
@@ -27,12 +28,8 @@
             </div>
         </div>
         <ul class="table-top-head">
-            <li>
-                <a data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh"><i class="ti ti-refresh"></i></a>
-            </li>
-            <li>
-                <a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a>
-            </li>
+            <li><a data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh"><i class="ti ti-refresh"></i></a></li>
+            <li><a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a></li>
         </ul>
         <div class="page-btn mt-0">
             <a href="product-list.html" class="btn btn-secondary"><i data-feather="arrow-left" class="me-2"></i>Back to Dashboard</a>
@@ -74,12 +71,7 @@
                                 </div>
                                 <div class="col-sm-6 col-12">
                                     <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
-                                    <select class="form-control" name="report_issue_to" required>
-                                        <option value="">Select</option>
-                                        <option value="vendor" {{ old('report_issue_to') == 'vendor' ? 'selected' : '' }}>Vendor</option>
-                                        <option value="sales" {{ old('report_issue_to') == 'sales' ? 'selected' : '' }}>Sales Team</option>
-                                        <option value="marketing" {{ old('report_issue_to') == 'marketing' ? 'selected' : '' }}>Marketing Team</option>
-                                    </select>
+                                    <input type="text" class="form-control" name="report_issue_to" value="{{ old('report_issue_to') }}" placeholder="Enter person/team to report issue to" required >
                                 </div>
                             </div>
 
@@ -88,22 +80,27 @@
                                     <label class="form-label">Reference No <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="reference_no" value="{{ old('reference_no') }}" required>
                                 </div>
-                                <div class="col-lg-4 col-sm-6 col-12">
+
+                                <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                     <label class="form-label">Marketing Code <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="marketing_id" value="{{ old('marketing_code') }}" required>
+                                    <input type="text" name="marketing_id" class="form-control marketing_code" autocomplete="off" required>
+                                    <div class="dropdown-menu w-100 MarketingCodeList overflow-auto"></div>
                                 </div>
+
                                 <div class="col-lg-4 col-sm-6 col-12">
                                     <label class="form-label">Contact No <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="contact_no" value="{{ old('contact_no') }}" required>
                                 </div>
+
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Contact Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control" name="contact_email" value="{{ old('contact_email') }}" required>
                                 </div>
-                                <div class="col-lg-4 col-sm-6 col-12 mt-3">
+
+                                <!-- <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Contractor Name <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="contractor_name" value="{{ old('contractor_name') }}" required>
-                                </div>
+                                </div> -->
                             </div>
                         </div>
                     </div>
@@ -113,15 +110,12 @@
                 <div class="accordion-item border mb-4">
                     <h2 class="accordion-header" id="headingUploadLetter">
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#uploadLetter" aria-expanded="true">
-                            <h5 class="d-flex align-items-center">
-                                <i data-feather="image" class="text-primary me-2"></i>Upload Letter
-                            </h5>
+                            <h5 class="d-flex align-items-center"> <i data-feather="image" class="text-primary me-2"></i>Upload Letter </h5>
                         </div>
                     </h2>
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
-                            <input type="file" name="upload_letter_path" class="form-control" 
-                                accept="image/*,.pdf">
+                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf">
                         </div>
                     </div>
                 </div>
@@ -165,18 +159,15 @@
                                             <label class="form-label">Amount *</label>
                                             <input type="text" name="booking_items[0][amount]" class="form-control" required>
                                         </div>
-                                        <div class="col-lg-4 col-sm-6 col-12">
+                                        <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                             <label class="form-label">Lab Analysis *</label>
-                                            <select name="booking_items[0][lab_analysis]" class="form-control" required>
-                                                <option value="">Select</option>
-                                                @for($i = 1; $i <= 10; $i++)
-                                                    <option value="{{ $i }}">Analytics {{ $i }}</option>
-                                                @endfor
-                                            </select>
+                                            <input type="text" name="booking_items[0][lab_analysis_code]" class="form-control lab_analysis_code" autocomplete="off" required>
+                                            <div class="dropdown-menu w-100 labAnalysisList overflow-auto"></div>
                                         </div>
-                                        <div class="col-lg-4 col-sm-6 col-12">
+                                        <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                             <label class="form-label">Job Order No *</label>
-                                            <input type="text" name="booking_items[0][job_order_no]" class="form-control" required>
+                                            <input type="text" name="booking_items[0][job_order_no]" class="form-control job_order_no" autocomplete="off" required>
+                                            <div class="dropdown-menu w-100 jobOrderList overflow-auto"></div>
                                         </div>
                                     </div>
                                     <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="display: none;">Remove</button>
@@ -185,7 +176,6 @@
                         </div>
                     </div>
                 </div>
-
             </div>
 
             {{-- Submit Button --}}
@@ -197,39 +187,191 @@
     </form>
 </div>
 
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Job Order Autocomplete -->
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const addItemBtn = document.getElementById('addItemBtn');
-    const itemsContainer = document.getElementById('itemsContainer');
+    document.addEventListener("DOMContentLoaded", function() {
+        function attachJobOrderSearch(inputElement) {
+            const dropdown = inputElement.closest(".position-relative").querySelector(".jobOrderList");
 
-    addItemBtn.addEventListener('click', function() {
-        const firstItemGroup = itemsContainer.querySelector('.item-group');
-        const newItemGroup = firstItemGroup.cloneNode(true);
+            inputElement.addEventListener("keyup", function() {
+                let query = this.value;
+                if (query.length < 1) {
+                    dropdown.style.display = "none";
+                    return;
+                }
 
-        const index = itemsContainer.querySelectorAll('.item-group').length;
+                $.ajax({
+                    url: "{{ route('superadmin.bookings.get.job.orders') }}",
+                    data: { term: query },
+                    success: function(data) {
+                        if (data.length > 0) {
+                            let listItems = "";
+                            data.forEach(function(item) {
+                                listItems += `<button type="button" class="dropdown-item">${item}</button>`;
+                            });
+                            dropdown.innerHTML = listItems;
+                            dropdown.style.display = "block";
+                        } else {
+                            dropdown.innerHTML = '<span class="dropdown-item disabled">No results found</span>';
+                            dropdown.style.display = "block";
+                        }
+                    }
+                });
+            });
 
-        // Update names to nested array format
-        newItemGroup.querySelectorAll('input, select').forEach(function(el) {
-            const name = el.getAttribute('name');
-            const newName = name.replace(/\d+/, index);
-            el.setAttribute('name', newName);
-            if(el.tagName === 'INPUT') el.value = '';
-            if(el.tagName === 'SELECT') el.selectedIndex = 0;
+            dropdown.addEventListener("click", function(e) {
+                if (e.target.tagName === "BUTTON") {
+                    inputElement.value = e.target.textContent;
+                    dropdown.style.display = "none";
+                }
+            });
+        }
+
+        attachJobOrderSearch(document.querySelector(".job_order_no"));
+        window.attachJobOrderSearch = attachJobOrderSearch;
+    });
+</script>
+
+<!-- Lab Analysis Autocomplete -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function attachLabAnalysisSearch(inputElement) {
+            const dropdown = inputElement.closest(".position-relative").querySelector(".labAnalysisList");
+
+            inputElement.addEventListener("keyup", function() {
+                let query = this.value;
+                if (query.length < 1) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ route('superadmin.bookings.get.labAnalyst') }}",
+                    data: { term: query },
+                    success: function(data) {
+                        if (data.length > 0) {
+                            let listItems = "";
+                            data.forEach(function(item) {
+                                listItems += `<button type="button" class="dropdown-item">${item}</button>`;
+                            });
+                            dropdown.innerHTML = listItems;
+                            dropdown.style.display = "block";
+                        } else {
+                            dropdown.innerHTML = '<span class="dropdown-item disabled">No results found</span>';
+                            dropdown.style.display = "block";
+                        }
+                    }
+                });
+            });
+
+            dropdown.addEventListener("click", function(e) {
+                if (e.target.tagName === "BUTTON") {
+                    inputElement.value = e.target.textContent;
+                    dropdown.style.display = "none";
+                }
+            });
+        }
+
+        attachLabAnalysisSearch(document.querySelector(".lab_analysis_code"));
+        window.attachLabAnalysisSearch = attachLabAnalysisSearch;
+    });
+</script> 
+
+<!-- Marketing Code Autocomplete -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        function attachMarketingCodeSearch(inputElement) {
+            const dropdown = inputElement.closest(".position-relative").querySelector(".MarketingCodeList");
+
+            inputElement.addEventListener("keyup", function() {
+                let query = this.value;
+                if (query.length < 1) {
+                    dropdown.style.display = "none";
+                    return;
+                }
+
+                $.ajax({
+                    url: "{{ route('superadmin.bookings.get.marketingCodes') }}",
+                    data: { term: query },
+                    success: function(data) {
+                        if (data.length > 0) {
+                            let listItems = "";
+                            data.forEach(function(item) {
+                                listItems += `<button type="button" class="dropdown-item">${item}</button>`;
+                            });
+                            dropdown.innerHTML = listItems;
+                            dropdown.style.display = "block";
+                        } else {
+                            dropdown.innerHTML = '<span class="dropdown-item disabled">No results found</span>';
+                            dropdown.style.display = "block";
+                        }
+                    }
+                });
+            });
+
+            dropdown.addEventListener("click", function(e) {
+                if (e.target.tagName === "BUTTON") {
+                    inputElement.value = e.target.textContent;
+                    dropdown.style.display = "none";
+                }
+            });
+        }
+
+        attachMarketingCodeSearch(document.querySelector(".marketing_code"));
+        window.attachMarketingCodeSearch = attachMarketingCodeSearch;
+    });
+</script>
+
+<!-- Add / Remove Item Script -->
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const addItemBtn = document.getElementById('addItemBtn');
+        const itemsContainer = document.getElementById('itemsContainer');
+
+        addItemBtn.addEventListener('click', function() {
+            const firstItemGroup = itemsContainer.querySelector('.item-group');
+            const newItemGroup = firstItemGroup.cloneNode(true);
+            const index = itemsContainer.querySelectorAll('.item-group').length;
+
+            newItemGroup.querySelectorAll('input, select').forEach(function(el) {
+                const name = el.getAttribute('name');
+                if(name) {
+                    const newName = name.replace(/\d+/, index);
+                    el.setAttribute('name', newName);
+                }
+                if(el.tagName === 'INPUT' && el.type !== 'hidden') el.value = '';
+                if(el.tagName === 'SELECT') el.selectedIndex = 0;
+            });
+
+            newItemGroup.querySelector('.remove-item').style.display = 'inline-block';
+            itemsContainer.appendChild(newItemGroup);
+
+            // Reattach dropdowns to new inputs
+            if (typeof window.attachJobOrderSearch === "function") {
+                window.attachJobOrderSearch(newItemGroup.querySelector(".job_order_no"));
+            }
+            if (typeof window.attachLabAnalysisSearch === "function") {
+                window.attachLabAnalysisSearch(newItemGroup.querySelector(".lab_analysis_code"));
+            }
+            if (typeof window.attachMarketingCodeSearch === "function") {
+                window.attachMarketingCodeSearch(newItemGroup.querySelector(".marketing_code"));
+            }
         });
 
-        newItemGroup.querySelector('.remove-item').style.display = 'inline-block';
-        itemsContainer.appendChild(newItemGroup);
-    });
-
-    itemsContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-item')) {
-            const itemGroup = e.target.closest('.item-group');
-            if (itemsContainer.querySelectorAll('.item-group').length > 1) {
-                itemGroup.remove();
+        itemsContainer.addEventListener('click', function(e) {
+            if (e.target.closest('.remove-item')) {
+                const itemGroup = e.target.closest('.item-group');
+                if (itemsContainer.querySelectorAll('.item-group').length > 1) {
+                    itemGroup.remove();
+                }
             }
-        }
-    });
-});
-</script>
+        });
+    });  
+</script> 
+
+
 
 @endsection

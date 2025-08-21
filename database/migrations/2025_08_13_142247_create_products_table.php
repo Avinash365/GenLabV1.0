@@ -24,9 +24,13 @@ return new class extends Migration
             $table->string('invoice_no')->unique();
             $table->string('product_code')->unique();
             $table->string('product_name');     
-            $table->decimal('purchase_price', 10, 2);
-            $table->string('purchase_unit'); // e.g., kg, gram
-            $table->integer('unit'); // number
+        
+
+            $table->string('purchase_unit'); 
+
+            $table->decimal('purchase_price', 10, 2)->nullable()->unsigned();
+            $table->integer('unit')->nullable()->unsigned();
+            
             $table->text('remark')->nullable();
 
             // Polymorphic relation: either admin or user
@@ -34,7 +38,7 @@ return new class extends Migration
             $table->string('created_by_type');
 
             $table->timestamps(); 
-            $table->softDeletes();  // deleted_at
+            $table->softDeletes();  
 
             $table->index(['created_by_id', 'created_by_type', 'product_name']);
         });

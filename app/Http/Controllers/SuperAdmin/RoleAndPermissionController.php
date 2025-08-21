@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Services\RoleAndPermissionService;
+use App\Models\Role; 
 
 class RoleAndPermissionController extends Controller
 {
@@ -13,6 +14,7 @@ class RoleAndPermissionController extends Controller
     public function __construct(RoleAndPermissionService $service)
     {
         $this->service = $service;
+        $this->authorizeResource(Role::class, 'role');
     }
 
     public function index()
@@ -30,58 +32,24 @@ class RoleAndPermissionController extends Controller
         return $this->service->store($request);
     }
 
-    public function edit($id)
+    public function edit(Role $role)
     {
-        return $this->service->edit($id);
+        return $this->service->edit($role);
     }   
 
-    public function update(Request $request, $id)
+    public function update(Request $request, Role $role)
     {
-        return $this->service->update($request, $id);
+        return $this->service->update($request, $role);
     }
 
-    public function destroy($id)
+    public function destroy(Role $role)
     {
-        return $this->service->destroy($id);
+        return $this->service->destroy($role);
     }
 
-    public function show($id)
+    public function show(Role $role)
     {
-        return $this->service->show($id);
+        return $this->service->show($role);
     }
 
-    // public function assignPermissions(Request $request, $id)
-    // {
-    //     return $this->service->assignPermissions($request, $id);
-    // }
-
-    // public function removePermissions(Request $request, $id)
-    // {
-    //     return $this->service->removePermissions($request, $id);
-    // }
-
-    // public function toggleActiveStatus($id)
-    // {
-    //     return $this->service->toggleActiveStatus($id);
-    // }
-
-    // public function bulkDelete(Request $request)
-    // {
-    //     return $this->service->bulkDelete($request);
-    // }
-
-    // public function exportRoles()
-    // {
-    //     return $this->service->exportRoles();
-    // }
-
-    // public function importRoles(Request $request)
-    // {
-    //     return $this->service->importRoles($request);
-    // }
-
-    // public function searchRoles(Request $request)
-    // {
-    //     return $this->service->searchRoles($request);
-    // }
 }

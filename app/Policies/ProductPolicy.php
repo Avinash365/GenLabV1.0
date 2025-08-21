@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace App\Policies;
 
@@ -8,75 +8,52 @@ use App\Models\User;
 
 class ProductPolicy
 {
-    /**
-     * Anyone logged in can view list.
-     */
     public function viewAny(Admin|User $user): bool
     {
-        return true;
+        if ($user instanceof Admin) return true;
+
+        return $user->hasPermission('product.view');
     }
 
-    /**
-     * Anyone logged in can view a product.
-     */
-    public function view(Admin|User $user, Product $product): bool
+
+    public function view(Admin|User $user): bool
     {
-        return true;
+        if ($user instanceof Admin) return true;
+
+        return $user->hasPermission('product.view');
     }
 
-    /**
-     * Only Admins can create products.
-     */
+    
     public function create(Admin|User $user): bool
     {
-        return $user instanceof Admin;
+        if ($user instanceof Admin) return true;
+
+        return $user->hasPermission('product.create');
     }
 
-    /**
-     * Admins: can update all
-     * Users: can update only their own
-     */
+
     public function update(Admin|User $user, Product $product): bool
     {
-        if ($user instanceof Admin) {
-            return true;
-        }
+        if ($user instanceof Admin) return true;
 
-        if ($user instanceof User) {
-            return $user->id === $product->created_by_id;
-        }
-
-        return false;
+        // Users can update only if they have permission and own the product
+        return $user->hasPermission('product.edit');
     }
 
-    /**
-     * Admins: can delete all
-     * Users: can delete only their own
-     */
+
     public function delete(Admin|User $user, Product $product): bool
     {
-        if ($user instanceof Admin) {
-            return true;
-        }
+        if ($user instanceof Admin) return true;
 
-        if ($user instanceof User) {
-            return $user->id === $product->created_by_id;
-        }
-
-        return false;
+        // Users can delete only if they have permission and own the product
+        return $user->hasPermission('product.delete');
     }
 
-    /**
-     * Restore (admins only).
-     */
     public function restore(Admin|User $user, Product $product): bool
     {
         return $user instanceof Admin;
     }
-
-    /**
-     * Force delete (admins only).
-     */
+     
     public function forceDelete(Admin|User $user, Product $product): bool
     {
         return $user instanceof Admin;

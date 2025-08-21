@@ -1,4 +1,4 @@
-<?php
+<?php 
 
 namespace App\Services;
 
@@ -8,19 +8,9 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
 
+
 class RoleAndPermissionService
 {
-    /**
-     * Default system permissions (optional fallback).
-     */
-    protected array $defaultPermissions = [
-        'dashboard.view',
-        'user.manage',
-        'role.manage',
-        'content.edit',
-        'settings.update',
-    ];
-
     /**
      * Display a listing of the roles with their permissions.
      */
@@ -50,21 +40,17 @@ class RoleAndPermissionService
         $validated = $request->validate([
             'role_name'   => 'required|string|max:255|unique:roles,role_name',
             'permissions' => 'nullable|array',
-            'description' => 'nullable|string|max:500',
         ]);
-
+       
         try {
             // Create role
             $role = Role::create([
-                'role_name'   => $validated['role_name'],
-                'description' => $validated['description'] ?? null,
-                'created_by'  => auth('admin')->id(),
+                'role_name'  => $validated['role_name'],
+                'created_by' => auth('admin')->id(),
             ]);
 
-            // Attach permissions (IDs directly)
-            if (!empty($validated['permissions'])) {
-                $role->permissions()->attach($validated['permissions']);
-            }
+            // Attach permissions if any
+            $role->permissions()->sync($validated['permissions'] ?? []);
 
             return redirect()
                 ->route('superadmin.roles.index')
@@ -72,7 +58,7 @@ class RoleAndPermissionService
 
         } catch (\Exception $e) {
             Log::error('Role creation failed', [
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
                 'request' => $request->all(),
             ]);
 
@@ -84,40 +70,35 @@ class RoleAndPermissionService
     /**
      * Show the form for editing the specified role.
      */
-    public function edit(int $id)
+    public function edit(Role $role)
     {
-        $role = Role::with('permissions')->findOrFail($id);
+        $role->load('permissions');
         $permissions = Permission::all();
         $rolePermissions = $role->permissions->pluck('id')->toArray();
 
-        return view('superadmin.roles.edit', [
-            'role' => $role,
-            'permissions' => $permissions,
-            'rolePermissions' => $rolePermissions,
-        ]);
+        return view('superadmin.roles.edit', compact('role', 'permissions', 'rolePermissions'));
     }
 
     /**
      * Update the specified role in storage.
      */
-    public function update(Request $request, int $id)
+    public function update(Request $request, Role $role)
     {
         $validated = $request->validate([
             'role_name'   => "required|string|max:255|unique:roles,role_name,{$id}",
-            'permissions' => 'nullable|array',
-            'description' => 'nullable|string|max:500',
+            'permissions' => 'nullable|array'
         ]);
 
         try {
-            $role = Role::findOrFail($id);
+            // dd($request->all());
+            // exit; 
 
-            // Update role details
+            // Update role name and updated_by
             $role->update([
-                'role_name'   => $validated['role_name'],
-                'description' => $validated['description'] ?? null,
-                'updated_by'  => auth('admin')->id(),
+                'role_name'  => $validated['role_name'],
+                'updated_by' => null,
             ]);
-
+            
             // Sync permissions
             $role->permissions()->sync($validated['permissions'] ?? []);
 
@@ -128,10 +109,10 @@ class RoleAndPermissionService
         } catch (ModelNotFoundException $e) {
             return redirect()->route('superadmin.roles.index')
                 ->with('error', 'Role not found.');
-                
+
         } catch (\Exception $e) {
             Log::error('Role update failed', [
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
                 'role_id' => $id,
                 'request' => $request->all(),
             ]);
@@ -144,10 +125,10 @@ class RoleAndPermissionService
     /**
      * Remove the specified role from storage.
      */
-    public function destroy(int $id)
+    public function destroy(Role $role)
     {
         try {
-            $role = Role::findOrFail($id);
+
             $role->delete();
 
             return redirect()
@@ -160,7 +141,7 @@ class RoleAndPermissionService
 
         } catch (\Exception $e) {
             Log::error('Role deletion failed', [
-                'error' => $e->getMessage(),
+                'error'   => $e->getMessage(),
                 'role_id' => $id,
             ]);
 
@@ -172,12 +153,12 @@ class RoleAndPermissionService
     /**
      * Display the specified role and its permissions.
      */
-    public function show(int $id)
+    public function show(Role $role)
     {
-        $role = Role::with('permissions')->findOrFail($id);
+        $role->load('permissions');
 
         return view('superadmin.roles.show', [
-            'role' => $role,
+            'role'        => $role,
             'permissions' => $role->permissions,
         ]);
     }

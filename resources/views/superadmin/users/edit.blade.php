@@ -7,11 +7,10 @@
 
             <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-2">
                 <div class="mb-3">
-                    <h1 class="mb-1">Create Roles and Permissions</h1>
-
+                    <h1 class="mb-1">Edit Role and Permissions</h1>
                 </div>
-
             </div>
+
             <div class="row">
                 <div class="col-md-12">
                     <div class="card">
@@ -24,6 +23,7 @@
                             </div>
                         </div>
                         <div class="card-body">
+
                             @if ($errors->any())
                                 <div class="alert alert-danger">
                                     <ul class="mb-0">
@@ -33,36 +33,70 @@
                                     </ul>
                                 </div>
                             @endif
-                            @php
-                                $selectedPermissions = is_array($role->permissions)
-                                    ? $role->permissions
-                                    : json_decode($role->permissions, true);
-                            @endphp
+
                             <form action="{{ route('superadmin.roles.update', $role->id) }}" method="POST">
                                 @csrf
                                 @method('PUT')
+
                                 <div class="mb-3">
                                     <label for="role_name" class="form-label">Role Name</label>
-                                    <input type="text" class="form-control" id="role_name" name="role_name"
-                                        value="{{ old('role_name', $role->role_name) }}" required>
+                                    <input type="text"
+                                           class="form-control"
+                                           id="role_name"
+                                           name="role_name"
+                                           value="{{ old('role_name', $role->role_name) }}"
+                                           required>
                                 </div>
+
                                 <div class="mb-3">
                                     <label class="form-label">Permissions</label>
-                                    <div class="row">
-                                        @foreach ($permissions as $permission)
-                                            <div class="col-md-4">
-                                                <div class="form-check">
-                                                    <input class="form-check-input" type="checkbox" name="permissions[]"
-                                                        id="permission_{{ $loop->index }}" value="{{ $permission }}"
-                                                        {{ in_array($permission, old('permissions', $selectedPermissions ?? [])) ? 'checked' : '' }}>
-                                                    <label class="form-check-label" for="permission_{{ $loop->index }}">
-                                                        {{ ucfirst(str_replace(['.', '_'], ' ', $permission)) }}
-                                                    </label>
-                                                </div>
-                                            </div>
-                                        @endforeach
-                                    </div>
+
+                                    <table class="table table-bordered">
+                                        <thead>
+                                            <tr>
+                                                <th>Module</th>
+                                                <th>Select All</th>
+                                                <th>View</th>
+                                                <th>Create</th>
+                                                <th>Edit</th>
+                                                <th>Delete</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            @php
+                                                $groupedPermissions = $permissions->groupBy(function($perm) {
+                                                    return explode('.', $perm->permission_name)[0]; // group by module
+                                                });
+                                                $rolePermissionIds = $role->permissions->pluck('id')->toArray();
+                                            @endphp
+
+                                            @foreach($groupedPermissions as $module => $perms)
+                                                <tr>
+                                                    <td>{{ ucfirst($module) }}</td>
+                                                    <td>
+                                                        <input type="checkbox" class="select_row" data-row="{{ $module }}">
+                                                    </td>
+
+                                                    @foreach(['view','create','edit','delete'] as $action)
+                                                        @php
+                                                            $permission = $perms->firstWhere('permission_name', $module.'.'.$action);
+                                                        @endphp
+                                                        <td>
+                                                            @if($permission)
+                                                                <input type="checkbox"
+                                                                       class="checkbox_{{ $module }} {{ $action }}"
+                                                                       name="permissions[]"
+                                                                       value="{{ $permission->id }}"
+                                                                       {{ in_array($permission->id, old('permissions', $rolePermissionIds)) ? 'checked' : '' }}>
+                                                            @endif
+                                                        </td>
+                                                    @endforeach
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
                                 </div>
+
                                 <button type="submit" class="btn btn-primary">Update Role</button>
                                 <a href="{{ route('superadmin.roles.index') }}" class="btn btn-secondary ms-2">Cancel</a>
                             </form>

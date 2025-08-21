@@ -10,10 +10,35 @@
                 </div>
             </div>
 
+            {{-- Toast Notifications --}}
             @if (session('success'))
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    <strong>Success!</strong> {{ session('success') }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                <div class="toast align-items-center text-bg-success border-0 position-fixed top-0 end-0 m-3"
+                    role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="true" data-bs-delay="4000">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>Success!</strong> {{ session('success') }}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                            aria-label="Close"></button>
+                    </div>
+                </div>
+            @endif
+
+            @if ($errors->any())
+                <div class="toast align-items-center text-bg-danger border-0 position-fixed top-0 end-0 m-3"
+                    role="alert" aria-live="assertive" aria-atomic="true" data-bs-autohide="false">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <strong>Error!</strong>
+                            <ul class="mb-0">
+                                @foreach ($errors->all() as $error)
+                                    <li>{{ $error }}</li>
+                                @endforeach
+                            </ul>
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"
+                            aria-label="Close"></button>
+                    </div>
                 </div>
             @endif
 
@@ -31,8 +56,8 @@
                                 <table class="table table-bordered table-striped mb-0">
                                     <thead class="table-light">
                                         <tr>
-                                            <th style="width: 20%;">Role Name</th>
-                                            <th style="width: 60%;">Permissions</th>
+                                            <th style="width: 40%;">Role Name</th>
+                                            <th style="width: 40%;">Description</th>
                                             <th style="width: 20%;">Actions</th>
                                         </tr>
                                     </thead>
@@ -41,49 +66,58 @@
                                             <tr>
                                                 <td>
                                                     <strong>{{ ucfirst(str_replace('_', ' ', $role->role_name)) }}</strong>
-                                                    <!-- @if (!$role->is_active)
-                                                        <span class="badge bg-secondary ms-1">Inactive</span>
-                                                    @endif -->
-                                                    @if ($role->description)
-                                                        <div class="text-muted small">{{ $role->description }}</div>
-                                                    @endif
                                                 </td>
                                                 <td>
-                                                    @php
-                                                        // Map permission slugs to human-readable names
-                                                        $permissionLabels = [
-                                                            'dashboard.view' => 'View Dashboard',
-                                                            'user.manage' => 'Manage Users',
-                                                            'role.manage' => 'Manage Roles',
-                                                            'content.edit' => 'Edit Content',
-                                                            'settings.update' => 'Update Settings',
-                                                        ];
-                                                    @endphp
-
-                                                    @if ($role->permissions->isEmpty())
-                                                        <span class="text-muted">No permissions</span>
-                                                    @else
-                                                        @foreach ($role->permissions as $permission)
-                                                            <span class="badge bg-info text-light mb-1">
-                                                                {{ $permissionLabels[$permission->permission_name] ?? ucfirst(str_replace(['.', '_'], ' ', $permission->permission_name)) }}
-                                                            </span>
-                                                        @endforeach
-                                                    @endif
+                                                    {{ $role->description ?? '—' }}
                                                 </td>
                                                 <td>
                                                     <a href="{{ route('superadmin.roles.edit', $role->id) }}"
                                                         class="btn btn-warning btn-sm mb-1">
-                                                        <i class="fa fa-edit"></i> Edit
+                                                        <i class="fa fa-edit"></i> Edit Permissions
                                                     </a>
-                                                    <form action="{{ route('superadmin.roles.destroy', $role->id) }}"
-                                                        method="POST" style="display:inline;"
-                                                        onsubmit="return confirm('Are you sure you want to delete this role?');">
-                                                        @csrf
-                                                        @method('DELETE')
-                                                        <button type="submit" class="btn btn-danger btn-sm mb-1">
-                                                            <i class="fa fa-trash"></i> Delete
-                                                        </button>
-                                                    </form>
+
+                                                    <!-- Trigger Delete Modal -->
+                                                    <button type="button" class="btn btn-danger btn-sm mb-1"
+                                                        data-bs-toggle="modal"
+                                                        data-bs-target="#deleteModal-{{ $role->id }}">
+                                                        <i class="fa fa-trash"></i> Delete
+                                                    </button>
+
+                                                    <!-- Delete Confirmation Modal -->
+                                                    <div class="modal fade" id="deleteModal-{{ $role->id }}" tabindex="-1"
+                                                        aria-labelledby="deleteModalLabel-{{ $role->id }}"
+                                                        aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header bg-danger text-white">
+                                                                    <h5 class="modal-title" id="deleteModalLabel-{{ $role->id }}">
+                                                                        Confirm Delete
+                                                                    </h5>
+                                                                    <button type="button" class="btn-close"
+                                                                        data-bs-dismiss="modal"
+                                                                        aria-label="Close"></button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    Are you sure you want to delete
+                                                                    <strong>{{ ucfirst(str_replace('_', ' ', $role->role_name)) }}</strong>?
+                                                                    <br>
+                                                                    <small class="text-muted">This action cannot be undone.</small>
+                                                                </div>
+                                                                <div class="modal-footer">
+                                                                    <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">Cancel</button>
+                                                                    <form action="{{ route('superadmin.roles.destroy', $role->id) }}"
+                                                                        method="POST" class="d-inline">
+                                                                        @csrf
+                                                                        @method('DELETE')
+                                                                        <button type="submit" class="btn btn-danger">
+                                                                            Yes, Delete
+                                                                        </button>
+                                                                    </form>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         @empty
@@ -103,4 +137,16 @@
             </div>
         </div>
     </div>
+@endsection
+
+@section('scripts')
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            var toastElList = [].slice.call(document.querySelectorAll('.toast'))
+            var toastList = toastElList.map(function(toastEl) {
+                return new bootstrap.Toast(toastEl)
+            })
+            toastList.forEach(toast => toast.show())
+        });
+    </script>
 @endsection

@@ -48,8 +48,10 @@
                 <a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a>
             </li>
         </ul>
-        <div class="page-btn">
-            <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-stock"><i class="ti ti-circle-plus me-1"></i>Add Stock</a>
+       <div class="page-btn">
+            <a href="{{ route('superadmin.productStockEntry.create') }}" class="btn btn-primary">
+                <i class="ti ti-circle-plus me-1"></i>Add Stock
+            </a>
         </div>
     </div>
 
@@ -109,7 +111,7 @@
                                 <th>Purchase Unit</th>
                                 <th>Purchase Price</th>
                                 <th>Unit</th>
-                                <th>Invoice No</th>
+                                <!-- <th>Invoice No</th> -->
                                 <th>Remark</th>
                                 <th class="text-center">Action</th>
                             </tr>
@@ -130,7 +132,7 @@
                                     <td>{{ $product->purchase_unit }}</td>
                                     <td>{{ number_format($product->purchase_price, 2) }}</td>
                                     <td>{{ $product->unit }}</td>
-                                    <td>{{ $product->invoice_no }}</td>
+                                    <!-- <td>{{ $product->invoice_no }}</td> -->
                                     <td>{{ $product->remark }}</td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">

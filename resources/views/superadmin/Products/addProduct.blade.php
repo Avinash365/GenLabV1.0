@@ -85,18 +85,11 @@
                             <div class="row mb-3">
                                 <label class="col-lg-3 col-form-label">Unit*</label>
                                 <div class="col-lg-9">
-                                    <input type="number" class="form-control" name="unit" placeholder="" required>
+                                    <input type="number" class="form-control" name="unit" placeholder="0" readonly>
                                 </div>
                             </div>
 
-                            <!-- Sales Price -->
-                            <div class="row mb-3">
-                                <label class="col-lg-3 col-form-label">Purchase price*</label>
-                                <div class="col-lg-9">
-                                    <input type="number" class="form-control" name="purchase_price" required>
-                                </div>
-                            </div> 
-
+                            
 
                             <!-- Remarks -->
                             <div class="row mb-3">

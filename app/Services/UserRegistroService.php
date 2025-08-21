@@ -9,24 +9,29 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Validation\ValidationException;
+use Illuminate\Validation\Rule;
 
 class UserRegistroService
 {
     
     
     public function index(){ 
-
-        // Eager load role and permissions for each user
+   
         $users = User::with(['role.permissions'])->get();
         $roles = Role::all();
-        return view('superadmin.users.index', compact('users','roles'));
-
+        $permissions = Permission::all();
+        return view('superadmin.users.index', compact('users', 'roles', 'permissions'));
     }
 
     public function create()
     {
-        $roles = Role::all(); // or your roles fetching logic
-        $permissions = Permission::all(); // or your permissions fetching logic
+        
+        // Load roles with only 'id' and 'role_name', and their permissions (id + name)
+        $roles = Role::with(['permissions:id,permission_name,id']) 
+                    ->get(['id', 'role_name']);
+
+        // Load all permissions for the matrix table
+        $permissions = Permission::all();
 
         return view('superadmin.users.create', [
             'roles' => $roles,
@@ -34,22 +39,18 @@ class UserRegistroService
         ]);
     }
 
-    /**
-     * Store a new user.
-     *
-     * @param Request $request
-     * @return User|null
-     */
+    
     public function store(Request $request)
     {
         try {
-          
+        
             // Validate request
             $validated = $request->validate([
                 'name'        => 'required|string|max:255',
                 'user_code'   => 'required|string|max:255|unique:users,user_code',
                 'role'     => 'required|exists:roles,id',
                 'password'    => 'required|string|min:6|confirmed',
+                'permissions' => 'nullable|array',
             ]);
 
             // Create user
@@ -58,8 +59,11 @@ class UserRegistroService
                 'user_code'  => $validated['user_code'],
                 'role_id'    => $validated['role'],
                 'password'   => Hash::make($validated['password']),
-                'created_by' => auth()->id() ?? null,
+                'created_by' => null,
             ]);
+
+            // Attach permissions if any
+            $user->permissions()->sync($validated['permissions'] ?? []);
 
             Log::info("User created successfully", ['user_id' => $user->id, 'admin_id' => auth('admin')->id()]);
             
@@ -78,21 +82,14 @@ class UserRegistroService
         }
     }
 
-    /**
-     * Update an existing user.
-     *
-     * @param Request $request
-     * @param int $userId
-     * @return User|null
-     */
-    public function update(Request $request, int $userId)
+    public function update(Request $request, User $user)
     {
-        try {
-            $user = User::findOrFail($userId);
-
+    
+        try { 
+            
             $validated = $request->validate([
                 'name'        => 'required|string|max:255',
-                'user_code'   => "required|string|max:255|unique:users,user_code,{$userId}",
+                'user_code'   => "required|string|max:255|unique:users,user_code,{$user->id}",
                 'role_id'     => 'required|exists:roles,id',
                 'password'    => 'nullable|string|min:6|confirmed',
             ]);
@@ -101,7 +98,7 @@ class UserRegistroService
                 'name'       => $validated['name'],
                 'user_code'  => $validated['user_code'],
                 'role_id'    => $validated['role_id'],
-                'updated_by' => auth('admin')->id() ?? null,
+                'updated_by' =>  null,
             ];
 
             if (!empty($validated['password'])) {
@@ -109,60 +106,75 @@ class UserRegistroService
             }
 
             $user->update($data);
-            
-            Log::info("User updated successfully", ['user_id' => $user->id, 'admin_id' => auth('admin')->id()]);
 
-             return back()->with('success', 'User update successfully.');
+            Log::info("User updated successfully", [
+                'user_id'  => $user->id,
+                'admin_id' => auth('admin')->id()
+            ]);
+
+            return back()->with('success', 'User updated successfully.');
 
         } catch (ValidationException $e) {
             Log::warning("User update validation failed", ['errors' => $e->errors()]);
             throw $e;
         } catch (\Exception $e) {
-            Log::error("Failed to update user", ['message' => $e->getMessage(), 'user_id' => $userId]);
-            return null;
+            Log::error("Failed to update user", ['message' => $e->getMessage(), 'user_id' => $user->id]);
+            return back()->with('error', 'Failed to update user.');
         }
     }
 
-    /**
-     * Soft delete a user.
-     *
-     * @param int $userId
-     * @return bool
-     */
-    public function delete(int $userId)
+    public function updatePermissions(Request $request, User $user)
+    {
+        
+
+        $validated = $request->validate([
+            'permissions' => 'nullable|array',
+            'permissions.*' => 'exists:permissions,id',
+        ]);
+
+        $user->permissions()->sync($validated['permissions'] ?? []);
+       
+        return redirect()->back()->with('success', 'Permissions updated successfully!');
+    }
+
+    public function delete(User $user)
     {
         try {
-            $user = User::findOrFail($userId);
             $user->delete();
 
-            Log::info("User soft-deleted", ['user_id' => $userId, 'admin_id' => auth('admin')->id()]);
+            Log::info("User soft-deleted", [
+                'user_id'  => $user->id,
+                'admin_id' => auth('admin')->id()
+            ]);
 
-            return back()->with('success', 'User created successfully.');
+            return back()->with('success', 'User deleted successfully.');
 
         } catch (\Exception $e) {
-            Log::error("Failed to delete user", ['message' => $e->getMessage(), 'user_id' => $userId]);
-            return false;
+            Log::error("Failed to delete user", ['message' => $e->getMessage(), 'user_id' => $user->id]);
+            return back()->with('error', 'Failed to delete user.');
         }
     }
 
-    /**
-     * Restore a soft-deleted user.
-     *
-     * @param int $userId
-     * @return bool
-     */
-    public function restore(int $userId): bool
+   
+    public function restore(User $user): bool
     {
         try {
-            $user = User::withTrashed()->findOrFail($userId);
+            // Ensure we can restore soft-deleted user
             $user->restore();
 
-            Log::info("User restored", ['user_id' => $userId, 'admin_id' => auth('admin')->id()]);
+            Log::info("User restored", [
+                'user_id'  => $user->id,
+                'admin_id' => auth('admin')->id()
+            ]);
 
             return true;
 
         } catch (\Exception $e) {
-            Log::error("Failed to restore user", ['message' => $e->getMessage(), 'user_id' => $userId]);
+            Log::error("Failed to restore user", [
+                'message' => $e->getMessage(),
+                'user_id' => $user->id
+            ]);
+
             return false;
         }
     }

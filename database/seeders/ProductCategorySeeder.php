@@ -3,7 +3,7 @@
 namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
-use App\Models\ProductCategories; // Import the model
+use App\Models\ProductCategory; // Import the model
 
 class ProductCategorySeeder extends Seeder
 {
@@ -21,7 +21,7 @@ class ProductCategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            ProductCategories::create($category); // now refers to the model
+            ProductCategory::create($category); // now refers to the model
         }
     }
 }

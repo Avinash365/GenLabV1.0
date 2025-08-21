@@ -31,26 +31,62 @@
                             <table class="table table-bordered table-striped mb-0">
                                 <thead class="table-light">
                                     <tr>
+                                        <th style="width: 20%;">User Code</th>
                                         <th style="width: 20%;">Name</th>
                                         <th style="width: 20%;">Role</th>
-                                        <th style="width: 40%;">Permissions</th>
-                                        <th style="width: 20%;">Actions</th>
+                                        <th style="width: 20%;">Permissions</th>
+                                        <th style="width: 40%;">Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @forelse ($users as $user)
                                         <tr>
+                                            <td>{{$user->user_code}}</td>
                                             <td>{{ $user->name }}</td>
                                             <td>{{ $user->role->role_name ?? 'N/A' }}</td>
                                             <td>
-                                                @if($user->role && $user->role->permissions->count())
-                                                    @foreach($user->role->permissions as $permission)
-                                                        <span class="badge bg-info text-light mb-1">
-                                                            {{ ucfirst(str_replace(['.', '_'], ' ', $permission->permission_name)) }}
-                                                        </span>
-                                                    @endforeach
+                                                @if($permissions->count())
+                                                    <!-- View & Update Permissions Button -->
+                                                    <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#permissionsModal{{ $user->id }}">
+                                                        <i class="fa fa-eye"></i> View / Update
+                                                    </button>
+
+                                                    <!-- Permissions Modal -->
+                                                    <div class="modal fade" id="permissionsModal{{ $user->id }}" tabindex="-1" aria-labelledby="permissionsModalLabel{{ $user->id }}" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="permissionsModalLabel{{ $user->id }}">
+                                                                        Permissions for {{ $user->name }}
+                                                                    </h5>
+                                                                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span> 
+                                                            </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <form action="{{ route('superadmin.users.updatePermissions', $user->id) }}" method="POST">
+                                                                        @csrf
+                                                                        @method('PUT')
+
+                                                                        {{-- Show all permissions, pre-check only user's permissions --}}
+                                                                        <x-permissions-matrix 
+                                                                            :permissions="$permissions" 
+                                                                            :oldPermissions="old('permissions', $user->permissions->pluck('id') ?? [])" 
+                                                                        />
+
+                                                                        <div class="mt-3 text-end">
+                                                                            <button type="submit" class="btn btn-primary">
+                                                                                Update
+                                                                            </button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                    
+                                                            </div>
+                                                        </div>
+                                                    </div>
                                                 @else
-                                                    <span class="text-muted">No permissions</span>
+                                                    <span class="text-muted">No permissions available</span>
                                                 @endif
                                             </td>
                                             <td>
@@ -146,10 +182,6 @@
                             </table>
                         </div>
                     </div>
-                    {{-- Optional pagination --}}
-                    {{-- <div class="card-footer">
-                        {{ $users->links() }}
-                    </div> --}}
                 </div>
             </div>
         </div>

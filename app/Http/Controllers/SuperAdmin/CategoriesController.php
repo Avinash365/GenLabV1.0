@@ -9,6 +9,6 @@ class CategoriesController extends Controller
 {
     public function index()
     {
-        return view('superadmin.categories.Categories');  
+        return view('superadmin.categories.index');  
     }
 }
