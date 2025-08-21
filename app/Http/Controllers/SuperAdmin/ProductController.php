@@ -1,11 +1,21 @@
 <?php
 
 namespace App\Http\Controllers\SuperAdmin;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Http\Request;
+
 use App\Http\Controllers\Controller;
 use App\Http\Requests\ProductRequest;
+
+
 use App\Models\Product;
 use App\Models\ProductCategory;
-use Illuminate\Support\Facades\Log;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\ProductsExport;
+use Barryvdh\DomPDF\Facade\Pdf;       // make sure the package is installed
+
+
+
 use Exception;
 
 
@@ -42,7 +52,7 @@ class ProductController extends Controller
                 'product_name'         => $request->product_name,
                 'purchase_price'       => null,
                 'purchase_unit'        => $request->purchase_unit,
-                'unit'                 => null,
+                'unit'                 => 0,
                 'remark'               => $request->remark,
                 'created_by_id'        => $creatorId,
                 'created_by_type'      => $creatorType,
@@ -83,4 +93,49 @@ class ProductController extends Controller
             return back()->withErrors('An error occurred while deleting the product. Please try again.');
         }
     }
+    public function exportPdf(Request $request, $category = null)
+    {
+        $query = Product::with('category');
+
+        if ($category) {
+            $query->where('product_category_id', $category);
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function($q) use ($s) {
+                $q->where('product_name', 'like', "%{$s}%")
+                  ->orWhere('product_code', 'like', "%{$s}%");
+            });
+        }
+
+        $products = $query->orderBy('product_name')->get();
+
+        $pdf = Pdf::loadView('superadmin.viewproduct.products_pdf', compact('products'))
+                  ->setPaper('a4', 'landscape');
+
+        return $pdf->stream('products.pdf');
+    }
+
+    public function exportExcel(Request $request, $category = null)
+    {
+        $query = Product::with('category');
+
+        if ($category) {
+            $query->where('product_category_id', $category);
+        }
+
+        if ($request->filled('search')) {
+            $s = $request->search;
+            $query->where(function($q) use ($s) {
+                $q->where('product_name', 'like', "%{$s}%")
+                  ->orWhere('product_code', 'like', "%{$s}%");
+            });
+        }
+
+        $products = $query->orderBy('product_name')->get();
+
+        return Excel::download(new ProductsExport($products), 'products.xlsx');
+    }
+
 }
