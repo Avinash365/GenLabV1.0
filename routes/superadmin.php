@@ -18,6 +18,8 @@ use App\Http\Controllers\SuperAdmin\PurchaseListController;
 use App\Http\Controllers\SuperAdmin\PurchaseAddController;
 use App\Http\Controllers\SuperAdmin\ShowBookingController;
 use App\Http\Controllers\SuperAdmin\DepartmentController;
+use App\Http\Controllers\SuperAdmin\LabAnalystController;
+use App\Http\Controllers\SuperAdmin\ReportingController;
 
 // =======================
 // Super Admin Login Routes
@@ -148,6 +150,23 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
          // ShowBooking List 
         Route::prefix('department')->name('department.')->group(function () {
             Route::get('/', [DepartmentController::class, 'index'])->name('Department');
+        });
+
+        // Lab Analysts - reports dropdown and viewer
+        Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
+            Route::get('/', [LabAnalystController::class, 'index'])->name('index');
+            Route::get('/view', [LabAnalystController::class, 'view'])->name('view');
+            Route::get('/render', [LabAnalystController::class, 'render'])->name('render');
+            Route::get('/preview', [LabAnalystController::class, 'preview'])->name('preview');
+            Route::get('/pdf', [LabAnalystController::class, 'pdf'])->name('pdf');
+            Route::post('/save', [LabAnalystController::class, 'save'])->name('save');
+        });
+
+        // Reporting
+        Route::prefix('reporting')->name('reporting.')->group(function () {
+            Route::get('/received', [ReportingController::class, 'received'])->name('received');
+            Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
+            Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
         });
 });
 
