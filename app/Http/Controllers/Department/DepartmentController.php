@@ -3,16 +3,26 @@
 namespace App\Http\Controllers\Department;
 
 use App\Http\Controllers\Controller;
-use App\Models\Department;
+
+
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
+
+use App\Models\Department; 
+use App\Models\Permission; 
 
 class DepartmentController extends Controller
 {
     /**
      * Display a listing of the departments.
      */
+
+    public function __construct()
+    {
+        $this->authorizeResource(Department::class, 'department');
+    }
+
     public function index()
     {
         $departments = Department::latest()->paginate(15);
@@ -60,7 +70,11 @@ class DepartmentController extends Controller
                 'description' => $input['description'] ?? null,
                 'is_active' => isset($input['is_active']) ? (bool)$input['is_active'] : true,
             ]);
+
+            
+
             return redirect()->back()->with('success', 'Department created successfully.');
+
         } catch (\Exception $e) {
             Log::error("Department creation failed: " . $e->getMessage());
             return redirect()->back()->with('error', 'Failed to create department.')->withInput();

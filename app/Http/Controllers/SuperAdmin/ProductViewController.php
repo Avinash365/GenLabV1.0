@@ -6,10 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\Product;
 use App\Models\ProductCategory;
 use Illuminate\Http\Request;
-
-use Barryvdh\DomPDF\Facade\Pdf; // require barryvdh/laravel-dompdf if not installed
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\ProductsExport;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 
 

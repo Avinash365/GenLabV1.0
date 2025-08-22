@@ -1,11 +1,16 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+
+
+use App\Http\Controllers\BookingController;
+use App\Http\Controllers\CalibrationController;
+use App\Http\Controllers\ISCodeController;
+
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\LoginController;
 use App\Http\Controllers\SuperAdmin\RoleAndPermissionController;
 use App\Http\Controllers\SuperAdmin\UserController;
-use App\Http\Controllers\BookingController;
 use App\Http\Controllers\SuperAdmin\ProductController;
 use App\Http\Controllers\SuperAdmin\ProductViewController;
 use App\Http\Controllers\SuperAdmin\CategoriesController;
@@ -17,14 +22,21 @@ use App\Http\Controllers\SuperAdmin\IssueViewController;
 use App\Http\Controllers\SuperAdmin\PurchaseListController;
 use App\Http\Controllers\SuperAdmin\PurchaseAddController;
 use App\Http\Controllers\SuperAdmin\ShowBookingController;
+use App\Http\Controllers\SuperAdmin\IsCodesController;
+
+use App\Http\Controllers\SuperAdmin\LeaveController;
 
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductStockEntryController;
+
 use App\Http\Controllers\Department\DepartmentController;
 
-use App\Http\Controllers\SuperAdmin\IsCodesController;
-use App\Http\Controllers\SuperAdmin\CalibrationController;
-use App\Http\Controllers\SuperAdmin\LeaveController;
+
+use App\Http\Controllers\Attachments\ProfileController; 
+use App\Http\Controllers\Attachments\ApprovalController; 
+use App\Http\Controllers\Attachments\ImportantLetterController; 
+use App\Http\Controllers\Attachments\DocumentController; 
+
 
 // =======================
 // Super Admin Login Routes
@@ -118,6 +130,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('categories', ProductCategoryController::class);
         Route::resource('productStockEntry', ProductStockEntryController::class);
         Route::resource('departments', DepartmentController::class);
+        Route::resource('profiles', ProfileController::class);
+        Route::resource('approvals', ApprovalController::class);
+        Route::resource('importantLetter', ImportantLetterController::class);
+        Route::resource('documents', DocumentController::class);
+        Route::resource('calibrations', CalibrationController::class);
+        Route::resource('iscodes', ISCodeController::class);
+
 
         // Store
         Route::prefix('store')->name('store.')->group(function () {
@@ -163,14 +182,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::prefix('department')->name('department.')->group(function () {
             Route::get('/', [DepartmentController::class, 'index'])->name('Department');
         });
-        // IsCode List 
-        Route::prefix('iscodes')->name('iscode.')->group(function () {
-            Route::get('/', [IsCodesController::class, 'index'])->name('Iscode');
-        });
-        // Caqlibration List 
-        Route::prefix('calibrations')->name('calibration.')->group(function () {
-            Route::get('/', [CalibrationController::class, 'index'])->name('Calibration');
-        });
+       
+        
+        
         // Caqlibration List 
         Route::prefix('leaves')->name('leave.')->group(function () {
             Route::get('/', [LeaveController::class, 'index'])->name('Leave');

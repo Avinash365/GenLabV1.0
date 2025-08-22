@@ -59,7 +59,43 @@ class PermissionSeeder extends Seeder
             'settings.view',
             'settings.create',
             'settings.edit',
-            'settings.delete',
+            'settings.delete', 
+
+            // Approval
+            'approval.view',
+            'approval.create',
+            'approval.edit',
+            'approval.delete',
+
+            // Calibration
+            'calibration.view',
+            'calibration.create',
+            'calibration.edit',
+            'calibration.delete',
+
+            // Document
+            'document.view',
+            'document.create',
+            'document.edit',
+            'document.delete',
+
+            // Letter
+            'letter.view',
+            'letter.create',
+            'letter.edit',
+            'letter.delete',
+
+            // IS Code
+            'iscode.view',
+            'iscode.create',
+            'iscode.edit',
+            'iscode.delete',
+
+            // Profile
+            'profile.view',
+            'profile.create',
+            'profile.edit',
+            'profile.delete',
         ];
 
         foreach ($defaultPermissions as $permission) {

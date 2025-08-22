@@ -10,7 +10,8 @@ use App\Models\NewBooking;
 use App\Models\BookingItem;
 use App\Services\JobOrderService;
 use App\Models\User;
-use App\Enums\Role;
+use App\Enums\Role; 
+use App\Models\Department; 
 
 class BookingController extends Controller
 {
@@ -26,6 +27,7 @@ class BookingController extends Controller
     public function index()
     {
         $bookings = NewBooking::with('items')->latest()->paginate(10);
+         
 
         return view('superadmin.Bookings.index', compact('bookings'));
     }
@@ -35,7 +37,8 @@ class BookingController extends Controller
      */
     public function create()
     {
-        return view('superadmin.Bookings.newBooking');
+        $departments = Department::all();
+        return view('superadmin.Bookings.newBooking',compact('departments'));
     }
 
     /**

@@ -2,7 +2,6 @@
 @section('title', 'Create New Product')
 @section('content')
 
-
 @if (session('success'))
   <div class="alert alert-success">{{ session('success') }}</div>
 @endif
@@ -16,6 +15,14 @@
       </ul>
   </div>
 @endif
+
+<div class="d-flex justify-content-end mt-3 me-3 mb-3">
+    @can('view', App\Models\Product::class)
+        <a href="{{ route('superadmin.viewproduct.viewProduct') }}" class="btn btn-primary">
+            <i class="bi bi-plus-lg"></i> view Product
+        </a>
+    @endcan
+</div>
 
 <div class="row">
     <div class="col-md-12">
@@ -78,9 +85,9 @@
                         </div>
 
                         <div class="col-xl-6">
-                            <a href="{{ route('superadmin.viewproduct.viewProduct') }}" class="btn btn-primary mb-3">
+                            <!-- <a href="{{ route('superadmin.viewproduct.viewProduct') }}" class="btn btn-primary mb-3">
                                 View Product List
-                            </a>
+                            </a> -->
                             <!-- Unit  -->
                             <div class="row mb-3">
                                 <label class="col-lg-3 col-form-label">Unit*</label>

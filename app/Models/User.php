@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 
+
 class User extends Authenticatable
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
@@ -56,6 +57,23 @@ class User extends Authenticatable
        
     }
 
+    public function uploadedProfiles()
+    {
+        return $this->hasMany(Profile::class, 'uploaded_by');
+    }
+
+    public function uploadedApprovals(){
+        return $this->hasMany(Approval::class, 'uploaded_by'); 
+    }
+
+    public function uploadedInportantletters(){
+        return $this->hashMany(ImportantLetter::class, 'uploaded_by'); 
+    }
+
+    public function uploadedDocuments(){
+        return $this->hashMany(Document::class, 'uploaded_by'); 
+    }
+
 
     public function products()
     {
@@ -91,10 +109,6 @@ class User extends Authenticatable
 
     public function hasPermission($permissionName)
     {
-        // return $this->role
-        //     ->permissions()
-        //     ->where('permission_name', $permissionName)
-        //     ->exists(); 
         return $this->permissions()
                     ->where('permission_name', $permissionName)
                     ->exists();

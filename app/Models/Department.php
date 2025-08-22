@@ -6,6 +6,9 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
+use App\Models\Permission;
+
+
 class Department extends Model
 {
     use HasFactory, SoftDeletes;
@@ -30,6 +33,14 @@ class Department extends Model
         'is_active' => 'boolean', // boolean column
     ];
 
+
+
+    public function permissions()
+    {
+        return $this->hasMany(Permission::class, 'department_id');
+    }
+
+
     /**
      * Optional: Accessor to return codes as comma-separated string
      */
@@ -48,5 +59,49 @@ class Department extends Model
         } else {
             $this->attributes['codes'] = json_encode([]);
         }
+    }  
+
+
+    protected static function booted()
+    {
+        static::created(function ($department) {
+            $department->syncPermissions();
+        });
+
+        static::updated(function ($department) {
+            $department->syncPermissions();
+        });
+
+        static::deleted(function ($department) {
+            $department->deletePermissions();
+        });
     }
+
+    public function syncPermissions()
+    {
+        $permissions = [
+            'dept_' . $this->name . '.view',
+            'dept_' . $this->name . '.create',
+            'dept_' . $this->name . '.edit',
+            'dept_' . $this->name . '.delete',
+        ];
+
+        // Delete old permissions for this department
+        $this->deletePermissions();
+
+        // Insert new permissions
+        foreach ($permissions as $perm) {
+            Permission::create([
+                'permission_name' => $perm,
+                'department_id' => $this->id, 
+            ]);
+        }
+    } 
+
+    // Delete permissions
+    public function deletePermissions()
+    {
+        Permission::where('department_id', $this->id)->delete();
+    }
+
 }

@@ -85,7 +85,7 @@ class RoleAndPermissionService
     public function update(Request $request, Role $role)
     {
         $validated = $request->validate([
-            'role_name'   => "required|string|max:255|unique:roles,role_name,{$id}",
+            'role_name'   => "required|string|max:255|unique:roles,role_name,{$role->id}",
             'permissions' => 'nullable|array'
         ]);
 

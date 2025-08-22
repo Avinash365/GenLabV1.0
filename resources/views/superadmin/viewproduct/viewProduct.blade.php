@@ -71,7 +71,14 @@
                             <i class="fa fa-search"></i>
                         </button>
                     </div>
-                </form>
+                </form> 
+                @can('create', App\Models\Product::class)
+                    <div class="d-flex justify-content-end mt-3 me-3 mb-4">
+                            <a href="{{ route('superadmin.products.addProduct') }}" class="btn btn-primary">
+                                <i class="bi bi-plus-lg"></i> Add New
+                            </a>
+                    </div>
+                @endcan
             </div>
             <div class="card-body p-3">
                 <!-- Category Filter -->

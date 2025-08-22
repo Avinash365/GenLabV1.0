@@ -96,11 +96,18 @@
                                     <label class="form-label">Contact Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control" name="contact_email" value="{{ old('contact_email') }}" required>
                                 </div>
-
-                                <!-- <div class="col-lg-4 col-sm-6 col-12 mt-3">
-                                    <label class="form-label">Contractor Name <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="contractor_name" value="{{ old('contractor_name') }}" required>
-                                </div> -->
+                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
+                                    <label class="form-label">Department<span class="text-danger">*</span></label>
+                                    <div class="col-lg-9">
+                                        <select class="form-select" name="product_category_id" required>
+                                            <option value="">Select</option>
+                                            @foreach($departments as $department)
+                                                <option value="{{ $department->id }}">{{ $department->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <!-- <input type="email" class="form-control" name="contact_email" value="{{ old('contact_email') }}" required> -->
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -146,29 +153,35 @@
                                         <div class="col-lg-4 col-sm-6 col-12">
                                             <label class="form-label">Sample Description *</label>
                                             <input type="text" name="booking_items[0][sample_description]" class="form-control" required>
+                                        </div> 
+                                         <div class="col-lg-4 col-sm-6 col-12">
+                                            <label class="form-label">Particulars *</label>
+                                            <input type="text" name="booking_items[0][sample_particulars]" class="form-control" required>
                                         </div>
-                                        <div class="col-lg-4 col-sm-6 col-12">
-                                            <label class="form-label">Sample Quality *</label>
-                                            <input type="text" name="booking_items[0][sample_quality]" class="form-control" required>
+                                       <div class="col-lg-4 col-sm-6 col-12 position-relative">
+                                            <label class="form-label">Job Order No *</label>
+                                            <input type="text" name="booking_items[0][job_order_no]" class="form-control job_order_no" autocomplete="off" required>
+                                            <div class="dropdown-menu w-100 jobOrderList overflow-auto"></div>
                                         </div>
-                                        <div class="col-lg-4 col-sm-6 col-12">
-                                            <label class="form-label">Lab Expected Date *</label>
-                                            <input type="date" name="booking_items[0][lab_expected_date]" class="form-control" required>
-                                        </div>
-                                        <div class="col-lg-4 col-sm-6 col-12">
+                                
+                                        <div class="col-lg-2 col-sm-6 col-12">
                                             <label class="form-label">Amount *</label>
                                             <input type="text" name="booking_items[0][amount]" class="form-control" required>
+                                        </div>
+                                         <div class="col-lg-2 col-sm-6 col-12">
+                                            <label class="form-label">Sample Quality *</label>
+                                            <input type="text" name="booking_items[0][sample_quality]" class="form-control" required>
                                         </div>
                                         <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                             <label class="form-label">Lab Analysis *</label>
                                             <input type="text" name="booking_items[0][lab_analysis_code]" class="form-control lab_analysis_code" autocomplete="off" required>
                                             <div class="dropdown-menu w-100 labAnalysisList overflow-auto"></div>
                                         </div>
-                                        <div class="col-lg-4 col-sm-6 col-12 position-relative">
-                                            <label class="form-label">Job Order No *</label>
-                                            <input type="text" name="booking_items[0][job_order_no]" class="form-control job_order_no" autocomplete="off" required>
-                                            <div class="dropdown-menu w-100 jobOrderList overflow-auto"></div>
+                                         <div class="col-lg-4 col-sm-6 col-12">
+                                            <label class="form-label">Lab Expected Date *</label>
+                                            <input type="date" name="booking_items[0][lab_expected_date]" class="form-control" required>
                                         </div>
+                                        
                                     </div>
                                     <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="display: none;">Remove</button>
                                 </div>

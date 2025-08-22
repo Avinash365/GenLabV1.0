@@ -25,7 +25,7 @@
                         </ul>
                     </div>
                 @endif
-
+                @can('create', App\Models\Department::class)
                 <form method="POST" action="{{ route('superadmin.departments.store') }}" id="addDeptForm">
                     @csrf
 
@@ -58,6 +58,8 @@
 
                     <button type="submit" class="btn btn-primary w-100">Save</button>
                 </form>
+                @endcan 
+
             </div>
         </div>
     </div>
@@ -93,8 +95,12 @@
                                     @endif
                                 </td>
                                 <td class="text-center">
+                                    @can('update', $department)
                                     <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editDeptModal{{ $department->id }}">✏️</button>
+                                    @endcan
+                                    @can('delete', $department)
                                     <button type="button" class="btn btn-sm btn-danger" data-bs-toggle="modal" data-bs-target="#deleteDeptModal{{ $department->id }}">🗑️</button>
+                                    @endcan
                                 </td>
                             </tr>
 
