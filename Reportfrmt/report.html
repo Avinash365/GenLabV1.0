@@ -1,0 +1,151 @@
+ 
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Report - <?= $nonulr['JOB_CARD_NO']; ?></title>
+<style>
+    body { font-family: Arial, sans-serif; margin:20px; }
+    table { border: 1px solid black; border-collapse: collapse; width: 100%; margin: 10px 0; }
+    th, td { border: 1px solid black; padding: 6px; font-size: 14px; }
+    th { background: #f2f2f2; }
+    .header-table td, .header-table th { border: none; }
+    .editable { background-color: #fff8dc; cursor: text; }
+</style>
+</head>
+<body>
+
+<h2 style="text-align:center;">Report No. <?= $nonulr['JOB_CARD_NO']; ?></h2>
+
+<table class="header-table">
+    <tr>
+        <th style="width: 20%;">Issued To</th>
+        <td><?= $nonulr['ISSUED_TO']; ?></td>
+        <th style="width: 20%;">Date of Receipt</th>
+        <td><?= $nonulr['JOB_ORDER_DATE']; ?></td>
+    </tr>
+    <tr>
+        <th>Letter Ref. No.</th>
+        <td><?= $nonulr['REFRENCE_NO']; ?></td>
+        <th>Date of Completion</th>
+        <td><?= $nonulr['ISSUE_DATE']; ?></td>
+    </tr>
+    <tr>
+        <th>Sample Description</th>
+        <td><?= $nonulr['SAMPLE_DISCRIPTION']; ?></td>
+        <th>Date of Issue</th>
+        <td><?= $nonulr['ISSUE_DATE']; ?></td>
+    </tr>
+    <tr>
+        <th>Name of Work</th>
+        <td colspan="3"><?= $nonulr['NAME_OF_WORK']; ?></td>
+    </tr>
+    <tr>
+        <th>Agency</th>
+        <td colspan="3"><?= $nonulr['CONTRACTOR']; ?></td>
+    </tr>
+</table>
+
+<h3>Test Results</h3>
+<table>
+    <tr>
+        <th style="width:5%;">S.No.</th>
+        <th style="width:25%;">Tests</th>
+        <th style="width:20%;">Test Methods</th>
+        <th style="width:20%;">Requirements</th>
+        <th style="width:15%;">Results</th>
+        <th style="width:15%;">Conformity</th>
+    </tr>
+
+    <!-- 1. Dimension -->
+    <tr><td>1</td><td colspan="5"><b>Dimension, mm</b></td></tr>
+    <tr>
+        <td>I</td><td>Length</td>
+        <td rowspan="3">IS : 2185(P-3)-1984, RA 2020</td>
+        <td>±5</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+    <tr>
+        <td>II</td><td>Width</td>
+        <td>±3</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+    <tr>
+        <td>III</td><td>Height</td>
+        <td>±3</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+
+    <!-- 2. Block Density -->
+    <tr><td>2</td><td colspan="5"><b>Block Density, kg/m³</b></td></tr>
+    <tr>
+        <td>I</td><td>Block Density</td>
+        <td rowspan="4">IS : 6441(P-1)-1972, RA 2022</td>
+        <td rowspan="4">551–650</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+    <tr><td>II</td><td>Block Density</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+    <tr><td>III</td><td>Block Density</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+    <tr><td>IV</td><td>Average</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+
+    <!-- 3. Compressive Strength -->
+    <tr><td>3</td><td colspan="5"><b>Compressive Strength, N/mm²</b></td></tr>
+    <?php 
+    $strengths = ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII","XIII (Average)"];
+    foreach($strengths as $i=>$s){ ?>
+    <tr>
+        <td><?= $s; ?></td><td>Compressive Strength</td>
+        <?php if($i==0){ ?>
+            <td rowspan="13">IS : 6441(P-5)-1972, RA 2022</td>
+            <td rowspan="13">4.0 Min.</td>
+        <?php } ?>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+    <?php } ?>
+
+    <!-- 4. Drying Shrinkage -->
+    <tr>
+        <td>4</td><td>Drying Shrinkage, %</td>
+        <td>IS : 6441(P-2)-1972, RA 2022</td>
+        <td>0.05 Max.</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+
+    <!-- 5. Thermal Conductivity -->
+    <tr>
+        <td>5</td><td>Thermal Conductivity (at 50°C Mean Temp.), W/m.k</td>
+        <td>IS : 3346-1980, RA 2022</td>
+        <td>0.24 Max.</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable"></td>
+    </tr>
+</table>
+
+<script>
+// Visual feedback when user edits cells
+document.querySelectorAll('[contenteditable]').forEach(cell => {
+    cell.addEventListener("input", () => {
+        cell.style.backgroundColor = "#d4ffd4"; // green highlight
+    });
+});
+</script>
+
+</body>
+</html>

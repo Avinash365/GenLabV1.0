@@ -182,6 +182,12 @@
     <script src="{{ url('assets/js/script.js') }}"></script>
     <script src="{{url('assets/plugins/summernote/summernote-bs4.min.js')}}" ></script>
 
+    <!-- SweetAlert2 (for confirmations) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <!-- Page-level scripts -->
+    @stack('scripts')
+
 
 </body>
 
