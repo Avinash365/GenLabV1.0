@@ -167,6 +167,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/received', [ReportingController::class, 'received'])->name('received');
             Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
             Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
+            Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
         });
 });
 

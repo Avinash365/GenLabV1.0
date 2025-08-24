@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BookingItem;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Schema;
 
 class ReportingController extends Controller
 {
@@ -33,7 +34,7 @@ class ReportingController extends Controller
                     'job_card_no'      => $firstItem->job_order_no,
                     'client_name'      => $b->client_name,
                     'job_order_date'   => optional($b->job_order_date)->format('Y-m-d'),
-                    'issue_date'       => optional($b->job_order_date)->format('Y-m-d'), // using job_order_date as placeholder
+                    'issue_date'       => optional($firstItem->issue_date)->format('Y-m-d'),
                     'reference_no'     => $b->reference_no,
                     'sample_description'=> $firstItem->sample_description,
                     'name_of_work'     => $b->client_address,
@@ -58,22 +59,33 @@ class ReportingController extends Controller
      */
     public function receiveOne(Request $request, BookingItem $item)
     {
-    // Only set receiver to a front-end user (users table) to satisfy FK
+        // Validate optional issue_date
+        $data = $request->validate([
+            'issue_date' => ['nullable', 'date'],
+        ]);
+
+        // Only set receiver to a front-end user (users table) to satisfy FK
         $receiverId = auth('web')->check() ? auth('web')->id() : null; // FK constraint
         $receiverName = auth('web')->check()
             ? optional(auth('web')->user())->name
             : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-        $item->received_by_id = $receiverId;
         $item->received_by_name = $receiverName;
         $item->received_at = now();
-    $item->save();
-        if ($request->wantsJson()) {
+        if (Schema::hasColumn('booking_items', 'received_by_id')) {
+            $item->received_by_id = $receiverId;
+        }
+        if (array_key_exists('issue_date', $data)) {
+            $item->issue_date = $data['issue_date'];
+        }
+        $item->save();
+    if ($request->wantsJson()) {
             return response()->json([
                 'ok' => true,
-                'received_by' => $item->receivedBy->name ?? $item->received_by_name ?? $receiverName,
-                'received_at' => optional($item->received_at)->toDateTimeString(),
+                'received_by' => $item->received_by_name ?? optional($item->receivedBy)->name ?? $receiverName,
+        'received_at' => optional($item->received_at)->toIso8601String(),
                 'id' => $item->id,
                 'receiver_name' => $receiverName,
+                'issue_date' => optional($item->issue_date)->format('Y-m-d'),
             ]);
         }
         return back()->with('status', 'Report received');
@@ -98,13 +110,16 @@ class ReportingController extends Controller
                 $receiverName = auth('web')->check()
                     ? optional(auth('web')->user())->name
                     : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-                $firstItem->booking->items()->update([
-                    'received_by_id' => $receiverId,
+                $update = [
                     'received_by_name' => $receiverName,
                     'received_at'    => now(),
-                ]);
+                ];
+                if (Schema::hasColumn('booking_items', 'received_by_id')) {
+                    $update['received_by_id'] = $receiverId;
+                }
+                $firstItem->booking->items()->update($update);
                 if ($request->wantsJson()) {
-                    return response()->json(['ok' => true, 'scope' => 'booking', 'booking_id' => $firstItem->booking->id, 'receiver_name' => $receiverName, 'received_at' => now()->toDateTimeString()]);
+                    return response()->json(['ok' => true, 'scope' => 'booking', 'booking_id' => $firstItem->booking->id, 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
                 }
                 return back()->with('status', 'All matching reports marked as received');
             }
@@ -115,15 +130,56 @@ class ReportingController extends Controller
         $receiverName = auth('web')->check()
             ? optional(auth('web')->user())->name
             : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-        BookingItem::query()->update([
-            'received_by_id' => $receiverId,
+        $update = [
             'received_by_name' => $receiverName,
             'received_at' => now()
-        ]);
+        ];
+        if (Schema::hasColumn('booking_items', 'received_by_id')) {
+            $update['received_by_id'] = $receiverId;
+        }
+        BookingItem::query()->update($update);
         if ($request->wantsJson()) {
-            return response()->json(['ok' => true, 'scope' => 'all', 'receiver_name' => $receiverName, 'received_at' => now()->toDateTimeString()]);
+            return response()->json(['ok' => true, 'scope' => 'all', 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
         }
 
     return back()->with('status', 'All matching reports marked as received');
+    }
+
+    /**
+     * Submit Issue Dates in bulk for received items.
+     */
+    public function submitAll(Request $request)
+    {
+        $payload = $request->validate([
+            'items' => ['required', 'array'],
+            'items.*.id' => ['required', 'integer', 'exists:booking_items,id'],
+            'items.*.issue_date' => ['nullable', 'date'],
+        ]);
+
+        DB::transaction(function () use ($payload) {
+            foreach ($payload['items'] as $row) {
+                $item = BookingItem::find($row['id']);
+                if (!$item) continue;
+                // Ensure it's marked received by someone
+                if (!$item->received_at) {
+                    $receiverId = auth('web')->check() ? auth('web')->id() : null;
+                    $receiverName = auth('web')->check()
+                        ? optional(auth('web')->user())->name
+                        : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
+                    $item->received_by_name = $receiverName;
+                    if (Schema::hasColumn('booking_items', 'received_by_id')) {
+                        $item->received_by_id = $receiverId;
+                    }
+                    $item->received_at = now();
+                }
+                $item->issue_date = $row['issue_date'] ?? $item->issue_date;
+                $item->save();
+            }
+        });
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true]);
+        }
+        return back()->with('status', 'Issue Dates submitted');
     }
 }

@@ -21,7 +21,21 @@ class ProductCategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            ProductCategories::create($category); // now refers to the model
+            // Ensure idempotent seeding and handle soft-deleted rows gracefully
+            $existing = ProductCategories::withTrashed()
+                ->where('name', $category['name'])
+                ->first();
+
+            if ($existing) {
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+                $existing->update([
+                    'description' => $category['description'],
+                ]);
+            } else {
+                ProductCategories::create($category);
+            }
         }
     }
 }

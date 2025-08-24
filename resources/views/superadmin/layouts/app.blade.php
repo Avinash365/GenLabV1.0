@@ -58,6 +58,8 @@
     <!-- Main CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/style.css') }}">
 
+    @stack('styles')
+
 </head>
 
 <body>
@@ -181,6 +183,8 @@
     <script src="{{ url('assets/js/theme-colorpicker.js') }}"></script>
     <script src="{{ url('assets/js/script.js') }}"></script>
     <script src="{{url('assets/plugins/summernote/summernote-bs4.min.js')}}" ></script>
+
+    @stack('scripts')
 
 
 </body>
