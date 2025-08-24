@@ -11,9 +11,9 @@ class ProductSeeder extends Seeder
     public function run()
     {
         for ($i = 1; $i <= 10; $i++) {
-            Product::create([
-                'product_category_id' => rand(1, 4), // random category from [1,6]
-                'invoice_no' => 'INV-' . str_pad($i, 5, '0', STR_PAD_LEFT), // unique invoice number
+            $invoice = 'INV-' . str_pad($i, 5, '0', STR_PAD_LEFT);
+
+            $data = [
                 'product_code' => 'PRD-' . strtoupper(Str::random(6)),
                 'product_name' => 'Sample Product ' . $i,
                 'purchase_price' => fake()->randomFloat(2, 100, 1000),
@@ -21,8 +21,23 @@ class ProductSeeder extends Seeder
                 'unit' => rand(1, 20),
                 'remark' => 'This is a sample remark for product ' . $i,
                 'created_by_id' => 1,
-                'created_by_type' => 'App\Models\Admin',
-            ]);
+                'created_by_type' => 'App\\Models\\Admin',
+            ];
+
+            $existing = Product::withTrashed()->where('invoice_no', $invoice)->first();
+
+            if ($existing) {
+                if ($existing->trashed()) {
+                    $existing->restore();
+                }
+                // Keep category stable on reseed; only refresh other fields
+                $existing->update($data);
+            } else {
+                Product::create(array_merge($data, [
+                    'product_category_id' => rand(1, 4),
+                    'invoice_no' => $invoice,
+                ]));
+            }
         }
     }
 }

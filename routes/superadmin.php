@@ -22,21 +22,16 @@ use App\Http\Controllers\SuperAdmin\IssueViewController;
 use App\Http\Controllers\SuperAdmin\PurchaseListController;
 use App\Http\Controllers\SuperAdmin\PurchaseAddController;
 use App\Http\Controllers\SuperAdmin\ShowBookingController;
-use App\Http\Controllers\SuperAdmin\IsCodesController;
-
 use App\Http\Controllers\SuperAdmin\LeaveController;
-
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductStockEntryController;
-
-use App\Http\Controllers\Department\DepartmentController;
-
-
+use App\Http\Controllers\Department\DepartmentController as DeptController;
 use App\Http\Controllers\Attachments\ProfileController; 
 use App\Http\Controllers\Attachments\ApprovalController; 
 use App\Http\Controllers\Attachments\ImportantLetterController; 
 use App\Http\Controllers\Attachments\DocumentController; 
-
+use App\Http\Controllers\SuperAdmin\LabAnalystController;
+use App\Http\Controllers\SuperAdmin\ReportingController;
 
 // =======================
 // Super Admin Login Routes
@@ -129,7 +124,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             
         Route::resource('categories', ProductCategoryController::class);
         Route::resource('productStockEntry', ProductStockEntryController::class);
-        Route::resource('departments', DepartmentController::class);
+    Route::resource('departments', DeptController::class);
         Route::resource('profiles', ProfileController::class);
         Route::resource('approvals', ApprovalController::class);
         Route::resource('importantLetter', ImportantLetterController::class);
@@ -180,14 +175,30 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
          // ShowBooking List 
         Route::prefix('department')->name('department.')->group(function () {
-            Route::get('/', [DepartmentController::class, 'index'])->name('Department');
+            Route::get('/', [DeptController::class, 'index'])->name('Department');
         });
-       
         
-        
-        // Caqlibration List 
+        // Caqlibration List / Leaves
         Route::prefix('leaves')->name('leave.')->group(function () {
             Route::get('/', [LeaveController::class, 'index'])->name('Leave');
+        });
+
+        // Lab Analysts - reports dropdown and viewer
+        Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
+            Route::get('/', [LabAnalystController::class, 'index'])->name('index');
+            Route::get('/view', [LabAnalystController::class, 'view'])->name('view');
+            Route::get('/render', [LabAnalystController::class, 'render'])->name('render');
+            Route::get('/preview', [LabAnalystController::class, 'preview'])->name('preview');
+            Route::get('/pdf', [LabAnalystController::class, 'pdf'])->name('pdf');
+            Route::post('/save', [LabAnalystController::class, 'save'])->name('save');
+        });
+
+        // Reporting
+        Route::prefix('reporting')->name('reporting.')->group(function () {
+            Route::get('/received', [ReportingController::class, 'received'])->name('received');
+            Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
+            Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
+            Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
         });
 });
 

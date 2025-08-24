@@ -57,38 +57,9 @@
 
     <!-- Main CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/style.css') }}">
+    @stack('styles')
 
-    <!--SweetAlert2 --> 
-    
-
-</head> 
-
-
-<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
-{{-- Global SweetAlert --}}
-<script>
-    document.addEventListener("DOMContentLoaded", function () {
-        @if (session('success'))
-            Swal.fire({
-                title: "Success!",
-                text: "{{ session('success') }}",
-                icon: "success",
-                confirmButtonColor: "#3085d6",
-                confirmButtonText: "OK"
-            });
-        @endif
-
-        @if ($errors->any())
-            Swal.fire({
-                title: "Error!",
-                html: `{!! implode('<br>', $errors->all()) !!}`,
-                icon: "error",
-                confirmButtonColor: "#d33",
-                confirmButtonText: "Close"
-            });
-        @endif
-    });
-</script>
+</head>
 
 <body>
 
@@ -211,6 +182,34 @@
     <script src="{{ url('assets/js/theme-colorpicker.js') }}"></script>
     <script src="{{ url('assets/js/script.js') }}"></script>
     <script src="{{url('assets/plugins/summernote/summernote-bs4.min.js')}}" ></script>
+
+    <!-- SweetAlert2 (global) -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            @if (session('success'))
+                Swal.fire({
+                    title: "Success!",
+                    text: "{{ session('success') }}",
+                    icon: "success",
+                    confirmButtonColor: "#3085d6",
+                    confirmButtonText: "OK"
+                });
+            @endif
+
+            @if ($errors->any())
+                Swal.fire({
+                    title: "Error!",
+                    html: `{!! implode('<br>', $errors->all()) !!}`,
+                    icon: "error",
+                    confirmButtonColor: "#d33",
+                    confirmButtonText: "Close"
+                });
+            @endif
+        });
+    </script>
+
+    @stack('scripts')
 
 
 </body>

@@ -61,12 +61,12 @@
                         </li>
 
                         <!-- Reporting -->
-                        <li class="submenu {{ Request::routeIs('superadmin.reporting.*') ? 'submenu-open' : '' }}">
+            <li class="submenu {{ Request::routeIs('superadmin.reporting.*') ? 'submenu-open' : '' }}">
                             <a href="#"><i class="ti ti-report fs-16 me-2"></i><span>Reporting</span><span class="menu-arrow"></span></a>
                             <ul>
-                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Draft Completed</a></li>
-                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Report Complete</a></li>
-                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Change Report</a></li>
+                <li><a href="{{ route('superadmin.reporting.received') }}" class="{{ Request::routeIs('superadmin.reporting.received') ? 'active' : '' }}">Received</a></li>
+                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Reported</a></li>
+                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Print & Upload</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Hold Report</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Cancel Report</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Export PDF</a></li>
@@ -75,7 +75,11 @@
 
                         <!-- Single links -->
                         <li><a href="#"><i class="ti ti-file-text fs-16 me-2"></i><span>Report</span></a></li>
-                        <li><a href="#"><i class="ti ti-flask fs-16 me-2"></i><span>Lab Analysts</span></a></li>
+                        <li>
+                            <a href="{{ route('superadmin.labanalysts.index') }}" class="{{ Request::routeIs('superadmin.labanalysts.*') ? 'active' : '' }}">
+                                <i class="ti ti-flask fs-16 me-2"></i><span>Lab Analysts</span>
+                            </a>
+                        </li>
                         <li><a href="#"><i class="ti ti-users fs-16 me-2"></i><span>Employees</span></a></li>
                         <li><a href="#"><i class="ti ti-briefcase fs-16 me-2"></i><span>HR</span></a></li>
 
