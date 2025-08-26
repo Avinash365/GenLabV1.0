@@ -33,6 +33,15 @@ class Department extends Model
         'is_active' => 'boolean', // boolean column
     ];
 
+    public function bookings()
+    {
+        return $this->hasMany(NewBooking::class);
+    }
+
+    public function bookingsWithDepartment()
+    {
+        return $this->bookings()->with('department'); // eager load department
+    }
 
 
     public function permissions()

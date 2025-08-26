@@ -81,12 +81,30 @@
                                     <input type="text" class="form-control" name="reference_no" value="{{ old('reference_no') }}" required>
                                 </div>
 
-                                <div class="col-lg-4 col-sm-6 col-12 position-relative">
+                                <!-- <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                     <label class="form-label">Marketing Code <span class="text-danger">*</span></label>
                                     <input type="text" name="marketing_id" class="form-control marketing_code" autocomplete="off" required>
                                     <div class="dropdown-menu w-100 MarketingCodeList overflow-auto"></div>
-                                </div>
+                                </div> -->
+ <div class="col-lg-4 col-sm-6 col-12 position-relative">
+        <label class="form-label">Marketing Code <span class="text-danger">*</span></label>
 
+        <!-- Visible input -->
+        <input type="text"
+               id="marketing_code_input"
+               class="form-control"
+               autocomplete="off"
+               required>
+
+        <!-- Hidden input for submission -->
+        <input type="hidden" name="marketing_id" id="marketing_code_hidden">
+
+        <!-- Dropdown -->
+        <div id="marketingCodeDropdown" 
+             class="dropdown-menu w-100 overflow-auto" 
+             style="display: none; max-height: 200px;">
+        </div>
+    </div>
                                 <div class="col-lg-4 col-sm-6 col-12">
                                     <label class="form-label">Contact No <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="contact_no" value="{{ old('contact_no') }}" required>
@@ -99,7 +117,7 @@
                                  <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Department<span class="text-danger">*</span></label>
                                     <div class="col-lg-9">
-                                        <select class="form-select" name="product_category_id" required>
+                                        <select class="form-select" name="department_id" required>
                                             <option value="">Select</option>
                                             @foreach($departments as $department)
                                                 <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -107,6 +125,16 @@
                                         </select>
                                     </div>
                                     <!-- <input type="email" class="form-control" name="contact_email" value="{{ old('contact_email') }}" required> -->
+                                </div> 
+                                <div class="col-lg-4 col-sm-6 col-12 mt-3">
+                                <label class="form-label">Booking Type<span class="text-danger">*</span></label>
+                                 <div class="col-lg-9">
+                                        <select class="form-select" name="booking_type" required>
+                                            <option value="">Select</option>
+                                            <option value="pay" {{ old('booking_type') == 'pay' ? 'selected' : '' }}>Pay</option>
+                                            <option value="without_pay" {{ old('booking_type') == 'without_pay' ? 'selected' : '' }}>Without Pay</option>
+                                        </select>
+                                    </div> 
                                 </div>
                             </div>
                         </div>
@@ -156,7 +184,7 @@
                                         </div> 
                                          <div class="col-lg-4 col-sm-6 col-12">
                                             <label class="form-label">Particulars *</label>
-                                            <input type="text" name="booking_items[0][sample_particulars]" class="form-control" required>
+                                            <input type="text" name="booking_items[0][particulars]" class="form-control" required>
                                         </div>
                                        <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                             <label class="form-label">Job Order No *</label>
@@ -172,11 +200,30 @@
                                             <label class="form-label">Sample Quality *</label>
                                             <input type="text" name="booking_items[0][sample_quality]" class="form-control" required>
                                         </div>
-                                        <div class="col-lg-4 col-sm-6 col-12 position-relative">
+                                        <!-- <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                             <label class="form-label">Lab Analysis *</label>
                                             <input type="text" name="booking_items[0][lab_analysis_code]" class="form-control lab_analysis_code" autocomplete="off" required>
                                             <div class="dropdown-menu w-100 labAnalysisList overflow-auto"></div>
-                                        </div>
+                                        </div> --> 
+                                       <div class="col-lg-4 col-sm-6 col-12 position-relative">
+    <label class="form-label">Lab Analysis <span class="text-danger">*</span></label>
+
+    <!-- Visible input for user convenience -->
+    <input type="text"
+        id="lab_analysis_input"
+        class="form-control"
+        autocomplete="off"
+        required>
+
+    <!-- Hidden input for form submission -->
+    <input type="hidden" name="booking_items[0][lab_analysis_code]" id="lab_analysis_code_hidden">
+
+    <!-- Dropdown container -->
+    <div id="labAnalysisDropdown" 
+         class="dropdown-menu w-100 overflow-auto" 
+         style="display: none; max-height: 200px;">
+    </div>
+</div>
                                          <div class="col-lg-4 col-sm-6 col-12">
                                             <label class="form-label">Lab Expected Date *</label>
                                             <input type="date" name="booking_items[0][lab_expected_date]" class="form-control" required>
@@ -248,95 +295,120 @@
     });
 </script>
 
+
+
 <!-- Lab Analysis Autocomplete -->
+
 <script>
-    document.addEventListener("DOMContentLoaded", function() {
-        function attachLabAnalysisSearch(inputElement) {
-            const dropdown = inputElement.closest(".position-relative").querySelector(".labAnalysisList");
+$(document).ready(function() {
+    const input = $("#lab_analysis_input");
+    const hiddenInput = $("#lab_analysis_code_hidden");
+    const dropdown = $("#labAnalysisDropdown");
 
-            inputElement.addEventListener("keyup", function() {
-                let query = this.value;
-                if (query.length < 1) {
-                    dropdown.style.display = "none";
-                    return;
-                }
-
-                $.ajax({
-                    url: "{{ route('superadmin.bookings.get.labAnalyst') }}",
-                    data: { term: query },
-                    success: function(data) {
-                        if (data.length > 0) {
-                            let listItems = "";
-                            data.forEach(function(item) {
-                                listItems += `<button type="button" class="dropdown-item">${item}</button>`;
-                            });
-                            dropdown.innerHTML = listItems;
-                            dropdown.style.display = "block";
-                        } else {
-                            dropdown.innerHTML = '<span class="dropdown-item disabled">No results found</span>';
-                            dropdown.style.display = "block";
-                        }
-                    }
-                });
-            });
-
-            dropdown.addEventListener("click", function(e) {
-                if (e.target.tagName === "BUTTON") {
-                    inputElement.value = e.target.textContent;
-                    dropdown.style.display = "none";
-                }
-            });
+    input.on("keyup", function() {
+        let query = $(this).val().trim();
+        if (query.length < 1) {
+            dropdown.hide();
+            return;
         }
 
-        attachLabAnalysisSearch(document.querySelector(".lab_analysis_code"));
-        window.attachLabAnalysisSearch = attachLabAnalysisSearch;
+        $.ajax({
+            url: "{{ route('superadmin.bookings.get.labAnalyst') }}",
+            method: "GET",
+            data: { term: query },
+            success: function(data) {
+                if (data.length) {
+                    let items = "";
+                    data.forEach(function(item) {
+                        items += `<button type="button" class="dropdown-item" 
+                                    data-code="${item.user_code}" 
+                                    data-name="${item.name}">
+                                    ${item.label}
+                                </button>`;
+                    });
+                    dropdown.html(items).show();
+                } else {
+                    dropdown.html('<span class="dropdown-item disabled">No results found</span>').show();
+                }
+            }
+        });
     });
-</script> 
+
+    // When user selects from dropdown
+    dropdown.on("click", "button", function() {
+        let code = $(this).data("code");
+        let name = $(this).data("name");
+
+        input.val(code + " - " + name);       // show in visible input
+        hiddenInput.val(code);                // save only code for submission
+        dropdown.hide();
+    });
+
+    // Hide dropdown when clicking outside
+    $(document).on("click", function(e) {
+        if (!$(e.target).closest(".position-relative").length) {
+            dropdown.hide();
+        }
+    });
+});
+</script>
+
+
 
 <!-- Marketing Code Autocomplete -->
 <script>
     document.addEventListener("DOMContentLoaded", function() {
-        function attachMarketingCodeSearch(inputElement) {
-            const dropdown = inputElement.closest(".position-relative").querySelector(".MarketingCodeList");
+        const input = document.getElementById("marketing_code_input");
+        const hiddenInput = document.getElementById("marketing_code_hidden");
+        const dropdown = document.getElementById("marketingCodeDropdown");
 
-            inputElement.addEventListener("keyup", function() {
-                let query = this.value;
-                if (query.length < 1) {
-                    dropdown.style.display = "none";
-                    return;
-                }
+        input.addEventListener("keyup", function() {
+            let query = this.value.trim();
+            if (query.length < 1) {
+                dropdown.style.display = "none";
+                hiddenInput.value = ""; // clear hidden input if empty
+                return;
+            }
 
-                $.ajax({
-                    url: "{{ route('superadmin.bookings.get.marketingCodes') }}",
-                    data: { term: query },
-                    success: function(data) {
-                        if (data.length > 0) {
-                            let listItems = "";
-                            data.forEach(function(item) {
-                                listItems += `<button type="button" class="dropdown-item">${item}</button>`;
-                            });
-                            dropdown.innerHTML = listItems;
-                            dropdown.style.display = "block";
-                        } else {
-                            dropdown.innerHTML = '<span class="dropdown-item disabled">No results found</span>';
-                            dropdown.style.display = "block";
-                        }
+            $.ajax({
+                url: "{{ route('superadmin.bookings.get.marketingCodes') }}",
+                data: { term: query },
+                success: function(data) {
+                    if (data.length > 0) {
+                        let listItems = "";
+                        data.forEach(function(item) {
+                            listItems += `<button type="button" class="dropdown-item" data-code="${item.user_code}" data-name="${item.name}">${item.label}</button>`;
+                        });
+                        dropdown.innerHTML = listItems;
+                        dropdown.style.display = "block";
+                    } else {
+                        dropdown.innerHTML = '<span class="dropdown-item disabled">No results found</span>';
+                        dropdown.style.display = "block";
                     }
-                });
-            });
-
-            dropdown.addEventListener("click", function(e) {
-                if (e.target.tagName === "BUTTON") {
-                    inputElement.value = e.target.textContent;
-                    dropdown.style.display = "none";
                 }
             });
-        }
+        });
 
-        attachMarketingCodeSearch(document.querySelector(".marketing_code"));
-        window.attachMarketingCodeSearch = attachMarketingCodeSearch;
+        // Select dropdown item
+        dropdown.addEventListener("click", function(e) {
+            if (e.target.tagName === "BUTTON") {
+                const code = e.target.dataset.code;
+                const name = e.target.dataset.name;
+                input.value = code + " - " + name; // show in visible input
+                hiddenInput.value = code;          // save only code for submission
+                dropdown.style.display = "none";
+            }
+        });
+
+        // Hide dropdown when clicking outside
+        document.addEventListener("click", function(e) {
+            if (!e.target.closest(".position-relative")) {
+                dropdown.style.display = "none";
+            }
+        });
     });
 </script>
+
 
 <!-- Add / Remove Item Script -->
 <script>

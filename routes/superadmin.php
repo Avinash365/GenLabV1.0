@@ -85,10 +85,15 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::prefix('bookings')
         ->name('bookings.')
         ->group(function () {
+            
             Route::get('/',[BookingController::class,'create'])->name('newbooking'); 
             Route::post('/', [BookingController::class, 'store'])->name('newbooking.store');
             Route::delete('{new_booking}', [BookingController::class, 'destroy'])->name('destroy');
+
             Route::put('{new_booking}', [BookingController::class, 'update'])->name('update');
+            
+            
+            Route::get('{new_booking}/edit', [BookingController::class, 'edit'])->name('edit');
 
             Route::get('/get-job-orders', [BookingController::class, 'getJobOrders'])->name('get.job.orders');
             Route::get('/labAnalyst', [BookingController::class, 'getLabAnalyst'])->name('get.labAnalyst');
@@ -170,7 +175,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
          // ShowBooking List 
         Route::prefix('showbooking')->name('showbooking.')->group(function () {
-            Route::get('/', [ShowBookingController::class, 'index'])->name('showBooking');
+            Route::get('/{department?}', [ShowBookingController::class, 'index'])->name('showBooking');
         });
 
          // ShowBooking List 

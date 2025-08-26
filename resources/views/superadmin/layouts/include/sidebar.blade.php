@@ -37,7 +37,7 @@
                                 <li><a href="{{ route('superadmin.showbooking.showBooking') }}" class="{{ Request::routeIs('superadmin.showbooking.showBooking') ? 'active' : '' }}">Show Booking</a></li>
                                 @foreach($departments ?? [] as $department)
                                     <li>
-                                        <a href="{{ route('superadmin.departments.show', $department->id) }}" 
+                                        <a href="{{ route('superadmin.showbooking.showBooking', $department->id) }}" 
                                         class="{{ Request::is('superadmin/departments/'.$department->id) ? 'active' : '' }}">
                                             {{ $department->name }}
                                         </a>
@@ -104,7 +104,13 @@
                         </li>
                         <li class="submenu {{ Request::routeIs('superadmin.attachments.*') ? 'submenu-open' : '' }}">
                             <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Attachments</span><span class="menu-arrow"></span></a>
-                            <ul>
+                            <ul> 
+                                 <li>
+                                    <a href="{{ route('superadmin.iscodes.index') }}"
+                                    class="{{ Request::routeIs('superadmin.settingsection.Iscode') ? 'active' : '' }}">
+                                    Is Code
+                                    </a>
+                                </li>
                                 <li><a href="{{ route('superadmin.profiles.index') }}">Profile</a></li>
                                 <li><a href="{{ route('superadmin.approvals.index') }}">Approval</a></li>
                                 <li><a href="{{ route('superadmin.importantLetter.index') }}">Letters</a></li>
@@ -133,12 +139,7 @@
                             </a>                              
                             <ul>
 
-                                <li>
-                                    <a href="{{ route('superadmin.iscodes.index') }}"
-                                    class="{{ Request::routeIs('superadmin.settingsection.Iscode') ? 'active' : '' }}">
-                                    Is Code
-                                    </a>
-                                </li>
+                               
                                 <li>
                                     <a href=""
                                     class="{{ Request::routeIs('superadmin.settingsection.general') ? 'active' : '' }}">

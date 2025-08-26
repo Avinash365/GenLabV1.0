@@ -18,9 +18,15 @@ class ISCodeController extends Controller
         $this->authorizeResource(ISCode::class, 'iSCode');   
     }
     
-    public function index()
+    public function index(Request $request)
     {
-        $iscodes = ISCode::with('creator')->latest()->paginate(10);
+        $search = $request->input('search');
+
+        $iscodes = ISCode::with('creator')
+        ->when($search, function($query, $search){
+            $query->where('Is_code','like',"%$search%");
+        })
+        ->latest()->paginate(10);
         return view('superadmin.iscodes.index', compact('iscodes'));
     }
 

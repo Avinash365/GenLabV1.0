@@ -22,7 +22,7 @@ class DocumentController extends Controller
     }
 
     
-    public function index()
+    public function index(Request $request)
     {
         try {
             
@@ -31,7 +31,19 @@ class DocumentController extends Controller
             //     return view('superadmin.attachments.approvals.index', compact('documents'));
             // }
 
-            $documents = Document::with('user')->latest()->paginate(10);
+            $search = $request->input('search'); 
+
+
+            $documents = Document::with('user')
+            ->when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                    ->orWhere('type', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(10);
+
             return view('superadmin.attachments.documents.index', compact('documents'));
         
         } catch (\Exception $e) {

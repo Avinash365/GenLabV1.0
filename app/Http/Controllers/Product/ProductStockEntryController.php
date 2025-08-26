@@ -42,41 +42,7 @@ class ProductStockEntryController extends Controller
         }
     }
 
-    // public function store(Request $request)
-    // {
-    //     $validated = $request->validate([
-    //         'product_code'   => 'required|exists:products,product_code',
-    //         'purchase_price' => 'nullable|numeric|min:0',
-    //         'purchase_unit'  => 'nullable|string|max:50',
-    //         'quantity'       => 'nullable|integer|min:0',
-    //         'remarks'        => 'nullable|string',
-    //         'upload_bill'    => 'nullable|file|mimes:jpg,png,pdf|max:2048',
-    //         'invoice_no'     => 'required|string|unique:product_stock_entries,invoice_no',
-    //     ]);
-
-    //     try {
-
-    //         if ($request->hasFile('upload_bill')) {
-    //             $validated['upload_bill'] = $request->file('upload_bill')->store('bills', 'public');
-    //         }
-
-    //         ProductStockEntry::create($validated);
-
-    //         // Increase unit in product table
-    //         $product = Product::where('product_code', $validated['product_code'])->first();
-    //         if ($product) {
-    //             $product->increment('unit', $validated['quantity'] ?? 0); 
-    //             // increment will safely add to existing value
-    //         }
-
-    //         return redirect()->back()
-    //             ->with('success', 'Stock entry added successfully.');
-
-    //     } catch (\Exception $e) {
-    //         Log::error("Error creating stock entry: " . $e->getMessage());
-    //         return back()->with('error', 'Failed to create stock entry.')->withInput();
-    //     }
-    // }
+    
 
     public function store(Request $request)
     {
@@ -85,13 +51,14 @@ class ProductStockEntryController extends Controller
             'purchase_price' => 'nullable|numeric|min:0',
             'purchase_unit'  => 'nullable|string|max:50',
             'quantity'       => 'required|integer|min:1',
-            'type'           => 'required|in:buy,sell',
+            'type'           => 'nullable|in:buy,sell',
             'remarks'        => 'nullable|string',
             'upload_bill'    => 'nullable|file|mimes:jpg,png,pdf|max:2048',
             'invoice_no'     => 'required|string|unique:product_stock_entries,invoice_no',
         ]);
 
         try {
+            $validated['type']='buy'; 
             
             $validated['upload_bill'] = null;
             if ($request->hasFile('upload_bill')) {

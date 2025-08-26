@@ -35,14 +35,14 @@
                         <div class="col-xl-6">
                             <h6 class="mb-3">Stock Details</h6>
                             <div class="row mb-3">
-                                <label class="col-lg-3 col-form-label">Type*</label>
+                                <!-- <label class="col-lg-3 col-form-label">Type*</label>
                                 <div class="col-lg-9">
                                     <select name="type" class="form-select" required>
                                         <option value="">Select Type</option>
                                         <option value="buy">Buy</option>
                                         <option value="sell">Sell</option>
                                     </select>
-                                </div>
+                                </div> -->
                             </div>
 
                             <!-- Product Code -->
@@ -82,10 +82,10 @@
                                 <div class="col-lg-9">
                                     <select class="form-select" name="purchase_unit" required>
                                         <option value="">Select Unit</option>
-                                        <option value="Kg">Kg</option>
-                                        <option value="Gram">Gram</option>
-                                        <option value="Piece">Piece</option>
-                                        <option value="Dozen">Dozen</option>
+                                        <option value="Kg">Piece</option>
+                                        <option value="Gram">Box</option>
+                                        <option value="Piece">Pack</option>
+                                        <option value="Dozen">Set</option>
                                     </select>
                                 </div>
                             </div>

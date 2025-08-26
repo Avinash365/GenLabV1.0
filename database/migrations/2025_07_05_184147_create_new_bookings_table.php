@@ -10,9 +10,14 @@ return new class extends Migration
     {
         Schema::create('new_bookings', function (Blueprint $table) {
             $table->id();
+            
+            //foreign key
+            $table->string('marketing_id', 50);  
+            
+            $table->foreignId('department_id')
+                    ->constrained('departments') // plural table name
+                    ->onDelete('cascade');
 
-            // foreign key to users table (using user_code)
-            $table->string('marketing_id', 50); // match length/type of user_code
 
             $table->string('client_name', 150);
             $table->text('client_address')->nullable();
@@ -21,7 +26,7 @@ return new class extends Migration
             $table->string('reference_no', 50)->unique();
             $table->string('contact_no', 20);
             $table->string('contact_email', 150);
-
+            
 
             $table->boolean('hold_status')->default(false);
             $table->string('upload_letter_path', 255)->nullable();

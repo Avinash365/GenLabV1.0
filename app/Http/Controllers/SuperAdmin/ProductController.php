@@ -26,7 +26,7 @@ class ProductController extends Controller
         $this->authorize('view', Product::class);
 
         $categories = ProductCategory::all();
-        return view('superadmin.products.addProduct', compact('categories'));
+        return view('superadmin.Products.addProduct', compact('categories'));
     }
 
     public function store(ProductRequest $request)

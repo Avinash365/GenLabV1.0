@@ -24,14 +24,29 @@ class ProfileController extends Controller
     }
 
     // List all profiles
-    public function index()
+    public function index(Request $request)
     {
+        $search = $request->input('search');
+
         if (auth()->guard('admin')->check()) {
-            $profiles = Profile::latest()->paginate(10);  
+
+            $profiles = Profile::query()
+            ->when($search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(10);
+
             return view('superadmin.attachments.profile.index', compact('profiles'));
         }
 
-        $profiles = Auth::user()->uploadedProfiles()->latest()->paginate(10);
+       $profiles = Auth::user()->uploadedProfiles()
+            ->when($search, function ($query, $search) {
+                $query->where('name', 'like', "%{$search}%");
+            })
+            ->latest()
+            ->paginate(10);
+
         return view('superadmin.attachments.profile.index', compact('profiles'));
         
     }

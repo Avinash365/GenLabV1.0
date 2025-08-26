@@ -16,14 +16,21 @@ class StoreBookingRequest extends FormRequest
     public function rules(): array
     {
         // Get booking ID from route (null if storing)
-        $bookingId = $this->route('id'); // use 'id' because your route uses {id}
+      
+        
+        $booking = $this->route('new_booking') ?? $this->route('id');
+        $bookingId = $booking instanceof \App\Models\NewBooking 
+        ? $booking->id 
+        : $booking;
 
+        
         return [
             'client_name'        => 'required|string|max:255',
             'client_address'     => 'nullable|string',
             'job_order_date'     => 'required|date',
             'report_issue_to'    => 'required|string|max:255',
-
+            'department_id'      => 'required|exists:departments,id', 
+            'booking_type'       => 'required|in:pay,without_pay',
             // Reference number: unique for store, ignore current record for update
             'reference_no'       => [
                 'required',
@@ -49,15 +56,17 @@ class StoreBookingRequest extends FormRequest
             'booking_items'                           => 'nullable|array',
             'booking_items.*.sample_description'      => 'required|string|max:255',
             'booking_items.*.sample_quality'          => 'required|string|max:255',
+            'booking_items.*.particulars'             => 'nullable|string|max:255',
             'booking_items.*.lab_expected_date'       => 'required|date',
             'booking_items.*.amount'                  => 'required|numeric|min:0',
             'booking_items.*.lab_analysis_code'       => ['required', Rule::exists('users', 'user_code')->whereNull('deleted_at')],
             
             'booking_items.*.job_order_no'            => [
                                                             'required',
-                                                            'regex:/^[A-Z]{3,4}\d{8}\d{3}$/', // DEPT + YYYYMMDD + NNN
-                                    
+                                                             // DEPT + YYYYMMDD + NNN
+                
                                                         ],
         ];
     }
 }
+// 'regex:/^[A-Z]{3,4}\d{8}\d{3}$/',

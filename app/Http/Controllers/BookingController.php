@@ -12,12 +12,28 @@ use App\Services\JobOrderService;
 use App\Models\User;
 use App\Enums\Role; 
 use App\Models\Department; 
+use App\Services\GetUserActiveDepartment;
+use App\Services\FileUploadService;
+use App\Jobs\GenerateBookingCards;
+use App\Services\BookingCardService;
+
 
 class BookingController extends Controller
 {
-    public function __construct()
-    {
-        // This will automatically check your BookingPolicy for all resource methods
+    protected GetUserActiveDepartment $departmentService;
+    protected FileUploadService $fileUploadService;
+    protected BookingCardService $bookingCardService; 
+
+
+
+    public function __construct(
+        GetUserActiveDepartment $departmentService,
+        FileUploadService $fileUploadService,  
+        BookingCardService $bookingCardService
+    ) {
+        $this->departmentService = $departmentService;
+        $this->fileUploadService = $fileUploadService;
+        $this->bookingCardService = $bookingCardService; 
         $this->authorizeResource(NewBooking::class, 'new_booking');
     }
 
@@ -27,9 +43,16 @@ class BookingController extends Controller
     public function index()
     {
         $bookings = NewBooking::with('items')->latest()->paginate(10);
-         
-
         return view('superadmin.Bookings.index', compact('bookings'));
+    }
+
+    public function edit(NewBooking $new_booking)
+    {
+        $departments = Department::all();
+        return view('superadmin.Bookings.update', [
+            'booking' => $new_booking,
+            'departments' => $departments
+        ]);
     }
 
     /**
@@ -37,69 +60,86 @@ class BookingController extends Controller
      */
     public function create()
     {
-        $departments = Department::all();
-        return view('superadmin.Bookings.newBooking',compact('departments'));
+        $departments = $this->departmentService->getDepartment();
+        return view('superadmin.Bookings.newBooking', compact('departments'));
     }
 
-    /**
-     * Store a new booking
-     */
+   
+
     public function store(StoreBookingRequest $request)
-    {
-        try {
-            // Determine creator dynamically
-            if (auth('admin')->check()) {
-                $creatorId = auth('admin')->id();
-                $creatorType = 'App\\Models\\Admin';
-            } elseif (auth('web')->check()) {
-                $creatorId = auth('web')->id();
-                $creatorType = 'App\\Models\\User';
-            } else {
-                abort(403, 'Unauthorized');
-            }
+{   
+    // dd($request->all()); 
+    // exit; 
+    try {
+        // Determine creator dynamically
+        if (auth('admin')->check()) {
+            $creatorId = auth('admin')->id();
+            $creatorType = 'App\\Models\\Admin';
+        } elseif (auth('web')->check()) {
+            $creatorId = auth('web')->id();
+            $creatorType = 'App\\Models\\User';
+        } else {
+            abort(403, 'Unauthorized');
+        }
 
-            DB::transaction(function () use ($request, $creatorId, $creatorType) {
-                $bookingData = $request->only([
-                    'client_name',
-                    'client_address',
-                    'job_order_date',
-                    'report_issue_to',
-                    'reference_no',
-                    'marketing_id',
-                    'contact_no',
-                    'contact_email',
-                    'hold_status',
-                ]);
-
-                $bookingData['created_by_id']   = $creatorId;
-                $bookingData['created_by_type'] = $creatorType;
-
-                $booking = NewBooking::create($bookingData);
-
-                if ($request->has('booking_items')) {
-                    foreach ($request->booking_items as $item) {
-                        $deptCode = $item['job_order_no'] ?? 'GEN';
-
-                        $item['job_order_no'] = JobOrderService::generateJobOrderNo($deptCode);
-
-                        $booking->items()->create($item);
-                    }
-                }
-            });
-
-            return redirect()
-                ->route('superadmin.bookings.index')
-                ->with('success', 'Booking created successfully!');
-
-        } catch (\Exception $e) {
-            Log::error('Booking creation failed', [
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
+        $booking = DB::transaction(function () use ($request, $creatorId, $creatorType) {
+            
+            
+            $bookingData = $request->only([
+                'client_name',
+                'client_address',
+                'job_order_date',
+                'department_id', 
+                'report_issue_to',
+                'reference_no',
+                'marketing_id',
+                'contact_no',
+                'contact_email',
+                'hold_status',
+                'booking_type', 
             ]);
 
-            return back()->withErrors($e->getMessage());
-        }
+            $bookingData['created_by_id']   = $creatorId;
+            $bookingData['created_by_type'] = $creatorType;
+
+            // File upload
+            if ($request->hasFile('upload_letter_path')) {
+                $bookingData['upload_letter_path'] = $this->fileUploadService->upload(
+                    $request->file('upload_letter_path'),
+                    'bookings'
+                );
+            }
+
+            $booking = NewBooking::create($bookingData);
+
+            // Add booking items if present
+            if ($request->has('booking_items')) {
+                foreach ($request->booking_items as $item) {
+                    $booking->items()->create($item);
+                }
+            }
+
+            return $booking;
+        });
+
+        // Dispatch job after successful transaction
+        // dispatch(new GenerateBookingCards($booking->id));
+        $pdfFileName = $this->bookingCardService->generateCardsForBooking($booking);
+
+          
+        return redirect()->away(asset('storage/cards/' . $pdfFileName));
+            // ->with('success', 'Booking created successfully!');
+
+    } catch (\Exception $e) {
+        Log::error('Booking creation failed', [
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+
+        return back()->withErrors($e->getMessage());
     }
+}
+
 
     /**
      * Update an existing booking
@@ -108,6 +148,8 @@ class BookingController extends Controller
     {
         try {
             DB::transaction(function () use ($request, $new_booking) {
+
+                // Determine the creator
                 if (auth('admin')->check()) {
                     $creatorId   = auth('admin')->id();
                     $creatorType = 'App\\Models\\Admin';
@@ -118,39 +160,49 @@ class BookingController extends Controller
                     abort(403, 'Unauthorized');
                 }
 
+                // Update booking main info
                 $bookingData = $request->only([
                     'client_name',
                     'client_address',
                     'job_order_date',
                     'report_issue_to',
                     'reference_no',
+                    'department_id',
                     'marketing_id',
                     'contact_no',
                     'contact_email',
                     'hold_status',
+                    'booking_type', 
                 ]);
 
                 $bookingData['created_by_id']   = $creatorId;
                 $bookingData['created_by_type'] = $creatorType;
 
+                if ($request->hasFile('upload_letter_path')) {
+                    $bookingData['upload_letter_path'] = $this->fileUploadService->upload(
+                        $request->file('upload_letter_path'),
+                        'bookings'
+                    );
+                }
+                
                 $new_booking->update($bookingData);
 
+                // Remove all previous items
+                $new_booking->items()->delete();
+
+                // Insert new items if provided
                 if ($request->has('booking_items')) {
-                    foreach ($request->booking_items as $key => $item) {
-                        if (is_numeric($key)) {
-                            $bookingItem = $new_booking->items()->find($key);
-                            if ($bookingItem) {
-                                $bookingItem->update($item);
-                            }
-                        } else {
-                            $new_booking->items()->create($item);
-                        }
-                    }
+                    foreach ($request->booking_items as $item) {
+                        $new_booking->items()->create($item);
+                    } 
+
                 }
             });
 
+            
+
             return redirect()
-                ->route('superadmin.bookings.index')
+                ->back()
                 ->with('success', 'Booking updated successfully!');
 
         } catch (\Exception $e) {
@@ -175,7 +227,7 @@ class BookingController extends Controller
             });
 
             return redirect()
-                ->route('superadmin.bookings.index')
+                ->back()
                 ->with('success', 'Booking deleted successfully!');
 
         } catch (\Exception $e) {
@@ -212,10 +264,18 @@ class BookingController extends Controller
         $results = User::whereHas('role', function ($q) {
                 $q->where('slug', Role::LAB_ANALYST->value);
             })
-            ->when($query, function ($q) use ($query) {
-                $q->where('user_code', 'like', '%' . $query . '%');
+            ->where(function ($q) use ($query) {
+                $q->where('user_code', 'like', '%' . $query . '%')
+                ->orWhere('name', 'like', '%' . $query . '%');
             })
-            ->pluck('user_code');
+            ->get(['user_code', 'name'])
+            ->map(function ($user) {
+                return [
+                    'user_code' => $user->user_code,
+                    'name'      => $user->name,
+                    'label'     => $user->user_code . ' - ' . $user->name,
+                ];
+            });
 
         return response()->json($results);
     }
@@ -230,10 +290,18 @@ class BookingController extends Controller
         $results = User::whereHas('role', function ($q) {
                 $q->where('slug', Role::MARKETING_PERSON->value);
             })
-            ->when($query, function ($q) use ($query) {
-                $q->where('user_code', 'like', '%' . $query . '%');
+            ->where(function ($q) use ($query) {
+                $q->where('user_code', 'like', '%' . $query . '%')
+                ->orWhere('name', 'like', '%' . $query . '%');
             })
-            ->pluck('user_code');
+            ->get(['user_code', 'name'])
+            ->map(function ($user) {
+                return [
+                    'user_code' => $user->user_code,
+                    'name'      => $user->name,
+                    'label'     => $user->user_code . ' - ' . $user->name,
+                ];
+            });
 
         return response()->json($results);
     }

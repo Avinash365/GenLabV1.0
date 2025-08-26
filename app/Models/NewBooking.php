@@ -23,7 +23,9 @@ class NewBooking extends Model
         'marketing_id',
         'contact_no',
         'contact_email',
+        'department_id', 
         'hold_status',
+        'booking_type', 
         'upload_letter_path', 
         'created_by_id',
         'created_by_type', 
@@ -47,5 +49,14 @@ class NewBooking extends Model
         return $this->morphTo(null, 'created_by_type', 'created_by_id'); 
     } 
     
+    public function department()
+    {
+        return $this->belongsTo(Department::class);
+    }
 
+    public function cards()
+    {
+        return $this->hasMany(BookingCard::class);
+    } 
+    
 }

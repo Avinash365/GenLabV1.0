@@ -15,10 +15,23 @@ class CalibrationController extends Controller
         $this->authorizeResource(Calibration::class, 'calibration');
     }
     
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $calibrations = Calibration::latest()->paginate(10);
+
+            $search = $request->input('search'); 
+
+             $calibrations = Calibration::when($search, function ($query, $search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('agency_name', 'like', "%{$search}%")
+                      ->orWhere('equipment_name', 'like', "%{$search}%")
+                      ->orWhere('issue_date', 'like', "%{$search}%")
+                      ->orWhere('expire_date', 'like', "%{$search}%");
+                });
+            })
+            ->latest()
+            ->paginate(10);
+            
             return view('superadmin.calibrations.index', compact('calibrations'));
         } catch (\Exception $e) {
             Log::error('Calibration Index Error: '.$e->getMessage());
