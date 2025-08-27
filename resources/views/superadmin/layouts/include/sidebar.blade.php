@@ -34,7 +34,9 @@
                             <a href="#"><i class="ti ti-calendar fs-16 me-2"></i><span>All Booking</span><span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ route('superadmin.bookings.newbooking') }}" class="{{ Request::routeIs('superadmin.bookings.newbooking') ? 'active' : '' }}">New Booking</a></li>
-                                <li><a href="{{ route('superadmin.showbooking.showBooking') }}" class="{{ Request::routeIs('superadmin.showbooking.showBooking') ? 'active' : '' }}">Show Booking</a></li>
+                                <li><a href="{{ route('superadmin.bookings.bookingByLetter.index') }}" class="{{ Request::routeIs('superadmin.showbooking.bookingByLetter.index') ? 'active' : '' }}">Show Booking</a></li>
+                                <li><a href="{{ route('superadmin.showbooking.showBooking') }}" class="{{ Request::routeIs('superadmin.showbooking.showBooking') ? 'active' : '' }}">Booking By Letter</a></li>
+                               
                                 @foreach($departments ?? [] as $department)
                                     <li>
                                         <a href="{{ route('superadmin.showbooking.showBooking', $department->id) }}" 

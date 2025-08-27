@@ -15,7 +15,7 @@ class ISCodeController extends Controller
     public function __construct(FileUploadService $fileUploadService)
     {
         $this->fileUploadService = $fileUploadService;
-        $this->authorizeResource(ISCode::class, 'iSCode');   
+        $this->authorizeResource(ISCode::class, 'iscode');   
     }
     
     public function index(Request $request)

@@ -42,7 +42,7 @@ class ISCodePolicy
     /**
      * Determine whether the user can update the model.
      */
-    public function update(Admin|User $user, ISCode $iSCode): bool
+    public function update(Admin|User $user, ISCode $iscode): bool
     {
         if ($user instanceof Admin) return true;
 
@@ -52,7 +52,7 @@ class ISCodePolicy
     /**
      * Determine whether the user can delete the model.
      */
-    public function delete(Admin|User $user, ISCode $iSCode): bool
+    public function delete(Admin|User $user, ISCode $iscode): bool
     {
         if ($user instanceof Admin) return true;
 
@@ -62,7 +62,7 @@ class ISCodePolicy
     /**
      * Determine whether the user can restore the model.
      */
-    public function restore(Admin|User $user, ISCode $iSCode): bool
+    public function restore(Admin|User $user, ISCode $iscode): bool
     {
         return $user instanceof Admin;   
     }
@@ -70,7 +70,7 @@ class ISCodePolicy
     /**
      * Determine whether the user can permanently delete the model.
      */
-    public function forceDelete(Admin|User $user, ISCode $iSCode): bool
+    public function forceDelete(Admin|User $user, ISCode $iscode): bool
     {
         return $user instanceof Admin;
     }

@@ -111,10 +111,10 @@
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Booking Type <span class="text-danger">*</span></label>
                                     <div class="col-lg-9">
-                                        <select class="form-select" name="booking_type" required>
+                                        <select class="form-select" name="payment_option" required>
                                             <option value="">Select</option>
-                                            <option value="pay" {{ old('booking_type', $booking->booking_type ?? '') == 'pay' ? 'selected' : '' }}>Pay</option>
-                                            <option value="without_pay" {{ old('booking_type', $booking->booking_type ?? '') == 'without_pay' ? 'selected' : '' }}>Without Pay</option>
+                                            <option value="pay" {{ old('payment_option', $booking->payment_option ?? '') == 'bill' ? 'selected' : '' }}>Bill</option>
+                                            <option value="without_pay" {{ old('payment_option', $booking->payment_option ?? '') == 'without_bill' ? 'selected' : '' }}>Without Bill</option>
                                         </select>
                                     </div>
                                 </div>

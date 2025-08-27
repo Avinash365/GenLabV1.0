@@ -12,8 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('new_bookings', function (Blueprint $table) {
-            $table->enum('booking_type', ['pay', 'without_pay'])
-                  ->default('without_pay')
+            $table->enum('payment_option', ['bill', 'without_bill'])
+                  ->default('without_bill')
                   ->after('hold_status'); // adjust position as needed
         });
     }
@@ -25,7 +25,7 @@ return new class extends Migration
     {
         Schema::table('new_bookings', function (Blueprint $table) {
             Schema::table('new_bookings', function (Blueprint $table) {
-                $table->dropColumn('booking_type');
+                $table->dropColumn('payment_option');
             });
         });
     }

@@ -25,7 +25,7 @@ class NewBooking extends Model
         'contact_email',
         'department_id', 
         'hold_status',
-        'booking_type', 
+        'payment_option', 
         'upload_letter_path', 
         'created_by_id',
         'created_by_type', 
@@ -57,6 +57,12 @@ class NewBooking extends Model
     public function cards()
     {
         return $this->hasMany(BookingCard::class);
-    } 
+    }  
+
+    public function marketingPerson()
+    {
+         return $this->belongsTo(User::class, 'marketing_id', 'user_code');
+    }
+
     
 }

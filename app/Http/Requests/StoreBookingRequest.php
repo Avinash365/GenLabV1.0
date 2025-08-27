@@ -30,7 +30,7 @@ class StoreBookingRequest extends FormRequest
             'job_order_date'     => 'required|date',
             'report_issue_to'    => 'required|string|max:255',
             'department_id'      => 'required|exists:departments,id', 
-            'booking_type'       => 'required|in:pay,without_pay',
+            'payment_option'     => 'required|in:bill,without_bill',
             // Reference number: unique for store, ignore current record for update
             'reference_no'       => [
                 'required',

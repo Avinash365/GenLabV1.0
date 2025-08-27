@@ -67,78 +67,78 @@ class BookingController extends Controller
    
 
     public function store(StoreBookingRequest $request)
-{   
-    // dd($request->all()); 
-    // exit; 
-    try {
-        // Determine creator dynamically
-        if (auth('admin')->check()) {
-            $creatorId = auth('admin')->id();
-            $creatorType = 'App\\Models\\Admin';
-        } elseif (auth('web')->check()) {
-            $creatorId = auth('web')->id();
-            $creatorType = 'App\\Models\\User';
-        } else {
-            abort(403, 'Unauthorized');
-        }
+    {   
+        // dd($request->all()); 
+        // exit; 
+        try {
+            // Determine creator dynamically
+            if (auth('admin')->check()) {
+                $creatorId = auth('admin')->id();
+                $creatorType = 'App\\Models\\Admin';
+            } elseif (auth('web')->check()) {
+                $creatorId = auth('web')->id();
+                $creatorType = 'App\\Models\\User';
+            } else {
+                abort(403, 'Unauthorized');
+            }
 
-        $booking = DB::transaction(function () use ($request, $creatorId, $creatorType) {
+            $booking = DB::transaction(function () use ($request, $creatorId, $creatorType) {
+                
+                
+                $bookingData = $request->only([
+                    'client_name',
+                    'client_address',
+                    'job_order_date',
+                    'department_id', 
+                    'report_issue_to',
+                    'reference_no',
+                    'marketing_id',
+                    'contact_no',
+                    'contact_email',
+                    'hold_status',
+                    'payment_option', 
+                ]);
+
+                $bookingData['created_by_id']   = $creatorId;
+                $bookingData['created_by_type'] = $creatorType;
+
+                // File upload
+                if ($request->hasFile('upload_letter_path')) {
+                    $bookingData['upload_letter_path'] = $this->fileUploadService->upload(
+                        $request->file('upload_letter_path'),
+                        'bookings'
+                    );
+                }
+
+                $booking = NewBooking::create($bookingData);
+
+                // Add booking items if present
+                if ($request->has('booking_items')) {
+                    foreach ($request->booking_items as $item) {
+                        $booking->items()->create($item);
+                    }
+                }
+
+                return $booking;
+            });
+
+            // Dispatch job after successful transaction
+            // dispatch(new GenerateBookingCards($booking->id));
+            $pdfFileName = $this->bookingCardService->generateCardsForBooking($booking);
+
             
-            
-            $bookingData = $request->only([
-                'client_name',
-                'client_address',
-                'job_order_date',
-                'department_id', 
-                'report_issue_to',
-                'reference_no',
-                'marketing_id',
-                'contact_no',
-                'contact_email',
-                'hold_status',
-                'booking_type', 
+            return redirect()->away(asset('storage/cards/' . $pdfFileName));
+                // ->with('success', 'Booking created successfully!');
+
+        } catch (\Exception $e) {
+            Log::error('Booking creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
             ]);
 
-            $bookingData['created_by_id']   = $creatorId;
-            $bookingData['created_by_type'] = $creatorType;
-
-            // File upload
-            if ($request->hasFile('upload_letter_path')) {
-                $bookingData['upload_letter_path'] = $this->fileUploadService->upload(
-                    $request->file('upload_letter_path'),
-                    'bookings'
-                );
-            }
-
-            $booking = NewBooking::create($bookingData);
-
-            // Add booking items if present
-            if ($request->has('booking_items')) {
-                foreach ($request->booking_items as $item) {
-                    $booking->items()->create($item);
-                }
-            }
-
-            return $booking;
-        });
-
-        // Dispatch job after successful transaction
-        // dispatch(new GenerateBookingCards($booking->id));
-        $pdfFileName = $this->bookingCardService->generateCardsForBooking($booking);
-
-          
-        return redirect()->away(asset('storage/cards/' . $pdfFileName));
-            // ->with('success', 'Booking created successfully!');
-
-    } catch (\Exception $e) {
-        Log::error('Booking creation failed', [
-            'error' => $e->getMessage(),
-            'trace' => $e->getTraceAsString(),
-        ]);
-
-        return back()->withErrors($e->getMessage());
+            return back()->withErrors($e->getMessage());
+        }
     }
-}
 
 
     /**
@@ -172,7 +172,7 @@ class BookingController extends Controller
                     'contact_no',
                     'contact_email',
                     'hold_status',
-                    'booking_type', 
+                    'payment_option', 
                 ]);
 
                 $bookingData['created_by_id']   = $creatorId;

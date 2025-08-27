@@ -23,7 +23,7 @@
         <div class="add-item d-flex">
             <div class="page-title">
                 <h4>Booking</h4>
-                <h6>Show Booking List</h6>
+                <h6>Booking By Letter</h6>
             </div>                            
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
@@ -107,20 +107,13 @@
         <div class="card-body p-0">
             <div class="table-responsive">
                 <table class="table">
-                    <thead class="thead-light">
+                    <thead class="table-light">
                         <tr>
                             <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                            <th>Reference No</th>
-                            <th>Department</th>
                             <th>Client Name</th>
-                            <th>Contact Email</th>
-                            <th>Contact no</th>
-                            <th>Marketing Code</th>
-                            <th>Report Issue To</th>
-                            <th>Client Address</th>
-                            <th>Job Order Date</th>
-                            <th>Hold Status</th>
-                            <th>Upload Letter</th>
+                            <th>Reference No</th> 
+                            <th>Marketing Person</th>
+                            <th>Show Letter</th>
                             <th>Items</th>
                             <th>Action</th>
                         </tr>
@@ -129,16 +122,13 @@
                         @forelse($bookings as $booking)
                         <tr>
                             <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                            <td>{{ $booking->reference_no }}</td>
-                            <td>{{ $booking->department->name ?? '-' }}</td>
+                          
+                           
                             <td>{{ $booking->client_name}}</td>
-                            <td>{{ $booking->contact_email }}</td>
-                            <td>{{ $booking->contact_no }}</td>
-                            <td>{{ $booking->marketing_id }}</td>
-                            <td>{{ $booking->report_issue_to }}</td>
-                            <td>{{ $booking->client_address }}</td>
-                            <td>{{ $booking->job_order_date }}</td>
-                            <td>{{ $booking->hold_status ? 'Yes' : 'No' }}</td>
+                            <td>{{ $booking->reference_no }}</td>
+                     
+                            <td>{{ $booking->marketingPerson->name }}</td>
+                         
                             <td>
                                 @if($booking->upload_letter_path)
                                     <a href="{{url($booking->upload_letter_path)}}" target="_blank">View</a>
@@ -183,7 +173,7 @@
                                                                     <td>{{ $item->sample_quality }}</td>
                                                                     <td>{{ $item->lab_analysis_code }}</td>
                                                                     <td>{{ $item->particulars }}</td>
-                                                                    <td>{{ $item->lab_expected_date }}</td>
+                                                                    <td>{{ \Carbon\Carbon::parse($item->lab_expected_date)->format('d-m-Y') }}</td>
                                                                     <td>{{ $item->amount }}</td>
                                                                     <td>{{ $item->job_order_no }}</td>
                                                                 </tr>

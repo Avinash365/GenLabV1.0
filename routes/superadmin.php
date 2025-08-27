@@ -22,6 +22,10 @@ use App\Http\Controllers\SuperAdmin\IssueViewController;
 use App\Http\Controllers\SuperAdmin\PurchaseListController;
 use App\Http\Controllers\SuperAdmin\PurchaseAddController;
 use App\Http\Controllers\SuperAdmin\ShowBookingController;
+use App\Http\Controllers\SuperAdmin\ShowBookingByLetterController; 
+
+use App\Http\Controllers\SuperAdmin\IsCodesController;
+
 use App\Http\Controllers\SuperAdmin\LeaveController;
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductStockEntryController;
@@ -32,6 +36,7 @@ use App\Http\Controllers\Attachments\ImportantLetterController;
 use App\Http\Controllers\Attachments\DocumentController; 
 use App\Http\Controllers\SuperAdmin\LabAnalystController;
 use App\Http\Controllers\SuperAdmin\ReportingController;
+
 
 // =======================
 // Super Admin Login Routes
@@ -100,7 +105,11 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/marketingCodes', [BookingController::class, 'getMarketingPerson'])->name('get.marketingCodes');
             
             Route::get('/users/role/{roleSlug}', [UserController::class, 'getUsersByRole'])->name('get.userByRole');
+
+            Route::get('/bookingByLetter', [ShowBookingByLetterController::class, 'index'])->name('bookingByLetter.index'); 
+            Route::delete('/bookingByLetter/{bookingItem}', [ShowBookingByLetterController::class, 'destroy'])->name('bookingByLetter.destroy');
     });
+                                    
 
 
     //Product 

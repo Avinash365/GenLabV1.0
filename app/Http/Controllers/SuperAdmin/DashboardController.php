@@ -18,8 +18,8 @@ class DashboardController extends Controller
     public function index()
     {
        
-        // $departments = $this->departmentService->getDepartment();
-        // return view('superadmin.dashboard');
-        return view('pdf.booking_card'); 
+        $departments = $this->departmentService->getDepartment();
+        return view('superadmin.dashboard', compact('departments'));
+        // return view('pdf.booking_card'); 
     }
 }
