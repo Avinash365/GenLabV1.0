@@ -66,6 +66,34 @@
                     <label class="form-label">M/s</label>
                     <input type="text" class="form-control" value="{{ $header['ms'] }}" readonly>
                 </div>
+                {{-- Upload Letter(s) box inserted after M/s --}}
+                @php
+                    $uploadRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.upload') ? route('superadmin.reporting.letters.upload') : '#';
+                    $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $job]) : '';
+                @endphp
+                <div class="col-md-6">
+                    <label class="form-label">Upload Report</label>
+                    <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}">
+                        @csrf
+                        <input type="hidden" name="job" value="{{ $job }}">
+                        <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" {{ $uploadRoute === '#' ? 'disabled' : '' }}>
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="submit" class="btn btn-primary" {{ $uploadRoute === '#' ? 'disabled' : '' }}>Upload</button>
+                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" {{ empty($listRoute) ? 'disabled' : '' }}>
+                                View
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
+                            </button>
+                        </div>
+                        <small class="text-muted d-block">You can upload multiple files.</small>
+                    </form>
+                </div>
+                @php
+                    $__first = $items->first();
+                    $__singleLetter = $__first?->booking?->upload_letter_path ? asset('storage/'.$__first->booking->upload_letter_path) : null;
+                @endphp
+                @if($__singleLetter)
+                    <input type="hidden" id="single-letter-url" value="{{ $__singleLetter }}">
+                @endif
             </div>
         </div>
     </div>
@@ -153,6 +181,23 @@
             </div>
         </div>
     </div>
+
+    {{-- Letters Modal --}}
+    <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Uploaded Letters</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="letters-list" class="list-group">
+                        <div class="text-muted">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 @endsection
 
@@ -173,6 +218,103 @@
             s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
             document.head.appendChild(s);
         }
+
+        // Upload/View Letters handlers
+        const uploadForm = document.getElementById('upload-letters-form');
+        const viewLettersBtn = document.getElementById('view-letters-btn');
+        const lettersModalEl = document.getElementById('lettersModal');
+        const lettersListEl = document.getElementById('letters-list');
+        const lettersCountBadge = document.getElementById('letters-count-badge');
+        async function refreshLettersCount() {
+            try {
+                if (!uploadForm) return;
+                const listUrl = uploadForm.getAttribute('data-list-url');
+                if (!listUrl) return;
+                const resp = await fetch(listUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await resp.json();
+                const cnt = (data && typeof data.count === 'number') ? data.count : (Array.isArray(data.letters) ? data.letters.length : 0);
+                if (lettersCountBadge) {
+                    if (cnt > 0) { lettersCountBadge.style.display = ''; lettersCountBadge.textContent = String(cnt); }
+                    else { lettersCountBadge.style.display = 'none'; lettersCountBadge.textContent = '0'; }
+                }
+                if (viewLettersBtn) viewLettersBtn.disabled = !cnt;
+            } catch (e) {}
+        }
+        async function loadLetters(showModal = true) {
+            try {
+                const listUrl = uploadForm ? uploadForm.getAttribute('data-list-url') : '';
+                if (!listUrl) {
+                    const single = document.getElementById('single-letter-url');
+                    if (single && single.value) window.open(single.value, '_blank');
+                    return;
+                }
+                if (lettersListEl) lettersListEl.innerHTML = '<div class="text-muted">Loading...</div>';
+                const resp = await fetch(listUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await resp.json();
+                const letters = Array.isArray(data.letters) ? data.letters : [];
+                if (lettersListEl) {
+                    lettersListEl.innerHTML = '';
+                    if (!letters.length) {
+                        lettersListEl.innerHTML = '<div class="text-muted">No letters uploaded yet.</div>';
+                    } else {
+                        letters.forEach(function(l) {
+                            const a = document.createElement('a');
+                            a.href = l.url || l.path || '#';
+                            a.target = '_blank';
+                            a.rel = 'noopener';
+                            a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+                            a.innerHTML = '<span>' + (l.name || l.filename || 'Letter') + '</span>' + '<span class="small text-muted">' + (l.uploaded_at || l.created_at || '') + '</span>';
+                            lettersListEl.appendChild(a);
+                        });
+                    }
+                }
+                if (showModal) {
+                    try {
+                        if (window.bootstrap && window.bootstrap.Modal && lettersModalEl) {
+                            new bootstrap.Modal(lettersModalEl).show();
+                        } else if (letters.length && (letters[0].url || letters[0].path)) {
+                            window.open(letters[0].url || letters[0].path, '_blank');
+                        }
+                    } catch (_) {}
+                }
+                refreshLettersCount();
+            } catch (_) {}
+        }
+        if (uploadForm && uploadForm.dataset.bound !== '1' && uploadForm.getAttribute('action') !== '#') {
+            uploadForm.dataset.bound = '1';
+            uploadForm.addEventListener('submit', function(ev) {
+                ev.preventDefault();
+                const btn = uploadForm.querySelector('button[type="submit"]');
+                const token = uploadForm.querySelector('input[name="_token"]').value;
+                const fd = new FormData(uploadForm);
+                if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+                fetch(uploadForm.action, {
+                    method: 'POST',
+                    headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                    body: fd
+                }).then(async (resp) => {
+                    const data = await resp.json().catch(() => null);
+                    return data;
+                }).then(function(data) {
+                    if (data && data.ok) {
+                        if (window.Swal) { Swal.fire({ icon: 'success', title: 'Uploaded', text: 'Letters uploaded successfully.' }); }
+                        loadLetters(false);
+                        refreshLettersCount();
+                        uploadForm.reset();
+                    } else {
+                        if (window.Swal) { Swal.fire({ icon: 'error', title: 'Failed', text: (data && data.message) || 'Upload failed.' }); }
+                    }
+                }).catch(function() {
+                    if (window.Swal) { Swal.fire({ icon: 'error', title: 'Failed', text: 'Upload failed.' }); }
+                }).finally(function() { if (btn) { btn.disabled = false; btn.textContent = 'Upload'; } });
+            });
+        }
+        if (viewLettersBtn && viewLettersBtn.dataset.bound !== '1') {
+            viewLettersBtn.dataset.bound = '1';
+            viewLettersBtn.addEventListener('click', function() { loadLetters(true); });
+        }
+        // initial count
+        refreshLettersCount();
 
         document.querySelectorAll('.receive-toggle-btn').forEach(function(btn) {
             if (btn.dataset.bound === '1') return; // avoid double-binding

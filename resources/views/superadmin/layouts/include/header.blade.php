@@ -100,13 +100,25 @@
                     </span>
                 </a>
                 <div class="dropdown-menu menu-drop-user">
+                    @php
+                        $authUser = auth('web')->user() ?: auth('admin')->user();
+                        $roleLabel = '';
+                        if ($authUser) {
+                            $r = $authUser->role ?? null; // can be relation or string
+                            if (is_object($r)) {
+                                $roleLabel = $r->role_name ?? '';
+                            } else {
+                                $roleLabel = (string) ($r ?? '');
+                            }
+                        }
+                    @endphp
                     <div class="profileset d-flex align-items-center">
                         <span class="user-img me-2">
                             <img src="{{ url('assets/img/profiles/avator1.jpg') }}" alt="Img">
                         </span>
                         <div>
-                            <h6 class="fw-medium">{{ auth()->user()->name }}</h6>
-                            <p>{{ auth('web')->user()->role->role_name ?? auth()->user()->role }}</p>
+                            <h6 class="fw-medium">{{ $authUser->name ?? 'Guest' }}</h6>
+                            <p>{{ $roleLabel }}</p>
                         </div>
                     </div>
                     <a class="dropdown-item" href="#"><i class="ti ti-user-circle me-2"></i>Profile</a>

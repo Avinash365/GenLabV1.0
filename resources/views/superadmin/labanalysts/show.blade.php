@@ -236,13 +236,31 @@
         window.location.href = url;
     });
     document.getElementById('word-btn')?.addEventListener('click', () => {
-        // Build URL for Word download with current values
-        const f = document.getElementById('gl-file').value;
-        const reference_no = document.getElementById('gl-reference').value;
-        const job_card_no = document.getElementById('gl-jobcard').value;
-        const params = new URLSearchParams({ f, reference_no, job_card_no, download: '1' });
-        const url = `{{ route('superadmin.labanalysts.render') }}` + '?' + params.toString();
-        window.location.href = url;
+        // Generate .doc on the client from the loaded HTML
+        const ref = (document.getElementById('gl-reference')?.value || '').trim();
+        const job = (document.getElementById('gl-jobcard')?.value || '').trim();
+        let title = 'Report';
+        if (ref) title = 'Report-' + ref; else if (job) title = 'Report-' + job;
+        title = title.replace(/[^A-Za-z0-9_-]+/g, '-').slice(0, 100);
+
+        const body = document.getElementById('format-content')?.innerHTML || '';
+        const styles = `body{font-family:Arial,Helvetica,sans-serif;} table{border-collapse:collapse;} th,td{border:1px solid #000; padding:4px;}`;
+        const doc = `<!DOCTYPE html>\n<html>\n<head>\n<meta charset="utf-8">\n<title>${title}</title>\n<style>${styles}</style>\n</head>\n<body>${body}</body>\n</html>`;
+
+        const blob = new Blob(['\ufeff', doc], { type: 'application/msword;charset=utf-8' });
+        const filename = `${title}.doc`;
+
+        if (window.navigator && window.navigator.msSaveOrOpenBlob) {
+            window.navigator.msSaveOrOpenBlob(blob, filename);
+        } else {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            setTimeout(() => { URL.revokeObjectURL(url); a.remove(); }, 200);
+        }
     });
 
     // Auto-fit report to avoid horizontal scrolling

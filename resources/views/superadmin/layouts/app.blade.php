@@ -209,6 +209,58 @@
         });
     </script>
 
+    @php($globalSetting = \App\Models\Setting::first())
+    <!-- Theme + color bootstrap variables applied globally with persisted preference -->
+    <script>
+    (function() {
+        var savedPref = null;
+        var savedColor = null;
+        try {
+            savedPref = localStorage.getItem('app-theme');
+            savedColor = localStorage.getItem('app-primary-color');
+        } catch(e) {}
+
+        var dbPref = @json(optional($globalSetting)->theme ?? 'system');
+        var dbColor = @json(optional($globalSetting)->primary_color ?? '#0d6efd');
+
+        var pref = savedPref || dbPref;
+        var color = savedColor || dbColor;
+
+        var html = document.documentElement;
+
+        function applyTheme(val) {
+            if (val === 'system') {
+                var dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+                html.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
+            } else {
+                html.setAttribute('data-bs-theme', val);
+            }
+        }
+
+        function applyPrimary(c) {
+            if (!/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(c)) return;
+            var root = document.documentElement && document.documentElement.style;
+            root.setProperty('--bs-primary', c);
+            root.setProperty('--bs-link-color', c);
+        }
+
+        applyPrimary(color);
+        applyTheme(pref);
+
+        if (pref === 'system' && window.matchMedia) {
+            try {
+                window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+                    html.setAttribute('data-bs-theme', e.matches ? 'dark' : 'light');
+                });
+            } catch (_) {
+                window.matchMedia('(prefers-color-scheme: dark)').addListener(function(e){
+                    html.setAttribute('data-bs-theme', e.matches ? 'dark' : 'light');
+                });
+            }
+        }
+    })();
+    </script>
+
     @stack('scripts')
 
 

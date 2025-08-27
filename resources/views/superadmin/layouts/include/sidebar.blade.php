@@ -2,13 +2,13 @@
     <!-- Logo -->
     <div class="sidebar-logo active">
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-normal">
-            <img src="{{ url('assets/img/logo.svg') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-white">
-            <img src="{{ url('assets/img/logo-white.svg') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo-small">
-            <img src="{{ url('assets/img/logo-small.png') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img">
         </a>
         <a id="toggle_btn" href="">
             <i data-feather="chevrons-left" class="feather-16"></i>
@@ -64,11 +64,11 @@
             <li class="submenu {{ Request::routeIs('superadmin.reporting.*') ? 'submenu-open' : '' }}">
                             <a href="#"><i class="ti ti-report fs-16 me-2"></i><span>Reporting</span><span class="menu-arrow"></span></a>
                             <ul>
-                <li><a href="{{ route('superadmin.reporting.received') }}" class="{{ Request::routeIs('superadmin.reporting.received') ? 'active' : '' }}">Received</a></li>
+                                <li><a href="{{ route('superadmin.reporting.received') }}" class="{{ Request::routeIs('superadmin.reporting.received') ? 'active' : '' }}">Received</a></li>
+                                <li><a href="{{ route('superadmin.reporting.holdcancel.index') }}" class="{{ Request::routeIs('superadmin.reporting.holdcancel.*') ? 'active' : '' }}">Hold & Cancel</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Reported</a></li>
+                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Hold & Unhold</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Print & Upload</a></li>
-                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Hold Report</a></li>
-                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Cancel Report</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Export PDF</a></li>
                             </ul>
                         </li>
@@ -125,7 +125,7 @@
 
 
                         <!--settings-->
-                       <li class="submenu {{ Request::routeIs('superadmin.settingsection.*') ? 'submenu-open' : '' }}">
+                       <li class="submenu {{ (Request::routeIs('superadmin.settingsection.*') || Request::routeIs('superadmin.websettings.*')) ? 'submenu-open' : '' }}">
                             <a href="javascript:void(0)">
                                 <i class="ti ti-tools fs-16 me-2"></i>
                                 <span>Settings</span>   
@@ -158,7 +158,12 @@
                                     </a>
                                 </li>
                                 <li>
-                                        @if(auth()->user()->hasPermission('department.view') || auth()->user()->hasPermission('department.create')  || auth()->user() instanceof Admin  )                            
+                                    <a href="{{ route('superadmin.websettings.edit') }}" class="{{ Request::routeIs('superadmin.websettings.*') ? 'active' : '' }}">
+                                        Web Settings
+                                    </a>
+                                </li>
+                                <li>
+                                        @if(auth()->check() && (auth()->user()->hasPermission('department.view') || auth()->user()->hasPermission('department.create')  || auth()->user() instanceof Admin))                            
                                         <a href="{{route('superadmin.departments.index')}}"
                                         class="{{ Request::routeIs('superadmin.settingsection.notifications') ? 'active' : '' }}">
                                             Departments
@@ -179,16 +184,16 @@
                         </li>
 
                         <li class="submenu {{ Request::routeIs('superadmin.users.*') ? 'submenu-open' : '' }}">
-                            @if(auth()->user()->hasPermission('user.view') || auth()->user()->hasPermission('user.create') || auth()->user() instanceof Admin)
+                            @if(auth()->check() && (auth()->user()->hasPermission('user.view') || auth()->user()->hasPermission('user.create') || auth()->user() instanceof Admin))
                                 <a href="#"><i class="ti ti-brand-apple-arcade fs-16 me-2"></i><span>User Management</span><span class="menu-arrow"></span></a>
                                 <ul>
-                                    @if(auth()->user()->hasPermission('user.create') || auth()->user() instanceof Admin)
+                                    @if(auth()->check() && (auth()->user()->hasPermission('user.create') || auth()->user() instanceof Admin))
                                         <li>
                                             <a href="{{ route('superadmin.users.create') }}" class="{{ Request::routeIs('superadmin.users.create') ? 'active' : '' }}">Create</a>
                                         </li>
                                     @endif
 
-                                    @if(auth()->user()->hasPermission('user.view') || auth()->user() instanceof Admin)
+                                    @if(auth()->check() && (auth()->user()->hasPermission('user.view') || auth()->user() instanceof Admin))
                                         <li>
                                             <a href="{{ route('superadmin.users.index') }}" class="{{ Request::routeIs('superadmin.users.index') ? 'active' : '' }}">View</a>
                                         </li>
