@@ -20,6 +20,5 @@ class DashboardController extends Controller
        
         $departments = $this->departmentService->getDepartment();
         return view('superadmin.dashboard', compact('departments'));
-        // return view('pdf.booking_card'); 
     }
 }
