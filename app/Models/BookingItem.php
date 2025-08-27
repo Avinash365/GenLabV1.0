@@ -20,11 +20,17 @@ class BookingItem extends Model
         'amount',
         'lab_analysis_code',
         'job_order_no',
+    'received_by_id',
+    'received_by_name',
+    'received_at',
+    'issue_date',
     ];
 
     protected $casts = [
         'lab_expected_date' => 'date',
         'amount' => 'decimal:2',
+    'received_at' => 'datetime',
+    'issue_date' => 'date',
     ];
 
     /**
@@ -33,5 +39,21 @@ class BookingItem extends Model
     public function booking()
     {
         return $this->belongsTo(NewBooking::class, 'new_booking_id');
+    }
+
+    /**
+     * Relationship: BookingItem belongs to an Analyst (User) via lab_analysis_code -> users.user_code
+     */
+    public function analyst()
+    {
+        return $this->belongsTo(User::class, 'lab_analysis_code', 'user_code');
+    }
+
+    /**
+     * Relationship: BookingItem received by (User)
+     */
+    public function receivedBy()
+    {
+        return $this->belongsTo(User::class, 'received_by_id');
     }
 }

@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        // Prevent error if the table already exists
+        if (Schema::hasTable('role_and_permissions')) {
+            return;
+        }
         Schema::create('role_and_permissions', function (Blueprint $table) {
 
             $table->foreignId('role_id')

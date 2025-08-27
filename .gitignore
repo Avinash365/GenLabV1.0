@@ -16,3 +16,6 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Web settings uploads stored in storage/app/public/site and served via public/storage
+# Ensure you have run: php artisan storage:link
