@@ -9,10 +9,10 @@
                         @csrf
                         <div class="login-userset">
                             <div class="login-logo logo-normal">
-                                <img src="{{ asset('assets/img/logo.svg') }}" alt="img">
+                                <img src="{{ $appSettings['site_logo_url'] ?? asset('assets/img/logo.svg') }}" alt="img">
                             </div>
                             <a href="#" class="login-logo logo-white">
-                                <img src="{{ asset('assets/img/logo-white.svg') }}" alt="Img">
+                                <img src="{{ $appSettings['site_logo_url'] ?? asset('assets/img/logo-white.svg') }}" alt="Img">
                             </a>
                             <div class="login-userheading">
                                 <h3>Sign In</h3>

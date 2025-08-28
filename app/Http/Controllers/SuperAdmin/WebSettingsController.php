@@ -20,18 +20,20 @@ class WebSettingsController extends Controller
             'site_logo' => 'nullable|mimes:jpeg,jpg,png,svg|max:2048',
         ]);
 
-        $setting = Setting::first() ?: new Setting();
+            $setting = SiteSetting::first() ?: new SiteSetting();
 
         if ($request->hasFile('site_logo')) {
             if ($setting->site_logo && Storage::disk('public')->exists($setting->site_logo)) {
                 Storage::disk('public')->delete($setting->site_logo);
             }
-            $path = $request->file('site_logo')->store('settings', 'public');
+                $path = $request->file('site_logo')->store('site', 'public');
             $data['site_logo'] = $path;
         }
 
-        $setting->fill($data);
-        $setting->save();
+            $setting->company_name = $data['company_name'] ?? $setting->company_name;
+            $setting->company_address = $data['company_address'] ?? $setting->company_address;
+            $setting->theme_color = $data['primary_color'] ?? $setting->theme_color;
+            $setting->save();
 
         return back()->with('success', 'Settings updated successfully.');
     }

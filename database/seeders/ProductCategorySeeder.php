@@ -21,7 +21,13 @@ class ProductCategorySeeder extends Seeder
         ];
 
         foreach ($categories as $category) {
-            ProductCategory::create($category); // now refers to the model
+            ProductCategory::updateOrCreate(
+                ['name' => $category['name']],
+                [
+                    'description' => $category['description'],
+                    'slug' => \Illuminate\Support\Str::slug($category['name'])
+                ]
+            );
         }
     }
 }

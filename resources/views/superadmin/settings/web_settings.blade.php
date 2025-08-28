@@ -3,8 +3,8 @@
 @section('content')
 @php($companyName = optional($setting)->company_name)
 @php($companyAddress = optional($setting)->company_address)
-@php($theme = optional($setting)->theme ?? 'system')
-@php($primaryColor = optional($setting)->primary_color ?? '#0d6efd')
+@php($theme = optional($setting)->theme_color ?? 'system')
+@php($primaryColor = optional($setting)->theme_color ?? '#0d6efd')
 <div class="content container-fluid">
     <div class="page-header">
         <div class="row align-items-center">

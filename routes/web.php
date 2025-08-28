@@ -10,6 +10,7 @@ use App\Http\Controllers\SuperAdmin\WebSettingController;
 use App\Http\Controllers\SuperAdmin\ReportingLettersController;
 use App\Http\Controllers\SuperAdmin\HoldCancelController;
 use App\Http\Controllers\Superadmin\LabAnalystsController;
+use App\Http\Controllers\ChatController;
 
 /*
 |--------------------------------------------------------------------------
@@ -65,5 +66,15 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin/reporting
 Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->group(function(){
     Route::get('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render');
     Route::post('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render');
+});
+
+
+// Chat
+Route::prefix('chat')->group(function(){
+    Route::get('/groups', [ChatController::class, 'groups'])->name('chat.groups');
+    Route::get('/messages', [ChatController::class, 'messages'])->name('chat.messages');
+    Route::get('/messages/since', [ChatController::class, 'messagesSince'])->name('chat.messages.since');
+    Route::post('/messages', [ChatController::class, 'send'])->name('chat.messages.store');
+    Route::post('/messages/{message}/reactions', [ChatController::class, 'react'])->name('chat.reactions.store');
 });
 
