@@ -17,11 +17,6 @@ class ChatController extends Controller
         return auth('web')->user() ?: auth('admin')->user();
     }
 
-    protected function isSuperAdmin(): bool
-    {
-        return auth('admin')->check();
-    }
-
     public function groups()
     {
         // Ensure default groups exist
@@ -36,26 +31,14 @@ class ChatController extends Controller
     {
         $request->validate(['group_id' => 'required|integer|exists:chat_groups,id']);
         $user = $this->user();
-        $isAdmin = $this->isSuperAdmin();
-
-        $q = ChatMessage::with(['user:id,name', 'reactions.user:id,name'])
-            ->where('group_id', $request->integer('group_id'));
-
-        if (!$isAdmin) {
-            $uid = $user?->id ?? 0;
-            $q->where(function($qr) use ($uid) {
-                $qr->where('user_id', $uid)
-                   ->orWhereExists(function($sq){
-                        $sq->select(DB::raw(1))
-                           ->from('chat_reactions')
-                           ->whereColumn('chat_reactions.message_id', 'chat_messages.id');
-                   });
+        $list = ChatMessage::with(['user:id,name', 'reactions.user:id,name'])
+            ->where('group_id', $request->integer('group_id'))
+            ->orderBy('id')
+            ->limit(200)
+            ->get()
+            ->map(function(ChatMessage $m) use ($user) {
+                return $this->serializeMessage($m, $user);
             });
-        }
-
-        $list = $q->orderBy('id')->limit(200)->get()
-            ->map(function(ChatMessage $m) use ($user) { return $this->serializeMessage($m, $user); });
-
         return response()->json($list);
     }
 
@@ -63,27 +46,15 @@ class ChatController extends Controller
     {
         $request->validate(['group_id' => 'required|integer|exists:chat_groups,id', 'after_id' => 'required|integer']);
         $user = $this->user();
-        $isAdmin = $this->isSuperAdmin();
-
-        $q = ChatMessage::with(['user:id,name', 'reactions.user:id,name'])
+        $list = ChatMessage::with(['user:id,name', 'reactions.user:id,name'])
             ->where('group_id', $request->integer('group_id'))
-            ->where('id', '>', $request->integer('after_id'));
-
-        if (!$isAdmin) {
-            $uid = $user?->id ?? 0;
-            $q->where(function($qr) use ($uid) {
-                $qr->where('user_id', $uid)
-                   ->orWhereExists(function($sq){
-                        $sq->select(DB::raw(1))
-                           ->from('chat_reactions')
-                           ->whereColumn('chat_reactions.message_id', 'chat_messages.id');
-                   });
+            ->where('id', '>', $request->integer('after_id'))
+            ->orderBy('id')
+            ->limit(200)
+            ->get()
+            ->map(function(ChatMessage $m) use ($user) {
+                return $this->serializeMessage($m, $user);
             });
-        }
-
-        $list = $q->orderBy('id')->limit(200)->get()
-            ->map(function(ChatMessage $m) use ($user) { return $this->serializeMessage($m, $user); });
-
         return response()->json($list);
     }
 
@@ -154,7 +125,6 @@ class ChatController extends Controller
     {
         $user = $this->user();
         if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-        if (!$this->isSuperAdmin()) return response()->json(['message' => 'Forbidden'], 403);
         $request->validate(['type' => 'required|string|max:32']);
         ChatReaction::updateOrCreate([
             'message_id' => $message->id,
@@ -163,23 +133,6 @@ class ChatController extends Controller
             'type' => $request->string('type')
         ]);
         return response()->json(['status' => 'ok']);
-    }
-
-    public function createGroup(Request $request)
-    {
-        $user = $this->user();
-        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-        $request->validate(['name' => 'required|string|max:120']);
-        $name = trim((string) $request->input('name'));
-        $base = Str::slug($name) ?: 'session';
-        $slug = $base; $i = 1;
-        while (ChatGroup::where('slug', $slug)->exists()) { $slug = $base.'-'.$i++; }
-        $group = ChatGroup::create([
-            'name' => $name,
-            'slug' => $slug,
-            'created_by' => $user->id,
-        ]);
-        return response()->json(['id' => $group->id, 'name' => $group->name], 201);
     }
 
     protected function serializeMessage(ChatMessage $m, $viewer)

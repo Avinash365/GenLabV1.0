@@ -72,9 +72,12 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->gr
 // Chat
 Route::prefix('chat')->group(function(){
     Route::get('/groups', [ChatController::class, 'groups'])->name('chat.groups');
+    Route::post('/groups', [ChatController::class, 'createGroup'])->name('chat.groups.create');
+
     Route::get('/messages', [ChatController::class, 'messages'])->name('chat.messages');
     Route::get('/messages/since', [ChatController::class, 'messagesSince'])->name('chat.messages.since');
-    Route::post('/messages', [ChatController::class, 'send'])->name('chat.messages.store');
-    Route::post('/messages/{message}/reactions', [ChatController::class, 'react'])->name('chat.reactions.store');
+    Route::post('/messages', [ChatController::class, 'send'])->name('chat.messages.send');
+
+    Route::post('/messages/{message}/reactions', [ChatController::class, 'react'])->name('chat.messages.react');
 });
 

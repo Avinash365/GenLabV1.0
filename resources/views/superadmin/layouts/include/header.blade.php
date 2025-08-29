@@ -1,4 +1,19 @@
 <div class="header" style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0;">
+    <!-- Mobile Header -->
+    <div class="mobile-header d-flex align-items-center justify-content-between px-3 d-md-none" style="min-height:56px; display:none;">
+        <button id="mobileMenuToggle" class="btn p-0" aria-label="Menu" style="width:36px;height:36px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;"><i class="fa fa-bars"></i></button>
+        <a href="{{ route('superadmin.dashboard.index') }}" class="d-flex align-items-center" style="gap:8px; text-decoration:none;">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Logo" style="height:24px;">
+        </a>
+        <button id="mobileMoreToggle" class="btn p-0 position-relative" aria-label="More" style="width:36px;height:36px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;"><i class="fa fa-ellipsis-v"></i></button>
+        <div id="mobileMoreMenu" class="dropdown-menu dropdown-menu-end" style="position:absolute; right:12px; top:56px; display:none;">
+            <a class="dropdown-item" href="#">My Profile</a>
+            <a class="dropdown-item" href="#">Settings</a>
+            <div class="dropdown-divider"></div>
+            <a class="dropdown-item text-danger" href="{{ route('superadmin.logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
+        </div>
+    </div>
+
     <div class="container-fluid d-flex align-items-center justify-content-between" style="min-height:56px; padding-top:15px; padding-bottom:12px; padding-left: 20px; gap:0;">
         <!-- Left: Search bar and company selector -->
         <div class="d-flex align-items-center flex-grow-1" style="gap:30px; min-width:0;">
@@ -15,18 +30,7 @@
                     </span>
                 </div>
             </form>
-            <!-- Company selector -->
-            <div class="dropdown flex-shrink-0" style="min-width:160px;">
-                <button class="btn btn-light d-flex align-items-center justify-content-between w-100" type="button" id="companyDropdown" data-bs-toggle="dropdown" aria-expanded="false" style="border-radius:8px; height:30px; font-size:15px; padding:0 16px; border:1px solid #e5e7eb; background:#fff;">
-                    <img src="{{ url('assets/img/company/freshmart.webp') }}" alt="Freshmart" style="height:16px; width:16px; border-radius:4px; margin-right:5px;">
-                    <span class="flex-grow-1 text-start">Freshmart</span>
-                    <i class="fa fa-chevron-down ms-2" style="font-size:13px;"></i>
-                </button>
-                <ul class="dropdown-menu" aria-labelledby="companyDropdown">
-                    <li><a class="dropdown-item" href="#">Freshmart</a></li>
-                    <li><a class="dropdown-item" href="#">Other Company</a></li>
-                </ul>
-            </div>
+             
         </div>
         <!-- Center: Action buttons -->
         <div class="d-flex align-items-center flex-shrink-0" style="gap:14px; margin-left:18px;">
@@ -95,31 +99,63 @@
 </div>
 @include('superadmin.layouts.include.chat')
 
+<style>
+/* Mobile responsive header & sidebar */
+@media (max-width: 991.98px){
+  .header .mobile-header{ display:flex !important; }
+  .header .container-fluid{ display:none !important; }
+  body.sidebar-open{ overflow:hidden; }
+  /* Off-canvas sidebar */
+  body.sidebar-open #sidebar{ transform: translateX(0) !important; }
+  #sidebar{ position:fixed; left:0; top:0; height:100dvh; width:80vw; max-width:320px; transform:translateX(-100%); transition:transform .25s ease; z-index:1040; background:#fff; }
+  .mobile-overlay{ position:fixed; inset:0; background:rgba(0,0,0,.4); z-index:1039; display:none; }
+  body.sidebar-open .mobile-overlay{ display:block; }
+}
+@media (min-width: 992px){ .header .mobile-header{ display:none !important; } }
+
+#mobileMoreMenu { z-index: 2000; }
+.dropdown-menu.show { display: block !important; }
+</style>
+
 <script>
 (function(){
   const expandBtn = document.getElementById('expandToggle');
-  if (!expandBtn) return;
-
-  function isFullscreen(){
-    return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement;
-  }
-  function requestFS(){
-    const el = document.documentElement;
-    (el.requestFullscreen || el.webkitRequestFullscreen || el.mozRequestFullScreen || el.msRequestFullscreen)?.call(el);
-  }
-  function exitFS(){
-    (document.exitFullscreen || document.webkitExitFullscreen || document.mozCancelFullScreen || document.msExitFullscreen)?.call(document);
-  }
-  function syncIcon(){
-    const i = expandBtn.querySelector('i'); if (!i) return;
-    if (isFullscreen()) { i.classList.remove('fa-expand'); i.classList.add('fa-compress'); }
-    else { i.classList.remove('fa-compress'); i.classList.add('fa-expand'); }
+  if (expandBtn){
+    function isFullscreen(){ return document.fullscreenElement || document.webkitFullscreenElement || document.mozFullScreenElement || document.msFullscreenElement; }
+    function requestFS(){ const el=document.documentElement; (el.requestFullscreen||el.webkitRequestFullscreen||el.mozRequestFullScreen||el.msRequestFullscreen)?.call(el); }
+    function exitFS(){ (document.exitFullscreen||document.webkitExitFullscreen||document.mozCancelFullScreen||document.msExitFullscreen)?.call(document); }
+    function syncIcon(){ const i = expandBtn.querySelector('i'); if (!i) return; if (isFullscreen()) { i.classList.remove('fa-expand'); i.classList.add('fa-compress'); } else { i.classList.remove('fa-compress'); i.classList.add('fa-expand'); } }
+    expandBtn.addEventListener('click', function(e){ e.preventDefault(); isFullscreen() ? exitFS() : requestFS(); });
+    document.addEventListener('fullscreenchange', syncIcon);
+    document.addEventListener('webkitfullscreenchange', syncIcon);
+    document.addEventListener('mozfullscreenchange', syncIcon);
+    document.addEventListener('MSFullscreenChange', syncIcon);
   }
 
-  expandBtn.addEventListener('click', function(e){ e.preventDefault(); isFullscreen() ? exitFS() : requestFS(); });
-  document.addEventListener('fullscreenchange', syncIcon);
-  document.addEventListener('webkitfullscreenchange', syncIcon);
-  document.addEventListener('mozfullscreenchange', syncIcon);
-  document.addEventListener('MSFullscreenChange', syncIcon);
+  // Mobile sidebar toggle & overlay
+  const menuBtn = document.getElementById('mobileMenuToggle');
+  const moreBtn = document.getElementById('mobileMoreToggle');
+  const moreMenu = document.getElementById('mobileMoreMenu');
+  const sidebarEl = document.getElementById('sidebar');
+  let overlay = document.querySelector('.mobile-overlay');
+  if (!overlay){ overlay = document.createElement('div'); overlay.className='mobile-overlay'; document.body.appendChild(overlay); }
+
+  function openSidebar(){ document.body.classList.add('sidebar-open'); if (sidebarEl) sidebarEl.style.transform = 'translateX(0)'; }
+  function closeSidebar(){ document.body.classList.remove('sidebar-open'); if (sidebarEl) sidebarEl.style.transform = 'translateX(-100%)'; }
+
+  menuBtn && menuBtn.addEventListener('click', function(e){ e.preventDefault(); openSidebar(); });
+  overlay && overlay.addEventListener('click', closeSidebar);
+  document.addEventListener('keydown', function(e){ if (e.key==='Escape') { closeSidebar(); hideMore(); } });
+
+  function hideMore(){ if (moreMenu){ moreMenu.classList.remove('show'); moreMenu.style.display='none'; } }
+  function toggleMore(){ if (!moreMenu) return; const willShow = !moreMenu.classList.contains('show'); if (willShow){ moreMenu.classList.add('show'); moreMenu.style.display='block'; } else { hideMore(); } }
+  moreBtn && moreBtn.addEventListener('click', function(e){ e.preventDefault(); e.stopPropagation(); toggleMore(); });
+  document.addEventListener('click', function(e){ if (moreMenu && !e.target.closest('#mobileMoreToggle') && !e.target.closest('#mobileMoreMenu')){ hideMore(); } });
+
+  // Delegated fallback
+  document.addEventListener('click', function(e){
+    if (e.target.closest('#mobileMenuToggle')){ e.preventDefault(); openSidebar(); }
+    if (e.target.closest('#mobileMoreToggle')){ e.preventDefault(); toggleMore(); }
+  });
 })();
 </script>

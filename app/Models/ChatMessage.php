@@ -9,16 +9,18 @@ class ChatMessage extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['group_id','user_id','content','type','file_path','original_name'];
+    protected $fillable = [
+        'group_id', 'user_id', 'type', 'content', 'file_path', 'original_name'
+    ];
+
+    protected $casts = [
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
+    ];
 
     public function user()
     {
         return $this->belongsTo(User::class, 'user_id');
-    }
-
-    public function group()
-    {
-        return $this->belongsTo(ChatGroup::class, 'group_id');
     }
 
     public function reactions()

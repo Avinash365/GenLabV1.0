@@ -17,6 +17,7 @@
                 <div class="input-group input-group-sm" style="border-radius:8px; overflow:hidden;">
                     <span class="input-group-text bg-white border-0"><i class="fa fa-search text-muted"></i></span>
                     <input id="chatGroupSearch" type="text" class="form-control border-0" placeholder="Search or start new chat" style="background:#fff;">
+                    <button id="chatNewSessionBtn" class="btn btn-success" type="button" title="New Session"><i class="fa fa-plus"></i></button>
                 </div>
             </div>
             <div id="chatGroups" class="list-group list-group-flush" style="overflow:auto; flex:1;"></div>
@@ -82,7 +83,7 @@
   position:fixed;
   right: max(20px, env(safe-area-inset-right));
   bottom: max(20px, env(safe-area-inset-bottom));
-  width: min(520px, calc(100vw - 40px));
+  width: min(600px, calc(100vw - 40px));
   height: min(640px, calc(100dvh - 40px));
   background:#fff;
   border:1px solid var(--chat-border);
@@ -276,8 +277,9 @@
 <script>
 (function(){
     const csrfToken = '{{ csrf_token() }}';
-    @php $authUser = auth('web')->user() ?: auth('admin')->user(); @endphp
+    @php $authUser = auth('web')->user() ?: auth('admin')->user(); $isAdmin = auth('admin')->check(); @endphp
     const currentUser = { id: {{ $authUser ? (int)$authUser->id : 'null' }}, name: @json($authUser->name ?? 'Guest') };
+    const isSuperAdmin = {{ $isAdmin ? 'true' : 'false' }};
     const routes = {
         groups: '{{ url('/chat/groups') }}',
         messages: '{{ url('/chat/messages') }}',
@@ -311,6 +313,7 @@
     const expandBtn = document.getElementById('chatExpandBtn');
     const closeBtn = document.getElementById('chatCloseBtn');
     const chatToggleBtn = document.getElementById('chatToggle');
+    const newSessionBtn = document.getElementById('chatNewSessionBtn');
 
     // Persist chat UI state (open/expanded)
     const CHAT_STATE_KEY = 'chat.ui.state';
@@ -349,6 +352,7 @@
         activeGroupId = id; activeTitle.textContent = name; activeAvatar.textContent = initials(name);
         inputAreaEl.style.display = 'flex';
         lastMessageId = 0; cache = []; messagesEl.querySelectorAll('.wa-row, .reaction-chip').forEach(n=>n.remove()); emptyEl.style.display = 'flex';
+        setState({ activeGroupId: id });
         fetchMessages(id);
     }
 
@@ -441,8 +445,10 @@
         const meta = document.createElement('div'); meta.className = 'wa-meta-row';
         const time = document.createElement('span'); time.textContent = fmtTime(m.created_at); meta.appendChild(time);
         if (mine){ const check = document.createElement('i'); check.className = 'fa fa-check text-muted'; meta.appendChild(check); }
-        const reactBtn = document.createElement('button'); reactBtn.className='btn btn-link btn-sm p-0 ms-1'; reactBtn.textContent='React'; reactBtn.addEventListener('click', (e)=> showEmojiPicker(e.currentTarget, m.id));
-        meta.appendChild(reactBtn);
+        if (isSuperAdmin){
+            const reactBtn = document.createElement('button'); reactBtn.className='btn btn-link btn-sm p-0 ms-1'; reactBtn.textContent='React'; reactBtn.addEventListener('click', (e)=> showEmojiPicker(e.currentTarget, m.id));
+            meta.appendChild(reactBtn);
+        }
         bubble.appendChild(meta);
 
         if (mine){ row.appendChild(bubble); row.appendChild(avatar); } else { row.appendChild(avatar); row.appendChild(bubble); }
@@ -464,21 +470,60 @@
         messagesEl.scrollTop = messagesEl.scrollHeight;
     }
 
-    // Emoji picker for reactions
+    // Hold/Cancel action picker -> replaces emoji picker for reactions
     function showEmojiPicker(anchor, messageId){
-        const picker = document.createElement('div'); picker.className = 'border rounded bg-white p-1 shadow position-absolute'; picker.style.zIndex=1080;
-        const emojis = ['👍','❤️','😂','🎉','😮','😢'];
-        emojis.forEach(em => { const b=document.createElement('button'); b.className='btn btn-light btn-sm'; b.textContent=em; b.addEventListener('click', ()=>{ reactToMessage(messageId, em).then(()=>{ picker.remove(); if (activeGroupId) fetchMessages(activeGroupId); }); }); picker.appendChild(b); });
+        const picker = document.createElement('div');
+        picker.className = 'border rounded bg-white p-2 shadow position-absolute';
+        picker.style.zIndex = 1080;
+        picker.style.minWidth = '160px';
+        picker.innerHTML = `
+            <div class="form-check m-1">
+                <input class="form-check-input" type="checkbox" id="chatHoldOption">
+                <label class="form-check-label" for="chatHoldOption">Hold</label>
+            </div>
+            <div class="form-check m-1">
+                <input class="form-check-input" type="checkbox" id="chatCancelOption">
+                <label class="form-check-label" for="chatCancelOption">Cancel</label>
+            </div>
+        `;
+
+        function choose(action){
+            picker.remove();
+            const msg = Array.isArray(cache) ? cache.find(x => x && x.id === messageId) : null;
+            const reason = prompt(`Enter reason to ${action}:`);
+            if (!reason || !reason.trim()) return;
+            const original = msg ? bestText(msg) : '';
+            const ref = msg ? `message #${msg.id} by ${msg.user?.name || 'User'}` : 'message';
+            const composed = `${action} - Reason: ${reason.trim()}\nRef: ${ref}`
+                + (original ? `: "${original.substring(0,200)}"` : '')
+                + (msg && msg.file_url ? ' [Attachment]' : '');
+            sendTextMessage(composed);
+        }
+
         document.body.appendChild(picker);
-        const rect = anchor.getBoundingClientRect(); picker.style.top = (window.scrollY + rect.bottom + 6) + 'px'; picker.style.left = (window.scrollX + rect.left) + 'px';
-        const closer=(e)=>{ if(!picker.contains(e.target)){ picker.remove(); document.removeEventListener('mousedown', closer);} }; document.addEventListener('mousedown', closer);
+        const rect = anchor.getBoundingClientRect();
+        picker.style.top = (window.scrollY + rect.bottom + 6) + 'px';
+        picker.style.left = (window.scrollX + rect.left) + 'px';
+
+        const closer = (e)=>{ if(!picker.contains(e.target)){ picker.remove(); document.removeEventListener('mousedown', closer);} };
+        document.addEventListener('mousedown', closer);
+
+        const holdEl = picker.querySelector('#chatHoldOption');
+        const cancelEl = picker.querySelector('#chatCancelOption');
+        if (holdEl) holdEl.addEventListener('change', (e)=>{ if (e.target.checked) choose('Hold'); });
+        if (cancelEl) cancelEl.addEventListener('change', (e)=>{ if (e.target.checked) choose('Cancel'); });
     }
 
     // Backend
     async function fetchGroups(){
         const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
-        allGroups = await res.json(); renderGroups(allGroups);
-        const first = groupsEl.querySelector('.list-group-item'); if (first) selectGroup(first.dataset.groupId, first.dataset.groupName, first);
+        allGroups = await res.json();
+        renderGroups(allGroups);
+        const state = getState();
+        let prefer = null;
+        if (state && state.activeGroupId){ prefer = groupsEl.querySelector(`.list-group-item[data-group-id="${state.activeGroupId}"]`); }
+        const first = prefer || groupsEl.querySelector('.list-group-item');
+        if (first) selectGroup(first.dataset.groupId, first.dataset.groupName, first);
     }
 
     async function fetchMessages(groupId){
@@ -505,6 +550,39 @@
         await res.json(); fetchMessages(activeGroupId);
     }
 
+    // Ensure text persists: try JSON with multiple aliases, fallback to FormData
+    async function sendTextMessage(text){
+        const payload = {
+            group_id: activeGroupId,
+            type: 'text',
+            content: text,
+            message: text,
+            body: text,
+            text: text,
+            description: text
+        };
+        try{
+            const res = await fetch(routes.send, {
+                method: 'POST',
+                headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' },
+                body: JSON.stringify(payload)
+            });
+            if (!res.ok) throw new Error('json-fail');
+            await res.json();
+            fetchMessages(activeGroupId);
+        } catch(err){
+            const fd = new FormData();
+            fd.append('group_id', activeGroupId);
+            fd.append('type','text');
+            fd.append('content', text);
+            fd.append('message', text);
+            fd.append('body', text);
+            fd.append('text', text);
+            fd.append('description', text);
+            sendMessage(fd);
+        }
+    }
+
     async function reactToMessage(messageId, emoji){
         return fetch(routes.react(messageId), { method:'POST', headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' }, body: JSON.stringify({ type: emoji }) });
     }
@@ -521,8 +599,12 @@
     });
     sendBtn.addEventListener('click', ()=>{
         if (!activeGroupId) return; const text = (msgInput.value||'').trim(); if (!text) { msgInput.focus(); return; }
-        const fd = new FormData(); fd.append('group_id', activeGroupId); fd.append('type','text'); fd.append('content', text);
-        sendMessage(fd); msgInput.value=''; toggleSendMic();
+        sendTextMessage(text);
+        msgInput.value=''; toggleSendMic();
+    });
+    // Enter to send
+    msgInput.addEventListener('keydown', (e)=>{
+        if (e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); if ((msgInput.value||'').trim()){ sendBtn.click(); } }
     });
 
     // Emoji insert into composer
@@ -623,6 +705,20 @@
         if (!allGroups.length) { fetchGroups(); }
     }
 
+    async function createSession(name){
+        const res = await fetch(routes.groups, {
+            method: 'POST',
+            headers: { 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' },
+            body: JSON.stringify({ name })
+        });
+        if (!res.ok){ alert('Failed to create session'); return; }
+        const g = await res.json();
+        allGroups.push(g);
+        renderGroups(allGroups);
+        const item = groupsEl.querySelector(`.list-group-item[data-group-id="${g.id}"]`);
+        if (item){ selectGroup(g.id, g.name, item); }
+    }
+
     // On load, restore persisted state
     (function restorePersisted(){
         const state = getState();
@@ -648,6 +744,11 @@
             i.classList.remove('fa-compress'); i.classList.add('fa-expand');
             popupEl.style.top = ''; popupEl.style.left = ''; popupEl.style.right = ''; popupEl.style.bottom = ''; popupEl.style.width = ''; popupEl.style.height = ''; popupEl.style.borderRadius = '';
         }
+    });
+    newSessionBtn && newSessionBtn.addEventListener('click', function(){
+        const name = prompt('Enter new session name');
+        if (!name || !name.trim()) return;
+        createSession(name.trim());
     });
 
     window.addEventListener('resize', applyExpandedBounds);
