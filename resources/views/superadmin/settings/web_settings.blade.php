@@ -3,7 +3,7 @@
 @section('content')
 @php($companyName = optional($setting)->company_name)
 @php($companyAddress = optional($setting)->company_address)
-@php($theme = optional($setting)->theme_color ?? 'system')
+@php($theme = 'system')
 @php($primaryColor = optional($setting)->theme_color ?? '#0d6efd')
 <div class="content container-fluid">
     <div class="page-header">
@@ -104,7 +104,7 @@
                 </div>
 
                 <div class="text-end">
-                    <button type="reset" class="btn btn-outline-secondary me-2">Reset</button>
+                    <button type="button" id="reset_btn" class="btn btn-outline-secondary me-2">Reset</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                 </div>
             </form>
@@ -114,8 +114,24 @@
 @endsection
 
 @push('scripts')
+<style>
+/* Ensure dark mode styles fully apply to tables */
+[data-bs-theme="dark"] .table {
+  --bs-table-color: var(--bs-body-color);
+  --bs-table-bg: transparent;
+  --bs-table-border-color: rgba(255, 255, 255, .15);
+}
+[data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+  --bs-table-bg-type: rgba(255, 255, 255, .03);
+}
+[data-bs-theme="dark"] .table-hover>tbody>tr:hover>* {
+  --bs-table-bg-state: rgba(255, 255, 255, .05);
+}
+</style>
 <script>
 (function() {
+    const DEFAULTS = { theme: 'system', primary: '#0d6efd' };
+
     // Logo preview + validation
     const fileInput = document.getElementById('site_logo_input');
     const logoPreview = document.getElementById('logoPreview');
@@ -125,7 +141,7 @@
     if (fileInput) {
         fileInput.addEventListener('change', function() {
             const file = this.files && this.files[0];
-            if (!file || !file.type.startsWith('image/')) return;
+            if (!file || !file.type || !file.type.startsWith('image/')) return;
 
             if (sizeError) sizeError.classList.add('d-none');
             this.classList.remove('is-invalid');
@@ -148,18 +164,17 @@
     }
 
     // Theme + color live preview
+    const html = document.documentElement;
     const themeSelect = document.getElementById('theme_select');
     const colorInput = document.getElementById('primary_color_input');
     const colorHex = document.getElementById('primary_color_hex');
 
+    const mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+    function currentSystemTheme() { return (mql && mql.matches) ? 'dark' : 'light'; }
+
     function applyTheme(val) {
-        const html = document.documentElement;
-        if (val === 'system') {
-            const dark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-            html.setAttribute('data-bs-theme', dark ? 'dark' : 'light');
-        } else {
-            html.setAttribute('data-bs-theme', val);
-        }
+        const mode = (val === 'system') ? currentSystemTheme() : val;
+        html.setAttribute('data-bs-theme', mode);
     }
 
     function isValidHex(hex) {
@@ -173,18 +188,39 @@
         root.setProperty('--bs-link-color', color);
     }
 
+    // Hydrate from localStorage first
+    try {
+        const savedTheme = localStorage.getItem('app-theme');
+        const savedPrimary = localStorage.getItem('app-primary-color');
+        if (themeSelect && savedTheme) themeSelect.value = savedTheme;
+        if (colorInput && savedPrimary && isValidHex(savedPrimary)) {
+            colorInput.value = savedPrimary;
+            if (colorHex) colorHex.value = savedPrimary;
+        }
+    } catch(e) {}
+
     if (themeSelect) {
-        applyTheme(themeSelect.value);
+        applyTheme(themeSelect.value || DEFAULTS.theme);
         themeSelect.addEventListener('change', function() {
             applyTheme(this.value);
             try { localStorage.setItem('app-theme', this.value); } catch(e) {}
         });
     }
 
+    if (mql) {
+        const onSystemChange = function() {
+            if (themeSelect && themeSelect.value === 'system') {
+                applyTheme('system');
+            }
+        };
+        if (mql.addEventListener) mql.addEventListener('change', onSystemChange);
+        else if (mql.addListener) mql.addListener(onSystemChange);
+    }
+
     if (colorInput && colorHex) {
         // initialize
-        applyPrimary(colorInput.value);
-        colorHex.value = colorInput.value;
+        applyPrimary(colorInput.value || DEFAULTS.primary);
+        colorHex.value = colorInput.value || DEFAULTS.primary;
 
         colorInput.addEventListener('input', function() {
             colorHex.value = this.value;
@@ -202,6 +238,48 @@
             } else {
                 this.classList.add('is-invalid');
             }
+        });
+    }
+
+    // Reset to defaults handler
+    const resetBtn = document.getElementById('reset_btn');
+    const companyNameEl = document.querySelector('input[name="company_name"]');
+    const companyAddressEl = document.querySelector('textarea[name="company_address"]');
+
+    if (resetBtn) {
+        resetBtn.addEventListener('click', function(e) {
+            e.preventDefault();
+            // Company fields back to default (empty)
+            if (companyNameEl) companyNameEl.value = '';
+            if (companyAddressEl) companyAddressEl.value = '';
+
+            // Logo back to default preview and clear file input
+            if (fileInput) {
+                fileInput.value = '';
+                fileInput.classList.remove('is-invalid');
+            }
+            if (sizeError) sizeError.classList.add('d-none');
+            if (logoPreview && logoPreview.dataset.defaultSrc) {
+                logoPreview.src = logoPreview.dataset.defaultSrc;
+            }
+
+            // Theme and color back to app defaults
+            if (themeSelect) {
+                themeSelect.value = DEFAULTS.theme;
+                applyTheme(DEFAULTS.theme);
+            }
+            if (colorInput) colorInput.value = DEFAULTS.primary;
+            if (colorHex) {
+                colorHex.value = DEFAULTS.primary;
+                colorHex.classList.remove('is-invalid');
+            }
+            applyPrimary(DEFAULTS.primary);
+
+            // Clear persisted preferences
+            try {
+                localStorage.removeItem('app-theme');
+                localStorage.removeItem('app-primary-color');
+            } catch(e) {}
         });
     }
 })();

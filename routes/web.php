@@ -11,6 +11,7 @@ use App\Http\Controllers\SuperAdmin\ReportingLettersController;
 use App\Http\Controllers\SuperAdmin\HoldCancelController;
 use App\Http\Controllers\Superadmin\LabAnalystsController;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Superadmin\ProfileController;
 
 /*
 |--------------------------------------------------------------------------
@@ -79,5 +80,14 @@ Route::prefix('chat')->group(function(){
     Route::post('/messages', [ChatController::class, 'send'])->name('chat.messages.send');
 
     Route::post('/messages/{message}/reactions', [ChatController::class, 'react'])->name('chat.messages.react');
+
+    // New: ensure/get direct chat with user
+    Route::get('/direct/{user}', [ChatController::class, 'direct'])->name('chat.direct');
+});
+
+// Superadmin Profile (protected)
+Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadmin.')->group(function(){
+    Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
+    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 

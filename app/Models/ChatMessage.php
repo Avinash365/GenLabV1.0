@@ -10,7 +10,8 @@ class ChatMessage extends Model
     use HasFactory;
 
     protected $fillable = [
-        'group_id', 'user_id', 'type', 'content', 'file_path', 'original_name'
+        'group_id', 'user_id', 'type', 'content', 'file_path', 'original_name',
+        'sender_guard', 'sender_name', 'reply_to_message_id'
     ];
 
     protected $casts = [

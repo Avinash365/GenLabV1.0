@@ -59,6 +59,56 @@
     <link rel="stylesheet" href="{{ url('assets/css/style.css') }}">
     @stack('styles')
 
+    <style>
+    /* Global dark mode table tweaks */
+    [data-bs-theme="dark"] .table {
+      --bs-table-color: var(--bs-body-color);
+      --bs-table-bg: transparent;
+      --bs-table-border-color: rgba(255, 255, 255, .15);
+    }
+    [data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+      --bs-table-bg-type: rgba(255, 255, 255, .03);
+    }
+    [data-bs-theme="dark"] .table-hover>tbody>tr:hover>* {
+      --bs-table-bg-state: rgba(255, 255, 255, .05);
+    }
+    </style>
+    <script>
+    // Apply theme + primary color globally before page paint
+    (function() {
+        try {
+            var DEFAULT_THEME = 'system';
+            var DEFAULT_PRIMARY = '#0d6efd';
+            var theme = localStorage.getItem('app-theme') || DEFAULT_THEME;
+            var mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+            var mode = theme === 'system' ? (mql && mql.matches ? 'dark' : 'light') : theme;
+            document.documentElement.setAttribute('data-bs-theme', mode);
+
+            var primary = localStorage.getItem('app-primary-color') || DEFAULT_PRIMARY;
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(primary)) {
+                var root = document.documentElement.style;
+                root.setProperty('--bs-primary', primary);
+                root.setProperty('--bs-link-color', primary);
+            }
+
+            if (mql && mql.addEventListener) {
+                mql.addEventListener('change', function() {
+                    var t = localStorage.getItem('app-theme') || DEFAULT_THEME;
+                    if (t === 'system') {
+                        document.documentElement.setAttribute('data-bs-theme', mql.matches ? 'dark' : 'light');
+                    }
+                });
+            } else if (mql && mql.addListener) {
+                mql.addListener(function(evt) {
+                    var t = localStorage.getItem('app-theme') || DEFAULT_THEME;
+                    if (t === 'system') {
+                        document.documentElement.setAttribute('data-bs-theme', evt.matches ? 'dark' : 'light');
+                    }
+                });
+            }
+        } catch (e) {}
+    })();
+    </script>
 </head>
 
 <body>

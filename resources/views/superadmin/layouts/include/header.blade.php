@@ -7,7 +7,7 @@
         </a>
         <button id="mobileMoreToggle" class="btn p-0 position-relative" aria-label="More" style="width:36px;height:36px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;"><i class="fa fa-ellipsis-v"></i></button>
         <div id="mobileMoreMenu" class="dropdown-menu dropdown-menu-end" style="position:absolute; right:12px; top:56px; display:none;">
-            <a class="dropdown-item" href="#">My Profile</a>
+            <a class="dropdown-item" href="{{ route('superadmin.profile') }}">My Profile</a>
             <a class="dropdown-item" href="#">Settings</a>
             <div class="dropdown-divider"></div>
             <a class="dropdown-item text-danger" href="{{ route('superadmin.logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
@@ -81,7 +81,7 @@
                         </div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="#"><i class="fa fa-user me-2"></i>Profile</a></li>
+                    <li><a class="dropdown-item" href="{{ route('superadmin.profile') }}"><i class="fa fa-user me-2"></i>Profile</a></li>
                     <li><a class="dropdown-item" href="#"><i class="fa fa-cog me-2"></i>Settings</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
