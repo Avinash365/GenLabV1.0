@@ -23,6 +23,7 @@ class NewBooking extends Model
         'marketing_id',
         'contact_no',
         'contact_email',
+        'name_of_work', 
         'department_id', 
         'hold_status',
         'payment_option', 
@@ -64,5 +65,8 @@ class NewBooking extends Model
          return $this->belongsTo(User::class, 'marketing_id', 'user_code');
     }
 
-    
+    public function generatedInvoice()
+    {
+        return $this->hasOne(Invoice::class, 'new_booking_id');
+    } 
 }

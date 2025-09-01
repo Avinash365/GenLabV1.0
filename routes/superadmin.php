@@ -37,6 +37,9 @@ use App\Http\Controllers\Attachments\DocumentController;
 use App\Http\Controllers\SuperAdmin\LabAnalystController;
 use App\Http\Controllers\SuperAdmin\ReportingController;
 
+use App\Http\Controllers\Accounts\GenerateInvoiceStatusController;
+use App\Http\Controllers\Accounts\InvoiceController;
+use App\Http\Controllers\Accounts\QuotationController;
 
 // =======================
 // Super Admin Login Routes
@@ -134,18 +137,30 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     });
 
         // Categories 
-        
-            
         Route::resource('categories', ProductCategoryController::class);
         Route::resource('productStockEntry', ProductStockEntryController::class);
-    Route::resource('departments', DeptController::class);
+        Route::resource('departments', DeptController::class);
         Route::resource('profiles', ProfileController::class);
         Route::resource('approvals', ApprovalController::class);
         Route::resource('importantLetter', ImportantLetterController::class);
         Route::resource('documents', DocumentController::class);
         Route::resource('calibrations', CalibrationController::class);
         Route::resource('iscodes', ISCodeController::class);
+        Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
+        
+        Route::post('bookingInvoiceStatuses/generate-invoice/{booking}', [GenerateInvoiceStatusController::class, 'generateInvoice'])
+              ->name('bookingInvoiceStatuses.generateInvoice');
+        
+        Route::resource('invoices', InvoiceController::class);
+        Route::PUT('invoices/generate-invoice/{invoices}', [InvoiceController::class, 'generateInvoice'])
+              ->name('invoices.generateInvoice');
 
+        Route::resource('quotations', QuotationController::class);
+        Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])
+              ->name('quotations.generateQuotations');
+
+        Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
+        
 
         // Store
         Route::prefix('store')->name('store.')->group(function () {

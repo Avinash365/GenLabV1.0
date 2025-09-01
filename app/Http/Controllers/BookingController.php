@@ -95,6 +95,7 @@ class BookingController extends Controller
                     'marketing_id',
                     'contact_no',
                     'contact_email',
+                    'name_of_work', 
                     'hold_status',
                     'payment_option', 
                 ]);
@@ -171,6 +172,7 @@ class BookingController extends Controller
                     'marketing_id',
                     'contact_no',
                     'contact_email',
+                    'name_of_work', 
                     'hold_status',
                     'payment_option', 
                 ]);

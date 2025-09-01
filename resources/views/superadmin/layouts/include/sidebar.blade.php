@@ -89,9 +89,11 @@
                         <li class="submenu {{ Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : '' }}">
                             <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                             <ul>
-                                <li><a href="#">Generate</a></li>
-                                <li><a href="#">Invoice</a></li>
-                                <li><a href="#">Quotation</a></li>
+                                <li><a href="{{ route('superadmin.bookingInvoiceStatuses.index') }}">Generate Invoice</a></li>
+                                <li><a href="{{ route('superadmin.invoices.index', ['type' => 'tax_invoice']) }}">Tax Invoice</a></li>
+                                <li><a href="{{ route('superadmin.invoices.index', ['type' => 'proforma_invoice']) }}">PI Invoice</a></li>
+                                <li><a href="{{ route('superadmin.quotations.index') }}">Quotation</a></li>
+
                                 <li><a href="#">CI</a></li>
                                 <li><a href="#">All Invoices</a></li>
                                 <li><a href="#">Client Ledger</a></li>
@@ -127,6 +129,7 @@
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
+            
                         
                         <li><a href="{{ route('superadmin.calibrations.index') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Calibration</span></a></li>
                         <li><a href="{{ route('superadmin.leave.Leave') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>

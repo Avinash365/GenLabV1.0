@@ -21,17 +21,17 @@ class BookingItem extends Model
         'particulars', 
         'lab_analysis_code',
         'job_order_no',
-    'received_by_id',
-    'received_by_name',
-    'received_at',
-    'issue_date',
+        'received_by_id',
+        'received_by_name',
+        'received_at',
+        'issue_date',
     ];
 
     protected $casts = [
         'lab_expected_date' => 'date',
         'amount' => 'decimal:2',
-    'received_at' => 'datetime',
-    'issue_date' => 'date',
+        'received_at' => 'datetime',
+        'issue_date' => 'date',
     ];
 
     /**

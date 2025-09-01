@@ -34,6 +34,7 @@
 
     <!-- animation CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/animate.css') }}">
+    
 	<!-- Bootstrap Tagsinput CSS -->
 	<link rel="stylesheet" href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css">
     <!-- Select2 CSS -->

@@ -137,8 +137,15 @@
                                     </div> 
                                 </div>
                             </div>
-                        </div>
-                    </div>
+                             <div class="col-sm-12 col-12 mt-3">
+                                    <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
+                                    <div class="input-group mb-3">
+                                        <input type="text" class="form-control" name="name_of_work" placeholder="Select or add a client" value="{{ old('name_of_work') }}" >
+                                    </div>
+                            </div>
+                        </div> 
+                       
+                    </div> 
                 </div>
 
                 {{-- Upload Letter --}}

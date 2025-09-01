@@ -109,13 +109,19 @@
                                     </div>
                                 </div> 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
-                                    <label class="form-label">Booking Type <span class="text-danger">*</span></label>
-                                    <div class="col-lg-9">
+                                <label class="form-label">Payment Option<span class="text-danger">*</span></label>
+                                 <div class="col-lg-9">
                                         <select class="form-select" name="payment_option" required>
                                             <option value="">Select</option>
-                                            <option value="pay" {{ old('payment_option', $booking->payment_option ?? '') == 'bill' ? 'selected' : '' }}>Bill</option>
-                                            <option value="without_pay" {{ old('payment_option', $booking->payment_option ?? '') == 'without_bill' ? 'selected' : '' }}>Without Bill</option>
+                                            <option value="bill" {{ old($booking->payment_option, 'payment_option') == 'bill' ? 'selected' : '' }}>Bill</option>
+                                            <option value="without_bill" {{ old($booking->payment_option,'payment_option') == 'without_bill' ? 'selected' : '' }}>Without Bill</option>
                                         </select>
+                                    </div> 
+                                </div>
+                                <div class="col-sm-12 col-12 mt-3">
+                                    <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
+                                    <div class="input-group mb-3">                                                                       
+                                        <input type="text" class="form-control" name="name_of_work" placeholder="Name of Work" value="{{$booking->name_of_work}}" >
                                     </div>
                                 </div>
                             </div>

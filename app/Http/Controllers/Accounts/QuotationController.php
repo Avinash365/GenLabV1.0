@@ -1,0 +1,165 @@
+<?php
+
+namespace App\Http\Controllers\Accounts;
+
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use App\Models\Quotation;
+use App\Models\User;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
+use Barryvdh\DomPDF\Facade\Pdf;
+
+
+class QuotationController extends Controller
+{
+    /**
+     * Display a listing of the quotations.
+     */
+    public function index()
+    {
+        $quotations = Quotation::with('generatedBy')->latest()->paginate(20);
+        return view('superadmin.accounts.quotation.index', compact('quotations'));
+    }
+
+    /**
+     * Show the form for creating a new quotation.
+     */
+    public function create()
+    {
+        $marketingUsers = User::whereHas('role', fn($q) => $q->where('slug', 'marketing_person'))->get();
+        return view('superadmin.accounts.quotation.create', compact('marketingUsers'));
+    }
+
+    /**
+     * Store a newly created quotation in storage.
+     */
+    public function store(Request $request)
+    {
+        
+        $letterhead = $request->input('letterhead');
+       
+        $request->validate([
+            'quotation_no' => 'required|unique:quotations,quotation_no',
+            'quotation_date' => 'required|date',
+            'marketing_user_id' => 'required|exists:users,id',
+            'quotation_data' => 'required|json',
+        ]);
+
+        try {
+            $quotationData = json_decode($request->quotation_data, true);
+            $marketingUser = User::findOrFail($request->marketing_user_id);
+
+            Quotation::create([
+                'quotation_no' => $request->quotation_no,
+                'quotation_date' => $request->quotation_date,
+                'client_name' => $quotationData['client_name'],
+                'client_gstin' => $quotationData['client_gstin'],
+                'name_of_work' => $quotationData['name_of_work'],
+                'bill_issue_to' => $quotationData['bill_issue_to'],
+                'marketing_person_code' => $marketingUser->user_code,
+                'generated_by' => Auth::id(),
+                'items' => $quotationData['items'],
+                'total_amount' => $quotationData['totals']['total_amount'],
+                'discount_percent' => $quotationData['totals']['discount_percent'],
+                'discount_amount' => $quotationData['totals']['discount_amount'],
+                'after_discount' => $quotationData['totals']['after_discount'],
+                'cgst_percent' => $quotationData['totals']['cgst_percent'],
+                'cgst_amount' => $quotationData['totals']['cgst_amount'],
+                'sgst_percent' => $quotationData['totals']['sgst_percent'],
+                'sgst_amount' => $quotationData['totals']['sgst_amount'],
+                'igst_percent' => $quotationData['totals']['igst_percent'],
+                'igst_amount' => $quotationData['totals']['igst_amount'],
+                'round_off' => $quotationData['totals']['round_off'],
+                'payable_amount' => $quotationData['totals']['payable_amount'],
+                'letterhead'     => $letterhead
+            ]);
+
+            return redirect()->back()->with('success', 'Quotation created successfully.');
+
+        } catch (\Exception $e) {
+            Log::error('Quotation Store Error: '.$e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Something went wrong while creating the quotation.');
+        }
+    }
+
+    /**
+     * Show the form for editing the specified quotation.
+     */
+    public function edit(Quotation $quotation)
+    {
+        $marketingUsers = User::whereHas('role', fn($q) => $q->where('slug', 'marketing_person'))->get();
+        return view('superadmin.accounts.quotation.edit', compact('quotation', 'marketingUsers'));
+    }
+
+    /**
+     * Update the specified quotation in storage.
+     */
+    public function update(Request $request, Quotation $quotation)
+    {
+        $letterhead = $request->input('letterhead');
+
+        $request->validate([
+            'marketing_user_id' => 'required|exists:users,id',
+            'quotation_data' => 'required|json',
+        ]);
+
+        try {
+            $quotationData = json_decode($request->quotation_data, true);
+            $marketingUser = User::findOrFail($request->marketing_user_id);
+
+            $quotation->update([
+                'marketing_person_code' => $marketingUser->user_code,
+                'items' => $quotationData['items'],
+                'total_amount' => $quotationData['totals']['total_amount'],
+                'discount_percent' => $quotationData['totals']['discount_percent'],
+                'discount_amount' => $quotationData['totals']['discount_amount'],
+                'after_discount' => $quotationData['totals']['after_discount'],
+                'cgst_percent' => $quotationData['totals']['cgst_percent'],
+                'cgst_amount' => $quotationData['totals']['cgst_amount'],
+                'sgst_percent' => $quotationData['totals']['sgst_percent'],
+                'sgst_amount' => $quotationData['totals']['sgst_amount'],
+                'igst_percent' => $quotationData['totals']['igst_percent'],
+                'igst_amount' => $quotationData['totals']['igst_amount'],
+                'round_off' => $quotationData['totals']['round_off'],
+                'payable_amount' => $quotationData['totals']['payable_amount'],
+                'letterhead'     => $letterhead
+            ]);
+
+            return redirect()->back()->with('success', 'Quotation updated successfully.');
+
+        } catch (\Exception $e) {
+            Log::error('Quotation Update Error: '.$e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Something went wrong while updating the quotation.');
+        }
+    }
+
+    /**
+     * Remove the specified quotation from storage.
+     */
+    public function destroy(Quotation $quotation)
+    {
+        try {
+            $quotation->delete();
+            return redirect()->route('quotations.index')->with('success', 'Quotation deleted successfully.');
+        } catch (\Exception $e) {
+            Log::error('Quotation Delete Error: '.$e->getMessage());
+            return redirect()->back()->with('error', 'Something went wrong while deleting the quotation.');
+        }
+    }
+
+
+    public function generateQuotations($id){
+        $quotation = Quotation::with('generatedBy')->findOrFail($id);
+        $items = $quotation->items ?? [];
+
+         $pdf = Pdf::loadView('superadmin.accounts.quotation.quotation_pdf', [
+            'quotation' => $quotation,
+            'items'     => $quotation->items
+        ]);
+
+        return $pdf->stream('quotation_'.$quotation->id.'.pdf');
+    }
+
+}
