@@ -26,7 +26,19 @@
                         $r = $user->role ?? null;
                         $roleLabel = is_object($r) ? ($r->role_name ?? ($r->name ?? '')) : (string) ($r ?? '');
                         $userCode = $user->code ?? $user->user_code ?? $user->employee_code ?? $user->emp_code ?? $user->staff_code ?? $user->uuid ?? $user->uid ?? $user->username ?? $user->id;
-                        $avatarUrl = $user->profile_photo_url ?? $user->avatar ?? $user->photo ?? url('assets/img/profiles/avator1.jpg');
+
+                        // Prefer stored avatar if present: storage/app/public/avatars/{id}.ext
+                        $avatarUrl = null;
+                        $tryExt = ['jpg','jpeg','png','webp'];
+                        foreach ($tryExt as $ext) {
+                            if (Storage::disk('public')->exists("avatars/{$user->id}.{$ext}")) {
+                                $avatarUrl = Storage::url("avatars/{$user->id}.{$ext}");
+                                break;
+                            }
+                        }
+                        if (!$avatarUrl) {
+                            $avatarUrl = $user->profile_photo_url ?? $user->avatar ?? $user->photo ?? url('assets/img/profiles/avator1.jpg');
+                        }
                     @endphp
 
                     <div class="d-flex align-items-center mb-4" style="gap:16px;">
@@ -43,7 +55,7 @@
                         </div>
                     </div>
 
-                    <form method="POST" action="{{ route('superadmin.profile.update') }}">
+                    <form method="POST" action="{{ route('superadmin.profile.update') }}" enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
                             <label class="form-label">Name</label>
@@ -52,6 +64,14 @@
                         <div class="mb-3">
                             <label class="form-label">Email</label>
                             <input type="email" name="email" class="form-control" value="{{ old('email', $user->email) }}" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Profile Photo</label>
+                            <input type="file" name="avatar" class="form-control" accept="image/*">
+                            @error('avatar')
+                                <div class="text-danger small">{{ $message }}</div>
+                            @enderror
+                            <div class="form-text">PNG, JPG, or WEBP up to 2MB.</div>
                         </div>
 
                         <div class="d-flex justify-content-end">

@@ -3,6 +3,8 @@
 @section('content')
 @php($companyName = optional($setting)->company_name)
 @php($companyAddress = optional($setting)->company_address)
+@php($projectTitle = optional($setting)->project_title)
+@php($favicon = optional($setting)->site_favicon)
 @php($theme = 'system')
 @php($primaryColor = optional($setting)->theme_color ?? '#0d6efd')
 <div class="content container-fluid">
@@ -47,6 +49,20 @@
                     </div>
                 </div>
 
+                <!-- Project Title (tab title) -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Project Title</label>
+                            <input id="project_title_input" type="text" name="project_title" value="{{ old('project_title', $projectTitle) }}" class="form-control @error('project_title') is-invalid @enderror" placeholder="Enter project/browser tab title">
+                            @error('project_title')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted d-block mt-1">This appears in the browser tab and app header where used.</small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="row">
                     <div class="col-md-6">
                         <div class="mb-3">
@@ -66,6 +82,30 @@
                                     @enderror
                                     <div id="site_logo_size_error" class="invalid-feedback d-none">File size must be 2 MB or less.</div>
                                     <small class="text-muted d-block mt-1">PNG, JPG, or SVG. Max 2 MB.</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Favicon upload -->
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Favicon</label>
+                            <div class="d-flex align-items-center">
+                                <div class="border rounded bg-white me-3" style="width: 48px; height: 48px; display:flex; align-items:center; justify-content:center;">
+                                    @if(!empty($setting?->site_favicon))
+                                        <img id="faviconPreview" src="{{ asset('storage/' . $setting->site_favicon) }}" alt="Current Favicon" style="width: 32px; height: 32px; object-fit: contain;" data-default-src="{{ asset('storage/' . $setting->site_favicon) }}">
+                                    @else
+                                        <img id="faviconPreview" src="{{ url('assets/img/favicon.png') }}" alt="Default Favicon" style="width: 32px; height: 32px; object-fit: contain; opacity: .75;" data-default-src="{{ url('assets/img/favicon.png') }}">
+                                    @endif
+                                </div>
+                                <div class="flex-grow-1">
+                                    <input id="site_favicon_input" type="file" name="site_favicon" accept="image/x-icon,image/png,image/svg+xml,.ico,.png,.svg" class="form-control @error('site_favicon') is-invalid @enderror">
+                                    @error('site_favicon')
+                                        <div class="invalid-feedback">{{ $message }}</div>
+                                    @enderror
+                                    <div id="site_favicon_size_error" class="invalid-feedback d-none">File size must be 256 KB or less.</div>
+                                    <small class="text-muted d-block mt-1">ICO or PNG preferred (32x32 or 48x48). Max 256 KB.</small>
                                 </div>
                             </div>
                         </div>
@@ -163,6 +203,39 @@
         });
     }
 
+    // Favicon preview + validation
+    const faviconInput = document.getElementById('site_favicon_input');
+    const faviconPreview = document.getElementById('faviconPreview');
+    const faviconError = document.getElementById('site_favicon_size_error');
+    const FAVICON_MAX = 256 * 1024; // 256 KB
+    const faviconLink = document.querySelector('link#app-favicon');
+    const originalFaviconHref = faviconLink ? faviconLink.getAttribute('href') : null;
+
+    if (faviconInput) {
+        faviconInput.addEventListener('change', function(){
+            const f = this.files && this.files[0];
+            if (!f) return;
+            if (faviconError) faviconError.classList.add('d-none');
+            this.classList.remove('is-invalid');
+            if (f.size > FAVICON_MAX) {
+                if (faviconError) faviconError.classList.remove('d-none');
+                this.classList.add('is-invalid');
+                this.value = '';
+                if (faviconPreview && faviconPreview.dataset.defaultSrc) {
+                    faviconPreview.src = faviconPreview.dataset.defaultSrc;
+                }
+                if (faviconLink && originalFaviconHref) faviconLink.href = originalFaviconHref;
+                return;
+            }
+            const reader = new FileReader();
+            reader.onload = function(e){
+                if (faviconPreview && e && e.target) faviconPreview.src = e.target.result;
+                if (faviconLink && e && e.target) faviconLink.href = e.target.result;
+            };
+            reader.readAsDataURL(f);
+        });
+    }
+
     // Theme + color live preview
     const html = document.documentElement;
     const themeSelect = document.getElementById('theme_select');
@@ -241,6 +314,16 @@
         });
     }
 
+    // Live preview: Project Title -> document.title
+    const titleInput = document.getElementById('project_title_input');
+    if (titleInput) {
+        const originalTitle = document.title;
+        titleInput.addEventListener('input', function(){
+            const v = (this.value || '').trim();
+            document.title = v || originalTitle;
+        });
+    }
+
     // Reset to defaults handler
     const resetBtn = document.getElementById('reset_btn');
     const companyNameEl = document.querySelector('input[name="company_name"]');
@@ -262,6 +345,22 @@
             if (logoPreview && logoPreview.dataset.defaultSrc) {
                 logoPreview.src = logoPreview.dataset.defaultSrc;
             }
+
+            // Favicon reset
+            if (faviconInput) {
+                faviconInput.value = '';
+                faviconInput.classList.remove('is-invalid');
+            }
+            if (faviconError) faviconError.classList.add('d-none');
+            if (faviconPreview && faviconPreview.dataset.defaultSrc) {
+                faviconPreview.src = faviconPreview.dataset.defaultSrc;
+            }
+            if (faviconLink) {
+                faviconLink.href = (faviconPreview && faviconPreview.dataset.defaultSrc) ? faviconPreview.dataset.defaultSrc : (originalFaviconHref || faviconLink.href);
+            }
+
+            // Title reset
+            if (titleInput) titleInput.value = '';
 
             // Theme and color back to app defaults
             if (themeSelect) {

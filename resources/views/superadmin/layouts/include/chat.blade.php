@@ -50,7 +50,8 @@
             </div>
             <div class="px-3 py-2">
                 <div id="chatInputArea" class="d-flex align-items-center" style="gap:8px; display:none;">
-                    <button id="emojiBtn" class="btn btn-light btn-sm rounded-circle shadow-sm" title="Emoji" style="width:36px;height:36px;"><i class="fa fa-smile-o"></i></button>
+                    <!-- Replace FA icon with visible emoji -->
+                    <button id="emojiBtn" class="btn btn-light btn-sm rounded-circle shadow-sm" title="Emoji" style="width:36px;height:36px;"><span class="emoji-icon">😊</span></button>
                     <button id="attachBtn" class="btn btn-light btn-sm rounded-circle shadow-sm" title="Attach" style="width:36px;height:36px;"><i class="fa fa-paperclip"></i></button>
                     <input id="fileInput" type="file" accept="image/*,application/pdf,audio/*" style="display:none;" />
                     <input type="text" id="chatMessageInput" class="form-control shadow-sm" placeholder="Type a message" style="border-radius:20px;">
@@ -83,7 +84,7 @@
   position:fixed;
   right: max(20px, env(safe-area-inset-right));
   bottom: max(20px, env(safe-area-inset-bottom));
-  width: min(600px, calc(100vw - 40px));
+  width: min(700px, calc(100vw - 40px));
   height: min(640px, calc(100dvh - 40px));
   background:#fff;
   border:1px solid var(--chat-border);
@@ -178,6 +179,7 @@
   align-items: center;
   justify-content: center;
 }
+.wa-avatar img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; display: block; }
 .wa-bubble {
   position: relative;
   max-width: 70%;
@@ -186,6 +188,7 @@
   font-size: 14px;
   line-height: 1.4;
   box-shadow: var(--chat-shadow);
+  overflow: hidden;
 }
 .wa-bubble.sent {
   background: var(--chat-msg-out);
@@ -202,7 +205,8 @@
 .wa-bubble.status-cancel { background: #fee2e2 !important; border: 1px solid #fecaca; }
 .wa-content { display: flex; flex-direction: column; gap: 8px; }
 .wa-text { white-space: pre-wrap; word-wrap: break-word; color:#111827; }
-.wa-image img { max-width: 100%; border-radius: 8px; display:block; }
+.wa-image { max-width: 100%; }
+.wa-image img { max-width: 100%; height: auto; max-height: 320px; object-fit: contain; display: block; }
 .wa-caption { font-size: 13px; color:#334155; }
 .wa-file { display:flex; align-items:center; gap:12px; }
 .wa-file .wa-icon { width:40px; height:40px; border-radius:8px; background:#fee2e2; color:#dc2626; display:flex; align-items:center; justify-content:center; }
@@ -286,23 +290,28 @@
 .filter-active.btn-outline-warning { background:#fef9c3; border-color:#fde68a; color:#92400e; }
 .filter-active.btn-outline-danger { background:#fee2e2; border-color:#fecaca; color:#991b1b; }
 
-/* WhatsApp-like document (PDF) styling */
-.wa-doc { display:flex; align-items:center; gap:12px; }
-.wa-doc-icon { width:48px; height:48px; border-radius:10px; background:#ffe4e6; color:#ef4444; display:flex; align-items:center; justify-content:center; font-size:22px; flex:0 0 48px; }
-.wa-doc-icon svg { width: 22px; height: 22px; display:block; }
-.wa-doc-info { display:flex; flex-direction:column; min-width:0; }
-.wa-doc-name { font-weight:600; color:#111827; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width:420px; }
-.wa-doc-meta { font-size:12px; color: var(--chat-muted); margin-top:2px; }
-.wa-doc-download { margin-left:auto; width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; background:#e6f4ea; color: var(--chat-primary-dark); text-decoration:none; }
-.wa-doc-link { text-decoration:none; color:inherit; display:flex; align-items:center; gap:12px; }
+/* Sidebar unread marker */
+.chat-dot{ width:10px; height:10px; border-radius:50%; background:#22c55e; display:inline-block; }
+.chat-unread{ font-size:12px; background:#ef4444; color:#fff; border-radius:999px; padding:1px 6px; }
+.chat-preview{ font-size:12px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 260px; }
 
-/* Day separator chip */
-.wa-day { display:flex; justify-content:center; margin: 10px 0; }
-.wa-day > span { background:#e2e8f0; color:#334155; padding:4px 10px; font-size:12px; border-radius:999px; border:1px solid #cbd5e1; line-height:1; }
+/* Day separator chip centered */
+.wa-day{ display:flex; justify-content:center; margin:10px 0; }
+.wa-day > span{ background:#e2e8f0; color:#334155; padding:4px 10px; font-size:12px; border-radius:999px; border:1px solid #cbd5e1; line-height:1; }
 
-/* Scope SweetAlert2 to the chat box */
-.chat-popup .swal2-container{ position:absolute !important; inset:0 !important; z-index: 1200 !important; }
-.chat-popup .swal2-container .swal2-popup{ max-width:min(520px, 92%); }
+/* WhatsApp-like PDF/document bubble */
+.wa-doc{ display:flex; align-items:center; gap:12px; padding:8px 10px; border-radius:10px; background: transparent; }
+.wa-doc-link{ display:flex; align-items:center; gap:12px; text-decoration:none; color:inherit; flex:1; min-width:0; }
+.wa-doc-icon{ width:44px; height:56px; border-radius:8px; background:#e2e8f0; color:#334155; display:flex; align-items:center; justify-content:center; flex:0 0 auto; }
+.wa-doc-icon svg{ width:24px; height:24px; display:block; }
+.wa-doc-info{ display:flex; flex-direction:column; min-width:0; }
+.wa-doc-name{ font-weight:600; color:#111827; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 260px; }
+.wa-doc-meta{ font-size:12px; color: var(--chat-muted); }
+.wa-doc-download{ margin-left:auto; color: var(--chat-primary-dark); text-decoration:none; font-size:16px; padding:6px; border-radius:8px; }
+.wa-doc-download:hover{ background: rgba(0,0,0,0.06); }
+
+/* Tighter caption under doc */
+.wa-bubble .wa-caption{ margin-top:4px; }
 </style>
 <script>
 (function(){
@@ -316,7 +325,11 @@
         messagesSince: '{{ url('/chat/messages/since') }}',
         send: '{{ url('/chat/messages') }}',
         react: (id) => `${'{{ url('/chat/messages') }}'}/${id}/reactions`,
-        direct: (userId) => `${'{{ url('/chat/direct') }}'}/${userId}`
+        direct: (userId) => `${'{{ url('/chat/direct') }}'}/${userId}`,
+        searchUsers: (q) => `${'{{ url('/chat/users/search') }}'}?q=${encodeURIComponent(q)}`,
+        directWith: (id) => `${'{{ url('/chat/direct-with') }}'}/${id}`,
+        // new: mark seen endpoint
+        markSeen: '{{ url('/chat/mark-seen') }}'
     };
 
     // Elements
@@ -333,6 +346,17 @@
     const voiceBtn = document.getElementById('voiceBtn');
     const recordingHint = document.getElementById('recordingHint');
     const emojiBtn = document.getElementById('emojiBtn');
+    if (emojiBtn){
+        // Ensure an icon or emoji is visible
+        const hasI = !!emojiBtn.querySelector('i');
+        if (!hasI) { emojiBtn.textContent = '😊'; }
+        else {
+            const i = emojiBtn.querySelector('i');
+            // Normalize to a known FA4 class and set fallback color
+            i.classList.remove('fa-smile'); i.classList.add('fa-smile-o');
+            i.style.color = '#6b7280';
+        }
+    }
     const activeTitle = document.getElementById('chatActiveTitle');
     const activeAvatar = document.getElementById('chatActiveAvatar');
     const popupEl = document.getElementById('chatPopup');
@@ -372,6 +396,8 @@
     let activeGroupId = null; let lastMessageId = 0;
     let mediaRecorder = null; let recordedChunks = [];
     let cache = []; let allGroups = [];
+    let idIndex = new Set(); // track message ids to dedupe
+    let polling = false; // prevent overlapping polls
 
     // Add: filter state and helpers
     const activeFilters = new Set();
@@ -393,8 +419,13 @@
     // using reactions-derived status first, then admin reply text markers.
     function effectiveStatus(m){
         if (!m) return null;
+        // Determine root id
         const rootId = m.reply_to_message_id ? findRootMessageId(m.id) : m.id;
-        const thread = []; const queue = [rootId]; const seen = new Set(); let guard = 0;
+        // Gather thread (root + replies recursively up to a safe guard)
+        const thread = [];
+        const queue = [rootId];
+        const seen = new Set();
+        let guard = 0;
         while (queue.length && guard++ < 500){
             const cur = queue.shift(); if (seen.has(cur)) continue; seen.add(cur);
             const node = Array.isArray(cache) ? cache.find(x => x && x.id === cur) : null;
@@ -403,16 +434,13 @@
             for (const r of replies){ queue.push(r.id); }
         }
         if (!thread.length) return null;
+        // Sort by id ascending to simulate chronology
         thread.sort((a,b)=> (a.id||0) - (b.id||0));
         let winner = null;
         for (const msg of thread){
-            if (msg && msg.status){
-                const st = String(msg.status).toLowerCase();
-                if (st==='hold' || st==='booked' || st==='cancel' || st==='unbooked'){
-                    winner = (st==='unbooked') ? 'cancel' : st; // map legacy
-                    continue;
-                }
-            }
+            // Prefer reactions-derived status
+            if (msg && msg.status){ winner = msg.status; continue; }
+            // Fallback to admin reply text markers
             if (msg && msg.sender_guard === 'admin'){
                 const s = adminStatusFromText(bestText(msg));
                 if (s) winner = s;
@@ -436,6 +464,22 @@
         renderMessages(cache);
     }
 
+    // New: compute and display counts for Hold and Unbooked in current group
+    function updateStatusCounts(){
+        if (!Array.isArray(cache)) return;
+        let hold = 0, unbooked = 0;
+        for (const m of cache){
+            if (!m || m.reply_to_message_id) continue;
+            const st = effectiveStatus(m);
+            if (st === 'hold') hold++;
+            else if (!st) unbooked++;
+        }
+        if (filterHoldBtn){ filterHoldBtn.textContent = `Hold (${hold})`; }
+        if (filterUnbookedBtn){ filterUnbookedBtn.textContent = `Unbooked (${unbooked})`; }
+    }
+    // Expose to other blocks (override renderer)
+    window.__CHAT_UPDATE_COUNTS = updateStatusCounts;
+
     // Wire header buttons
     filterHoldBtn && filterHoldBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleFilter('hold'); });
     filterUnbookedBtn && filterUnbookedBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleFilter('unbooked'); });
@@ -451,18 +495,29 @@
     // Groups
     function renderGroups(list){
         groupsEl.innerHTML = '';
-        list.forEach(g => {
+        const sorted = Array.isArray(list) ? list.slice().sort((a,b)=> (b.last_msg_id||0) - (a.last_msg_id||0)) : [];
+        sorted.forEach(g => {
             const item = document.createElement('a');
             item.href = '#'; item.className = 'list-group-item d-flex align-items-center';
             item.dataset.groupId = g.id; item.dataset.groupName = g.name;
-            const label = g.name; // show plain name for DMs
-            item.innerHTML = `<div class="wa-avatar me-2">${initials(label)}</div>
-                              <div class="flex-grow-1">
-                                <div class="fw-semibold">${label}</div>
-                                <div class="small text-muted">Everyone can view</div>
-                              </div>
-                              <div class="text-muted small">&nbsp;</div>`;
-            item.addEventListener('click', (e)=>{ e.preventDefault(); selectGroup(g.id, label, item); });
+            const initials2 = (g.name||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
+            const avatarHtml = g.avatar ? `<div class="wa-avatar me-2"><img src="${g.avatar}" alt="${g.name||'Group'}" loading="lazy"></div>`
+                                        : `<div class="wa-avatar me-2">${initials2}</div>`;
+            const right = document.createElement('div'); right.className='ms-auto d-flex align-items-center';
+            if (g.unread && g.unread > 0){ right.innerHTML = `<span class="me-2 chat-dot"></span><span class="chat-unread">${g.unread>99?'99+':g.unread}</span>`; }
+            const meta = document.createElement('div'); meta.className='flex-grow-1';
+            const previewText = (function(){
+                const l = g.latest || null; if (!l) return '';
+                const t = (l.type||'').toLowerCase();
+                if (t==='text') return (l.content||'').toString().slice(0,80);
+                if (t==='image') return 'Photo';
+                if (t==='pdf') return l.original_name ? ('PDF • '+l.original_name) : 'PDF';
+                if (t==='voice') return 'Voice message';
+                return (l.content || l.original_name || '').toString().slice(0,80);
+            })();
+            meta.innerHTML = `<div class="d-flex align-items-center justify-content-between"><div>${g.name}</div><div class="text-muted small">${g.last_msg_at? new Date(g.last_msg_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}):''}</div></div><div class="chat-preview">${previewText}</div>`;
+            item.innerHTML = avatarHtml + meta.outerHTML + right.outerHTML;
+            item.addEventListener('click', (e)=>{ e.preventDefault(); selectGroup(g.id, g.name, item); });
             groupsEl.appendChild(item);
         });
     }
@@ -474,10 +529,17 @@
         if (node) node.classList.add('active');
         activeGroupId = id; activeTitle.textContent = name; activeAvatar.textContent = initials(name);
         inputAreaEl.style.display = 'flex';
-        lastMessageId = 0; cache = []; messagesEl.querySelectorAll('.wa-row, .reaction-chip').forEach(n=>n.remove()); emptyEl.style.display = 'flex';
+        lastMessageId = 0; cache = []; idIndex.clear(); // reset index on group change
+        messagesEl.querySelectorAll('.wa-row, .reaction-chip').forEach(n=>n.remove()); emptyEl.style.display = 'flex';
         setState({ activeGroupId: id });
         requestAnimationFrame(syncMessagesPadding);
         fetchMessages(id);
+
+        // Clear unread locally for this group so the dot disappears immediately
+        try {
+            const g = allGroups.find(x => String(x.id) === String(id));
+            if (g) { g.unread = 0; renderGroups(allGroups); }
+        } catch(_) {}
     }
 
     async function openDirectChat(userId){
@@ -494,6 +556,47 @@
             selectGroup(g.id, g.name, item);
         } catch(e){ alert('Failed to open direct chat'); }
     }
+
+    // Add: open symmetric direct chat with peer
+    async function openPeerChat(userId){
+        try{
+            // Admin forced to admin<->user DM; users to dm2
+            const url = isSuperAdmin ? routes.direct(userId) : routes.directWith(userId);
+            const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
+            if (!res.ok) throw new Error('dm-open-fail');
+            const g = await res.json();
+            const exist = allGroups.find(x=> x.id === g.id);
+            if (exist) exist.name = g.name; else allGroups.unshift(g);
+            renderGroups(allGroups);
+            const item = groupsEl.querySelector(`.list-group-item[data-group-id="${g.id}"]`);
+            selectGroup(g.id, g.name, item);
+        } catch(e){ alert('Failed to open chat'); }
+    }
+
+    let searchAbort = null;
+    searchEl.addEventListener('input', async ()=>{
+        const q = (searchEl.value||'').trim();
+        if (!q){ renderGroups(allGroups); return; }
+        try{
+            if (searchAbort) searchAbort.abort();
+            searchAbort = new AbortController();
+            const res = await fetch(routes.searchUsers(q), { headers:{ 'Accept':'application/json' }, signal: searchAbort.signal });
+            if (!res.ok) throw new Error('search-fail');
+            const users = await res.json();
+            // Render results as a temporary list
+            groupsEl.innerHTML = '';
+            users.forEach(u=>{
+                const a = document.createElement('a'); a.href='#'; a.className='list-group-item d-flex align-items-center';
+                a.innerHTML = `<div class="wa-avatar me-2">${initials(u.name||('U'+u.id))}</div>
+                               <div class="flex-grow-1">
+                                 <div class="fw-semibold">${u.name || ('User '+u.id)}</div>
+                                 <div class="small text-muted">Start chat</div>
+                               </div>`;
+                a.addEventListener('click', (e)=>{ e.preventDefault(); openPeerChat(u.id); });
+                groupsEl.appendChild(a);
+            });
+        } catch(e){ /* ignore aborts */ }
+    });
 
     // Robust text extractor: scans common keys, regex-matching keys, containers, and arrays; ignores numeric-only strings
     function bestText(m){
@@ -542,9 +645,11 @@
     }
 
     function avatarLabel(m){
-        if (m.user && m.user.name) return displayInitials(m.user);
-        const n = (m.sender_name || '').trim();
-        return n ? n.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() : 'U';
+        // If avatar URL provided, render <img>
+        if (m && m.user && m.user.avatar) return { html: '<img src="'+m.user.avatar+'" alt="'+(m.user.name||'U')+'" loading="lazy">', text: null };
+        const n = (m && m.user && m.user.name) ? m.user.name : (m && m.sender_name ? m.sender_name : 'U');
+        const init = n ? n.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() : 'U';
+        return { html: null, text: init };
     }
 
     function senderName(m){
@@ -680,7 +785,9 @@
         const mine = !!m.mine;
         const row = document.createElement('div'); row.className = 'wa-row ' + (mine ? 'sent' : 'received');
         row.dataset.msgId = m.id;
-        const avatar = document.createElement('div'); avatar.className='wa-avatar'; avatar.textContent= avatarLabel(m);
+        const avatar = document.createElement('div'); avatar.className='wa-avatar';
+        const av = avatarLabel(m);
+        if (av && av.html) { avatar.innerHTML = av.html; } else { avatar.textContent = av.text || 'U'; }
         const bubble = document.createElement('div'); bubble.className = 'wa-bubble ' + (mine ? 'sent' : 'received');
         if (m.reply_to_message_id) {
             bubble.addEventListener('click', (e)=>{
@@ -727,7 +834,8 @@
             content.appendChild(t);
         } else if (isImage){
             const wrap = document.createElement('div'); wrap.className = 'wa-image';
-            const img = document.createElement('img'); img.src = m.file_url; img.alt = original || 'image'; wrap.appendChild(img);
+            const img = document.createElement('img'); img.src = m.file_url; img.alt = original || 'image'; img.loading = 'lazy'; img.decoding = 'async';
+            wrap.appendChild(img);
             content.appendChild(wrap);
             if (textValue){ const cap = document.createElement('div'); cap.className='wa-caption'; cap.textContent = textValue; content.appendChild(cap); }
         } else if (isPdf){
@@ -828,6 +936,7 @@
         });
         messagesEl.scrollTop = messagesEl.scrollHeight;
         syncMessagesPadding();
+        updateStatusCounts();
     }
 
     // Hold/Cancel action picker -> replaces emoji picker for reactions
@@ -902,13 +1011,17 @@
     // Backend
     async function fetchGroups(){
         const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
-        allGroups = await res.json();
+        const data = await res.json();
+        allGroups = Array.isArray(data) ? data : [];
         renderGroups(allGroups);
-        const state = getState();
-        let prefer = null;
-        if (state && state.activeGroupId){ prefer = groupsEl.querySelector(`.list-group-item[data-group-id="${state.activeGroupId}"]`); }
-        const first = prefer || groupsEl.querySelector('.list-group-item');
-        if (first) selectGroup(first.dataset.groupId, first.dataset.groupName, first);
+        // Restore previously active group after refresh/open
+        try {
+            const state = getState();
+            if (state && state.activeGroupId){
+                const item = groupsEl.querySelector(`.list-group-item[data-group-id="${state.activeGroupId}"]`);
+                if (item) { selectGroup(state.activeGroupId, item.dataset.groupName || '', item); }
+            }
+        } catch(_) {}
     }
 
     async function fetchMessages(groupId){
@@ -916,24 +1029,36 @@
         const url = new URL(routes.messages, window.location.origin); url.searchParams.set('group_id', groupId);
         const res = await fetch(url, { headers: { 'Accept':'application/json' } });
         const data = await res.json();
-        cache = Array.isArray(data) ? data : []; lastMessageId = cache.length ? cache[cache.length-1].id : 0;
+        // Build fresh cache and id index
+        cache = Array.isArray(data) ? data : [];
+        idIndex = new Set(cache.map(m=> m && m.id));
+        lastMessageId = cache.length ? cache[cache.length-1].id : 0;
         renderMessages(cache); loadingEl.style.display = 'none';
+        // mark this group as seen and refresh header badge
+        try {
+            await markGroupSeen(groupId, lastMessageId);
+            if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
+        } catch(e) { /* ignore */ }
     }
 
     async function poll(){
-        if (!activeGroupId || lastMessageId === null) return;
-        const url = new URL(routes.messagesSince, window.location.origin);
-        url.searchParams.set('group_id', activeGroupId); url.searchParams.set('after_id', lastMessageId);
-        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-        const data = await res.json();
-        if (Array.isArray(data) && data.length){ cache = cache.concat(data); lastMessageId = cache[cache.length-1].id; renderMessages(cache); }
+        if (polling) return; if (!activeGroupId || lastMessageId === null) return; polling = true;
+        try{
+            const url = new URL(routes.messagesSince, window.location.origin);
+            url.searchParams.set('group_id', activeGroupId); url.searchParams.set('after_id', lastMessageId);
+            const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+            const data = await res.json();
+            if (Array.isArray(data) && data.length){
+                const fresh = [];
+                for (const m of data){ if (!m || idIndex.has(m.id)) continue; idIndex.add(m.id); fresh.push(m); }
+                if (fresh.length){ cache = cache.concat(fresh); lastMessageId = cache[cache.length-1].id; renderMessages(cache); }
+            }
+        } finally { polling = false; }
     }
 
-    async function sendMessage(fd){
-        const res = await fetch(routes.send, { method:'POST', headers:{ 'X-CSRF-TOKEN': csrfToken }, body: fd });
-        if (!res.ok){ alert('Failed to send'); return; }
-        await res.json(); fetchMessages(activeGroupId);
-    }
+    // Ensure only one polling interval exists globally
+    if (window.__CHAT_POLL_INTERVAL) { try { clearInterval(window.__CHAT_POLL_INTERVAL); } catch{} }
+    window.__CHAT_POLL_INTERVAL = setInterval(poll, 5000);
 
     // Ensure text persists: try JSON with multiple aliases, fallback to FormData
     async function sendTextMessage(text){
@@ -975,15 +1100,38 @@
         return fetch(routes.react(messageId), { method:'DELETE', headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json' } });
     }
 
+    // Mark a group seen helper
+    async function markGroupSeen(groupId, lastId){
+        if (!groupId) return;
+        try {
+            await fetch(routes.markSeen, {
+                method:'POST',
+                headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' },
+                body: JSON.stringify({ group_id: groupId, last_id: lastId || undefined })
+            });
+        } catch(e) { /* ignore */ }
+    }
+
     // UI events
     searchEl.addEventListener('input', ()=>{ const q = searchEl.value.toLowerCase(); const filtered = allGroups.filter(g=> g.name.toLowerCase().includes(q)); renderGroups(filtered); });
     attachBtn.addEventListener('click', ()=> fileInput.click());
     fileInput.addEventListener('change', ()=>{
         if (!activeGroupId) return; const f = fileInput.files[0]; if (!f) return;
-        const kind = f.type.startsWith('image/') ? 'image' : (f.type === 'application/pdf' ? 'pdf' : (f.type.startsWith('audio/') ? 'voice' : 'file'));
-        if (kind === 'file'){ alert('Unsupported file type.'); fileInput.value=''; return; }
+        const mime = (f.type||'').toLowerCase(); const ext = (f.name||'').toLowerCase().split('.').pop();
+        const imageExts = new Set(['jpg','jpeg','png','gif','webp','bmp','heic','heif']);
+        const audioExts = new Set(['mp3','wav','m4a','ogg','webm','aac','oga']);
+        let kind = '';
+        if (mime.startsWith('image/') || imageExts.has(ext)) kind = 'image';
+        else if (mime === 'application/pdf' || ext === 'pdf') kind = 'pdf';
+        else if (mime.startsWith('audio/') || audioExts.has(ext) || mime==='video/webm' || mime==='application/octet-stream') kind = 'voice';
+        else kind = 'file';
+        if (kind === 'file'){ alert('Unsupported file type. Please upload image, pdf, or audio.'); fileInput.value=''; return; }
         const fd = new FormData(); fd.append('group_id', activeGroupId); fd.append('type', kind); fd.append('file', f);
-        sendMessage(fd); fileInput.value='';
+        fetch(routes.send, { method:'POST', headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json' }, body: fd })
+            .then(r=> r.ok ? r.json() : Promise.reject(r))
+            .then(()=> fetchMessages(activeGroupId))
+            .catch(async err=>{ try{ const j=await err.json(); alert(j.message||'Upload failed'); }catch{ alert('Upload failed'); } })
+            .finally(()=>{ fileInput.value=''; });
     });
     sendBtn.addEventListener('click', ()=>{
         if (!activeGroupId) return; const text = (msgInput.value||'').trim(); if (!text) { msgInput.focus(); return; }
@@ -1185,11 +1333,38 @@
     });
     // Also expose open on keyboard shortcut (optional)
     document.addEventListener('keydown', function(e){ if ((e.ctrlKey||e.metaKey) && e.key === 'i'){ openPopup(); } });
+
+    // Expose globals for external notifications
+    window.__CHAT_OPEN_GROUP__ = function(groupId){
+        try {
+            openPopup();
+            let tries = 0;
+            const pick = function(){
+                const item = document.querySelector(`#chatGroups .list-group-item[data-group-id="${groupId}"]`);
+                if (item) { item.click(); return; }
+                if (tries++ < 20) { setTimeout(pick, 150); } else { /* give up */ }
+            };
+            if (!allGroups.length) { fetchGroups().then(()=> pick()).catch(()=> pick()); } else { pick(); }
+        } catch(e) {}
+    };
+    window.__CHAT_QUICK_REPLY__ = async function(groupId, text, replyToId){
+        try {
+            if (!groupId || !text) return;
+            const payload = { group_id: groupId, type:'text', content: text };
+            if (replyToId) payload.reply_to_message_id = replyToId;
+            await fetch(routes.send, { method:'POST', headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+            if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
+            if (activeGroupId === groupId) { try { fetchMessages(groupId); } catch(_) {} }
+       
+
+        } catch(e) {}
+    };
 })();
 </script>
 <script>
 (function(){
     // Filters (Hold/Unbooked) visible to both admin and users
+   
     const filterHoldBtn = document.getElementById('filterHoldBtn');
     const filterUnbookedBtn = document.getElementById('filterUnbookedBtn');
     const activeFilters = new Set();
@@ -1250,9 +1425,11 @@
 
     // Apply filters while rendering
     function filteredList(list){
+
         if (!activeFilters.size) return list;
         return list.filter(m=>{
             if (!m || m.reply_to_message_id) return false;
+
             const st = effectiveStatus(m);
             if (activeFilters.has('unbooked') && !st) return true;
             return activeFilters.has(st);
@@ -1277,6 +1454,7 @@
             messagesEl.appendChild(messageRow(m));
         });
         messagesEl.scrollTop = messagesEl.scrollHeight;
+        if (window.__CHAT_UPDATE_COUNTS) window.__CHAT_UPDATE_COUNTS();
     };
 
     // Ensure bubble color reflects effective status
@@ -1312,4 +1490,31 @@
 <!-- Neutralize duplicate filter script block (scope fix) -->
 <script>
 (function(){ if (window.__CHAT_FILTER_READY) return; })();
+</script>
+<script>
+(function(){
+    // Live unread updates from global polling
+    window.addEventListener('chat:counts', function(ev){
+        try{
+            const payload = ev && ev.detail ? ev.detail : null;
+            if (!payload || !Array.isArray(payload.groups)) return;
+            const map = new Map(payload.groups.map(x=> [x.group_id, { count:x.count, latest:x.latest }]));
+            let changed = false;
+            allGroups.forEach(g=>{
+                const m = map.get(g.id);
+                if (!m) return;
+                const prev = g.unread || 0;
+                g.unread = m.count;
+                // If latest is newer, update preview/time to keep sort natural
+                if (m.latest && m.latest.id && (!g.last_msg_id || m.latest.id > g.last_msg_id)){
+                    g.last_msg_id = m.latest.id;
+                    g.last_msg_at = m.latest.created_at || g.last_msg_at;
+                    g.latest = m.latest;
+                }
+                if (g.unread !== prev) changed = true;
+            });
+            if (changed) renderGroups(allGroups);
+        } catch(_) {}
+    });
+})();
 </script>

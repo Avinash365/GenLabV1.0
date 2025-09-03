@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
@@ -31,7 +32,23 @@ class ProfileController extends Controller
                 'required','email','max:255',
                 Rule::unique($user->getTable(),'email')->ignore($user->getKey(), $user->getKeyName())
             ],
+            'avatar' => ['nullable','image','mimes:jpg,jpeg,png,webp','max:2048'],
         ]);
+
+        // Handle avatar upload to storage/app/public/avatars/{id}.{ext}
+        if ($request->hasFile('avatar')) {
+            $file = $request->file('avatar');
+            $ext = strtolower($file->getClientOriginalExtension());
+            $allowed = ['jpg','jpeg','png','webp'];
+            // Remove any previous avatar files for this user
+            foreach ($allowed as $e) {
+                Storage::disk('public')->delete("avatars/{$user->id}.{$e}");
+            }
+            if (!in_array($ext, $allowed)) {
+                $ext = 'jpg';
+            }
+            $file->storeAs('avatars', $user->id . '.' . $ext, 'public');
+        }
 
         $user->name = $validated['name'];
         $user->email = $validated['email'];

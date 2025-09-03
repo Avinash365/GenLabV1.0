@@ -81,9 +81,17 @@ Route::prefix('chat')->group(function(){
 
     Route::post('/messages/{message}/reactions', [ChatController::class, 'react'])->name('chat.messages.react');
 
-    // New: ensure/get direct chat with user
+    // New: ensure/get direct chat with user (admin->user legacy DM)
     Route::get('/direct/{user}', [ChatController::class, 'direct'])->name('chat.direct');
+    // New: search users and symmetric DM between users
+    Route::get('/users/search', [ChatController::class, 'searchUsers'])->name('chat.users.search');
+    Route::get('/direct-with/{user}', [ChatController::class, 'directWith'])->name('chat.directWith');
 });
+
+// Chat unread counts + seen marker
+Route::get('/chat/unread-counts', [ChatController::class, 'unreadCounts'])->name('chat.unread-counts');
+Route::post('/chat/mark-seen', [ChatController::class, 'markSeen'])->name('chat.mark-seen');
+
 
 // Superadmin Profile (protected)
 Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadmin.')->group(function(){
