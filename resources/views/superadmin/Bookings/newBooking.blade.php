@@ -207,7 +207,7 @@
                 </div>
                  
             </div>
-           
+    
         
             {{-- Submit --}} 
             <div class="d-flex align-items-center justify-content-end mb-4 mt-4">
@@ -224,216 +224,216 @@
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
-$(document).ready(function() {
+    $(document).ready(function() {
 
-    // Marketing Person Autocomplete
-    function attachMarketingSearch(inputElement){
-        const $input = $(inputElement);
-        const $hidden = $('#marketing_code_hidden');
-        const $dropdown = $('#marketingCodeDropdown');
+        // Marketing Person Autocomplete
+        function attachMarketingSearch(inputElement){
+            const $input = $(inputElement);
+            const $hidden = $('#marketing_code_hidden');
+            const $dropdown = $('#marketingCodeDropdown');
 
-        $input.off('keyup').on('keyup', function(){
-            let query = $input.val().trim();
-            if(query.length < 1){ $dropdown.hide(); $hidden.val(''); return; }
+            $input.off('keyup').on('keyup', function(){
+                let query = $input.val().trim();
+                if(query.length < 1){ $dropdown.hide(); $hidden.val(''); return; }
 
-            $.ajax({
-                url: "{{ route('superadmin.bookings.autocomplete') }}",
-                data: { term: query, type: 'marketing' },
-                success: function(data){
-                    let html = '';
-                    if(data.length > 0){
-                        data.forEach(item => {
-                            html += `<button type="button" class="dropdown-item" data-id="${item.user_code}" data-name="${item.name}">${item.name}</button>`;
-                        });
-                    } else html = '<span class="dropdown-item disabled">No results found</span>';
-                    $dropdown.html(html).show();
-                }
-            });
-        });
-
-        $dropdown.off('click').on('click','button',function(){
-            $input.val($(this).data('name'));
-            $hidden.val($(this).data('id'));
-            $dropdown.hide();
-        });
-    }
-
-    // Lab Analysis Autocomplete
-    function attachLabAnalysis(inputElement){
-        const $input = $(inputElement);
-        const $hidden = $input.siblings('.lab_analysis_code_hidden');
-        const $dropdown = $input.siblings('.labAnalysisDropdown');
-
-        $input.off('keyup').on('keyup', function(){
-            let query = $input.val().trim();
-            if(query.length < 1){ $dropdown.hide(); $hidden.val(''); return; }
-
-            $.ajax({
-                url: "{{ route('superadmin.bookings.autocomplete') }}",
-                data: { term: query, type: 'lab' },
-                success: function(data){
-                    let html = '';
-                    if(data.length > 0){
-                        data.forEach(item=>{
-                            html += `<button type="button" class="dropdown-item" data-code="${item.user_code}" data-name="${item.name}">${item.label}</button>`;
-                        });
-                    } else html = '<span class="dropdown-item disabled">No results found</span>';
-                    $dropdown.html(html).show();
-                }
-            });
-        });
-
-        $dropdown.off('click').on('click','button',function(){
-            $input.val($(this).data('code') + ' - ' + $(this).data('name'));
-            $hidden.val($(this).data('code'));
-            $dropdown.hide();
-        });
-    }
-
-    // Job Order Autocomplete
-    function attachJobOrderSearch(inputElement){
-        const $input = $(inputElement);
-        const $dropdown = $input.siblings('.jobOrderList');
-
-        $input.off('keyup').on('keyup', function(){
-            const query = $input.val().trim();
-            if(query.length < 1){ $dropdown.hide(); return; }
-
-            $.ajax({
-                url: "{{ route('superadmin.bookings.get.job.orders') }}",
-                data: { term: query },
-                success: function(data){
-                    let html = '';
-                    if(data.length > 0){
-                        data.forEach(item=>{
-                            html += `<button type="button" class="dropdown-item">${item}</button>`;
-                        });
-                    } else html = '<span class="dropdown-item disabled">No results found</span>';
-                    $dropdown.html(html).show();
-                }
-            });
-        });
-
-        $dropdown.off('click').on('click','button',function(){
-            $input.val($(this).text());
-            $dropdown.hide();
-        });
-    }
-
-    // Reference No Autocomplete
-    function attachReferenceSearch(inputElement){
-        const $input = $(inputElement);
-        const $dropdown = $input.siblings('.referenceDropdown');
-
-        $input.on('keyup', function(){
-            const query = $input.val().trim();
-            if(query.length < 1){ $dropdown.hide(); return; }
-
-            $.ajax({
-                url: "{{ route('superadmin.bookings.get.ref_no') }}",
-                type: "GET",
-                data: { term: query },
-                success: function(data){
-                    let html = '';
-                    if(data.length > 0){
-                        data.forEach(item=>{
-                            html += `<button type="button" class="dropdown-item">${item.reference_no}</button>`;
-                        });
-                    } else html = '<span class="dropdown-item disabled">No results found</span>';
-                    $dropdown.html(html).show();
-                },
-                error: function(err){
-                    console.log("Error fetching reference no:", err);
-                    $dropdown.hide();
-                }
-            });
-        });
-
-        $dropdown.on('click','button', function(){
-            $input.val($(this).text());
-            $dropdown.hide();
-        });
-    }
-
-    // Initialize first inputs
-    attachMarketingSearch($('#marketing_code_input'));
-    attachLabAnalysis($('.lab_analysis_input'));
-    attachJobOrderSearch($('.job_order_no'));
-    attachReferenceSearch('.reference_no_input');
-
-    // ==========================
-    // Add / Remove Items Section
-    // ==========================
-    function updateTotalItems() {
-        const count = $('#itemsContainer .item-group').length;
-        $('#totalItems').text('Total Items: ' + count);
-    }
-
-    $('#addItemBtn').on('click', function(){
-        const $first = $('#itemsContainer .item-group:first');
-        const $clone = $first.clone();
-        const index = $('#itemsContainer .item-group').length;
-
-        $clone.find('input, select').each(function(){
-            const name = $(this).attr('name');
-            if(name) $(this).attr('name', name.replace(/\d+/, index));
-
-            // Prefill all except amount, job_order_no, lab_analysis_input
-            if($(this).hasClass('amount')) {
-                const prevAmount = $('#itemsContainer .item-group').eq(index-1).find('.amount').val();
-                $(this).val(prevAmount || '');
-            } 
-            else if($(this).hasClass('job_order_no')) {
-                // Auto-increment job order number
-                const prevJob = $('#itemsContainer .item-group').eq(index-1).find('.job_order_no').val();
-                let prefix = '';
-                let num = 1;
-
-                if(prevJob) {
-                    const match = prevJob.match(/^(\D*)(\d+)$/);
-                    if(match){
-                        prefix = match[1];
-                        num = parseInt(match[2]) + 1;
-                    } else {
-                        prefix = prevJob;
+                $.ajax({
+                    url: "{{ route('superadmin.bookings.autocomplete') }}",
+                    data: { term: query, type: 'marketing' },
+                    success: function(data){
+                        let html = '';
+                        if(data.length > 0){
+                            data.forEach(item => {
+                                html += `<button type="button" class="dropdown-item" data-id="${item.user_code}" data-name="${item.name}">${item.name}</button>`;
+                            });
+                        } else html = '<span class="dropdown-item disabled">No results found</span>';
+                        $dropdown.html(html).show();
                     }
+                });
+            });
+
+            $dropdown.off('click').on('click','button',function(){
+                $input.val($(this).data('name'));
+                $hidden.val($(this).data('id'));
+                $dropdown.hide();
+            });
+        }
+
+        // Lab Analysis Autocomplete
+        function attachLabAnalysis(inputElement){
+            const $input = $(inputElement);
+            const $hidden = $input.siblings('.lab_analysis_code_hidden');
+            const $dropdown = $input.siblings('.labAnalysisDropdown');
+
+            $input.off('keyup').on('keyup', function(){
+                let query = $input.val().trim();
+                if(query.length < 1){ $dropdown.hide(); $hidden.val(''); return; }
+
+                $.ajax({
+                    url: "{{ route('superadmin.bookings.autocomplete') }}",
+                    data: { term: query, type: 'lab' },
+                    success: function(data){
+                        let html = '';
+                        if(data.length > 0){
+                            data.forEach(item=>{
+                                html += `<button type="button" class="dropdown-item" data-code="${item.user_code}" data-name="${item.name}">${item.label}</button>`;
+                            });
+                        } else html = '<span class="dropdown-item disabled">No results found</span>';
+                        $dropdown.html(html).show();
+                    }
+                });
+            });
+
+            $dropdown.off('click').on('click','button',function(){
+                $input.val($(this).data('code') + ' - ' + $(this).data('name'));
+                $hidden.val($(this).data('code'));
+                $dropdown.hide();
+            });
+        }
+
+        // Job Order Autocomplete
+        function attachJobOrderSearch(inputElement){
+            const $input = $(inputElement);
+            const $dropdown = $input.siblings('.jobOrderList');
+
+            $input.off('keyup').on('keyup', function(){
+                const query = $input.val().trim();
+                if(query.length < 1){ $dropdown.hide(); return; }
+
+                $.ajax({
+                    url: "{{ route('superadmin.bookings.get.job.orders') }}",
+                    data: { term: query },
+                    success: function(data){
+                        let html = '';
+                        if(data.length > 0){
+                            data.forEach(item=>{
+                                html += `<button type="button" class="dropdown-item">${item}</button>`;
+                            });
+                        } else html = '<span class="dropdown-item disabled">No results found</span>';
+                        $dropdown.html(html).show();
+                    }
+                });
+            });
+
+            $dropdown.off('click').on('click','button',function(){
+                $input.val($(this).text());
+                $dropdown.hide();
+            });
+        }
+
+        // Reference No Autocomplete
+        function attachReferenceSearch(inputElement){
+            const $input = $(inputElement);
+            const $dropdown = $input.siblings('.referenceDropdown');
+
+            $input.on('keyup', function(){
+                const query = $input.val().trim();
+                if(query.length < 1){ $dropdown.hide(); return; }
+
+                $.ajax({
+                    url: "{{ route('superadmin.bookings.get.ref_no') }}",
+                    type: "GET",
+                    data: { term: query },
+                    success: function(data){
+                        let html = '';
+                        if(data.length > 0){
+                            data.forEach(item=>{
+                                html += `<button type="button" class="dropdown-item">${item.reference_no}</button>`;
+                            });
+                        } else html = '<span class="dropdown-item disabled">No results found</span>';
+                        $dropdown.html(html).show();
+                    },
+                    error: function(err){
+                        console.log("Error fetching reference no:", err);
+                        $dropdown.hide();
+                    }
+                });
+            });
+
+            $dropdown.on('click','button', function(){
+                $input.val($(this).text());
+                $dropdown.hide();
+            });
+        }
+
+        // Initialize first inputs
+        attachMarketingSearch($('#marketing_code_input'));
+        attachLabAnalysis($('.lab_analysis_input'));
+        attachJobOrderSearch($('.job_order_no'));
+        attachReferenceSearch('.reference_no_input');
+
+        // ==========================
+        // Add / Remove Items Section
+        // ==========================
+        function updateTotalItems() {
+            const count = $('#itemsContainer .item-group').length;
+            $('#totalItems').text('Total Items: ' + count);
+        }
+
+        $('#addItemBtn').on('click', function(){
+            const $first = $('#itemsContainer .item-group:first');
+            const $clone = $first.clone();
+            const index = $('#itemsContainer .item-group').length;
+
+            $clone.find('input, select').each(function(){
+                const name = $(this).attr('name');
+                if(name) $(this).attr('name', name.replace(/\d+/, index));
+
+                // Prefill all except amount, job_order_no, lab_analysis_input
+                if($(this).hasClass('amount')) {
+                    const prevAmount = $('#itemsContainer .item-group').eq(index-1).find('.amount').val();
+                    $(this).val(prevAmount || '');
+                } 
+                else if($(this).hasClass('job_order_no')) {
+                    // Auto-increment job order number
+                    const prevJob = $('#itemsContainer .item-group').eq(index-1).find('.job_order_no').val();
+                    let prefix = '';
+                    let num = 1;
+
+                    if(prevJob) {
+                        const match = prevJob.match(/^(\D*)(\d+)$/);
+                        if(match){
+                            prefix = match[1];
+                            num = parseInt(match[2]) + 1;
+                        } else {
+                            prefix = prevJob;
+                        }
+                    }
+                    $(this).val(prefix + num.toString().padStart(3,'0')); // e.g., AB-001 -> AB-002
+                } 
+                else if($(this).is('input[type=text]')) {
+                    // keep value as is (prefilled)
+                } 
+                else if($(this).is('select')) {
+                    $(this).prop('selectedIndex',0);
                 }
-                $(this).val(prefix + num.toString().padStart(3,'0')); // e.g., AB-001 -> AB-002
-            } 
-            else if($(this).is('input[type=text]')) {
-                // keep value as is (prefilled)
-            } 
-            else if($(this).is('select')) {
-                $(this).prop('selectedIndex',0);
+            });
+
+            $clone.find('.remove-item').show();
+            $('#itemsContainer').append($clone);
+
+            attachLabAnalysis($clone.find('.lab_analysis_input'));
+            attachJobOrderSearch($clone.find('.job_order_no'));
+            attachReferenceSearch($clone.find('.reference_no_input'));
+
+            updateTotalItems(); // Update total items
+        });
+
+        $('#itemsContainer').on('click','.remove-item', function(){
+            if($('#itemsContainer .item-group').length > 1){
+                $(this).closest('.item-group').remove();
+                updateTotalItems();
             }
         });
 
-        $clone.find('.remove-item').show();
-        $('#itemsContainer').append($clone);
+        updateTotalItems(); // Initial count
 
-        attachLabAnalysis($clone.find('.lab_analysis_input'));
-        attachJobOrderSearch($clone.find('.job_order_no'));
-        attachReferenceSearch($clone.find('.reference_no_input'));
-
-        updateTotalItems(); // Update total items
+        // Hide dropdown if clicked outside globally
+        $(document).on('click', function(e){
+            if(!$(e.target).closest('.position-relative').length){
+                $('.dropdown-menu').hide();
+            }
+        });
     });
-
-    $('#itemsContainer').on('click','.remove-item', function(){
-        if($('#itemsContainer .item-group').length > 1){
-            $(this).closest('.item-group').remove();
-            updateTotalItems();
-        }
-    });
-
-    updateTotalItems(); // Initial count
-
-    // Hide dropdown if clicked outside globally
-    $(document).on('click', function(e){
-        if(!$(e.target).closest('.position-relative').length){
-            $('.dropdown-menu').hide();
-        }
-    });
-});
 </script>
 
 

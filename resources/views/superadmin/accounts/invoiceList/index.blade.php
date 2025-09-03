@@ -4,7 +4,7 @@
 
 
 <div class="d-flex justify-content-end mt-3 me-3">
-    <a href="{{ route('superadmin.bookingInvoiceStatuses.edit', $booking->id ?? 0) }}" class="btn btn-primary">
+    <a href="{{ route('superadmin.blank-invoices.create') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Generate Blank PI
     </a>
 </div>  
