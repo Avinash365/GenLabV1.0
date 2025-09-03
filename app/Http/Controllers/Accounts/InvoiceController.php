@@ -11,6 +11,7 @@ use App\Models\NewBooking;
 use Carbon\Carbon;
 use App\Services\BillingService;
 use App\Services\InvoicePdfService;
+use App\Http\Requests\GenerateInvoiceRequest;
 
 
 class InvoiceController extends Controller
@@ -84,6 +85,9 @@ class InvoiceController extends Controller
             if (empty($invoiceData['invoice'])) {
                 throw new \Exception('Invoice data is missing.');
             }
+            
+            // dd($invoiceData['invoice']['invoice_date']); 
+            // exit; 
 
             // Update main invoice
             $invoice->update([
@@ -106,7 +110,9 @@ class InvoiceController extends Controller
                                             + ($invoiceData['bill']['igst_amount'] ?? 0),
                 'round_of'              => $invoiceData['bill']['round_of']??0, 
                 'total_amount'          => $invoiceData['bill']['payable_amount'] ?? $invoice->total_amount, 
-                'type'                  => $invoiceType
+                'address'               => $invoiceData['invoice']['address'] ?? $invoice->address, 
+                'type'                  => $invoiceType,
+                'invoice_date'          => $invoiceData['invoice']['invoice_date']
             ]);
 
             $invoiceId = $invoice->id;
@@ -155,9 +161,9 @@ class InvoiceController extends Controller
         }
     }
     
-    public function generateInvoice(Request $request)
+    public function generateInvoice(GenerateInvoiceRequest $request)
     {
-        try {
+        try { 
             $invoiceType = $request->input('typeOption');
             $invoiceData = $this->billingService->generateInvoiceData($request);
             
@@ -166,7 +172,9 @@ class InvoiceController extends Controller
             // $invoice = $this->storeInvoiceData($invoiceData, $invoiceType);
 
             $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
-            
+            // dd($invoiceData['invoice']['invoiceType']); 
+            // exit; 
+
             return $this->invoicePdfService->generate($invoiceData);
 
         } catch (\Throwable $e) {

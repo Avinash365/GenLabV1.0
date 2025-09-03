@@ -4,6 +4,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
+
 
 class Invoice extends Model
 {
@@ -26,7 +28,9 @@ class Invoice extends Model
         'igst_percent', 
         'gst_amount', 
         'total_amount', 
-        'round_of'
+        'address', 
+        'round_of', 
+        'invoice_date'
     ];
 
     /**
@@ -41,6 +45,20 @@ class Invoice extends Model
     public function relatedBooking()
     {
         return $this->belongsTo(NewBooking::class, 'new_booking_id');
+    }
+
+
+     // Mutator → runs when saving to DB
+    public function setInvoiceDateAttribute($value)
+    {
+        if (!empty($value)) {
+            $this->attributes['invoice_date'] = Carbon::createFromFormat('d-m-Y', $value)->format('Y-m-d');
+        }
+    }
+
+    public function getInvoiceDateAttribute($value)
+    {
+        return Carbon::parse($value)->format('d-m-Y');
     }
 
 }

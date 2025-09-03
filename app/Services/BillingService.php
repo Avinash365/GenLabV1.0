@@ -24,15 +24,13 @@ class BillingService
     public function generateInvoiceData($request)
     {
         $data = json_decode($request->invoice_data, true);
-        
-        // dd($data); 
-        // exit; 
 
         $bookingInfo = $data['booking_info'] ?? [];
+
         
         $invoice = [
             'invoice_no'       => $bookingInfo['invoice_no'] ?? $this->generateInvoiceNo(),
-            'invoice_date'     => $bookingInfo['invoice_date'] ?? now()->format('d/m/Y'),
+            'invoice_date'     => $bookingInfo['invoice_date'] ?? now()->format('d-m-Y'),
             'ref_no'           => $bookingInfo['reference_no'] ?? '',
             'ref_date'         => $bookingInfo['letter_date'] ?? '22-04-2003',
             'name_of_work'     => $bookingInfo['name_of_work'] ?? '',
@@ -41,6 +39,7 @@ class BillingService
             'marketing_person' => $bookingInfo['marketing_person'] ?? '',
             'client_gstin'     => $bookingInfo['client_gstin'] ?? '',
             'sac_code'         => '998346', 
+            'address'          => $bookingInfo['address'], 
         ];
 
         // Bank info
@@ -137,11 +136,25 @@ class BillingService
 
     public function generateInvoiceNo()
     {
-        $lastInvoice = DB::table('invoices')->orderBy('invoice_no', 'desc')->first();
-            
+        // Get last invoice number
+        $lastInvoice = DB::table('invoices')
+            ->orderBy('id', 'desc') // better to use ID for ordering
+            ->first();
+
+        $prefix = 'ITL/25-26/'; // your prefix
+
         if ($lastInvoice && isset($lastInvoice->invoice_no)) {
-             return $lastInvoice->invoice_no + 1;
+            // Extract numeric part from the invoice_no
+            $lastNumber = preg_replace('/[^0-9]/', '', $lastInvoice->invoice_no);
+
+            // Increment numeric part
+            $nextNumber = (int)$lastNumber + 1;
+        } else {
+            $nextNumber = 1001; // starting number
         }
-        return $lastInvoice->invoice_no ?? 1000000001;
+
+        // Return new invoice number with prefix
+        return $prefix . $nextNumber;
     }
+
 }

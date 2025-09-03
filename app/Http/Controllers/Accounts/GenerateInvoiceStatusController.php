@@ -14,6 +14,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\{GetUserActiveDepartment, BillingService};
 use App\Services\InvoicePdfService; 
 
+use App\Http\Requests\GenerateInvoiceRequest;
 
 class GenerateInvoiceStatusController extends Controller
 {
@@ -72,24 +73,36 @@ class GenerateInvoiceStatusController extends Controller
         ]);
     }
 
-    public function create(Request $request)
-    {
-        $invoiceData = $this->billingService->generateInvoiceData($request);
-        $pdf = Pdf::loadView('superadmin.accounts.generateInvoice.bill_pdf1', compact('invoiceData'));
-        return $pdf->download('invoice.pdf');
-    }
+    
 
     public function edit(string $bookingId)
     {
-        $booking = NewBooking::with('items', 'generatedInvoice')->findOrFail($bookingId);
-        $booking->invoice_no = $booking->generatedInvoice?->invoice_no 
-            ?? $this->billingService->generateInvoiceNo();
+        if ($bookingId == 0) {
+            // Empty booking object
+            $booking = (object)[
+                'id' => 0,
+                'items' => collect(),
+                'generatedInvoice' => null,
+                'invoice_no' => $this->billingService->generateInvoiceNo()
+            ];
+        } else {
+            $booking = NewBooking::with('items', 'generatedInvoice')->find($bookingId);
+
+            if (!$booking) {
+                // Optionally, handle if booking not found
+                abort(404, 'Booking not found');
+            }
+
+            $booking->invoice_no = $booking->generatedInvoice?->invoice_no 
+                ?? $this->billingService->generateInvoiceNo();
+        }
 
         return view('superadmin.accounts.generateInvoice.show', compact('booking'));
     }
 
     private function storeInvoiceData(array $invoiceData, string $invoiceType)
-    {
+    {   
+
         $invoice = Invoice::create([
             'new_booking_id' => $invoiceData['booking_id'] ?? null,
             'invoice_no'     => $invoiceData['invoice']['invoice_no'] ?? null,
@@ -111,7 +124,9 @@ class GenerateInvoiceStatusController extends Controller
                                         + ($invoiceData['bill']['igst_amount'] ?? 0),
            'round_of'                => $invoiceData['bill']['round_of'], 
            'total_amount'            => $invoiceData['bill']['payable_amount'], 
-           'type'                    => $invoiceType
+           'address'                 => $invoiceData['address'] ?? '', 
+           'type'                    => $invoiceType, 
+           'invoice_date'            => $invoiceData['invoice']['invoice_date']
         ]);
 
         foreach ($invoiceData['items'] ?? [] as $item) {
@@ -137,9 +152,10 @@ class GenerateInvoiceStatusController extends Controller
         return $invoice;
     }
 
-    public function generateInvoice(Request $request)
+    public function generateInvoice(GenerateInvoiceRequest $request)
     {
-        try {
+        try { 
+    
             $invoiceType = $request->input('typeOption');
             $invoiceData = $this->billingService->generateInvoiceData($request);
             

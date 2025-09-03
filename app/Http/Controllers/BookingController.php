@@ -122,14 +122,8 @@ class BookingController extends Controller
 
                 return $booking;
             });
-
-            // Dispatch job after successful transaction
-            // dispatch(new GenerateBookingCards($booking->id));
-            $pdfFileName = $this->bookingCardService->generateCardsForBooking($booking);
-
             
-            return redirect()->away(asset('storage/cards/' . $pdfFileName));
-                // ->with('success', 'Booking created successfully!');
+            return $this->bookingCardService->renderCardsForBooking($booking);            
 
         } catch (\Exception $e) {
             Log::error('Booking creation failed', [
@@ -137,7 +131,7 @@ class BookingController extends Controller
                 'trace' => $e->getTraceAsString(),
             ]);
 
-            return back()->withErrors($e->getMessage());
+            return back()->withErrors('Booking failed, please try again later.');
         }
     }
 
@@ -251,60 +245,54 @@ class BookingController extends Controller
 
         $results = BookingItem::where('job_order_no', 'LIKE', "%{$search}%")
             ->distinct()
+            ->orderBy('job_order_no', 'desc')
             ->pluck('job_order_no');
 
         return response()->json($results);
     }
 
-    /**
-     * Autocomplete Lab Analyst users
-     */
-    public function getLabAnalyst(Request $request)
+   
+
+    public function getAutocomplete(Request $request)
     {
-        $query = $request->query('term');
+        $term = $request->get('term', '');
+        $type = $request->get('type', ''); // 'lab' or 'marketing'
 
-        $results = User::whereHas('role', function ($q) {
-                $q->where('slug', Role::LAB_ANALYST->value);
-            })
-            ->where(function ($q) use ($query) {
-                $q->where('user_code', 'like', '%' . $query . '%')
-                ->orWhere('name', 'like', '%' . $query . '%');
-            })
-            ->get(['user_code', 'name'])
-            ->map(function ($user) {
-                return [
-                    'user_code' => $user->user_code,
-                    'name'      => $user->name,
-                    'label'     => $user->user_code . ' - ' . $user->name,
-                ];
-            });
+        if (empty($term) || !in_array($type, ['lab', 'marketing'])) {
+            return response()->json([]);
+        }
 
-        return response()->json($results);
-    }
+        $roleSlug = $type === 'lab' ? 'lab_analyst' : 'marketing_person';
 
-    /**
-     * Autocomplete Marketing Person users
-     */
-    public function getMarketingPerson(Request $request)
-    {
-        $query = $request->query('term');
+        $users = User::whereHas('role', function($q) use ($roleSlug) {
+                        $q->where('slug', $roleSlug); // Assuming role table has 'slug' column
+                    })
+                    ->where(function($q) use ($term) {
+                        $q->where('name', 'LIKE', "%{$term}%")
+                        ->orWhere('user_code', 'LIKE', "%{$term}%");
+                    })
+                    ->get(['user_code', 'name'])
+                    ->map(function($user) {
+                        return [
+                            'user_code' => $user->user_code,
+                            'name' => $user->name,
+                            'label' => $user->user_code . ' - ' . $user->name
+                        ];
+                    });
 
-        $results = User::whereHas('role', function ($q) {
-                $q->where('slug', Role::MARKETING_PERSON->value);
-            })
-            ->where(function ($q) use ($query) {
-                $q->where('user_code', 'like', '%' . $query . '%')
-                ->orWhere('name', 'like', '%' . $query . '%');
-            })
-            ->get(['user_code', 'name'])
-            ->map(function ($user) {
-                return [
-                    'user_code' => $user->user_code,
-                    'name'      => $user->name,
-                    'label'     => $user->user_code . ' - ' . $user->name,
-                ];
-            });
+        return response()->json($users);
+    } 
 
-        return response()->json($results);
-    }
+    public function getReferenceNo(Request $request)
+{
+    $term = $request->term ?? '';
+    
+    $results = NewBooking::where('reference_no', 'like', "%{$term}%")
+        ->pluck('reference_no')
+        ->map(fn($ref) => ['reference_no' => $ref])
+        ->toArray();
+
+    return response()->json($results);
+}
+
 }

@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 
+
 class NewBooking extends Model
 {
     use HasFactory, SoftDeletes;
@@ -37,7 +38,9 @@ class NewBooking extends Model
         'hold_status' => 'boolean',
     ];
 
-    
+
+    // Inside your NewBooking model
+   
     /**
      * Relationship: NewBooking has many BookingItems
      */

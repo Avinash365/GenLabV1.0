@@ -24,6 +24,7 @@ class StoreBookingRequest extends FormRequest
         : $booking;
 
         
+
         return [
             'client_name'        => 'required|string|max:255',
             'client_address'     => 'nullable|string',

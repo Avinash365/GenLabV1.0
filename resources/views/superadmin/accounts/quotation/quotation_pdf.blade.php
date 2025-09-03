@@ -146,14 +146,14 @@
             </tr>
             <tr class="total-row">
                 <td colspan="4" class="text-right">Round Off</td>
-                <td>{{ number_format((float)($quotation->round_off_amount ?? 0), 2) }}</td>
+                <td>{{ number_format((float)($quotation->round_off ?? 0), 2) }}</td>
             </tr>
             <tr class="total-row">
                 <td colspan="4" class="text-right">Payable Amount</td>
                 <td>{{ number_format((float)($quotation->payable_amount ?? 0), 2) }}</td>
             </tr>
             <tr>
-                <th colspan="5">Amount in Words: {{ $quotation->payable_amount_in_text ?? '' }}</th>
+                <th colspan="5">Amount in Words: {{ $WordAmout ?? '' }}</th>
             </tr>
         </tbody>
     </table>
@@ -187,10 +187,12 @@
 
         <p>More details visit: <a href="http://www.indiantestinglaboratory.com">www.indiantestinglaboratory.com</a></p>
 
-        <p><strong>Warm Regards</strong><br><br>
+        <p><strong>Warm Regards</strong><br><br></p>
+            <p class="text-uppercase">
         <em>(MANISH SINGH)</em><br>
-        INDIAN TESTING LABORATORY Private Limited<br>
-        Mob. No: +91 - 8368595831, 9999669383</p>
+        {{ $companyName }}<br>
+        Mob. No: +91 - 8368595831, 9999669383
+    </p>
     </div>
 
 </body>

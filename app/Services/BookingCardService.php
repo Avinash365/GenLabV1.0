@@ -2,45 +2,43 @@
 namespace App\Services;
 
 use Barryvdh\DomPDF\Facade\Pdf;
-use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
 use App\Models\NewBooking;
 use Exception;
+use Illuminate\Support\Facades\Log;
+
+use App\Models\SiteSetting;
 
 class BookingCardService
 {
     /**
-     * Generate a single PDF with multiple pages (two cards per page) for a booking
+     * Render a PDF directly in browser for a booking
      */
-    public function generateCardsForBooking(NewBooking $booking): string
+    public function renderCardsForBooking(NewBooking $booking)
     {
-        try {
-           
+        try { 
+
+          
+            $companyName = SiteSetting::value('company_name'); 
+            
+            $booking->lr = '0101';
+            $booking->companyName = $companyName;  
+
             $pdf = Pdf::loadView('pdf.booking_cards', [
                 'booking' => $booking,
             ]);
 
             $fileName = 'booking_' . $booking->id . '.pdf';
 
-            // Save to storage/app/public/cards/
-            Storage::disk('public')->put('cards/' . $fileName, $pdf->output());
-
-            Log::info("Booking PDF generated successfully", [
-                'booking_id' => $booking->id,
-                'file'       => 'storage/cards/' . $fileName,
-            ]);
-
-            return $fileName;
+            // Stream the PDF to browser (opens in new tab)
+            return $pdf->stream($fileName);
 
         } catch (Exception $e) {
-            // Log error for debugging
-            Log::error('Failed to generate booking PDF', [
+            Log::error('Failed to render booking PDF', [
                 'booking_id' => $booking->id ?? null,
                 'error'      => $e->getMessage(),
                 'trace'      => $e->getTraceAsString(),
             ]);
 
-            // Rethrow so controller can handle it
             throw $e;
         }
     }

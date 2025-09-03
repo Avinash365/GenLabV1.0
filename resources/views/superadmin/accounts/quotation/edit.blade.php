@@ -28,7 +28,7 @@
                     <input type="text" id="marketingInput" class="form-control" 
                            placeholder="Enter user code or name" 
                            autocomplete="off" 
-                           value="{{ $quotation->marketing_person_code ?? '' }}">
+                           value="">
                     <button class="btn btn-primary" type="button">
                         <i data-feather="search"></i>
                     </button>
@@ -74,7 +74,7 @@
                         <th style="width:20%;">Client Name</th>
                         <td contenteditable="true" class="editable" id="td_client_name" style="min-width:100px;">{{ $quotation->client_name }}</td>
                         <th style="width:20%;">Marketing Person</th>
-                        <td contenteditable="true" class="editable" id="td_marketing_person" style="min-width:100px;">{{ $quotation->marketing_person_code ?? '' }}</td>
+                        <td contenteditable="true" class="editable" id="td_marketing_person" style="min-width:100px;"></td>
                     </tr>
                     <tr>
                         <th style="width:20%;">Quotation No</th>
@@ -116,7 +116,7 @@
                                 <td class="amount">{{ $item['amount'] }}</td>
                             </tr>
                         @endforeach
-                        @for($i = count($quotation->items); $i < 11; $i++)
+                        @for($i = count($quotation->items); $i < 10; $i++)
                             <tr>
                                 <td>{{ $i+1 }}</td>
                                 <td contenteditable="true" class="editable"></td>
@@ -133,36 +133,36 @@
                         </tr>
                         <tr>
                             <th colspan="3" class="text-end">Discount %</th>
-                            <td contenteditable="true" class="editable" id="discountPercent">{{ $quotation->totals['discount_percent'] ?? 0 }}</td>
+                            <td contenteditable="true" class="editable" id="discountPercent">{{ $quotation->discount_percent ?? 0 }}</td>
                             <th id="discountAmount">{{ $quotation->totals['discount_amount'] ?? '0.00' }}</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">After Discount Amount</th>
-                            <th id="afterDiscount">{{ $quotation->totals['after_discount'] ?? '0.00' }}</th>
+                            <th id="afterDiscount">{{ $quotation->after_discount ?? '0.00' }}</th>
                         </tr>
                         <tr>
                             <th colspan="3" class="text-end">CGST %</th>
-                            <td contenteditable="true" class="editable" id="cgstPercent">{{ $quotation->totals['cgst_percent'] ?? 0 }}</td>
+                            <td contenteditable="true" class="editable" id="cgstPercent">{{ $quotation->cgst_percent ?? 0 }}</td>
                             <th id="cgstAmount">{{ $quotation->totals['cgst_amount'] ?? '0.00' }}</th>
                         </tr>
                         <tr>
                             <th colspan="3" class="text-end">SGST %</th>
-                            <td contenteditable="true" class="editable" id="sgstPercent">{{ $quotation->totals['sgst_percent'] ?? 0 }}</td>
+                            <td contenteditable="true" class="editable" id="sgstPercent">{{ $quotation->sgst_percent ?? 0 }}</td>
                             <th id="sgstAmount">{{ $quotation->totals['sgst_amount'] ?? '0.00' }}</th>
                         </tr>
                         <tr>
                             <th colspan="3" class="text-end">IGST %</th>
-                            <td contenteditable="true" class="editable" id="igstPercent">{{ $quotation->totals['igst_percent'] ?? 0 }}</td>
+                            <td contenteditable="true" class="editable" id="igstPercent">{{ $quotation->igst_percent ?? 0 }}</td>
                             <th id="igstAmount">{{ $quotation->totals['igst_amount'] ?? '0.00' }}</th>
                         </tr>
                         <tr>
                             <th colspan="3" class="text-end">Round Off</th>
-                            <td><input type="checkbox" id="roundOffCheckbox" {{ ($quotation->totals['round_off'] ?? 0) != 0 ? 'checked' : '' }}></td>
-                            <th id="roundOffAmount">{{ $quotation->totals['round_off'] ?? '0.00' }}</th>
+                            <td><input type="checkbox" id="roundOffCheckbox" {{ ($quotation->round_off ?? 0) != 0 ? 'checked' : '' }}></td>
+                            <th id="roundOffAmount">{{ $quotation->round_off ?? '0.00' }}</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">Payable Amount</th>
-                            <th id="payableAmount">{{ $quotation->totals['payable_amount'] ?? '0.00' }}</th>
+                            <th id="payableAmount">{{ $quotation->payable_amount ?? '0.00' }}</th>
                         </tr>
                     </tfoot>
                 </table>

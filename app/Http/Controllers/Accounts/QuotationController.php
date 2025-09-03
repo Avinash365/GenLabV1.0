@@ -10,13 +10,24 @@ use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
+use App\Services\NumberToWordsService;
 
+use App\Models\SiteSetting;
 
 class QuotationController extends Controller
 {
     /**
      * Display a listing of the quotations.
+     * 
      */
+
+    protected $numberToWordsService; 
+    public function __construct(NumberToWordsService $numberToWordsService )
+    {
+        $this->numberToWordsService = $numberToWordsService; 
+
+    }
+
     public function index()
     {
         $quotations = Quotation::with('generatedBy')->latest()->paginate(20);
@@ -150,15 +161,19 @@ class QuotationController extends Controller
     }
 
 
-    public function generateQuotations($id){
+    public function generateQuotations($id){ 
         $quotation = Quotation::with('generatedBy')->findOrFail($id);
         $items = $quotation->items ?? [];
+        $companyName = SiteSetting::value('company_name'); 
 
-         $pdf = Pdf::loadView('superadmin.accounts.quotation.quotation_pdf', [
+        $WordAmout = $this->numberToWordsService->convert($quotation->payable_amount); 
+        $pdf = Pdf::loadView('superadmin.accounts.quotation.quotation_pdf', [
             'quotation' => $quotation,
-            'items'     => $quotation->items
+            'items'     => $quotation->items, 
+            'WordAmout' => $WordAmout, 
+            'companyName' =>$companyName
         ]);
-
+    
         return $pdf->stream('quotation_'.$quotation->id.'.pdf');
     }
 

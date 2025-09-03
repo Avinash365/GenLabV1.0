@@ -96,7 +96,7 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @for($i = 1; $i <= 11; $i++)
+                        @for($i = 1; $i <= 10; $i++)
                             <tr>
                                 <td>{{ $i }}</td>
                                 <td contenteditable="true" class="editable"></td>

@@ -8,20 +8,23 @@ use Carbon\Carbon;
 
 class FileUploadService
 {
-   
     public function upload(UploadedFile $file, string $folder): string
     {
+        // Path inside public/uploads/{folder}
+        $destinationPath = public_path('uploads/' . $folder);
 
-        $filename = Carbon::now()->format('Ymd_His') . '_' . Str::random(20) . '.' . $file->getClientOriginalExtension();
-        $destination = base_path("uploads/{$folder}");
-
-        if (!is_dir($destination)) {
-            mkdir($destination, 0777, true);
+        // Create the folder if it doesn't exist
+        if (!file_exists($destinationPath)) {
+            mkdir($destinationPath, 0755, true);
         }
 
-        $file->move($destination, $filename);
+        // Generate a unique filename
+        $filename = Carbon::now()->format('Ymd_His') . '_' . Str::random(20) . '.' . $file->getClientOriginalExtension();
 
-        return "uploads/{$folder}/" . $filename;
+        // Move the file to public/uploads/{folder}
+        $file->move($destinationPath, $filename);
 
+        // Return the public URL
+        return url('uploads/' . $folder . '/' . $filename);
     }
 }

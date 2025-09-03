@@ -41,6 +41,8 @@ use App\Http\Controllers\Accounts\GenerateInvoiceStatusController;
 use App\Http\Controllers\Accounts\InvoiceController;
 use App\Http\Controllers\Accounts\QuotationController;
 
+
+
 // =======================
 // Super Admin Login Routes
 // =======================
@@ -104,6 +106,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('{new_booking}/edit', [BookingController::class, 'edit'])->name('edit');
 
             Route::get('/get-job-orders', [BookingController::class, 'getJobOrders'])->name('get.job.orders');
+            
             Route::get('/labAnalyst', [BookingController::class, 'getLabAnalyst'])->name('get.labAnalyst');
             Route::get('/marketingCodes', [BookingController::class, 'getMarketingPerson'])->name('get.marketingCodes');
             
@@ -111,6 +114,12 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::get('/bookingByLetter', [ShowBookingByLetterController::class, 'index'])->name('bookingByLetter.index'); 
             Route::delete('/bookingByLetter/{bookingItem}', [ShowBookingByLetterController::class, 'destroy'])->name('bookingByLetter.destroy');
+
+            Route::get('/superadmin/bookings/autocomplete', [BookingController::class, 'getAutocomplete'])->name('autocomplete');
+
+            Route::post('/superadmin/bookings/item/save', [BookingController::class, 'saveItem'])->name('item.save');
+
+            Route::get('/get-ref-no', [BookingController::class, 'getReferenceNo'])->name('get.ref_no');
     });
                                     
 

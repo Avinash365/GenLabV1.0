@@ -122,15 +122,15 @@
                     </tr>
                     <tr>
                         <th>Invoice No </th>
-                        <td class="noteditable" id="td_invoice_no">{{$invoice->invoice_no}}</td>
+                        <td   class="noteditable" id="td_invoice_no">{{$invoice->invoice_no ?? ''}}</td>
                         <th>Reference No</th>
-                        <td class="noteditable" id="td_reference_no">{{ $invoice->relatedBooking->reference_no}}</td>
+                        <td contenteditable="true" class="editable" id="td_reference_no">{{ $invoice->relatedBooking->reference_no ?? ''}}</td>
                     </tr>
                     <tr>
                         <th>Invoice Date</th>
-                        <td class="noteditable" id="td_invoice_date">{{ $invoice->created_at }}</td>
+                        <td contenteditable="true" class="editable" id="td_invoice_date">{{ $invoice->invoice_date }}</td>
                         <th>Letter Date</th>
-                        <td class="noteditable" id="td_letter_date">{{ \Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y') }}</td>
+                        <td  contenteditable="true" class="editable" id="td_letter_date">{{ \Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y') ??'' }}</td>
                     </tr>
                     <tr>
                         <th>Name of Work</th>
@@ -141,8 +141,8 @@
                     <tr>
                         <th>Client GSTIN</th>
                         <td contenteditable="true" class="editable" id="td_client_gstin">{{ $invoice->client_gstin ?? '' }}</td>
-                        <th>SAC CODE</th>
-                        <td contenteditable="true" class="editable" id="td_sac_code">{{$invoice->sac_code}}</td>
+                        <th>Address</th>
+                        <td contenteditable="true" class="editable" id="td_address">{{$invoice->address ?? ''}}</td>
                     </tr>
                 </table>
 
@@ -253,8 +253,8 @@
                 <div class="d-flex justify-content-end align-items-center gap-3 mb-3">
 
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="typeOption" id="typeInvoice" value="tax_invoice" {{ $invoice->type === 'text_invoice' ? 'checked' : '' }}>
-                        <label class="form-check-label" for="typeInvoice">Invoice</label>
+                        <input class="form-check-input" type="radio" name="typeOption" id="typeInvoice" value="tax_invoice" {{ $invoice->type === 'tax_invoice' ? 'checked' : '' }}>
+                        <label class="form-check-label" for="typeInvoice">Tax Invoice</label>
                     </div>
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="typeOption" id="typePI" value="proforma_invoice" {{ $invoice->type === 'proforma_invoice' ? 'checked' : '' }}>
@@ -355,14 +355,14 @@
                 invoice_id: document.getElementById('td_invoice_id').value, 
                 client_name: document.getElementById('td_client_name').textContent,
                 marketing_person: document.getElementById('td_marketing_person').textContent,
-                invoice_no: document.getElementById('td_invoice_no').textContent,
+                invoice_no: document.getElementById('td_invoice_no').value,
                 reference_no: document.getElementById('td_reference_no').textContent,
                 invoice_date: document.getElementById('td_invoice_date').textContent,
                 letter_date: document.getElementById('td_letter_date').textContent,
                 name_of_work: document.getElementById('td_name_of_work').textContent,
                 bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
                 client_gstin: document.getElementById('td_client_gstin').textContent,
-                sac_code: document.getElementById('td_sac_code').textContent
+                address: document.getElementById('td_address').textContent
             },
             items: [],
             totals: {

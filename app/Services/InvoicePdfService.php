@@ -5,6 +5,8 @@ namespace App\Services;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\FileUploadService;
 
+use App\Models\SiteSetting;
+
 
 class InvoicePdfService
 {
@@ -20,13 +22,15 @@ class InvoicePdfService
     public function generate(array $invoiceData, string $view = 'superadmin.accounts.generateInvoice.bill_pdf', string $filename = 'invoice.pdf')
     {
         // $invoiceData['invoice']['ref_no']  
-         
-        $pdf = Pdf::loadView($view, compact('invoiceData'))->setPaper('A4');
+
+        $companyName = SiteSetting::value('company_name'); 
+
+        $pdf = Pdf::loadView($view, compact('invoiceData', 'companyName'))->setPaper('A4');
 
         $pdf->output();
         $canvas = $pdf->getDomPDF()->getCanvas();
         $fontMetrics = new \Dompdf\FontMetrics($canvas, $pdf->getDomPDF()->getOptions());
-        $canvas->page_text(500, 70, "Page {PAGE_NUM} of {PAGE_COUNT}", $fontMetrics->getFont('Arial', 'normal'), 10);
+        $canvas->page_text(500, 80, "Page {PAGE_NUM} of {PAGE_COUNT}", $fontMetrics->getFont('Arial', 'normal'), 10);
 
         return $pdf->stream($filename);
     }

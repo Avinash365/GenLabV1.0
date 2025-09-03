@@ -2,6 +2,13 @@
 @section('title', 'Manage Documents')
 @section('content')
 
+
+<div class="d-flex justify-content-end mt-3 me-3">
+    <a href="{{ route('superadmin.bookingInvoiceStatuses.edit', $booking->id ?? 0) }}" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Generate Blank PI
+    </a>
+</div>  
+
 <!-- Table List -->
 <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">

@@ -9,7 +9,7 @@
             font-size: 6px;
             color: #333;
             line-height: 1;
-            padding-top: 70px;
+            padding-top: 85px;
             padding-bottom: 40px;
         }
         table {
@@ -51,7 +51,7 @@
             padding: 6px 4px;
         }
         .bank-table tr th:first-child { font-weight: bold; width: 20%; }
-        .bank-table tr td:nth-child(2) { width: 50%; }
+        .bank-table tr td:nth-child(2) { width: 40%; }
         .bank-table tr td.text-centre { text-align: center; }
         .footer { margin-top: 20px; font-size: 12px; text-align: center; }
 
@@ -73,8 +73,10 @@
     <tbody>
         <tr>
             <th class="colw text-start" >Bill Issue To:</th>
-            <td class="col4 text-start">
+            <td class="col4 text-start text-uppercase">
                 {{ $invoiceData['invoice']['bill_issue_to'] ?? '' }}<br>
+                {{$invoiceData['invoice']['address'] ?? ''}}
+                <br>
                <span class="text-uppercase">GSTIN: {{ $invoiceData['invoice']['client_gstin'] ?? '' }}</span> 
             </td>
         </tr>
@@ -168,7 +170,7 @@
         <tr>
             <th class="text-start">BANK NAME:</th>
             <td>{{ $invoiceData['bankDetails']['name'] ?? '' }}</td>
-            <td class="text-centre">For Indian Testing Laboratory</td>
+            <td class="text-centre text-uppercase">For {{$companyName}}</td>
         </tr>
         <tr>
             <th class="text-start">ACCOUNT NO:</th>
