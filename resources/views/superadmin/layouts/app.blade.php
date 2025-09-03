@@ -14,15 +14,20 @@
         content="inventory management, admin dashboard, bootstrap template, invoicing, estimates, business management, responsive admin, POS system">
     <meta name="author" content="Dreams Technologies">
     <meta name="robots" content="index, follow">
-    <title>@yield('title')</title>
+    @php(
+        $__appSetting = isset($setting) ? $setting : (View::shared('setting') ?? \App\Models\Setting::first())
+    )
+    @php(
+        $___faviconBase = optional($__appSetting)->site_favicon ? asset('storage/' . optional($__appSetting)->site_favicon) : url('assets/img/favicon.png')
+    )
+    @php(
+        $___favVersion = optional($__appSetting)->updated_at ? ('?v=' . optional($__appSetting)->updated_at->timestamp) : ''
+    )
+    @php($__pageTitle = trim($__env->yieldContent('title')))
+    <title>{{ $__pageTitle !== '' ? ($__pageTitle . ' • ' . (optional($__appSetting)->project_title ?? config('app.name', 'Dream POS'))) : (optional($__appSetting)->project_title ?? config('app.name', 'Dream POS')) }}</title>
+    <link id="app-favicon" rel="icon" type="image/png" sizes="32x32" href="{{ $___faviconBase . $___favVersion }}">
+    <link rel="shortcut icon" href="{{ $___faviconBase . $___favVersion }}" type="image/x-icon">
 
-
-
-    <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="{{ url('assets/img/favicon.png') }}">
-
-    <!-- Apple Touch Icon -->
-    <link rel="apple-touch-icon" sizes="180x180" href="{{ url('assets/img/apple-touch-icon.png') }}">
 
     <!-- Bootstrap CSS -->
     <link rel="stylesheet" href="{{ url('assets/css/bootstrap.min.css') }}">
@@ -60,6 +65,59 @@
     <link rel="stylesheet" href="{{ url('assets/css/style.css') }}">
     @stack('styles')
 
+    <style>
+    /* Global dark mode table tweaks */
+    [data-bs-theme="dark"] .table {
+      --bs-table-color: var(--bs-body-color);
+      --bs-table-bg: transparent;
+      --bs-table-border-color: rgba(255, 255, 255, .15);
+    }
+    [data-bs-theme="dark"] .table-striped>tbody>tr:nth-of-type(odd)>* {
+      --bs-table-bg-type: rgba(255, 255, 255, .03);
+    }
+    [data-bs-theme="dark"] .table-hover>tbody>tr:hover>* {
+      --bs-table-bg-state: rgba(255, 255, 255, .05);
+    }
+    /* Chat inbox badge near header inbox icon */
+    .chat-inbox-badge{ position: absolute; top: -6px; right: -6px; background:#ef4444; color:#fff; font-size:11px; line-height:1; padding:2px 5px; border-radius:999px; min-width:18px; text-align:center; display:none; }
+    .chat-inbox-wrapper{ position: relative; display:inline-block; }
+    </style>
+    <script>
+    // Apply theme + primary color globally before page paint
+    (function() {
+        try {
+            var DEFAULT_THEME = 'system';
+            var DEFAULT_PRIMARY = '#0d6efd';
+            var theme = localStorage.getItem('app-theme') || DEFAULT_THEME;
+            var mql = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
+            var mode = theme === 'system' ? (mql && mql.matches ? 'dark' : 'light') : theme;
+            document.documentElement.setAttribute('data-bs-theme', mode);
+
+            var primary = localStorage.getItem('app-primary-color') || DEFAULT_PRIMARY;
+            if (/^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(primary)) {
+                var root = document.documentElement.style;
+                root.setProperty('--bs-primary', primary);
+                root.setProperty('--bs-link-color', primary);
+            }
+
+            if (mql && mql.addEventListener) {
+                mql.addEventListener('change', function() {
+                    var t = localStorage.getItem('app-theme') || DEFAULT_THEME;
+                    if (t === 'system') {
+                        document.documentElement.setAttribute('data-bs-theme', mql.matches ? 'dark' : 'light');
+                    }
+                });
+            } else if (mql && mql.addListener) {
+                mql.addListener(function(evt) {
+                    var t = localStorage.getItem('app-theme') || DEFAULT_THEME;
+                    if (t === 'system') {
+                        document.documentElement.setAttribute('data-bs-theme', evt.matches ? 'dark' : 'light');
+                    }
+                });
+            }
+        } catch (e) {}
+    })();
+    </script>
 </head>
 
 <body>
@@ -261,6 +319,123 @@
         }
     })();
     </script>
+
+    <!-- Global chat inbox badge + polling -->
+    <script>
+(function(){
+    var countsUrl = '{{ url('/chat/unread-counts') }}';
+    var LAST_KEY = 'chat.unread.last';
+    var LAST_SHOWN_KEY = 'chat.unread.lastShown';
+
+    function getInboxButton(){ return document.getElementById('chatToggle'); }
+    function ensureBadge(){
+        var btn = getInboxButton(); if (!btn) return null;
+        var host = btn.closest('.chat-inbox-wrapper') || (function(){ var w = document.createElement('span'); w.className='chat-inbox-wrapper'; if (btn.parentNode){ btn.parentNode.insertBefore(w, btn); w.appendChild(btn); } return w; })();
+        var badge = host.querySelector('.chat-inbox-badge');
+        if (!badge){ badge = document.createElement('span'); badge.className = 'chat-inbox-badge'; host.appendChild(badge); }
+        return badge;
+    }
+    function setBadge(n){ var b = ensureBadge(); if (!b) return; if (!n){ b.style.display='none'; b.textContent=''; } else { b.style.display='inline-block'; b.textContent = n > 99 ? '99+' : String(n); } }
+
+    var __lastTotal = null;
+    var __lastShownTotal = null;
+
+    function isChatOpen(){
+        try { var st = JSON.parse(localStorage.getItem('chat.ui.state') || '{}'); if (st && st.open) return true; } catch(_) {}
+        var el = document.getElementById('chatPopup');
+        return !!(el && getComputedStyle(el).display !== 'none');
+    }
+
+    function initials(name){ return (String(name||'').trim() || '?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase(); }
+
+    function miniPopup(opts){
+        // opts: { senderName, preview, groupName, unread, groupId, latestId }
+        // Remove existing mini popup
+        var prev = document.getElementById('chat-mini-popup'); if (prev) try { prev.remove(); } catch(_) {}
+        var w = document.createElement('div'); w.id = 'chat-mini-popup';
+        w.style.cssText = 'position:fixed; right:20px; bottom:20px; width:320px; max-width:90vw; background:#111827; color:#fff; border-radius:12px; box-shadow:0 16px 40px rgba(0,0,0,.28); overflow:hidden; z-index:2147483000; opacity:0; transform:translateY(8px); transition:opacity .2s ease, transform .2s ease;';
+
+        var header = document.createElement('div'); header.style.cssText='display:flex; align-items:center; gap:10px; padding:10px 12px; background:#0b5ed7;';
+        var av = document.createElement('div'); av.style.cssText='width:32px; height:32px; border-radius:50%; background:#e5e7eb; color:#111827; font-weight:700; display:flex; align-items:center; justify-content:center;'; av.textContent = initials(opts.senderName || '');
+        var titleWrap = document.createElement('div'); titleWrap.style.cssText='display:flex; flex-direction:column;';
+        var title = document.createElement('div'); title.style.cssText='font-weight:700;'; title.textContent = opts.senderName || 'New message';
+        var sub = document.createElement('div'); sub.style.cssText='font-size:12px; opacity:.9;'; sub.textContent = (opts.groupName || '');
+        titleWrap.appendChild(title); titleWrap.appendChild(sub);
+        var badge = document.createElement('span'); badge.style.cssText='margin-left:auto; background:#ef4444; border-radius:999px; padding:2px 8px; font-size:12px;'; badge.textContent = (opts.unread > 99 ? '99+' : String(opts.unread || 1));
+        header.appendChild(av); header.appendChild(titleWrap); header.appendChild(badge);
+
+        var body = document.createElement('div'); body.style.cssText='padding:10px 12px; background:#1f2937; font-size:14px;'; body.textContent = opts.preview || '';
+
+        var footer = document.createElement('div'); footer.style.cssText='display:flex; align-items:center; gap:8px; padding:8px 10px; background:#111827; border-top:1px solid rgba(255,255,255,.08);';
+        var input = document.createElement('input'); input.type='text'; input.placeholder='Type a reply'; input.style.cssText='flex:1; background:#0f172a; color:#fff; border:1px solid rgba(255,255,255,.15); border-radius:18px; padding:6px 10px; outline:none;';
+        var openBtn = document.createElement('button'); openBtn.textContent='Open'; openBtn.style.cssText='background:#22c55e; color:#0b140f; border:none; border-radius:18px; padding:6px 10px; font-weight:600;';
+        var sendBtn = document.createElement('button'); sendBtn.textContent='Send'; sendBtn.style.cssText='background:#10b981; color:#0b140f; border:none; border-radius:18px; padding:6px 10px; font-weight:600;';
+        footer.appendChild(input); footer.appendChild(openBtn); footer.appendChild(sendBtn);
+
+        w.appendChild(header); w.appendChild(body); w.appendChild(footer);
+        document.body.appendChild(w);
+        requestAnimationFrame(function(){ w.style.opacity='1'; w.style.transform='translateY(0)'; });
+
+        function close(){ w.style.opacity='0'; w.style.transform='translateY(8px)'; setTimeout(function(){ try{ w.remove(); }catch(_){} }, 180); }
+        var timer = setTimeout(close, 8000);
+        w.addEventListener('mouseenter', function(){ clearTimeout(timer); });
+        w.addEventListener('mouseleave', function(){ timer = setTimeout(close, 2500); });
+        openBtn.addEventListener('click', function(e){ e.preventDefault(); if (window.__CHAT_OPEN_GROUP__) window.__CHAT_OPEN_GROUP__(opts.groupId); close(); });
+        sendBtn.addEventListener('click', function(e){ e.preventDefault(); var v = (input.value||'').trim(); if (!v) { input.focus(); return; } if (window.__CHAT_QUICK_REPLY__) window.__CHAT_QUICK_REPLY__(opts.groupId, v, opts.latestId); close(); });
+        input.addEventListener('keydown', function(e){ if (e.key==='Enter'){ e.preventDefault(); sendBtn.click(); } });
+    }
+
+    function previewFromLatest(latest){
+        if (!latest) return '';
+        var t = (latest.type || '').toLowerCase();
+        if (t === 'text') return (latest.content || '').toString().slice(0, 140);
+        if (t === 'image') return '📷 Photo';
+        if (t === 'pdf') return '📄 ' + (latest.original_name || 'PDF');
+        if (t === 'voice') return '🎤 Voice message';
+        return (latest.content || latest.original_name || '').toString().slice(0, 140) || 'New message';
+    }
+
+    async function fetchCounts(){
+        try{
+            const res = await fetch(countsUrl, { headers:{ 'Accept':'application/json' } });
+            if (!res.ok) throw new Error('bad');
+            const data = await res.json();
+            // Notify listeners (chat sidebar) with latest counts payload
+            try { window.dispatchEvent(new CustomEvent('chat:counts', { detail: data })); } catch(_) {}
+            const total = (data && data.total) ? data.total : 0;
+
+            var lastShown = (__lastShownTotal !== null) ? __lastShownTotal : (function(){ try { return parseInt(sessionStorage.getItem(LAST_SHOWN_KEY) || '0', 10) || 0; } catch(_) { return 0; } })();
+
+            if (!isChatOpen() && total > lastShown && data && Array.isArray(data.groups) && data.groups.length){
+                // Prefer the group with the latest message id
+                var sorted = data.groups.slice().sort(function(a,b){ var ai = (a.latest && a.latest.id) || 0; var bi = (b.latest && b.latest.id) || 0; return bi - ai; });
+                var g = sorted[0];
+                var sender = (g.latest && (g.latest.sender_name || (g.latest.user && g.latest.user.name))) || 'New message';
+                var preview = previewFromLatest(g.latest);
+                miniPopup({ senderName: sender, preview: preview, groupName: g.group_name, unread: g.count, groupId: g.group_id, latestId: g.latest ? g.latest.id : null });
+                __lastShownTotal = total; try { sessionStorage.setItem(LAST_SHOWN_KEY, String(total)); } catch(_) {}
+            }
+
+            __lastTotal = total; try { sessionStorage.setItem(LAST_KEY, String(total)); } catch(_) {}
+            setBadge(total);
+        }
+        catch(e){ /* ignore */ }
+    }
+
+    window.__CHAT_BADGE_SET__ = setBadge;
+    window.__CHAT_FETCH_COUNTS__ = fetchCounts;
+
+    if (window.__CHAT_BADGE_TIMER__) { try { clearInterval(window.__CHAT_BADGE_TIMER__); } catch(_){} }
+    window.__CHAT_BADGE_TIMER__ = setInterval(fetchCounts, 5000);
+
+    document.addEventListener('visibilitychange', function(){ if (document.visibilityState === 'visible') fetchCounts(); });
+    window.addEventListener('focus', fetchCounts);
+    document.addEventListener('DOMContentLoaded', fetchCounts);
+    window.addEventListener('load', fetchCounts);
+
+    document.addEventListener('click', function(e){ var t = e.target.closest('#chatToggle'); if (t){ try { sessionStorage.setItem(LAST_SHOWN_KEY, String(__lastTotal || 0)); } catch(_) {} __lastShownTotal = __lastTotal; fetchCounts(); } });
+})();
+</script>
 
     @stack('scripts')
 

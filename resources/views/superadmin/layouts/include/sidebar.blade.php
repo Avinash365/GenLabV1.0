@@ -13,6 +13,8 @@
         <a id="toggle_btn" href="">
             <i data-feather="chevrons-left" class="feather-16"></i>
         </a>
+        <!-- Mobile close button -->
+        <a id="sidebarClose" href="#" style="position:absolute; right:10px; top:10px; display:none;"><i class="fa fa-times"></i></a>
     </div>
     <!-- /Logo -->
 
@@ -213,5 +215,19 @@
         </div>
     </div>
 </div>
+
+<style>
+@media (max-width: 991.98px){
+  #sidebar .sidebar-logo{ position: relative; padding-right: 36px; }
+  #sidebar #sidebarClose{ display:block !important; }
+}
+</style>
+<script>
+(function(){
+  const closeBtn = document.getElementById('sidebarClose');
+  function closeSidebar(){ document.body.classList.remove('sidebar-open'); document.body.classList.remove('no-scroll'); }
+  closeBtn && closeBtn.addEventListener('click', function(e){ e.preventDefault(); closeSidebar(); });
+})();
+</script>
 
 
