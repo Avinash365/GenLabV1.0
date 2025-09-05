@@ -319,21 +319,21 @@
 </style>
 <script>
 (function(){
-    const csrfToken = '{{ csrf_token() }}';
-    @php $authUser = auth('admin')->user() ?: auth('web')->user(); $isAdmin = auth('admin')->check(); @endphp
-    const currentUser = { id: {{ $authUser ? (int)$authUser->id : 'null' }}, name: @json($authUser->name ?? 'Guest') };
-    const isSuperAdmin = {{ $isAdmin ? 'true' : 'false' }};
+    const csrfToken = '<?php echo e(csrf_token()); ?>';
+    <?php $authUser = auth('admin')->user() ?: auth('web')->user(); $isAdmin = auth('admin')->check(); ?>
+    const currentUser = { id: <?php echo e($authUser ? (int)$authUser->id : 'null'); ?>, name: <?php echo json_encode($authUser->name ?? 'Guest', 15, 512) ?> };
+    const isSuperAdmin = <?php echo e($isAdmin ? 'true' : 'false'); ?>;
     const routes = {
-        groups: '{{ url('/chat/groups') }}',
-        messages: '{{ url('/chat/messages') }}',
-        messagesSince: '{{ url('/chat/messages/since') }}',
-        send: '{{ url('/chat/messages') }}',
-        react: (id) => `${'{{ url('/chat/messages') }}'}/${id}/reactions`,
-        direct: (userId) => `${'{{ url('/chat/direct') }}'}/${userId}`,
-        searchUsers: (q) => `${'{{ url('/chat/users/search') }}'}?q=${encodeURIComponent(q)}`,
-        directWith: (id) => `${'{{ url('/chat/direct-with') }}'}/${id}`,
+        groups: '<?php echo e(url('/chat/groups')); ?>',
+        messages: '<?php echo e(url('/chat/messages')); ?>',
+        messagesSince: '<?php echo e(url('/chat/messages/since')); ?>',
+        send: '<?php echo e(url('/chat/messages')); ?>',
+        react: (id) => `${'<?php echo e(url('/chat/messages')); ?>'}/${id}/reactions`,
+        direct: (userId) => `${'<?php echo e(url('/chat/direct')); ?>'}/${userId}`,
+        searchUsers: (q) => `${'<?php echo e(url('/chat/users/search')); ?>'}?q=${encodeURIComponent(q)}`,
+        directWith: (id) => `${'<?php echo e(url('/chat/direct-with')); ?>'}/${id}`,
         // new: mark seen endpoint
-        markSeen: '{{ url('/chat/mark-seen') }}'
+        markSeen: '<?php echo e(url('/chat/mark-seen')); ?>'
     };
 
     // Elements
@@ -1796,3 +1796,4 @@
     setInterval(pollGlobal, 3000);
 })();
 </script>
+<?php /**PATH C:\xampp\htdocs\GenLab\resources\views/superadmin/layouts/include/chat.blade.php ENDPATH**/ ?>

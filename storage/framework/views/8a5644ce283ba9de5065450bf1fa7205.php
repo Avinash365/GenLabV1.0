@@ -2,15 +2,15 @@
     <!-- Mobile Header -->
     <div class="mobile-header d-flex align-items-center justify-content-between px-3 d-md-none" style="min-height:56px; display:none;">
         <button id="mobileMenuToggle" class="btn p-0" aria-label="Menu" style="width:36px;height:36px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;"><i class="fa fa-bars"></i></button>
-        <a href="{{ route('superadmin.dashboard.index') }}" class="d-flex align-items-center" style="gap:8px; text-decoration:none;">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Logo" style="height:24px;">
+        <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="d-flex align-items-center" style="gap:8px; text-decoration:none;">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Logo" style="height:24px;">
         </a>
         <button id="mobileMoreToggle" class="btn p-0 position-relative" aria-label="More" style="width:36px;height:36px;border-radius:8px;border:1px solid #e5e7eb;background:#fff;display:flex;align-items:center;justify-content:center;"><i class="fa fa-ellipsis-v"></i></button>
         <div id="mobileMoreMenu" class="dropdown-menu dropdown-menu-end" style="position:absolute; right:12px; top:56px; display:none;">
-            <a class="dropdown-item" href="{{ route('superadmin.profile') }}">My Profile</a>
+            <a class="dropdown-item" href="<?php echo e(route('superadmin.profile')); ?>">My Profile</a>
             <a class="dropdown-item" href="#">Settings</a>
             <div class="dropdown-divider"></div>
-            <a class="dropdown-item text-danger" href="{{ route('superadmin.logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
+            <a class="dropdown-item text-danger" href="<?php echo e(route('superadmin.logout')); ?>" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">Logout</a>
         </div>
     </div>
 
@@ -25,7 +25,7 @@
                     <input type="text" class="form-control border-start-0" placeholder="Search" style="border-radius:0; height:30px; font-size:15px; padding:0 10px; border:1px solid #e5e7eb; border-left:0; background:#fff;">
                     <span class="input-group-text bg-white border-start-0" style="border-radius:0 8px 8px 0; height:30px; border:1px solid #e5e7eb; border-left:0; padding-right:14px; background:#fff;">
                         <kbd class="d-flex align-items-center" style="background:#f3f4f6; border-radius:6px; padding:2px 8px; font-size:13px;">
-                            <img src="{{ url('assets/img/icons/command.svg') }}" alt="img" class="me-1" style="height:15px;">K
+                            <img src="<?php echo e(url('assets/img/icons/command.svg')); ?>" alt="img" class="me-1" style="height:15px;">K
                         </kbd>
                     </span>
                 </div>
@@ -43,7 +43,7 @@
         </div>
         <!-- Right: Icon buttons and user avatar -->
         <div class="d-flex align-items-center flex-shrink-0" style="gap:10px; margin-left:18px;">
-            <button class="btn btn-light d-flex align-items-center justify-content-center p-0" style="border-radius:6px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;"><img src="{{ url('assets/img/icons/flag.jpg') }}" alt="EN" style="height:18px;"></button>
+            <button class="btn btn-light d-flex align-items-center justify-content-center p-0" style="border-radius:6px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;"><img src="<?php echo e(url('assets/img/icons/flag.jpg')); ?>" alt="EN" style="height:18px;"></button>
             <button id="expandToggle" class="btn btn-light d-flex align-items-center justify-content-center p-0" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;" type="button"><i class="fa fa-expand"></i></button>
             <button id="chatToggle" class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class="fa fa-envelope"></i>
@@ -53,16 +53,16 @@
                 <i class="fa fa-bell"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:flex; align-items:center; justify-content:center;">2</span>
             </button>
-            <a href="{{ route('superadmin.websettings.edit') }}" class="btn btn-light d-flex align-items-center justify-content-center p-0 {{ Request::routeIs('superadmin.websettings.*') ? 'active' : '' }}" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
+            <a href="<?php echo e(route('superadmin.websettings.edit')); ?>" class="btn btn-light d-flex align-items-center justify-content-center p-0 <?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class="fa fa-cog"></i>
             </a>
             <!-- User avatar -->
             <div class="dropdown ms-2">
                 <a href="#" class="d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="{{ url('assets/img/profiles/avator1.jpg') }}" alt="User" class="img-fluid" style="height:30px; width:30px; object-fit:cover; border-radius: 6px;">
+                    <img src="<?php echo e(url('assets/img/profiles/avator1.jpg')); ?>" alt="User" class="img-fluid" style="height:30px; width:30px; object-fit:cover; border-radius: 6px;">
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
-                    @php
+                    <?php
                         $authUser = auth('web')->user() ?: auth('admin')->user();
                         $roleLabel = '';
                         if ($authUser) {
@@ -73,26 +73,26 @@
                                 $roleLabel = (string) ($r ?? '');
                             }
                         }
-                    @endphp
+                    ?>
                     <li class="px-3 py-2">
                         <div class="d-flex align-items-center">
-                            <img src="{{ url('assets/img/profiles/avator1.jpg') }}" alt="User" class="rounded-circle me-2" style="height:32px; width:32px;">
+                            <img src="<?php echo e(url('assets/img/profiles/avator1.jpg')); ?>" alt="User" class="rounded-circle me-2" style="height:32px; width:32px;">
                             <div>
-                                <div class="fw-medium">{{ $authUser->name ?? 'Guest' }}</div>
-                                <div class="text-muted" style="font-size:13px;">{{ $roleLabel }}</div>
+                                <div class="fw-medium"><?php echo e($authUser->name ?? 'Guest'); ?></div>
+                                <div class="text-muted" style="font-size:13px;"><?php echo e($roleLabel); ?></div>
                             </div>
                         </div>
                     </li>
                     <li><hr class="dropdown-divider"></li>
-                    <li><a class="dropdown-item" href="{{ route('superadmin.profile') }}"><i class="fa fa-user me-2"></i>Profile</a></li>
+                    <li><a class="dropdown-item" href="<?php echo e(route('superadmin.profile')); ?>"><i class="fa fa-user me-2"></i>Profile</a></li>
                     <li><a class="dropdown-item" href="#"><i class="fa fa-cog me-2"></i>Settings</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
-                        <a class="dropdown-item text-danger" href="{{ route('superadmin.logout') }}" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
+                        <a class="dropdown-item text-danger" href="<?php echo e(route('superadmin.logout')); ?>" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">
                             <i class="fa fa-sign-out me-2"></i>Logout
                         </a>
-                        <form id="logout-form" action="{{ route('superadmin.logout') }}" method="POST" style="display: none;">
-                            @csrf
+                        <form id="logout-form" action="<?php echo e(route('superadmin.logout')); ?>" method="POST" style="display: none;">
+                            <?php echo csrf_field(); ?>
                         </form>
                     </li>
                 </ul>
@@ -100,7 +100,7 @@
         </div>
     </div>
 </div>
-@include('superadmin.layouts.include.chat')
+<?php echo $__env->make('superadmin.layouts.include.chat', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
 <style>
 /* Mobile responsive header & sidebar */
@@ -162,3 +162,4 @@
   });
 })();
 </script>
+<?php /**PATH C:\xampp\htdocs\GenLab\resources\views/superadmin/layouts/include/header.blade.php ENDPATH**/ ?>

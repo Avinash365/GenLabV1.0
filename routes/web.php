@@ -99,3 +99,6 @@ Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadm
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
 });
 
+// Delete chat message
+Route::delete('/chat/messages/{id}', [\App\Http\Controllers\ChatController::class, 'destroy'])->name('chat.messages.destroy');
+

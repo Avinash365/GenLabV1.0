@@ -546,6 +546,13 @@ class ChatController extends Controller
     protected function serializeMessage(ChatMessage $m, $viewer)
     {
         $fileUrl = $m->file_path ? Storage::url($m->file_path) : null;
+        // Ensure only one /storage/ prefix
+        if ($fileUrl && !preg_match('#^https?://#', $fileUrl)) {
+            $fileUrl = str_replace('/public/', '/storage/', $fileUrl);
+            // Remove all leading /storage/ prefixes except one
+            $fileUrl = preg_replace('#^(/storage/)+#', '/storage/', $fileUrl);
+        }
+
         $hasUserRel = $m->relationLoaded('user') && $m->user;
         $senderGuard = $m->sender_guard ?: ($m->reply_to_message_id ? 'admin' : ($hasUserRel ? 'web' : 'admin'));
         $senderName = ($senderGuard === 'admin') ? 'Super Admin' : ($m->sender_name ?: ($hasUserRel ? $m->user->name : 'User'));
@@ -577,7 +584,6 @@ class ChatController extends Controller
             'group_id' => $m->group_id,
             'user_id' => $m->user_id,
             'user' => $displayUser,
-            'sender_guard' => $senderGuard,
             'sender_name' => $senderName,
             'type' => $m->type,
             'content' => $m->content,
@@ -597,5 +603,34 @@ class ChatController extends Controller
             $data['reactions'] = [];
         }
         return $data;
+    }
+
+    // Add this method to support DELETE for messages:
+    public function destroy($id)
+    {
+        $user = $this->user();
+        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
+        $msg = ChatMessage::find($id);
+        if (!$msg) return response()->json(['message' => 'Not found'], 404);
+        // Only allow sender or admin to delete
+        if ($this->isSuperAdmin() || $msg->user_id === $user->id) {
+            $msg->delete();
+            return response()->json(['status' => 'deleted']);
+        }
+        return response()->json(['message' => 'Forbidden'], 403);
+    }
+
+    public function promptDelete($messageId)
+    {
+        $user = $this->user();
+        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
+        $msg = ChatMessage::find($messageId);
+        if (!$msg) return response()->json(['message' => 'Not found'], 404);
+        // Only allow sender or admin to delete
+        if ($this->isSuperAdmin() || $msg->user_id === $user->id) {
+            $msg->delete();
+            return response()->json(['status' => 'deleted']);
+        }
+        return response()->json(['message' => 'Forbidden'], 403);
     }
 }
