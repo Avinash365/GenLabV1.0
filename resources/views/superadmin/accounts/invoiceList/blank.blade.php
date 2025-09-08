@@ -1,3 +1,7 @@
+@php
+    use Illuminate\Support\Str;
+@endphp
+
 @extends('superadmin.layouts.app')
 
 @section('title', 'Invoice Report')
@@ -18,6 +22,7 @@
         {{ session('success') }}
     </div>
 @endif
+
 <div class="row g-3">
 
     <!-- Card 1: GSTIN Search -->
@@ -38,20 +43,6 @@
         </div>
     </div>
 
-    <!-- Card 2: File Upload -->
-    <div class="col-sm-6">
-        <div class="card">
-            <div class="card-body">
-                <form id="gstinUploadForm" class="d-flex flex-column" enctype="multipart/form-data" method="POST" action="">
-                    @csrf
-                    <label for="gstinFile" class="btn btn-secondary w-50 mb-2">Upload File</label>
-                    <input type="file" id="gstinFile" name="gstin_file" class="d-none">
-                    <small id="fileName" class="text-muted">No file selected</small>
-                    <button type="submit" class="btn btn-success w-50 mt-3">Save</button>
-                </form>
-            </div>
-        </div>
-    </div>
 </div>
 
 <!-- GSTIN Details / Error Modal -->
@@ -78,19 +69,19 @@
   </div>
 </div>
 
-
 <div class="content">
-
     <form id="invoiceForm" method="POST">
         @csrf
-        <input type="hidden" id="td_booking_id" name="booking_id" value="{{ $booking->id }}">
+        <input type="hidden" id="td_booking_id" name="booking_id" value="">
+        <input type="hidden" id="td_invoice_id" name="invoice_id" value="">
+
         <div class="page-header d-flex justify-content-between align-items-center">
             <div class="page-title">
-                <h4 class="fw-bold">Invoice Report</h4>
-                <h6>Preview Invoice in PDF Style</h6>
+                <h4 class="fw-bold text-uppercase">Blank Invoice</h4>
+                <h6>PDF</h6>
             </div>
             <div class="page-btn">
-                <button type="submit"  class="btn btn-danger" formaction="{{ route('superadmin.bookingInvoiceStatuses.generateInvoice', $booking->id) }}">
+                <button type="submit" class="btn btn-danger" formaction="">
                     <i class="fa fa-file-pdf me-2"></i>Download PDF
                 </button>
             </div>
@@ -99,44 +90,42 @@
         <div class="card">
             <div class="card-body">
 
-                <!-- Booking Information -->
-                <h5 class="fw-bold mb-2">Booking Information</h5>
+                <!-- Invoice Information -->
+                <h5 class="fw-bold mb-2">Invoice Information</h5>
                 <table class="table table-bordered mb-4">
                     <tr>
-                        <th>Client Name</th>
-                        <td class="noteditable" id="td_client_name">{{ $booking->client_name ?? 'N/A' }}</td>
-                        <th>Marketing Person</th>
-                        <td class="noteditable" id="td_marketing_person">{{ $booking->marketingPerson->name ?? '-' }}</td>
+                        <th style="width: 190px;">Client Name</th>
+                        <td contenteditable="true" class="editable" id="td_client_name"></td>
+                        <th style="width: 190px;">Marketing Person</th>
+                        <td contenteditable="true" class="editable" id="td_marketing_person"></td>
                     </tr>
                     <tr>
-                        <th>Invoice No </th>
-                        <td contenteditable="true" class="editable" id="td_invoice_no">{{$booking->invoice_no ?? '00'}}</td>
+                        <th style="width: 190px;">Invoice No</th>
+                        <td contenteditable="true" class="editable" id="td_invoice_no"></td>
                         <th>Reference No</th>
-                        <td contenteditable="true" class="editable" id="td_reference_no">{{ $booking->reference_no ?? ''}}</td>
+                        <td contenteditable="true" class="editable" id="td_reference_no"></td>
                     </tr>
                     <tr>
-                        <th>Invoice Date</th>
-                        <td contenteditable="true" class="editable" id="td_invoice_date">{{ date('d-m-Y') ??'' }}</td>
+                        <th style="width: 190px;">Invoice Date</th>
+                        <td contenteditable="true" class="editable" id="td_invoice_date"></td>
                         <th>Letter Date</th>
-                        <td class="noteditable" id="td_letter_date">
-                            {{ isset($booking->job_order_date) && $booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('d-m-Y') : '' }}
-                        </td>
+                        <td contenteditable="true" class="editable" id="td_letter_date"></td>
                     </tr>
                     <tr>
-                        <th>Name of Work</th>
-                        <td contenteditable="true" class="editable" id="td_name_of_work">{{ $booking->name_of_work ?? '' }}</td>
-                        <th>Bill Issue To</th>
+                        <th style="width: 190px;">Name of Work</th>
+                        <td contenteditable="true" class="editable" id="td_name_of_work"></td>
+                        <th style="width: 190px;">Bill Issue To</th>
                         <td contenteditable="true" class="editable" id="td_bill_issue_to"></td>
                     </tr>
                     <tr>
-                        <th>Client GSTIN</th>
-                        <td contenteditable="true" class="editable" id="td_client_gstin">{{ $booking->gstin ?? '' }}</td>
-                        <th>Address</th>
+                        <th style="width: 190px;">Client GSTIN</th>
+                        <td contenteditable="true" class="editable" id="td_client_gstin"></td>
+                        <th style="width: 190px;">Address</th>
                         <td contenteditable="true" class="editable" id="td_address"></td>
                     </tr>
                 </table>
 
-                <!-- Data Fields (Items) -->
+                <!-- Data Fields -->
                 <h5 class="fw-bold mb-2">Data Fields</h5>
                 <table class="table table-bordered mb-4" id="invoiceTable">
                     <thead style="background:#e9ecef;">
@@ -150,30 +139,17 @@
                         </tr>
                     </thead>
                     <tbody>
-    @if($booking->items->isNotEmpty())
-        @foreach($booking->items as $item)
-            <tr>
-                <td>{{ $loop->iteration }}</td>
-                <td contenteditable="true" class="editable">{{ $item->sample_description }}</td>
-                <td>{{ $item->job_order_no }}</td>
-                <td contenteditable="true" class="editable qty">{{ $item->qty ?? 1 }}</td>
-                <td contenteditable="true" class="editable rate">{{ number_format($item->amount, 2) }}</td>
-                <td class="amount">0.00</td>
-            </tr>
-        @endforeach
-    @else
-        @for($i = 1; $i <= 9; $i++)
-            <tr>
-                <td>{{ $i }}</td>
-                <td contenteditable="true" class="editable"></td>
-                <td></td>
-                <td contenteditable="true" class="editable qty">1</td>
-                <td contenteditable="true" class="editable rate">0.00</td>
-                <td class="amount">0.00</td>
-            </tr>
-        @endfor
-    @endif
-</tbody>
+                        @for ($j = 0; $j < 9; $j++)
+                            <tr>
+                                <td>{{ $j }}</td>
+                                <td contenteditable="true" class="editable"></td>
+                                <td></td>
+                                <td contenteditable="true" class="editable qty"></td>
+                                <td contenteditable="true" class="editable rate"></td>
+                                <td class="amount">0.00</td>
+                            </tr>
+                        @endfor
+                    </tbody>
                     <tfoot>
                         <tr>
                             <th colspan="5" class="text-end">Total</th>
@@ -181,7 +157,7 @@
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">Discount %</th>
-                            <td contenteditable="true" class="editable" id="discountPercent">0</td>
+                            <td contenteditable="true" class="editable" id="discountPercent"></td>
                             <th id="discountAmount">0.00</th>
                         </tr>
                         <tr>
@@ -236,41 +212,45 @@
                     </tr>
                     <tr>
                         <th>IFSC CODE</th>
-                        <td class="noteditable" id="td_ifsc_code">{{ $bankInfo->ifsc_code ?? "SB00001"}}</td>
+                        <td class="noteditable" id="td_ifsc_code">{{ $bankInfo->ifsc_code ?? 'SB00001' }}</td>
                     </tr>
                     <tr>
                         <th>Pan No</th>
-                        <td class="noteditable" id="td_pan_no">{{$bankInfo->pan_no??'AHTPJ45454'}}</td>
+                        <td class="noteditable" id="td_pan_no">{{ $bankInfo->pan_no ?? 'AHTPJ45454' }}</td>
                     </tr>
                     <tr>
                         <th>GSTIN</th>
-                        <td class="noteditable" id="td_gstin">{{$bankInfo->gstin??'87457187441417644'}}</td>
+                        <td class="noteditable" id="td_gstin">{{ $bankInfo->gstin ?? '87457187441417644' }}</td>
                     </tr>
                 </table>
 
-                <!-- Hidden inputs to send to controller -->
+                <!-- Hidden inputs -->
                 <input type="hidden" name="invoice_data" id="invoice_data">
+                <input type="hidden" id="invoice_type" name="invoice_type" value="">
 
-                <input type="hidden" id="invoice_type" name="invoice_type" value="tax_invoice">
-
-                <!-- Option to select type -->
+                <!-- Type Option -->
                 <div class="d-flex justify-content-end align-items-center gap-3 mb-3">
-
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="typeOption" id="typeInvoice" value="tax_invoice" >
-                        <label class="form-check-label" for="typeInvoice"> Tax Invoice</label>
+                        <input class="form-check-input" type="radio" name="typeOption" id="typeInvoice" value="tax_invoice" checked>
+                        <label class="form-check-label" for="typeInvoice">Tax Invoice</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="typeOption" id="typePI" value="proforma_invoice" checked>
+                        <input class="form-check-input" type="radio" name="typeOption" id="typePI" value="proforma_invoice">
                         <label class="form-check-label" for="typePI">Proforma Invoice</label>
                     </div>
                 </div>
-                 <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-success" formaction="{{ route('superadmin.bookingInvoiceStatuses.generateInvoice', $booking->id) }}">
+
+                <div class="d-flex justify-content-end gap-2 mb-3">
+                    <button type="button" id="addRowBtn" class="btn btn-primary"><i class="fa fa-plus me-1"></i> Add Row</button>
+                    <button type="button" id="deleteRowBtn" class="btn btn-danger"><i class="fa fa-trash me-1"></i> Delete Row</button>
+                </div>
+
+                <div class="d-flex justify-content-end">
+                    <button type="submit" class="btn btn-success" formaction="{{ route('superadmin.blank-invoices.store') }}">
                         <i class="fa fa-file-pdf me-2"></i>Save Invoice
                     </button>
                 </div>
-                
+
             </div>
         </div>
     </form>
@@ -345,16 +325,15 @@
         document.getElementById('payableAmount').textContent = payable.toFixed(2);
     }
 
-    // Gather all data before submitting
     document.getElementById('invoiceForm').addEventListener('submit', function(e){
-        let selectedType = document.querySelector('input[name="typeOption"]:checked').value;
-        document.getElementById('invoice_type').value = selectedType;
-        // Update amounts first
         updateAmounts();
+        const selectedType = document.querySelector('input[name="typeOption"]:checked').value;
+        document.getElementById('invoice_type').value = selectedType;
 
         let invoiceData = {
-            booking_info: {
+            booking_info: { 
                 booking_id: document.getElementById('td_booking_id').value, 
+                invoice_id: document.getElementById('td_invoice_id').value, 
                 client_name: document.getElementById('td_client_name').textContent,
                 marketing_person: document.getElementById('td_marketing_person').textContent,
                 invoice_no: document.getElementById('td_invoice_no').textContent,
@@ -364,7 +343,8 @@
                 name_of_work: document.getElementById('td_name_of_work').textContent,
                 bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
                 client_gstin: document.getElementById('td_client_gstin').textContent,
-                address: document.getElementById('td_address').textContent
+                address: document.getElementById('td_address').innerHTML.replace(/<div>/g, '\n').replace(/<\/div>/g, '').replace(/<br>/g, '\n')
+
             },
             items: [],
             totals: {
@@ -405,7 +385,6 @@
         document.getElementById('invoice_data').value = JSON.stringify(invoiceData);
     });
 
-    // Editable cells event
     document.querySelectorAll('.editable').forEach(function(cell){
         cell.addEventListener('input', function() {
             this.classList.add('edited');
@@ -414,9 +393,7 @@
         cell.addEventListener('blur', updateAmounts);
     });
 
-    // Round off checkbox
     document.getElementById('roundOffCheckbox').addEventListener('change', updateAmounts);
-
     window.addEventListener('DOMContentLoaded', updateAmounts);
 </script>
 @endpush
@@ -425,7 +402,6 @@
 <script>
 document.getElementById('gstinForm').addEventListener('submit', function(e) {
     e.preventDefault();
-
     let gstin = document.getElementById('gstinInput').value;
 
     fetch(`http://sheet.gstincheck.co.in/check/c3b7f08e18bb7426407abad5af5d7712/${gstin}`)
@@ -436,36 +412,26 @@ document.getElementById('gstinForm').addEventListener('submit', function(e) {
             var errorDiv = document.getElementById('gstinError');
 
             if(data.flag) {
-                // Populate data
                 document.getElementById('tradeNam').textContent = data.data.tradeNam || 'N/A';
-                document.getElementById('panNo').textContent = data.data.gstin 
-                    ? data.data.gstin.substring(2, 12) // PAN
-                    : 'N/A';
+                document.getElementById('panNo').textContent = data.data.gstin ? data.data.gstin.substring(2, 12) : 'N/A';
                 document.getElementById('legalName').textContent = data.data.lgnm || 'N/A';
                 document.getElementById('address').textContent = data.data.pradr?.adr || 'N/A';
-
-                // Show details and hide error
                 detailsDiv.classList.remove('d-none');
                 errorDiv.classList.add('d-none');
             } else {
-                // Show error and hide details
                 errorDiv.textContent = data.message || 'GSTIN not found';
                 errorDiv.classList.remove('d-none');
                 detailsDiv.classList.add('d-none');
             }
-
-            // Show modal
             gstinModal.show();
         })
         .catch(err => {
             var gstinModal = new bootstrap.Modal(document.getElementById('gstinModal'));
             var detailsDiv = document.getElementById('gstinDetails');
             var errorDiv = document.getElementById('gstinError');
-
             errorDiv.textContent = 'Something went wrong. Please try again.';
             errorDiv.classList.remove('d-none');
             detailsDiv.classList.add('d-none');
-
             gstinModal.show();
             console.error(err);
         });
@@ -475,11 +441,40 @@ document.getElementById('gstinForm').addEventListener('submit', function(e) {
 
 @push('scripts')
 <script>
-    // Show selected file name below upload button
-    document.getElementById('gstinFile').addEventListener('change', function() {
-        const fileName = this.files[0]?.name || 'No file selected';
-        document.getElementById('fileName').textContent = fileName;
+const invoiceTableBody = document.querySelector('#invoiceTable tbody');
+const addRowBtn = document.getElementById('addRowBtn');
+const deleteRowBtn = document.getElementById('deleteRowBtn');
+
+addRowBtn.addEventListener('click', function() {
+    const rowCount = invoiceTableBody.rows.length;
+    const row = invoiceTableBody.insertRow();
+
+    row.insertCell(0).textContent = rowCount;
+    row.insertCell(1).contentEditable = "true"; row.cells[1].classList.add('editable');
+    row.insertCell(2).contentEditable = "true"; row.cells[2].classList.add('editable');
+    row.insertCell(3).contentEditable = "true"; row.cells[3].classList.add('editable','qty');
+    row.insertCell(4).contentEditable = "true"; row.cells[4].classList.add('editable','rate');
+    row.insertCell(5).textContent = "0.00"; row.cells[5].classList.add('amount');
+
+    row.querySelectorAll('.editable').forEach(function(cell){
+        cell.addEventListener('input', function() {
+            this.classList.add('edited');
+            updateAmounts();
+        });
+        cell.addEventListener('blur', updateAmounts);
     });
+
+    updateAmounts();
+});
+
+deleteRowBtn.addEventListener('click', function() {
+    const rowCount = invoiceTableBody.rows.length;
+    if (rowCount > 1) {
+        invoiceTableBody.deleteRow(rowCount - 1);
+        updateAmounts();
+    }
+});
 </script>
 @endpush
+
 @endsection

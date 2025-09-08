@@ -116,9 +116,9 @@
                         @forelse($bookings as $booking)
                         <tr>
                             <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                            <td>{{ $booking->client_name }}</td>
-                            <td>{{ $booking->reference_no }}</td>
-                            <td>{{ $booking->marketingPerson->name }}</td>
+                            <td>{{ $booking->client_name ?? ''}}</td>
+                            <td>{{ $booking->reference_no ?? ''}}</td>
+                            <td>{{ $booking->marketingPerson->name ?? '' }}</td>
                             <td>
                                 @if($booking->upload_letter_path)
                                     <a href="{{ url($booking->upload_letter_path) }}" target="_blank">View</a>
@@ -138,7 +138,7 @@
                                         <div class="modal-dialog modal-dialog-centered modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">Booking Items for {{ $booking->client_name }}</h5>
+                                                    <h5 class="modal-title">Booking Items for {{ $booking->client_name ?? '' }}</h5>
                                                      <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                                                         <span aria-hidden="true">&times;</span> 
                                                     </button>
@@ -160,13 +160,13 @@
                                                             <tbody>
                                                                 @foreach($booking->items as $item)
                                                                 <tr>
-                                                                    <td>{{ $item->sample_description }}</td>
-                                                                    <td>{{ $item->sample_quality }}</td>
-                                                                    <td>{{ $item->lab_analysis_code }}</td>
-                                                                    <td>{{ $item->particulars }}</td>
+                                                                    <td>{{ $item->sample_description ?? '' }}</td>
+                                                                    <td>{{ $item->sample_quality ?? '' }}</td>
+                                                                    <td>{{ $item->lab_analysis_code ?? '' }}</td>
+                                                                    <td>{{ $item->particulars ?? '' }}</td>
                                                                     <td>{{ \Carbon\Carbon::parse($item->lab_expected_date)->format('d-m-Y') }}</td>
-                                                                    <td>{{ $item->amount }}</td>
-                                                                    <td>{{ $item->job_order_no }}</td>
+                                                                    <td>{{ $item->amount ?? '' }}</td>
+                                                                    <td>{{ $item->job_order_no  ?? ''}}</td>
                                                                 </tr>
                                                                 @endforeach
                                                             </tbody>

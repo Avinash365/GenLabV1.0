@@ -86,9 +86,7 @@ class InvoiceController extends Controller
                 throw new \Exception('Invoice data is missing.');
             }
             
-            // dd($invoiceData['invoice']['invoice_date']); 
-            // exit; 
-
+            
             // Update main invoice
             $invoice->update([
                 'new_booking_id' => $bookingId,

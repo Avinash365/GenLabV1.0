@@ -142,7 +142,7 @@
                         <th>Client GSTIN</th>
                         <td contenteditable="true" class="editable" id="td_client_gstin">{{ $invoice->client_gstin ?? '' }}</td>
                         <th>Address</th>
-                        <td contenteditable="true" class="editable" id="td_address">{{$invoice->address ?? ''}}</td>
+                        <td contenteditable="true" class="editable" id="td_address">{{ $invoice->address ?? '' }}</td>
                     </tr>
                 </table>
 
@@ -362,7 +362,12 @@
                 name_of_work: document.getElementById('td_name_of_work').textContent,
                 bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
                 client_gstin: document.getElementById('td_client_gstin').textContent,
-                address: document.getElementById('td_address').textContent
+                address: document.getElementById('td_address').innerHTML
+                                .replace(/<div>/g, '\n')   // convert div to newline
+                                .replace(/<\/div>/g, '')   // remove closing div
+                                .replace(/<br>/g, '\n')    // convert <br> to newline
+                                .replace(/&nbsp;/g, ' ')
+                                .trim()
             },
             items: [],
             totals: {

@@ -57,6 +57,9 @@
         .terms h3 { font-size: 13px; font-weight: bold; margin-bottom: 8px; }
         .terms ol { padding-left: 18px; margin-bottom: 15px; }
         .terms p { margin: 4px 0; }
+        .page-break {
+            page-break-before: always; /* forces a new page before this element */
+        }
     </style>
 </head>
 <body>
@@ -84,7 +87,7 @@
 
     <p><strong>To,</strong><br>
         <strong>{{ $quotation->client_name ?? 'Avinash' }}</strong><br>
-        {{ $quotation->bill_issue_to ?? 'Avinajsjd' }}<br>
+        {!! nl2br($quotation->bill_issue_to ?? 'Avinajsjd') !!}<br>
         GST No: {{ $quotation->client_gst ?? 'NA' }}
     </p>
 
@@ -159,7 +162,7 @@
     </table>
 
     <!-- Terms & Conditions Section -->
-    <div class="terms">
+    <div class="terms page-break">
         <h3>Terms & Conditions:</h3>
         <ol>
             <li>The above quotation charges will be valid for next 30 days.</li>

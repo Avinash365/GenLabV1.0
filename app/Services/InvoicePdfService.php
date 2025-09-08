@@ -4,8 +4,11 @@ namespace App\Services;
 
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\FileUploadService;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+
 
 use App\Models\SiteSetting;
+use App\Models\PaymentSetting;
 
 
 class InvoicePdfService
@@ -24,13 +27,28 @@ class InvoicePdfService
         // $invoiceData['invoice']['ref_no']  
 
         $companyName = SiteSetting::value('company_name'); 
+        $amount = $invoiceData['bill']['payable_amount'] ?? '1';
 
-        $pdf = Pdf::loadView($view, compact('invoiceData', 'companyName'))->setPaper('A4');
+        // Fetch UPI & Holder Name from DB
+        $paymentSetting = PaymentSetting::latest()->first();
+
+        $upiId = $paymentSetting->upi ?? "7739136208.etb@icici"; 
+        
+
+        $payeeName =  $paymentSetting->branch_holder_name ?? "Avinash Kumar Jha"; 
+        $description = "In:10001";
+
+        $upiLink = "upi://pay?pa={$upiId}&pn=" . urlencode($payeeName) . "&am={$amount}&cu=INR&tn=" . urlencode($description);
+
+        $qrcode = base64_encode( QrCode::format('svg')->size(200)->generate($upiLink));
+
+
+        $pdf = Pdf::loadView($view, compact('invoiceData', 'companyName', 'qrcode'))->setPaper('A4');
 
         $pdf->output();
         $canvas = $pdf->getDomPDF()->getCanvas();
         $fontMetrics = new \Dompdf\FontMetrics($canvas, $pdf->getDomPDF()->getOptions());
-        $canvas->page_text(500, 80, "Page {PAGE_NUM} of {PAGE_COUNT}", $fontMetrics->getFont('Arial', 'normal'), 10);
+        $canvas->page_text(500, 85, "Page {PAGE_NUM} of {PAGE_COUNT}", $fontMetrics->getFont('Arial', 'normal'), 10);
 
         return $pdf->stream($filename);
     }

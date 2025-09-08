@@ -26,14 +26,12 @@
                     <tr>
                         <th>#</th>
                         <th>Invoice No</th>
-                        <th>Client Name</th>
-                        <th>Marketing Person</th>      
+                        <th>Client Name</th>     
                         <th>Client Gstin</th>
                         <th>GST Amount</th>
                         <th>Total Amount</th>
                         <th>Letter Date</th>
                         <th>Bill Issue Date</th>
-                        <th>Invoice Letter</th>
                         <th>Action</th>
                     </tr>
                 </thead>
@@ -42,28 +40,19 @@
                         <tr>
                             <td>{{ $loop->iteration }}</td>
                             <td>{{ $invoice->invoice_no }}</td>
-                            <td>{{ $invoice->relatedBooking->client_name ?? 'N/A' }}</td>
-                            <td>{{ $invoice->relatedBooking->marketingPerson->name ?? 'N/A' }}</td>
-
+                            <td>{{ $invoice->client_name}}</td>
                             <td>{{ $invoice->client_gstin }}</td>
-                            <td>{{$invoice->gst_amount}}</td>
-                            <td>{{$invoice->total_amount}}</td>
+                            <td>{{ ($invoice->cgst_amount ?? 0) + ($invoice->sgst_amount ?? 0) + ($invoice->igst_amount ?? 0) }}</td>
+                            <td>{{$invoice->payable_amount}}</td>
                             <td>{{ \Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y') }}</td>
                            <td>{{ optional($invoice->created_at)->format('d-m-y') }}</td>
-                            <td>
-    @if($invoice->invoice_letter_path)
-        <a href="{{ url($invoice->invoice_letter_path) }}" class="btn btn-sm btn-outline-primary" target="_blank">Pdf</a>
-    @else
-        <span class="text-muted">No File</span>
-    @endif
-</td>
 <td class="d-flex">
     <!-- Edit Button as Icon -->
-    <a href="{{ route('superadmin.invoices.edit', $invoice->id) }}" 
+    <!-- <a href="{{ route('superadmin.invoices.edit', $invoice->id) }}" 
        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
        title="Edit">
         <i data-feather="edit" class="feather-edit"></i>
-    </a>
+    </a> -->
 
     <!-- Delete Button as Icon -->
     <button type="button" 
@@ -80,7 +69,7 @@
                         <div class="modal fade" id="deleteModal{{ $invoice->id }}" tabindex="-1" aria-hidden="true">
                           <div class="modal-dialog modal-sm">
                             <div class="modal-content">
-                              <form action="{{ route('superadmin.invoices.destroy', $invoice->id) }}" method="POST">
+                              <form action="{{ route('superadmin.blank-invoices.destroy', $invoice->id) }}" method="POST">
                                 @csrf
                                 @method('DELETE')
                                 <div class="modal-header">
@@ -91,8 +80,8 @@
                                   Are you sure you want to delete <strong>{{ $invoice->invoice_no }}</strong>?
                                 </div>
                                 <div class="modal-footer">
-                                  <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
-                                  <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                  <button type="button" class="btn btn-secondary btn-sm ms-2" data-bs-dismiss="modal">Cancel</button>
+                                  <button type="submit" class="btn btn-danger btn-sm ms-2">Delete</button>
                                 </div>
                               </form>
                             </div>

@@ -42,6 +42,22 @@ class NumberToWordsService
     public function convert($number)
     {
         if (!is_numeric($number)) return false;
+        
+        // Handle decimals properly
+        if (strpos((string)$number, '.') !== false) {
+            $parts = explode('.', (string)$number);
+            $whole = (int)$parts[0];
+            $decimal = (int)rtrim($parts[1], '0'); // remove trailing zeros
+
+            $result = $this->convert($whole);
+            if ($decimal > 0) {
+                $result .= ' point';
+                foreach (str_split((string)$parts[1]) as $digit) {
+                    $result .= ' ' . $this->dictionary[(int)$digit];
+                }
+            }
+            return $result;
+        }
 
         if ($number < 0) {
             return 'negative ' . $this->convert(abs($number));

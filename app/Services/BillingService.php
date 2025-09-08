@@ -3,6 +3,8 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
+use App\Models\PaymentSetting;
+
 
 
 class BillingService
@@ -42,17 +44,19 @@ class BillingService
             'address'          => $bookingInfo['address'], 
         ];
 
-        // Bank info
-        $bankInfo = $data['bank_info'] ?? [];
+        $paymentSetting = PaymentSetting::latest()->first();
         $bankDetails = [
-            'instructions' => $bankInfo['instructions'] ?? 'hhjbgfdbbdfn',
-            'name'         => $bankInfo['name'] ?? 'SBI',
-            'account_no'   => $bankInfo['account_no'] ?? '5346432165465',
-            'branch_name'  => $bankInfo['branch_name'] ?? 'knkfnknjfg',
-            'ifsc_code'    => $bankInfo['ifsc_code'] ?? '212knkvf',
-            'pan_no'       => $bankInfo['pan_no'] ?? '32414645',
-            'gstin'        => $bankInfo['gstin'] ?? '4642165454654',
-        ];
+                    'instructions'       => $paymentSetting->instructions ?? '',
+                    'bank_name'          => $paymentSetting->bank_name ?? '',
+                    'account_no'         => $paymentSetting->account_no ?? '',
+                    'branch_name'        => $paymentSetting->branch ?? '',
+                    'branch_holder_name' => $paymentSetting->branch_holder_name ?? '',
+                    'ifsc_code'          => $paymentSetting->ifsc_code ?? '',
+                    'pan_code'           => $paymentSetting->pan_code ?? '',
+                    'pan_no'             => $paymentSetting->pan_no ?? '',
+                    'gstin'              => $paymentSetting->gstin ?? '',
+                    'upi'                => $paymentSetting->upi ?? '',
+                ];
 
         // Items
         $items = $data['items'] ?? [];
@@ -134,26 +138,28 @@ class BillingService
         return $invoiceId;
     }
 
-    public function generateInvoiceNo()
+    public function generateInvoiceNo($prefix = 'ITL/25-26/', $start = 1001)
     {
-        // Get last invoice number
-        $lastInvoice = DB::table('invoices')
-            ->orderBy('id', 'desc') // better to use ID for ordering
+        // Get the last invoice record
+        $lastInvoice = \DB::table('invoices')
+            ->where('invoice_no', 'like', $prefix . '%')
+            ->orderBy('id', 'desc')
             ->first();
 
-        $prefix = 'ITL/25-26/'; // your prefix
-
         if ($lastInvoice && isset($lastInvoice->invoice_no)) {
-            // Extract numeric part from the invoice_no
-            $lastNumber = preg_replace('/[^0-9]/', '', $lastInvoice->invoice_no);
+            // Extract numeric part at the end
+            preg_match('/(\d+)$/', $lastInvoice->invoice_no, $matches);
 
-            // Increment numeric part
-            $nextNumber = (int)$lastNumber + 1;
+            if (isset($matches[1])) {
+                $lastNumber = $matches[1];
+                $nextNumber = bcadd($lastNumber, '1'); // increment
+            } else {
+                $nextNumber = $start;
+            }
         } else {
-            $nextNumber = 1001; // starting number
+            $nextNumber = $start;
         }
 
-        // Return new invoice number with prefix
         return $prefix . $nextNumber;
     }
 

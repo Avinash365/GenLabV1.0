@@ -50,11 +50,26 @@ class Invoice extends Model
 
      // Mutator → runs when saving to DB
     public function setInvoiceDateAttribute($value)
-    {
-        if (!empty($value)) {
-            $this->attributes['invoice_date'] = Carbon::createFromFormat('d-m-Y', $value)->format('Y-m-d');
+{   
+    if (!empty($value)) {
+        $cleanValue = trim($value); // remove \n, spaces, tabs
+
+        try {
+            $this->attributes['invoice_date'] =
+                Carbon::createFromFormat('d-m-Y', $cleanValue)->format('Y-m-d');
+        } catch (\Exception $e) {
+            // fallback if format doesn't match
+            try {
+                $this->attributes['invoice_date'] =
+                    Carbon::parse($cleanValue)->format('Y-m-d');
+            } catch (\Exception $e2) {
+                $this->attributes['invoice_date'] = null;
+            }
         }
+    } else {
+        $this->attributes['invoice_date'] = null;
     }
+}
 
     public function getInvoiceDateAttribute($value)
     {

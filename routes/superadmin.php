@@ -40,7 +40,8 @@ use App\Http\Controllers\SuperAdmin\ReportingController;
 use App\Http\Controllers\Accounts\GenerateInvoiceStatusController;
 use App\Http\Controllers\Accounts\InvoiceController;
 use App\Http\Controllers\Accounts\QuotationController;
-
+use App\Http\Controllers\Accounts\BlankInvoiceController;
+use App\Http\Controllers\Accounts\PaymentSettingController;
 
 
 // =======================
@@ -156,6 +157,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('calibrations', CalibrationController::class);
         Route::resource('iscodes', ISCodeController::class);
         Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
+        Route::resource('blank-invoices', BlankInvoiceController::class);
         
         Route::post('bookingInvoiceStatuses/generate-invoice/{booking}', [GenerateInvoiceStatusController::class, 'generateInvoice'])
               ->name('bookingInvoiceStatuses.generateInvoice');
@@ -170,7 +172,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
         
+        Route::resource('payment-settings', PaymentSettingController::class);
 
+        
         // Store
         Route::prefix('store')->name('store.')->group(function () {
             Route::get('/', [StoreController::class, 'index'])->name('Store');

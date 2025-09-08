@@ -11,6 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\NumberToWordsService;
+use Illuminate\Support\Facades\DB; 
+
 
 use App\Models\SiteSetting;
 
@@ -46,11 +48,12 @@ class QuotationController extends Controller
     /**
      * Store a newly created quotation in storage.
      */
+
     public function store(Request $request)
     {
-        
         $letterhead = $request->input('letterhead');
-       
+
+        // Validate request
         $request->validate([
             'quotation_no' => 'required|unique:quotations,quotation_no',
             'quotation_date' => 'required|date',
@@ -58,43 +61,55 @@ class QuotationController extends Controller
             'quotation_data' => 'required|json',
         ]);
 
+        DB::beginTransaction(); // Start transaction
+
         try {
             $quotationData = json_decode($request->quotation_data, true);
             $marketingUser = User::findOrFail($request->marketing_user_id);
 
+            // Filter out empty items
+            $items = array_filter($quotationData['items'], function($item) {
+                return !empty(trim($item['description'])) 
+                    && !empty(trim($item['qty'])) 
+                    && !empty(trim($item['rate']));
+            });
+
+            // Create the quotation
             Quotation::create([
                 'quotation_no' => $request->quotation_no,
                 'quotation_date' => $request->quotation_date,
-                'client_name' => $quotationData['client_name'],
-                'client_gstin' => $quotationData['client_gstin'],
-                'name_of_work' => $quotationData['name_of_work'],
-                'bill_issue_to' => $quotationData['bill_issue_to'],
+                'client_name' => $quotationData['client_name'] ?: null,
+                'client_gstin' => $quotationData['client_gstin'] ?: null,
+                'name_of_work' => $quotationData['name_of_work'] ?: null,
+                'bill_issue_to' => $quotationData['bill_issue_to'] ?: null, // preserves line breaks
                 'marketing_person_code' => $marketingUser->user_code,
                 'generated_by' => Auth::id(),
-                'items' => $quotationData['items'],
-                'total_amount' => $quotationData['totals']['total_amount'],
-                'discount_percent' => $quotationData['totals']['discount_percent'],
-                'discount_amount' => $quotationData['totals']['discount_amount'],
-                'after_discount' => $quotationData['totals']['after_discount'],
-                'cgst_percent' => $quotationData['totals']['cgst_percent'],
-                'cgst_amount' => $quotationData['totals']['cgst_amount'],
-                'sgst_percent' => $quotationData['totals']['sgst_percent'],
-                'sgst_amount' => $quotationData['totals']['sgst_amount'],
-                'igst_percent' => $quotationData['totals']['igst_percent'],
-                'igst_amount' => $quotationData['totals']['igst_amount'],
-                'round_off' => $quotationData['totals']['round_off'],
-                'payable_amount' => $quotationData['totals']['payable_amount'],
-                'letterhead'     => $letterhead
+                'items' => $items, // only non-empty items
+                'total_amount' => $quotationData['totals']['total_amount'] ?: 0,
+                'discount_percent' => $quotationData['totals']['discount_percent'] ?: 0,
+                'discount_amount' => $quotationData['totals']['discount_amount'] ?: 0,
+                'after_discount' => $quotationData['totals']['after_discount'] ?: 0,
+                'cgst_percent' => $quotationData['totals']['cgst_percent'] ?: 0,
+                'cgst_amount' => $quotationData['totals']['cgst_amount'] ?: 0,
+                'sgst_percent' => $quotationData['totals']['sgst_percent'] ?: 0,
+                'sgst_amount' => $quotationData['totals']['sgst_amount'] ?: 0,
+                'igst_percent' => $quotationData['totals']['igst_percent'] ?: 0,
+                'igst_amount' => $quotationData['totals']['igst_amount'] ?: 0,
+                'round_off' => $quotationData['totals']['round_off'] ?: 0,
+                'payable_amount' => $quotationData['totals']['payable_amount'] ?: 0,
+                'letterhead' => $letterhead
             ]);
 
+            DB::commit(); // Commit transaction
             return redirect()->back()->with('success', 'Quotation created successfully.');
 
         } catch (\Exception $e) {
+            DB::rollBack(); // Rollback if any error occurs
             Log::error('Quotation Store Error: '.$e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Something went wrong while creating the quotation.');
         }
     }
-
+    
     /**
      * Show the form for editing the specified quotation.
      */
@@ -116,31 +131,43 @@ class QuotationController extends Controller
             'quotation_data' => 'required|json',
         ]);
 
+        DB::beginTransaction(); // Start transaction
+
         try {
             $quotationData = json_decode($request->quotation_data, true);
             $marketingUser = User::findOrFail($request->marketing_user_id);
 
+            // Filter out empty items
+            $items = array_filter($quotationData['items'], function($item) {
+                return !empty(trim($item['description'])) 
+                    && !empty(trim($item['qty'])) 
+                    && !empty(trim($item['rate']));
+            });
+
             $quotation->update([
                 'marketing_person_code' => $marketingUser->user_code,
-                'items' => $quotationData['items'],
-                'total_amount' => $quotationData['totals']['total_amount'],
-                'discount_percent' => $quotationData['totals']['discount_percent'],
-                'discount_amount' => $quotationData['totals']['discount_amount'],
-                'after_discount' => $quotationData['totals']['after_discount'],
-                'cgst_percent' => $quotationData['totals']['cgst_percent'],
-                'cgst_amount' => $quotationData['totals']['cgst_amount'],
-                'sgst_percent' => $quotationData['totals']['sgst_percent'],
-                'sgst_amount' => $quotationData['totals']['sgst_amount'],
-                'igst_percent' => $quotationData['totals']['igst_percent'],
-                'igst_amount' => $quotationData['totals']['igst_amount'],
-                'round_off' => $quotationData['totals']['round_off'],
-                'payable_amount' => $quotationData['totals']['payable_amount'],
-                'letterhead'     => $letterhead
+                'items' => $items, // only non-empty items
+                'total_amount' => $quotationData['totals']['total_amount'] ?: 0,
+                'discount_percent' => $quotationData['totals']['discount_percent'] ?: 0,
+                'discount_amount' => $quotationData['totals']['discount_amount'] ?: 0,
+                'after_discount' => $quotationData['totals']['after_discount'] ?: 0,
+                'cgst_percent' => $quotationData['totals']['cgst_percent'] ?: 0,
+                'cgst_amount' => $quotationData['totals']['cgst_amount'] ?: 0,
+                'sgst_percent' => $quotationData['totals']['sgst_percent'] ?: 0,
+                'sgst_amount' => $quotationData['totals']['sgst_amount'] ?: 0,
+                'igst_percent' => $quotationData['totals']['igst_percent'] ?: 0,
+                'igst_amount' => $quotationData['totals']['igst_amount'] ?: 0,
+                'round_off' => $quotationData['totals']['round_off'] ?: 0,
+                'payable_amount' => $quotationData['totals']['payable_amount'] ?: 0,
+                'bill_issue_to' => $quotationData['bill_issue_to'] ?: null, // preserve newlines
+                'letterhead' => $letterhead
             ]);
 
+            DB::commit(); // Commit transaction
             return redirect()->back()->with('success', 'Quotation updated successfully.');
 
         } catch (\Exception $e) {
+            DB::rollBack(); // Rollback if any error occurs
             Log::error('Quotation Update Error: '.$e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Something went wrong while updating the quotation.');
         }
