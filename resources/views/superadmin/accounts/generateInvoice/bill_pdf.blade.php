@@ -9,7 +9,7 @@
             font-size: 6px;
             color: #333;
             line-height: 1;
-            padding-top: 85px;
+            padding-top: 90px;
             padding-bottom: 40px;
         }
         table {
@@ -57,7 +57,8 @@
 
         /* Column widths */
         .colw { width: 30%; } /* Header left column */
-        .col4 { width: 70%; } /* Description column */
+        .col4 { width: 52%; } /* Description column */
+        
     </style>
 </head>
 <body>
@@ -68,6 +69,7 @@
         <tr>
             <th class="colw text-uppercase">GSTIN: {{ $invoiceData['bankDetails']['gstin'] ?? '' }}</th>
             <th class="text-uppercase">{{$invoiceData['invoice']['invoiceType']}}</th>
+            <th>Scan to Pay</Th>
         </tr>
     </thead>
     <tbody>
@@ -75,19 +77,20 @@
             <th class="colw text-start" >Bill Issue To:</th>
             <td class="col4 text-start text-uppercase">
                 {{ $invoiceData['invoice']['bill_issue_to'] ?? '' }}<br>
-                {{$invoiceData['invoice']['address'] ?? ''}}
+                {!! nl2br($invoiceData['invoice']['address'] ?? '') !!}
                 <br>
-               <span class="text-uppercase">GSTIN: {{ $invoiceData['invoice']['client_gstin'] ?? '' }}</span> 
-            </td>
+               <span class="text-uppercase">GSTIN: {{ $invoiceData['invoice']['client_gstin'] ?? '' }}</span>  
+            </td> 
+            <td><img src="data:image/svg+xml;base64,{{ $qrcode }}" alt="UPI QR Code" width="100"></td>
         </tr>
-        <tr><th class="colw text-start">Invoice No:</th><td class="col4 text-uppercase">{{ $invoiceData['invoice']['invoice_no'] ?? '' }}</td></tr>
-        <tr><th class="colw text-start">Invoice Date:</th><td class="col4">{{ $invoiceData['invoice']['invoice_date'] ?? now()->format('d-m-Y') }}</td></tr>
+        <tr><th class="colw text-start">Invoice No:</th><td colspan="2" class="col4 text-uppercase">{{ $invoiceData['invoice']['invoice_no'] ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Invoice Date:</th><td colspan="2" class="col4">{{ $invoiceData['invoice']['invoice_date'] ?? now()->format('d-m-Y') }}</td></tr>
         <tr><th class="colw text-start">Ref. No & Date:</th>
-            <td class="col4 text-uppercase">
+            <td colspan="2" class="col4 text-uppercase">
                 {{ $invoiceData['invoice']['ref_no'] ?? '' }} & {{ $invoiceData['invoice']['ref_date'] ?? '' }}
             </td>
         </tr>
-        <tr><th class="colw text-start">Name of Work:</th><td class="col4">{{ $invoiceData['invoice']['name_of_work'] ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Name of Work:</th><td  colspan="2" class="col4">{{ $invoiceData['invoice']['name_of_work'] ?? '' }}</td></tr>
     
     </tbody>
 </table>
@@ -169,7 +172,7 @@
         </tr>
         <tr>
             <th class="text-start">BANK NAME:</th>
-            <td>{{ $invoiceData['bankDetails']['name'] ?? '' }}</td>
+            <td>{{ $invoiceData['bankDetails']['bank_name'] ?? '' }}</td>
             <td class="text-centre text-uppercase">For {{$companyName}}</td>
         </tr>
         <tr>

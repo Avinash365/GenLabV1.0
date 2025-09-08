@@ -43,7 +43,7 @@
         </div>
     </div>
 
-   
+</div>
 
 <!-- GSTIN Details / Error Modal -->
 <div class="modal fade" id="gstinModal" tabindex="-1" aria-labelledby="gstinModalLabel" aria-hidden="true">
@@ -69,19 +69,16 @@
   </div>
 </div>
 
-
 <div class="content">
-
     <form id="invoiceForm" method="POST">
         @csrf
         <input type="hidden" id="td_booking_id" name="booking_id" value="">
         <input type="hidden" id="td_invoice_id" name="invoice_id" value="">
-        <input type="hidden" id="td_invoice_no" name="invoice_no" value="">
 
         <div class="page-header d-flex justify-content-between align-items-center">
             <div class="page-title">
                 <h4 class="fw-bold text-uppercase">Blank Invoice</h4>
-                <h6>PDF </h6>
+                <h6>PDF</h6>
             </div>
             <div class="page-btn">
                 <button type="submit" class="btn btn-danger" formaction="">
@@ -93,18 +90,18 @@
         <div class="card">
             <div class="card-body">
 
-                <!-- invoice Information -->
+                <!-- Invoice Information -->
                 <h5 class="fw-bold mb-2">Invoice Information</h5>
                 <table class="table table-bordered mb-4">
                     <tr>
                         <th style="width: 190px;">Client Name</th>
-                        <td  contenteditable="true" class="editable" id="td_client_name" ></td>
+                        <td contenteditable="true" class="editable" id="td_client_name"></td>
                         <th style="width: 190px;">Marketing Person</th>
-                        <td contenteditable="true" class="editable" id="td_marketing_person" ></td>
+                        <td contenteditable="true" class="editable" id="td_marketing_person"></td>
                     </tr>
                     <tr>
-                        <th style="width: 190px;">Invoice No </th>
-                        <td contenteditable="true" class="editable" id="td_invoice_no" ></td>
+                        <th style="width: 190px;">Invoice No</th>
+                        <td contenteditable="true" class="editable" id="td_invoice_no"></td>
                         <th>Reference No</th>
                         <td contenteditable="true" class="editable" id="td_reference_no"></td>
                     </tr>
@@ -112,7 +109,7 @@
                         <th style="width: 190px;">Invoice Date</th>
                         <td contenteditable="true" class="editable" id="td_invoice_date"></td>
                         <th>Letter Date</th>
-                        <td  contenteditable="true" class="editable" id="td_letter_date"></td>
+                        <td contenteditable="true" class="editable" id="td_letter_date"></td>
                     </tr>
                     <tr>
                         <th style="width: 190px;">Name of Work</th>
@@ -128,7 +125,7 @@
                     </tr>
                 </table>
 
-                <!-- Data Fields (Items) -->
+                <!-- Data Fields -->
                 <h5 class="fw-bold mb-2">Data Fields</h5>
                 <table class="table table-bordered mb-4" id="invoiceTable">
                     <thead style="background:#e9ecef;">
@@ -144,7 +141,7 @@
                     <tbody>
                         @for ($j = 0; $j < 9; $j++)
                             <tr>
-                                <td>{{$j}}</td>
+                                <td>{{ $j }}</td>
                                 <td contenteditable="true" class="editable"></td>
                                 <td></td>
                                 <td contenteditable="true" class="editable qty"></td>
@@ -215,36 +212,40 @@
                     </tr>
                     <tr>
                         <th>IFSC CODE</th>
-                        <td class="noteditable" id="td_ifsc_code">{{ $bankInfo->ifsc_code ?? "SB00001"}}</td>
+                        <td class="noteditable" id="td_ifsc_code">{{ $bankInfo->ifsc_code ?? 'SB00001' }}</td>
                     </tr>
                     <tr>
                         <th>Pan No</th>
-                        <td class="noteditable" id="td_pan_no">{{$bankInfo->pan_no??'AHTPJ45454'}}</td>
+                        <td class="noteditable" id="td_pan_no">{{ $bankInfo->pan_no ?? 'AHTPJ45454' }}</td>
                     </tr>
                     <tr>
                         <th>GSTIN</th>
-                        <td class="noteditable" id="td_gstin">{{$bankInfo->gstin??'87457187441417644'}}</td>
+                        <td class="noteditable" id="td_gstin">{{ $bankInfo->gstin ?? '87457187441417644' }}</td>
                     </tr>
                 </table>
 
-                <!-- Hidden inputs to send to controller -->
+                <!-- Hidden inputs -->
                 <input type="hidden" name="invoice_data" id="invoice_data">
                 <input type="hidden" id="invoice_type" name="invoice_type" value="">
 
-                <!-- Option to select type -->
+                <!-- Type Option -->
                 <div class="d-flex justify-content-end align-items-center gap-3 mb-3">
-
                     <div class="form-check">
                         <input class="form-check-input" type="radio" name="typeOption" id="typeInvoice" value="tax_invoice" checked>
                         <label class="form-check-label" for="typeInvoice">Tax Invoice</label>
                     </div>
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="typeOption" id="typePI" value="proforma_invoice" >
+                        <input class="form-check-input" type="radio" name="typeOption" id="typePI" value="proforma_invoice">
                         <label class="form-check-label" for="typePI">Proforma Invoice</label>
                     </div>
                 </div>
 
-                 <div class="d-flex justify-content-end">
+                <div class="d-flex justify-content-end gap-2 mb-3">
+                    <button type="button" id="addRowBtn" class="btn btn-primary"><i class="fa fa-plus me-1"></i> Add Row</button>
+                    <button type="button" id="deleteRowBtn" class="btn btn-danger"><i class="fa fa-trash me-1"></i> Delete Row</button>
+                </div>
+
+                <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-success" formaction="{{ route('superadmin.blank-invoices.store') }}">
                         <i class="fa fa-file-pdf me-2"></i>Save Invoice
                     </button>
@@ -280,7 +281,7 @@
 @endpush
 
 @push('scripts')
-<script> 
+<script>
     function updateAmounts() {
         let total = 0;
         document.querySelectorAll('#invoiceTable tbody tr').forEach(function(row) {
@@ -324,14 +325,8 @@
         document.getElementById('payableAmount').textContent = payable.toFixed(2);
     }
 
-    // Gather all data before submitting
     document.getElementById('invoiceForm').addEventListener('submit', function(e){
-        // Update amounts first
-        
-        
         updateAmounts();
-
-         // Set invoice_type from selected radio button
         const selectedType = document.querySelector('input[name="typeOption"]:checked').value;
         document.getElementById('invoice_type').value = selectedType;
 
@@ -341,14 +336,15 @@
                 invoice_id: document.getElementById('td_invoice_id').value, 
                 client_name: document.getElementById('td_client_name').textContent,
                 marketing_person: document.getElementById('td_marketing_person').textContent,
-                invoice_no: document.getElementById('td_invoice_no').value,
+                invoice_no: document.getElementById('td_invoice_no').textContent,
                 reference_no: document.getElementById('td_reference_no').textContent,
                 invoice_date: document.getElementById('td_invoice_date').textContent,
                 letter_date: document.getElementById('td_letter_date').textContent,
                 name_of_work: document.getElementById('td_name_of_work').textContent,
                 bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
                 client_gstin: document.getElementById('td_client_gstin').textContent,
-                address: document.getElementById('td_address').textContent
+                address: document.getElementById('td_address').innerHTML.replace(/<div>/g, '\n').replace(/<\/div>/g, '').replace(/<br>/g, '\n')
+
             },
             items: [],
             totals: {
@@ -389,7 +385,6 @@
         document.getElementById('invoice_data').value = JSON.stringify(invoiceData);
     });
 
-    // Editable cells event
     document.querySelectorAll('.editable').forEach(function(cell){
         cell.addEventListener('input', function() {
             this.classList.add('edited');
@@ -398,9 +393,7 @@
         cell.addEventListener('blur', updateAmounts);
     });
 
-    // Round off checkbox
     document.getElementById('roundOffCheckbox').addEventListener('change', updateAmounts);
-
     window.addEventListener('DOMContentLoaded', updateAmounts);
 </script>
 @endpush
@@ -409,7 +402,6 @@
 <script>
 document.getElementById('gstinForm').addEventListener('submit', function(e) {
     e.preventDefault();
-
     let gstin = document.getElementById('gstinInput').value;
 
     fetch(`http://sheet.gstincheck.co.in/check/c3b7f08e18bb7426407abad5af5d7712/${gstin}`)
@@ -420,36 +412,26 @@ document.getElementById('gstinForm').addEventListener('submit', function(e) {
             var errorDiv = document.getElementById('gstinError');
 
             if(data.flag) {
-                // Populate data
                 document.getElementById('tradeNam').textContent = data.data.tradeNam || 'N/A';
-                document.getElementById('panNo').textContent = data.data.gstin 
-                    ? data.data.gstin.substring(2, 12) // PAN
-                    : 'N/A';
+                document.getElementById('panNo').textContent = data.data.gstin ? data.data.gstin.substring(2, 12) : 'N/A';
                 document.getElementById('legalName').textContent = data.data.lgnm || 'N/A';
                 document.getElementById('address').textContent = data.data.pradr?.adr || 'N/A';
-
-                // Show details and hide error
                 detailsDiv.classList.remove('d-none');
                 errorDiv.classList.add('d-none');
             } else {
-                // Show error and hide details
                 errorDiv.textContent = data.message || 'GSTIN not found';
                 errorDiv.classList.remove('d-none');
                 detailsDiv.classList.add('d-none');
             }
-
-            // Show modal
             gstinModal.show();
         })
         .catch(err => {
             var gstinModal = new bootstrap.Modal(document.getElementById('gstinModal'));
             var detailsDiv = document.getElementById('gstinDetails');
             var errorDiv = document.getElementById('gstinError');
-
             errorDiv.textContent = 'Something went wrong. Please try again.';
             errorDiv.classList.remove('d-none');
             detailsDiv.classList.add('d-none');
-
             gstinModal.show();
             console.error(err);
         });
@@ -459,11 +441,40 @@ document.getElementById('gstinForm').addEventListener('submit', function(e) {
 
 @push('scripts')
 <script>
-    // Show selected file name below upload button
-    document.getElementById('gstinFile').addEventListener('change', function() {
-        const fileName = this.files[0]?.name || 'No file selected';
-        document.getElementById('fileName').textContent = fileName;
+const invoiceTableBody = document.querySelector('#invoiceTable tbody');
+const addRowBtn = document.getElementById('addRowBtn');
+const deleteRowBtn = document.getElementById('deleteRowBtn');
+
+addRowBtn.addEventListener('click', function() {
+    const rowCount = invoiceTableBody.rows.length;
+    const row = invoiceTableBody.insertRow();
+
+    row.insertCell(0).textContent = rowCount;
+    row.insertCell(1).contentEditable = "true"; row.cells[1].classList.add('editable');
+    row.insertCell(2).contentEditable = "true"; row.cells[2].classList.add('editable');
+    row.insertCell(3).contentEditable = "true"; row.cells[3].classList.add('editable','qty');
+    row.insertCell(4).contentEditable = "true"; row.cells[4].classList.add('editable','rate');
+    row.insertCell(5).textContent = "0.00"; row.cells[5].classList.add('amount');
+
+    row.querySelectorAll('.editable').forEach(function(cell){
+        cell.addEventListener('input', function() {
+            this.classList.add('edited');
+            updateAmounts();
+        });
+        cell.addEventListener('blur', updateAmounts);
     });
+
+    updateAmounts();
+});
+
+deleteRowBtn.addEventListener('click', function() {
+    const rowCount = invoiceTableBody.rows.length;
+    if (rowCount > 1) {
+        invoiceTableBody.deleteRow(rowCount - 1);
+        updateAmounts();
+    }
+});
 </script>
 @endpush
+
 @endsection

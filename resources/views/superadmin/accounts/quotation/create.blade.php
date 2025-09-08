@@ -42,7 +42,7 @@
         <input type="hidden" name="quotation_no" id="input_quotation_no">
         <input type="hidden" name="quotation_date" id="input_quotation_date" value="{{ date('Y-m-d') }}">
         <input type="hidden" name="marketing_user_id" id="input_marketing_user_id">
-        <input type="hidden" name="letterhead" id="input_letterhead"> <!-- boolean -->
+        <input type="hidden" name="letterhead" id="input_letterhead">
 
         <div class="page-header d-flex justify-content-between align-items-center">
             <div>
@@ -107,6 +107,16 @@
                         @endfor
                     </tbody>
                     <tfoot>
+                        <tr>
+                            <td colspan="5" class="text-end">
+                                <button type="button" class="btn btn-sm btn-primary me-2" id="addRowBtn">
+                                    <i class="fa fa-plus"></i> Add Row
+                                </button>
+                                <button type="button" class="btn btn-sm btn-danger" id="removeRowBtn">
+                                    <i class="fa fa-minus"></i> Remove Row
+                                </button>
+                            </td>
+                        </tr>
                         <tr>
                             <th colspan="4" class="text-end">Total</th>
                             <th id="totalAmount">0.00</th>
@@ -186,7 +196,8 @@
 <script>
 function updateAmounts() {
     let total = 0;
-    document.querySelectorAll('#quotationTable tbody tr').forEach(row => {
+    document.querySelectorAll('#quotationTable tbody tr').forEach((row, index) => {
+        row.cells[0].textContent = index + 1; // update serial #
         let qty = parseFloat(row.querySelector('.qty')?.textContent) || 0;
         let rate = parseFloat(row.querySelector('.rate')?.textContent.replace(/,/g,'')) || 0;
         let amount = qty * rate;
@@ -226,13 +237,11 @@ function updateAmounts() {
 document.getElementById('quotationForm').addEventListener('submit', function() {
     updateAmounts();
 
-    // Update hidden inputs
     document.getElementById('input_quotation_no').value = document.getElementById('td_quotation_no').textContent.trim();
     document.getElementById('input_quotation_date').value = document.getElementById('td_quotation_date').textContent.trim();
     const marketingHidden = document.getElementById('selectedUser');
     document.getElementById('input_marketing_user_id').value = marketingHidden ? marketingHidden.value : '';
 
-    // Set letterhead as boolean
     const selectedType = document.querySelector('input[name="typeOption"]:checked');
     document.getElementById('input_letterhead').value = selectedType && selectedType.value === 'tax_invoice' ? 1 : 0;
 
@@ -243,7 +252,13 @@ document.getElementById('quotationForm').addEventListener('submit', function() {
         quotation_no: document.getElementById('td_quotation_no').textContent,
         quotation_date: document.getElementById('td_quotation_date').textContent,
         name_of_work: document.getElementById('td_name_of_work').textContent,
-        bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
+        bill_issue_to: document.getElementById('td_bill_issue_to').innerHTML
+                                .replace(/<div>/g, '\n')
+                                .replace(/<\/div>/g, '')
+                                .replace(/<br>/g, '\n')
+                                .replace(/&nbsp;/g, ' ')
+                                .trim(), 
+
         client_gstin: document.getElementById('td_client_gstin').textContent,
         items: [],
         totals: {
@@ -279,6 +294,32 @@ document.querySelectorAll('.editable').forEach(cell=>{
 });
 document.getElementById('roundOffCheckbox').addEventListener('change', updateAmounts);
 window.addEventListener('DOMContentLoaded', updateAmounts);
+
+// Add & Remove row functionality
+document.getElementById('addRowBtn').addEventListener('click', function(){
+    let tbody = document.querySelector('#quotationTable tbody');
+    let rowCount = tbody.rows.length;
+    let newRow = tbody.insertRow();
+    newRow.innerHTML = `
+        <td>${rowCount+1}</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable qty"></td>
+        <td contenteditable="true" class="editable rate"></td>
+        <td class="amount">0.00</td>
+    `;
+    newRow.querySelectorAll('.editable').forEach(cell=>{
+        cell.addEventListener('input', function(){ this.classList.add('edited'); updateAmounts(); });
+    });
+    updateAmounts();
+});
+
+document.getElementById('removeRowBtn').addEventListener('click', function(){
+    let tbody = document.querySelector('#quotationTable tbody');
+    if(tbody.rows.length > 1){
+        tbody.deleteRow(tbody.rows.length - 1);
+        updateAmounts();
+    }
+});
 
 // Marketing autocomplete
 document.addEventListener('DOMContentLoaded', function () {

@@ -94,8 +94,10 @@
                                 <li><a href="{{ route('superadmin.bookingInvoiceStatuses.index') }}">Generate Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'tax_invoice']) }}">Tax Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'proforma_invoice']) }}">PI Invoice</a></li>
+                                <li><a href="{{ route('superadmin.blank-invoices.index') }}">Blank Invoice</a></li>
                                 <li><a href="{{ route('superadmin.quotations.index') }}">Quotation</a></li>
 
+                                
                                 <li><a href="#">CI</a></li>
                                 <li><a href="#">All Invoices</a></li>
                                 <li><a href="#">Client Ledger</a></li>
@@ -222,12 +224,5 @@
   #sidebar #sidebarClose{ display:block !important; }
 }
 </style>
-<script>
-(function(){
-  const closeBtn = document.getElementById('sidebarClose');
-  function closeSidebar(){ document.body.classList.remove('sidebar-open'); document.body.classList.remove('no-scroll'); }
-  closeBtn && closeBtn.addEventListener('click', function(e){ e.preventDefault(); closeSidebar(); });
-})();
-</script>
 
 

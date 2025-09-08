@@ -67,7 +67,7 @@
 
         <div class="card mt-3">
             <div class="card-body">
-                <!-- Booking Info (unchanged) -->
+                <!-- Booking Info -->
                 <h4 class="fw-bold mb-2">Booking Information</h4>
                 <table class="table table-bordered mb-3">
                     <tr>
@@ -94,8 +94,16 @@
                     </tr>
                 </table>
 
-                <!-- Items table unchanged -->
+                <!-- Items table -->
                 <h4 class="fw-bold mb-2">Data Fields</h4>
+                <div class="d-flex justify-content-end mb-2">
+                    <button type="button" class="btn btn-sm btn-primary me-2" id="addRowBtn">
+                        <i class="fa fa-plus me-1"></i>Add Row
+                    </button>
+                    <button type="button" class="btn btn-sm btn-danger" id="removeRowBtn">
+                        <i class="fa fa-minus me-1"></i>Remove Row
+                    </button>
+                </div>
                 <table class="table table-bordered" id="quotationTable">
                     <thead style="background:#e9ecef;">
                         <tr>
@@ -263,7 +271,12 @@ document.getElementById('quotationForm').addEventListener('submit', function() {
         quotation_no: document.getElementById('td_quotation_no').textContent,
         quotation_date: document.getElementById('td_quotation_date').textContent,
         name_of_work: document.getElementById('td_name_of_work').textContent,
-        bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
+        bill_issue_to: document.getElementById('td_bill_issue_to').innerHTML
+                                .replace(/<div>/g, '\n')
+                                .replace(/<\/div>/g, '')
+                                .replace(/<br>/g, '\n')
+                                .replace(/&nbsp;/g, ' ')
+                                .trim(),  
         client_gstin: document.getElementById('td_client_gstin').textContent,
         items: [],
         totals: {
@@ -348,6 +361,41 @@ document.addEventListener('DOMContentLoaded', function () {
             });
         }
     });
+});
+
+// Add / Remove row
+document.getElementById('addRowBtn').addEventListener('click', function () {
+    const tbody = document.querySelector('#quotationTable tbody');
+    const rowCount = tbody.rows.length + 1;
+
+    const newRow = document.createElement('tr');
+    newRow.innerHTML = `
+        <td>${rowCount}</td>
+        <td contenteditable="true" class="editable"></td>
+        <td contenteditable="true" class="editable qty"></td>
+        <td contenteditable="true" class="editable rate"></td>
+        <td class="amount">0.00</td>
+    `;
+    tbody.appendChild(newRow);
+
+    newRow.querySelectorAll('.editable').forEach(cell=>{
+        cell.addEventListener('input', function(){ 
+            this.classList.add('edited'); 
+            updateAmounts(); 
+        });
+    });
+
+    updateAmounts();
+});
+
+document.getElementById('removeRowBtn').addEventListener('click', function () {
+    const tbody = document.querySelector('#quotationTable tbody');
+    if (tbody.rows.length > 1) {
+        tbody.deleteRow(tbody.rows.length - 1);
+        // re-index row numbers
+        Array.from(tbody.rows).forEach((row, idx) => row.cells[0].textContent = idx + 1);
+        updateAmounts();
+    }
 });
 </script>
 @endpush

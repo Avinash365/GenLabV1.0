@@ -19,6 +19,7 @@ class GenerateInvoiceRequest extends FormRequest
             'invoice_type' => 'nullable|string|in:proforma_invoice,tax_invoice|required_without:typeOption',
             'typeOption'   => 'nullable|string|in:proforma_invoice,tax_invoice|required_without:invoice_type',
         ];
+    
     }
 
     public function withValidator($validator)
@@ -26,22 +27,24 @@ class GenerateInvoiceRequest extends FormRequest
         $validator->after(function ($validator) {
             // Only check nested data if invoice_data is valid JSON
             $invoiceData = json_decode($this->invoice_data, true);
+            
             if (!$invoiceData) {
                 return;
-            }
+            } 
+
 
             $nestedValidator = \Validator::make($invoiceData, [
-                'booking_info.booking_id'     => 'required|integer',
-                'booking_info.client_name'    => 'required|string|max:255',
+                'booking_info.booking_id'       => 'required|integer',
+                'booking_info.client_name'      => 'required|string|max:255',
                 'booking_info.marketing_person' => 'required|string|max:255',
-                'booking_info.invoice_no'     => 'required|string|max:50',
-                'booking_info.reference_no'   => 'required|string|max:50',
-                'booking_info.invoice_date'   => 'required|date',
-                'booking_info.letter_date'    => 'nullable|date',
-                'booking_info.name_of_work'   => 'nullable|string|max:255',
-                'booking_info.bill_issue_to'  => 'nullable|string|max:255',
-                'booking_info.client_gstin'   => 'nullable|string|max:20',
-                'booking_info.address'        => 'nullable|string|max:500',
+                'booking_info.invoice_no'       => 'required|string|max:50',
+                'booking_info.reference_no'     => 'required|string|max:50',
+                'booking_info.invoice_date'     => 'required|date',
+                'booking_info.letter_date'      => 'nullable|date',
+                'booking_info.name_of_work'     => 'nullable|string|max:255',
+                'booking_info.bill_issue_to'    => 'nullable|string|max:255',
+                'booking_info.client_gstin'     => 'nullable|string|max:20',
+                'booking_info.address'          => 'nullable|string|max:500',
 
                 'items'                       => 'required|array|min:1',
                 'items.*.description'         => 'nullable|string|max:500',

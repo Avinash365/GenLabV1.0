@@ -3,6 +3,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Carbon\Carbon;
 
 class BlankInvoice extends Model
 {
@@ -21,5 +22,36 @@ class BlankInvoice extends Model
     public function items()
     {
         return $this->hasMany(BlankInvoiceItem::class);
+    } 
+
+     // 🔹 Mutator for invoice_date (store in DB as Y-m-d)
+    public function setInvoiceDateAttribute($value)
+    {
+        $this->attributes['invoice_date'] = !empty($value)
+            ? Carbon::createFromFormat('d-m-Y', $value)->format('Y-m-d')
+            : null;
+    }
+     // 🔹 Accessor for invoice_date (show as d-m-Y)
+    public function getInvoiceDateAttribute($value)
+    {
+        return !empty($value)
+            ? Carbon::parse($value)->format('d-m-Y')
+            : null;
+    }
+
+    // 🔹 Mutator for letter_date
+    public function setLetterDateAttribute($value)
+    {
+        $this->attributes['letter_date'] = !empty($value)
+            ? Carbon::createFromFormat('d-m-Y', $value)->format('Y-m-d')
+            : null;
+    }
+
+    // 🔹 Accessor for letter_date
+    public function getLetterDateAttribute($value)
+    {
+        return !empty($value)
+            ? Carbon::parse($value)->format('d-m-Y')
+            : null;
     }
 }

@@ -92,6 +92,7 @@ class GenerateInvoiceStatusController extends Controller
                 // Optionally, handle if booking not found
                 abort(404, 'Booking not found');
             }
+            
 
             $booking->invoice_no = $booking->generatedInvoice?->invoice_no 
                 ?? $this->billingService->generateInvoiceNo();
@@ -102,7 +103,8 @@ class GenerateInvoiceStatusController extends Controller
 
     private function storeInvoiceData(array $invoiceData, string $invoiceType)
     {   
-
+       
+        
         $invoice = Invoice::create([
             'new_booking_id' => $invoiceData['booking_id'] ?? null,
             'invoice_no'     => $invoiceData['invoice']['invoice_no'] ?? null,
@@ -124,7 +126,7 @@ class GenerateInvoiceStatusController extends Controller
                                         + ($invoiceData['bill']['igst_amount'] ?? 0),
            'round_of'                => $invoiceData['bill']['round_of'], 
            'total_amount'            => $invoiceData['bill']['payable_amount'], 
-           'address'                 => $invoiceData['address'] ?? '', 
+           'address'                 => $invoiceData['invoice']['address'] ?? '', 
            'type'                    => $invoiceType, 
            'invoice_date'            => $invoiceData['invoice']['invoice_date']
         ]);
@@ -155,6 +157,7 @@ class GenerateInvoiceStatusController extends Controller
     public function generateInvoice(GenerateInvoiceRequest $request)
     {
         try { 
+
     
             $invoiceType = $request->input('typeOption');
             $invoiceData = $this->billingService->generateInvoiceData($request);
