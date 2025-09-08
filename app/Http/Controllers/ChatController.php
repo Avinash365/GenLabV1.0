@@ -346,6 +346,7 @@ class ChatController extends Controller
         }
 
         $msg->load('user:id,name,email');
+        event(new \App\Events\ChatMessageBroadcast($this->serializeMessage($msg, $user)));
         return response()->json($this->serializeMessage($msg, $user), 201);
     }
 
@@ -585,6 +586,7 @@ class ChatController extends Controller
             'user_id' => $m->user_id,
             'user' => $displayUser,
             'sender_name' => $senderName,
+            'sender_guard' => $senderGuard,
             'type' => $m->type,
             'content' => $m->content,
             'file_url' => $fileUrl,

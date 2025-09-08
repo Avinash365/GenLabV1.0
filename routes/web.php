@@ -12,6 +12,7 @@ use App\Http\Controllers\SuperAdmin\HoldCancelController;
 use App\Http\Controllers\Superadmin\LabAnalystsController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Superadmin\ProfileController;
+use App\Http\Controllers\ChatbotController;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,4 +102,7 @@ Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadm
 
 // Delete chat message
 Route::delete('/chat/messages/{id}', [\App\Http\Controllers\ChatController::class, 'destroy'])->name('chat.messages.destroy');
+
+// Chatbot query
+Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 

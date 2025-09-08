@@ -2,13 +2,13 @@
     <!-- Logo -->
     <div class="sidebar-logo active">
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-normal">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img" style="height:24px;">
         </a>
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-white">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg')); ?>" alt="Img">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg')); ?>" alt="Img" style="height:24px;">
         </a>
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo-small">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-small.png')); ?>" alt="Img">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-small.png')); ?>" alt="Img" style="height:24px;">
         </a>
         <a id="toggle_btn" href="">
             <i data-feather="chevrons-left" class="feather-16"></i>

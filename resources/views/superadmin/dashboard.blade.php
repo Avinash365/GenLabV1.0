@@ -166,6 +166,8 @@
 
         </div>
 
-    
     </div>
+    @include('components.chatbot')
+    <link rel="stylesheet" href="/css/chatbot.css">
+    <script src="/js/chatbot.js"></script>
 @endsection

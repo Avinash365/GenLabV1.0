@@ -1,3 +1,12 @@
+<?php
+// PHP code here (if any)
+?>
+
+<script>
+// Legacy Echo init via require disabled. WebSocket init is handled later with a robust fallback.
+// This avoids "require is not defined" errors in browsers without a bundler.
+</script>
+
 <!-- Floating Chat Popup (replaces offcanvas) -->
 <div id="chatPopup" class="chat-popup" style="display:none;">
     <div class="chat-popup-header">
@@ -335,6 +344,9 @@
         // new: mark seen endpoint
         markSeen: '{{ url('/chat/mark-seen') }}'
     };
+    // Expose routes and badge globally for external listeners
+    window.routes = routes;
+    window.chatNotifBadge = document.getElementById('chatNotifBadge');
 
     // Elements
     const groupsEl = document.getElementById('chatGroups');
@@ -350,6 +362,8 @@
     const voiceBtn = document.getElementById('voiceBtn');
     const recordingHint = document.getElementById('recordingHint');
     const emojiBtn = document.getElementById('emojiBtn');
+    // Make the messages container available to realtime handlers
+    window.messagesEl = messagesEl;
     if (emojiBtn){
         // Ensure an icon or emoji is visible
         const hasI = !!emojiBtn.querySelector('i');
@@ -387,6 +401,20 @@
     const chatToggleBtn = document.getElementById('chatToggle');
     const newSessionBtn = document.getElementById('chatNewSessionBtn');
 
+    // Fallback: inject a floating chat toggle if header toggle is missing
+    if (!chatToggleBtn && !document.getElementById('chatToggle')) {
+        try {
+            const fab = document.createElement('button');
+            fab.id = 'chatToggle';
+            fab.type = 'button';
+            fab.title = 'Open chat';
+            fab.innerHTML = '<i class="fa fa-comments"></i>';
+            fab.className = 'btn btn-success rounded-circle shadow';
+            fab.style.cssText = 'position:fixed; right:20px; bottom:20px; width:48px; height:48px; z-index:1000;';
+            document.body.appendChild(fab);
+        } catch(_) {}
+    }
+
     // Add: filter buttons refs (visible to both admin and users)
     const filterHoldBtn = document.getElementById('filterHoldBtn');
     const filterUnbookedBtn = document.getElementById('filterUnbookedBtn');
@@ -400,6 +428,7 @@
     let activeGroupId = null; let lastMessageId = 0;
     let mediaRecorder = null; let recordedChunks = [];
     let cache = []; let allGroups = [];
+    window.allGroups = allGroups; // Expose globally for realtime updates
     let idIndex = new Set(); // track message ids to dedupe
     let polling = false; // prevent overlapping polls
 
@@ -516,37 +545,29 @@
             const avatarHtml = g.avatar ? `<div class="wa-avatar me-2"><img src="${g.avatar}" alt="${g.name||'Group'}" loading="lazy"></div>`
                                         : `<div class="wa-avatar me-2">${initials2}</div>`;
             const right = document.createElement('div'); right.className='ms-auto d-flex align-items-center';
-            if (g.unread && g.unread > 0){ right.innerHTML = `<span class="me-2 chat-dot"></span><span class="chat-unread">${g.unread>99?'99+':g.unread}</span>`; }
+            // Only show unread badge if latest message is not from current user
+            const latest = g.latest || {};
+            const isMine = window.currentUser && Number(latest.user_id) === Number(window.currentUser.id);
+            if (g.unread && g.unread > 0 && !isMine){ right.innerHTML = `<span class="me-2 chat-dot"></span><span class="chat-unread">${g.unread>99?'99+':g.unread}</span>`; }
             const meta = document.createElement('div'); meta.className='flex-grow-1';
-            // Always show preview for latest message, incoming or outgoing
-            const previewText = (function(){
-                const l = g.latest || null; if (!l) return '';
-                const t = (l.type||'').toLowerCase();
-                let text = '';
-                if (t==='text') text = (l.content||'').toString();
-                else if (t==='image') text = 'Photo';
-                else if (t==='pdf') text = l.original_name ? ('PDF • '+l.original_name) : 'PDF';
-                else if (t==='voice') text = 'Voice message';
-                else text = (l.content || l.original_name || '').toString();
-                // Truncate and add ellipsis for long text
-                if (text.length > 40) text = text.slice(0, 40) + '...';
-                return text;
-            })();
+            const previewText = ((latest.content || latest.original_name || (latest.type==='image' ? '[Image]' : latest.type==='pdf' ? '[PDF]' : latest.type==='voice' ? '[Audio]' : '') || '') + '').slice(0, 60);
             meta.innerHTML = `<div class="d-flex align-items-center justify-content-between"><div>${g.name}</div><div class="text-muted small">${g.last_msg_at? new Date(g.last_msg_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}):''}</div></div><div class="chat-preview">${previewText}</div>`;
             item.innerHTML = avatarHtml + meta.outerHTML + right.outerHTML;
             item.addEventListener('click', (e)=>{ e.preventDefault(); selectGroup(g.id, g.name, item); });
             groupsEl.appendChild(item);
         });
     }
+    // Expose render for realtime handlers
+    window.renderGroups = renderGroups;
 
     function selectGroup(id, name, node){
         // Clear filters on group change
         activeFilters.clear(); updateFilterButtons();
         groupsEl.querySelectorAll('.list-group-item').forEach(n=>n.classList.remove('active'));
         if (node) node.classList.add('active');
-        activeGroupId = id; activeTitle.textContent = name; activeAvatar.textContent = initials(name);
+        activeGroupId = id; window.activeGroupId = id; activeTitle.textContent = name; activeAvatar.textContent = initials(name);
         inputAreaEl.style.display = 'flex';
-        lastMessageId = 0; cache = []; idIndex.clear(); // reset index on group change
+        lastMessageId = 0; window.lastMessageId = 0; cache = []; idIndex.clear(); // reset index on group change
         messagesEl.querySelectorAll('.wa-row, .reaction-chip').forEach(n=>n.remove()); emptyEl.style.display = 'flex';
         setState({ activeGroupId: id });
         requestAnimationFrame(syncMessagesPadding);
@@ -958,6 +979,8 @@
         }
         return row;
     }
+    // Expose message row for realtime append
+    window.messageRow = messageRow;
 
     function renderMessages(list){
         const src = Array.isArray(list) ? list : [];
@@ -1066,7 +1089,6 @@
         }
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Reply"><i class="fa fa-reply me-2 text-primary"></i> Reply</button>';
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Forward"><i class="fa fa-share me-2 text-info"></i> Forward</button>';
-        menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Share"><i class="fa fa-share-alt me-2 text-success"></i> Share</button>';
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Delete"><i class="fa fa-trash me-2 text-danger"></i> Delete</button>';
         menuHtml += '</div>';
         picker.innerHTML = menuHtml;
@@ -1093,7 +1115,6 @@
             picker.remove();
             if (action === 'Reply') { promptReply(messageId); return; }
             if (action === 'Forward') { promptForward(messageId); return; }
-            if (action === 'Share') { promptShare(messageId); return; }
             if (action === 'Delete') { promptDelete(messageId); return; }
             // Hold/Booked/Cancel (same as before)
             const msg = Array.isArray(cache) ? cache.find(x => x && x.id === messageId) : null;
@@ -1220,6 +1241,7 @@
         const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
         const data = await res.json();
         allGroups = Array.isArray(data) ? data : [];
+        window.allGroups = allGroups; // Keep global in sync
         renderGroups(allGroups);
         // Restore previously active group after refresh/open
         try {
@@ -1230,6 +1252,8 @@
             }
         } catch(_) {}
     }
+    // Expose for realtime and external calls
+    window.fetchGroups = fetchGroups;
 
     async function fetchMessages(groupId){
         loadingEl.style.display = 'block';
@@ -1240,6 +1264,7 @@
         cache = Array.isArray(data) ? data : [];
         idIndex = new Set(cache.map(m=> m && m.id));
         lastMessageId = cache.length ? cache[cache.length-1].id : 0;
+        window.lastMessageId = lastMessageId;
         renderMessages(cache); loadingEl.style.display = 'none';
         // mark this group as seen and refresh header badge
         try {
@@ -1247,6 +1272,8 @@
             if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
         } catch(e) { /* ignore */ }
     }
+    // Expose for realtime and external calls
+    window.fetchMessages = fetchMessages;
 
     async function poll(){
         if (polling) return; if (!activeGroupId || lastMessageId === null) return; polling = true;
@@ -1254,6 +1281,7 @@
             const url = new URL(routes.messagesSince, window.location.origin);
             url.searchParams.set('group_id', activeGroupId); url.searchParams.set('after_id', lastMessageId);
             const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+
             const data = await res.json();
             if (Array.isArray(data) && data.length){
                 const fresh = [];
@@ -1266,6 +1294,17 @@
     // Ensure only one polling interval exists globally
     if (window.__CHAT_POLL_INTERVAL) { try { clearInterval(window.__CHAT_POLL_INTERVAL); } catch{} }
     window.__CHAT_POLL_INTERVAL = setInterval(poll, 5000);
+
+    // Generic FormData sender used by uploads and voice notes
+    async function sendMessage(formData){
+        if (!formData) return;
+        try {
+            const res = await fetch(routes.send, { method:'POST', headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json' }, body: formData });
+            if (!res.ok) throw new Error('send-fail');
+            await res.json();
+            if (activeGroupId) fetchMessages(activeGroupId);
+        } catch(e){ alert('Failed to send message.'); }
+    }
 
     // Ensure text persists: try JSON with multiple aliases, fallback to FormData
     async function sendTextMessage(text){
@@ -1322,7 +1361,6 @@
     // UI events
     searchEl.addEventListener('input', ()=>{ const q = searchEl.value.toLowerCase(); const filtered = allGroups.filter(g=> g.name.toLowerCase().includes(q)); renderGroups(filtered); });
     attachBtn.addEventListener('click', ()=> fileInput.click());
-
     fileInput.addEventListener('change', ()=>{
         if (!activeGroupId) return; const f = fileInput.files[0]; if (!f) return;
         const mime = (f.type||'').toLowerCase(); const ext = (f.name||'').toLowerCase().split('.').pop();
@@ -1525,9 +1563,8 @@
     window.addEventListener('resize', function(){ applyExpandedBounds(); syncMessagesPadding(); });
     window.addEventListener('scroll', function(){ if (popupEl.classList.contains('expanded')) syncMessagesPadding(); }, { passive: true });
     window.addEventListener('load', function(){ if (popupEl.classList.contains('expanded')) { applyExpandedBounds(); } });
-    // Remove offcanvas dependency; fetch on first open via handler above
-    // document.getElementById('chatOffcanvas').addEventListener('shown.bs.offcanvas', ()=>{ fetchGroups(); });
-    setInterval(poll, 5000);
+    // Remove duplicate extra interval; ensure single guarded timer only
+    if (!window.__CHAT_POLL_INTERVAL) { window.__CHAT_POLL_INTERVAL = setInterval(poll, 5000); }
 
     function openPopup(){
         popupEl.style.display = 'flex';
@@ -1535,7 +1572,8 @@
         if (popupEl.classList.contains('expanded')) { applyExpandedBounds(); requestAnimationFrame(applyExpandedBounds); }
         if (!allGroups.length) { fetchGroups(); }
     }
-    // Replace direct binding with delegated listener (covers dynamically loaded header)
+    // Make opening callable globally and keep delegated listener
+    window.openChat = openPopup; window.openPopup = openPopup;
     document.addEventListener('click', function(e){
         const btn = e.target.closest('#chatToggle');
         if (btn){ e.preventDefault(); openPopup(); }
@@ -1570,229 +1608,249 @@
     };
 })();
 </script>
+
+<!-- Echo init with CDN fallback + real-time listener binding -->
 <script>
 (function(){
-    // Filters (Hold/Unbooked) visible to both admin and users
-   
-    const filterHoldBtn = document.getElementById('filterHoldBtn');
-    const filterUnbookedBtn = document.getElementById('filterUnbookedBtn');
-    const activeFilters = new Set();
-    function updateFilterButtons(){
-        if (!filterHoldBtn || !filterUnbookedBtn) return;
-        filterHoldBtn.classList.toggle('filter-active', activeFilters.has('hold'));
-        filterUnbookedBtn.classList.toggle('filter-active', activeFilters.has('unbooked'));
-    }
-    function adminStatusFromText(t){
-        if (!t) return null; const s = String(t).trim().toLowerCase();
-        if (s.startsWith('hold')) return 'hold';
-        if (s.startsWith('booked')) return 'booked';
-        if (s.startsWith('cancel')) return 'cancel';
-        if (s.startsWith('unbooked')) return null; // ignore as status
-        return null;
-    }
-
-    // Compute status by scanning the whole thread (original + all replies),
-    // using reactions-derived status first, then admin reply text markers.
-    function effectiveStatus(m){
-        if (!m) return null;
-        // Determine root id
-        const rootId = m.reply_to_message_id ? findRootMessageId(m.id) : m.id;
-        // Gather thread (root + replies recursively up to a safe guard)
-        const thread = [];
-        const queue = [rootId];
-        const seen = new Set();
-        let guard = 0;
-        while (queue.length && guard++ < 500){
-            const cur = queue.shift(); if (seen.has(cur)) continue; seen.add(cur);
-            const node = Array.isArray(cache) ? cache.find(x => x && x.id === cur) : null;
-            if (node) thread.push(node);
-            const replies = Array.isArray(cache) ? cache.filter(x => x && x.reply_to_message_id === cur) : [];
-            for (const r of replies){ queue.push(r.id); }
-        }
-        if (!thread.length) return null;
-        // Sort by id ascending to simulate chronology
-        thread.sort((a,b)=> (a.id||0) - (b.id||0));
-        let winner = null;
-        for (const msg of thread){
-            // Prefer reactions-derived status
-            if (msg && msg.status){ winner = msg.status; continue; }
-            // Fallback to admin reply text markers
-            if (msg && msg.sender_guard === 'admin'){
-                const s = adminStatusFromText(bestText(msg));
-                if (s) winner = s;
-            }
-        }
-        return winner;
-    }
-
-    // Clear filters on group change and proceed
-    const __selectGroup = selectGroup;
-    selectGroup = function(id, name, node){
-        activeFilters.clear(); updateFilterButtons();
-        __selectGroup(id, name, node);
-    };
-
-    // Apply filters while rendering
-    function filteredList(list){
-
-        if (!activeFilters.size) return list;
-        return list.filter(m=>{
-            if (!m || m.reply_to_message_id) return false;
-
-            const st = effectiveStatus(m);
-            if (activeFilters.has('unbooked') && !st) return true;
-            return activeFilters.has(st);
-        });
-    }
-
-    // Replace renderMessages to honor filters
-    const __renderMessages = renderMessages;
-    renderMessages = function(list){
-        const src = Array.isArray(list) ? list : [];
-        const view = filteredList(src);
-        messagesEl.querySelectorAll('.wa-row, .reaction-chip, .wa-day').forEach(n=>n.remove());
-        if (!view.length){ emptyEl.style.display = 'flex'; return; }
-        emptyEl.style.display = 'none';
-        let lastDay = null;
-        view.forEach(m => {
-            const d = toDate(m.created_at);
-            if (!lastDay || !isSameDay(d, lastDay)){
-                const sep = document.createElement('div'); sep.className='wa-day'; const span = document.createElement('span'); span.textContent = dayLabel(d); sep.appendChild(span); messagesEl.appendChild(sep);
-                lastDay = d;
-            }
-            messagesEl.appendChild(messageRow(m));
-        });
-        messagesEl.scrollTop = messagesEl.scrollHeight;
-        if (window.__CHAT_UPDATE_COUNTS) window.__CHAT_UPDATE_COUNTS();
-    };
-
-    // Ensure bubble color reflects effective status
-    const __messageRow = messageRow;
-    messageRow = function(m){
-        const row = __messageRow(m);
-        try{
-            const b = row.querySelector('.wa-bubble');
-            const st = effectiveStatus(m);
-            if (b && st){
-                b.classList.remove('status-booked','status-hold','status-unbooked','status-cancel');
-                if (st === 'booked') b.classList.add('status-booked');
-                else if (st === 'hold') b.classList.add('status-hold');
-                else if (st === 'cancel') b.classList.add('status-cancel');
-                else if (st === 'unbooked') b.classList.add('status-unbooked');
-            }
-        } catch{}
-        return row;
-    };
-
-    function toggleFilter(kind){ if (activeFilters.has(kind)) activeFilters.delete(kind); else activeFilters.add(kind); updateFilterButtons(); renderMessages(cache); }
-    filterHoldBtn && filterHoldBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleFilter('hold'); });
-    filterUnbookedBtn && filterUnbookedBtn.addEventListener('click', (e)=>{ e.preventDefault(); toggleFilter('unbooked'); });
-
-    // Init filter buttons
-    updateFilterButtons();
-
-    // Mark filters initialized so any duplicate scripts won’t run
-    window.__CHAT_FILTER_READY = true;
-})();
-</script>
-
-<!-- Neutralize duplicate filter script block (scope fix) -->
-<script>
-(function(){ if (window.__CHAT_FILTER_READY) return; })();
-</script>
-<script>
-(function(){
-    // Live unread updates from global polling
-    window.addEventListener('chat:counts', function(ev){
-        try{
-            const payload = ev && ev.detail ? ev.detail : null;
-            if (!payload || !Array.isArray(payload.groups)) return;
-            const map = new Map(payload.groups.map(x=> [x.group_id, { count:x.count, latest:x.latest }]));
-            let changed = false;
-            allGroups.forEach(g=>{
-                const m = map.get(g.id);
-                if (!m) return;
-                const prev = g.unread || 0;
-                g.unread = m.count;
-                // If latest is newer, update preview/time to keep sort natural
-                if (m.latest && m.latest.id && (!g.last_msg_id || m.latest.id > g.last_msg_id)){
-                    g.last_msg_id = m.latest.id;
-                    g.last_msg_at = m.latest.created_at || g.last_msg_at;
-                    g.latest = m.latest;
-                }
-                if (g.unread !== prev) changed = true;
-            });
-            if (changed) renderGroups(allGroups);
-        } catch(_) {}
-    });
-})();
-</script>
-
-<!-- Add floating live notification for new messages -->
-<script>
-(function(){
-    const chatNotifBadge = document.getElementById('chatNotifBadge');
-    let lastNotifId = null;
-    function showLiveNotification(msg) {
-        if (!msg) return;
-        // Remove any existing notification
-        let notif = document.getElementById('chatLiveNotif');
-        if (notif) notif.remove();
-        notif = document.createElement('div');
-        notif.id = 'chatLiveNotif';
-        notif.style.position = 'fixed';
-        notif.style.right = '32px';
-        notif.style.bottom = '100px';
-        notif.style.zIndex = '1200';
-        notif.style.background = '#fff';
-        notif.style.border = '1px solid #e5e7eb';
-        notif.style.borderRadius = '12px';
-        notif.style.boxShadow = '0 4px 24px rgba(0,0,0,0.10)';
-        notif.style.padding = '16px 20px';
-        notif.style.minWidth = '260px';
-        notif.style.maxWidth = '350px';
-        notif.style.display = 'flex';
-        notif.style.flexDirection = 'column';
-        notif.innerHTML = `
-            <div style="font-weight:600; color:#00a884; margin-bottom:6px;">${msg.sender_name || 'User'} messaged</div>
-            <div style="font-size:14px; color:#334155; margin-bottom:10px;">${(msg.content || msg.original_name || '').toString().slice(0, 60)}</div>
-            <div style="display:flex; gap:10px;">
-                <button id="notifReplyBtn" class="btn btn-sm btn-success">Reply</button>
-                <button id="notifOpenBtn" class="btn btn-sm btn-primary">Open Chat</button>
-            </div>
-        `;
-        document.body.appendChild(notif);
-        setTimeout(()=>{ notif.remove(); }, 3000);
-        document.getElementById('notifReplyBtn').onclick = ()=>{ promptReply(msg.id); notif.remove(); };
-        document.getElementById('notifOpenBtn').onclick = ()=>{ openPopup(); selectGroup(msg.group_id, msg.sender_name || 'Chat'); notif.remove(); };
-    }
-
-    // Listen for new messages via polling
-    let lastMsgIdGlobal = 0;
-    function pollGlobal(){
-        fetch(routes.unreadCounts, { headers: { 'Accept':'application/json' } })
-            .then(r=>r.json())
-            .then(data=>{
-                let totalUnread = data.total || 0;
-                if (chatNotifBadge){
-                    chatNotifBadge.style.display = totalUnread > 0 ? 'flex' : 'none';
-                    chatNotifBadge.textContent = totalUnread > 99 ? '99+' : totalUnread;
-                }
-                // Find latest message for live notification
-                let latest = null;
-                if (Array.isArray(data.groups)){
-                    data.groups.forEach(g=>{
-                        if (g.latest && (!latest || g.latest.id > latest.id)) latest = g.latest;
-                    });
-                }
-                if (latest && latest.id !== lastMsgIdGlobal){
-                    lastMsgIdGlobal = latest.id;
-                    if (popupEl.style.display === 'none'){
-                        showLiveNotification(latest);
+    if (window.__ECHO_BOOTSTRAPPED__) return; // prevent duplicates
+    function attachListener(){
+        if (!window.Echo || !window.Echo.channel || window.__CHAT_LISTENER_BOUND__) return;
+        const handler = function(e){
+            const msg = e && e.message ? e.message : e;
+            const isMine = window.currentUser && Number(msg.user_id) === Number(window.currentUser.id);
+            // Detect DM group by slug
+            let groupSlug = '';
+            let foundIdx = -1;
+            if (Array.isArray(window.allGroups)) {
+                for (let i = 0; i < window.allGroups.length; ++i) {
+                    if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
+                        groupSlug = window.allGroups[i].slug || '';
+                        foundIdx = i;
+                        break;
                     }
                 }
-            });
+            }
+            // Only increment unread and show notification for receiver (not sender)
+            let shouldIncrementUnread = false;
+            if (groupSlug.startsWith('dm-') || groupSlug.startsWith('dm2-')) {
+                shouldIncrementUnread = !isMine;
+            } else {
+                shouldIncrementUnread = !isMine;
+            }
+            try {
+                if (Array.isArray(window.allGroups)) {
+                    let found = false;
+                    for (let i = 0; i < window.allGroups.length; ++i) {
+                        if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
+                            const g = window.allGroups[i];
+                            g.latest = {
+                                id: msg.id,
+                                type: msg.type,
+                                content: msg.content,
+                                original_name: msg.original_name,
+                                sender_guard: msg.sender_guard,
+                                sender_name: msg.sender_name,
+                                user: msg.user || null,
+                                created_at: msg.created_at
+                            };
+                            g.last_msg_id = msg.id;
+                            g.last_msg_at = msg.created_at;
+                            if (shouldIncrementUnread) g.unread = (g.unread || 0) + 1;
+                            window.allGroups.splice(i, 1);
+                            window.allGroups.unshift(g);
+                            found = true;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        window.allGroups.unshift({
+                            id: msg.group_id,
+                            slug: msg.group_slug || '',
+                            name: msg.sender_name || 'Chat',
+                            avatar: (msg.user && msg.user.avatar) || '',
+                            latest: {
+                                id: msg.id,
+                                type: msg.type,
+                                content: msg.content,
+                                original_name: msg.original_name,
+                                sender_guard: msg.sender_guard,
+                                sender_name: msg.sender_name,
+                                user: msg.user || null,
+                                created_at: msg.created_at
+                            },
+                            last_msg_id: msg.id,
+                            last_msg_at: msg.created_at,
+                            unread: shouldIncrementUnread ? 1 : 0
+                        });
+                    }
+                    if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
+                }
+                // Floating toast only for receiver (not sender)
+                if (shouldIncrementUnread && typeof showLiveNotification === 'function') {
+                    showLiveNotification(msg);
+                    // Real-time update for floating badge only if chat popup is truly hidden
+                    var chatPopup = document.getElementById('chatPopup');
+                    var isChatClosed = true;
+                    if (chatPopup) {
+                        var style = window.getComputedStyle(chatPopup);
+                        isChatClosed = style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
+                    }
+                    if (isChatClosed) {
+                        if (window.__FLOAT_BADGE && typeof window.__FLOAT_BADGE.update === 'function') {
+                            window.__FLOAT_BADGE.update(msg.group_id, msg);
+                        } else {
+                            var badge = document.querySelector('.float-chat-badge[data-group-id="' + msg.group_id + '"]');
+                            if (badge) {
+                                var count = parseInt(badge.textContent) || 0;
+                                badge.textContent = count + 1;
+                                badge.style.display = 'flex';
+                            }
+                        }
+                    }
+                }
+                // Badge only for receiver (not sender)
+                if (shouldIncrementUnread && window.chatNotifBadge) {
+                    const n = parseInt(window.chatNotifBadge.textContent) || 0;
+                    window.chatNotifBadge.style.display = 'flex';
+                    window.chatNotifBadge.textContent = (n + 1);
+                }
+                // Active chat: append without fetch
+                if (window.activeGroupId && Number(msg.group_id) === Number(window.activeGroupId)) {
+                    try {
+                        if (typeof messageRow === 'function' && window.messagesEl) {
+                            window.messagesEl.appendChild(messageRow(msg));
+                            window.messagesEl.scrollTop = window.messagesEl.scrollHeight;
+                        }
+                        // Clear unread badge for active group immediately
+                        if (Array.isArray(window.allGroups)) {
+                            for (let i = 0; i < window.allGroups.length; ++i) {
+                                if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
+                                    window.allGroups[i].unread = 0;
+                                    break;
+                                }
+                            }
+                            if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
+                        }
+                    } catch (_) { }
+                }
+            } catch (_) { }
+        };
+        try{
+            window.Echo.channel('chat')
+                .listen('ChatMessageBroadcast', handler)
+                .listen('.ChatMessageBroadcast', handler);
+            window.__CHAT_LISTENER_BOUND__ = true;
+            // Stop polling when WS is ready to cut duplication/latency
+            try { if (window.__CHAT_POLL_INTERVAL){ clearInterval(window.__CHAT_POLL_INTERVAL); } } catch{}
+        } catch(_) {}
     }
-    setInterval(pollGlobal, 3000);
+    function attachDiagnostics(){
+        try{
+            const p = window.Echo && window.Echo.connector && window.Echo.connector.pusher;
+            if (!p || !p.connection) return;
+            p.connection.bind('connecting', ()=> console.log('[WS] connecting...'));
+            p.connection.bind('connected', ()=> console.log('[WS] connected'));
+            p.connection.bind('unavailable', ()=> console.warn('[WS] unavailable'));
+            p.connection.bind('failed', ()=> console.error('[WS] failed'));
+            p.connection.bind('disconnected', ()=> console.warn('[WS] disconnected'));
+            p.connection.bind('state_change', (s)=> console.log('[WS] state:', s))
+            p.connection.bind('error', (err)=> console.error('[WS] error:', err));
+        } catch(_) {}
+    }
+    function initEcho(){
+        if (window.Echo && window.Echo.connector){ attachListener(); attachDiagnostics(); return; }
+        // Raw WebSocket diagnostic if Echo fails to init
+        function testRawWS(){
+            try{
+                const host = (window.location.hostname || '127.0.0.1');
+                const url = `ws://${host}:6001/app/local?protocol=7&client=js&version=8.3.0`;
+                const ws = new WebSocket(url);
+                ws.onopen = ()=> console.log('[WS] raw: open -> server reachable');
+                ws.onerror = (e)=> console.error('[WS] raw: error -> cannot reach ws server', e);
+                ws.onclose = (e)=> console.warn('[WS] raw: closed', e && e.code);
+            } catch(err){ console.error('[WS] raw: failed to start', err); }
+        }
+        setTimeout(()=>{ try{ const st = window.Echo?.connector?.pusher?.connection?.state; if (!st) testRawWS(); } catch{ testRawWS(); } }, 3000);
+        if (typeof window.require === 'function'){
+            try{
+                window.Pusher = window.Pusher || window.require('pusher-js');
+                const Echo = window.require('laravel-echo');
+                window.Echo = new Echo({
+                    broadcaster: 'pusher',
+                    key: 'local',
+                    cluster: 'mt1',
+                    wsHost: (window.location.hostname || '127.0.0.1'),
+                    wsPort: 6001,
+                    forceTLS: false,
+                    disableStats: true,
+                    enabledTransports: ['ws','wss']
+                });
+                attachListener(); attachDiagnostics();
+                return;
+            } catch(_) { /* fall through to CDN */ }
+        }
+        const add = (src)=> new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>{ console.log('[WS] loaded', src); res(); }; s.onerror=()=>{ console.warn('[WS] failed', src); rej(); }; document.head.appendChild(s); });
+        // Try jsDelivr, then unpkg as fallback
+        add('https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.min.js')
+            .then(()=> add('https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js'))
+            .then(()=>{
+                try {
+                    if (window.Pusher) { window.Pusher.logToConsole = true; }
+                    const EchoCtor = window.Echo;
+                    window.Echo = new EchoCtor({
+                        broadcaster: 'pusher',
+                        key: 'local',
+                        cluster: 'mt1',
+                        wsHost: (window.location.hostname || '127.0.0.1'),
+                        wsPort: 6001,
+                        forceTLS: false,
+                        disableStats: true,
+                        enabledTransports: ['ws','wss']
+                    });
+                    console.log('[WS] Echo initialized');
+                    attachListener(); attachDiagnostics();
+                    setTimeout(()=>{
+                        try{
+                            const st = window.Echo.connector.pusher.connection.state;
+                            if (st !== 'connected') console.warn('[WS] not connected after 5s, state=', st);
+                        } catch(_) {}
+                    }, 5000);
+                } catch(err) {
+                    console.error('[WS] Echo init failed', err);
+                    // Fallback to raw Pusher subscription
+                    try {
+                        const host = (window.location.hostname || '127.0.0.1');
+                        const pusher = new Pusher('local', {
+                            cluster: 'mt1',
+                            wsHost: host,
+                            wsPort: 6001,
+                            forceTLS: false,
+                            disableStats: true,
+                            enabledTransports: ['ws','wss']
+                        });
+                        const ch = pusher.subscribe('chat');
+                        const handler = (e)=>{
+                            const msg = e && e.message ? e.message : e;
+                            console.log('[WS][raw] event received', msg);
+                            if (typeof showLiveNotification === 'function') showLiveNotification(msg);
+                            if (window.chatNotifBadge){ const n=parseInt(window.chatNotifBadge.textContent)||0; window.chatNotifBadge.style.display='flex'; window.chatNotifBadge.textContent=(n+1); }
+                            if (window.routes && window.renderGroups){ fetch(window.routes.groups,{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(d=>{ window.allGroups=Array.isArray(d)?d:[]; window.renderGroups(window.allGroups); }); }
+                            if (window.activeGroupId && msg && Number(msg.group_id)===Number(window.activeGroupId) && typeof window.fetchMessages==='function'){ window.fetchMessages(window.activeGroupId); }
+                        };
+                        ch.bind('ChatMessageBroadcast', handler);
+                        ch.bind('.ChatMessageBroadcast', handler);
+                        ch.bind('App\\\Events\\\ChatMessageBroadcast', handler);
+                        const conn = pusher.connection;
+                        conn.bind('state_change', (s)=> console.log('[WS][raw] state:', s));
+                        conn.bind('connected', ()=> console.log('[WS][raw] connected'));
+                        conn.bind('error', (e)=> console.error('[WS][raw] error', e));
+                        console.warn('[WS] fallback: using raw Pusher client');
+                    } catch (e2) { console.error('[WS] raw Pusher fallback failed', e2); }
+                }
+            })
+            .catch((e)=>{ console.error('[WS] Could not load Echo/Pusher libraries'); });
+    }
+    window.addEventListener('load', initEcho);
+    window.__ECHO_BOOTSTRAPPED__ = true;
 })();
 </script>

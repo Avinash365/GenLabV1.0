@@ -164,8 +164,10 @@
 
         </div>
 
-    
     </div>
+    <?php echo $__env->make('components.chatbot', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+    <link rel="stylesheet" href="/css/chatbot.css">
+    <script src="/js/chatbot.js"></script>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\xampp\htdocs\GenLab\resources\views/superadmin/dashboard.blade.php ENDPATH**/ ?>

@@ -2,13 +2,13 @@
     <!-- Logo -->
     <div class="sidebar-logo active">
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-normal">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img" style="height:24px;">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-white">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img" style="height:24px;">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo-small">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img" style="height:24px;">
         </a>
         <a id="toggle_btn" href="">
             <i data-feather="chevrons-left" class="feather-16"></i>

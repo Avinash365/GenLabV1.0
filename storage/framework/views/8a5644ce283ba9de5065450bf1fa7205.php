@@ -51,7 +51,7 @@
             </button>
             <button class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class="fa fa-bell"></i>
-                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:flex; align-items:center; justify-content:center;">2</span>
+                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:flex; align-items:center; justify-content:center;"></span>
             </button>
             <a href="<?php echo e(route('superadmin.websettings.edit')); ?>" class="btn btn-light d-flex align-items-center justify-content-center p-0 <?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class="fa fa-cog"></i>
