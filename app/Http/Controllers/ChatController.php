@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Models\User;
+use Illuminate\Support\Facades\File;
 
 class ChatController extends Controller
 {
@@ -33,6 +34,25 @@ class ChatController extends Controller
         return auth('admin')->check();
     }
 
+    // NEW: copy storage/app/public/<relative> to public/storage/<relative> if not present
+    protected function ensurePublicCopy(string $relative): void
+    {
+        $relative = ltrim($relative, '/');
+        $src = storage_path('app/public/' . $relative);
+        $dst = public_path('storage/' . $relative);
+        try {
+            if (is_file($src) && !is_file($dst)) {
+                $dir = dirname($dst);
+                if (!File::exists($dir)) {
+                    File::makeDirectory($dir, 0755, true);
+                }
+                @File::copy($src, $dst);
+            }
+        } catch (\Throwable $e) {
+            // ignore
+        }
+    }
+
     // Generate an avatar URL for a user based on stored profile pics or model fields; fallback to placeholder
     protected function avatarUrl(?User $u): ?string
     {
@@ -41,7 +61,9 @@ class ChatController extends Controller
         foreach (['jpg','jpeg','png','webp'] as $ext) {
             $path = "avatars/{$u->id}.{$ext}";
             if (Storage::disk('public')->exists($path)) {
-                return Storage::url($path);
+                // NEW: make sure it's reachable without symlink
+                $this->ensurePublicCopy($path);
+                return url('storage/' . $path);
             }
         }
         // 2) Fallback to model-provided URLs if present
@@ -320,6 +342,9 @@ class ChatController extends Controller
             ]);
             $original = $request->file('file')->getClientOriginalName();
             $filePath = $request->file('file')->store('public/chat/'.$request->integer('group_id'));
+            // NEW: immediately expose a public copy for direct web access
+            $relative = ltrim(str_replace('public/', '', $filePath), '/'); // chat/<gid>/<file>
+            $this->ensurePublicCopy($relative);
         } else if ($type === 'text') {
             if ($firstNonEmpty === null) {
                 return response()->json(['message' => 'Text content is required'], 422);
@@ -560,12 +585,12 @@ class ChatController extends Controller
 
     protected function serializeMessage(ChatMessage $m, $viewer)
     {
-        $fileUrl = $m->file_path ? Storage::url($m->file_path) : null;
-        // Ensure only one /storage/ prefix
-        if ($fileUrl && !preg_match('#^https?://#', $fileUrl)) {
-            $fileUrl = str_replace('/public/', '/storage/', $fileUrl);
-            // Remove all leading /storage/ prefixes except one
-            $fileUrl = preg_replace('#^(/storage/)+#', '/storage/', $fileUrl);
+        // NEW: normalize and ensure public copy, then build absolute URL
+        $fileUrl = null;
+        if ($m->file_path) {
+            $relative = ltrim(Str::after($m->file_path, 'public/'), '/'); // chat/<gid>/<file>
+            $this->ensurePublicCopy($relative);
+            $fileUrl = url('storage/' . $relative);
         }
 
         $hasUserRel = $m->relationLoaded('user') && $m->user;
@@ -603,7 +628,7 @@ class ChatController extends Controller
             'sender_guard' => $senderGuard,
             'type' => $m->type,
             'content' => $m->content,
-            'file_url' => $fileUrl,
+            'file_url' => $fileUrl, // CHANGED: now absolute URL and guaranteed copied
             'original_name' => $m->original_name,
             'created_at' => $m->created_at?->toISOString(),
             'mine' => $mine,

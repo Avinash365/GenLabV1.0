@@ -351,6 +351,24 @@
     window.routes = routes;
     window.chatNotifBadge = document.getElementById('chatNotifBadge');
 
+    // NEW: robust base for absolute URLs (works under subdirectories)
+    const APP_BASE = '{{ rtrim(url('/'), '/') }}';
+
+    // Helper: normalize and build absolute URL for file/asset paths
+    function toAbsoluteUrl(u){
+        if (!u) return '';
+        try {
+            let s = String(u);
+            if (/^https?:\/\//i.test(s)) return s;
+            // collapse any repeated /storage/ prefixes
+            s = s.replace(/^(\/storage\/)+/, '/storage/');
+            // handle relative 'storage/...' (no leading slash)
+            if (!s.startsWith('/')) s = '/' + s;
+            // join with app base (handles subfolder installs)
+            return APP_BASE + s;
+        } catch(_) { return String(u || ''); }
+    }
+
     // Elements
     const groupsEl = document.getElementById('chatGroups');
     const searchEl = document.getElementById('chatGroupSearch');
@@ -582,8 +600,10 @@
             item.href = '#'; item.className = 'list-group-item d-flex align-items-center';
             item.dataset.groupId = g.id; item.dataset.groupName = g.name;
             const initials2 = (g.name||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
-            const avatarHtml = g.avatar ? `<div class="wa-avatar me-2"><img src="${g.avatar}" alt="${g.name||'Group'}" loading="lazy"></div>`
-                                        : `<div class="wa-avatar me-2">${initials2}</div>`;
+            // CHANGED: ensure avatar URL is absolute and valid
+            const absAvatar = g.avatar ? toAbsoluteUrl(g.avatar) : null;
+            const avatarHtml = absAvatar ? `<div class="wa-avatar me-2"><img src="${absAvatar}" alt="${g.name||'Group'}" loading="lazy"></div>`
+                                         : `<div class="wa-avatar me-2">${initials2}</div>`;
             const right = document.createElement('div'); right.className='ms-auto d-flex align-items-center';
             // Only show unread badge if latest message is not from current user
             const latest = g.latest || {};
@@ -742,8 +762,8 @@
     }
 
     function avatarLabel(m){
-        // If avatar URL provided, render <img>
-        if (m && m.user && m.user.avatar) return { html: '<img src="'+m.user.avatar+'" alt="'+(m.user.name||'U')+'" loading="lazy">', text: null };
+        // If avatar URL provided, render <img> (CHANGED: normalize URL)
+        if (m && m.user && m.user.avatar) return { html: '<img src="'+toAbsoluteUrl(m.user.avatar)+'" alt="'+(m.user.name||'U')+'" loading="lazy">', text: null };
         const n = (m && m.user && m.user.name) ? m.user.name : (m && m.sender_name ? m.sender_name : 'U');
         const init = n ? n.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() : 'U';
         return { html: null, text: init };
@@ -931,11 +951,8 @@
             content.appendChild(t);
         } else if (isImage){
             const wrap = document.createElement('div'); wrap.className = 'wa-image';
-            let imgUrl = m.file_url || '';
-            imgUrl = imgUrl.replace(/^(\/storage\/)+/, '/storage/');
-            if (!/^https?:\/\//i.test(imgUrl)) {
-                imgUrl = window.location.origin + imgUrl;
-            }
+            // CHANGED: build absolute URL correctly
+            const imgUrl = toAbsoluteUrl(m.file_url || '');
             const img = document.createElement('img'); img.src = imgUrl; img.alt = original || 'image'; img.loading = 'lazy'; img.decoding = 'async';
             wrap.appendChild(img);
             content.appendChild(wrap);
@@ -943,12 +960,8 @@
         } else if (isPdf){
             // WhatsApp-like document row
             const wrap = document.createElement('div'); wrap.className='wa-doc';
-            let fileUrl = m.file_url || '';
-            // Remove all leading /storage/ prefixes except one
-            fileUrl = fileUrl.replace(/^(\/storage\/)+/, '/storage/');
-            if (!/^https?:\/\//i.test(fileUrl)) {
-                fileUrl = window.location.origin + fileUrl;
-            }
+            // CHANGED: build absolute URL correctly
+            const fileUrl = toAbsoluteUrl(m.file_url || '');
             const link = document.createElement('a'); link.href = fileUrl; link.target = '_blank'; link.rel = 'noopener noreferrer'; link.className='wa-doc-link';
             link.addEventListener('click', function(e){ e.stopPropagation(); });
             const icon = document.createElement('div'); icon.className='wa-doc-icon';
@@ -969,7 +982,9 @@
             }
         } else if (isAudio){
             const wrap = document.createElement('div'); wrap.className='wa-audio';
-            const audio = document.createElement('audio'); audio.controls = true; audio.src = m.file_url; wrap.appendChild(audio);
+            // CHANGED: build absolute URL correctly
+            const audio = document.createElement('audio'); audio.controls = true; audio.src = toAbsoluteUrl(m.file_url || '');
+            wrap.appendChild(audio);
             content.appendChild(wrap);
             if (textValue){ const cap = document.createElement('div'); cap.className='wa-caption'; cap.textContent = textValue; content.appendChild(cap); }
         } else {
@@ -1129,6 +1144,8 @@
         }
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Reply"><i class="fa fa-reply me-2 text-primary"></i> Reply</button>';
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Forward"><i class="fa fa-share me-2 text-info"></i> Forward</button>';
+        // ADD: Share option for all users
+        menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Share"><i class="fa fa-share-alt me-2 text-secondary"></i> Share</button>';
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Delete"><i class="fa fa-trash me-2 text-danger"></i> Delete</button>';
         menuHtml += '</div>';
         picker.innerHTML = menuHtml;
@@ -1155,6 +1172,8 @@
             picker.remove();
             if (action === 'Reply') { promptReply(messageId); return; }
             if (action === 'Forward') { promptForward(messageId); return; }
+            // ADD: handle Share
+            if (action === 'Share') { promptShare(messageId); return; }
             if (action === 'Delete') { promptDelete(messageId); return; }
             // Hold/Booked/Cancel (same as before)
             const msg = Array.isArray(cache) ? cache.find(x => x && x.id === messageId) : null;
@@ -1312,6 +1331,7 @@
         try {
             await markGroupSeen(groupId, lastMessageId);
             updateHeaderBadge(); // reflect that active group is seen
+           
             if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
         } catch(e) { /* ignore */ }
     }
@@ -1610,19 +1630,84 @@
     // Remove duplicate extra interval; ensure single guarded timer only
     if (!window.__CHAT_POLL_INTERVAL) { window.__CHAT_POLL_INTERVAL = setInterval(poll, 5000); }
 
+    // --- Make chat popup draggable ---
+    let dragActive = false, dragOffset = {x:0, y:0}, dragStart = {x:0, y:0};
+    const headerEl = document.querySelector('.chat-popup-header');
+    let lastPos = {top:null, left:null};
+
+    function onDragStart(e){
+        if (popupEl.classList.contains('expanded')) return; // don't drag in expanded mode
+        dragActive = true;
+        const rect = popupEl.getBoundingClientRect();
+        dragOffset.x = (e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX) - rect.left;
+        dragOffset.y = (e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY) - rect.top;
+        dragStart.x = rect.left;
+        dragStart.y = rect.top;
+        document.body.style.userSelect = 'none';
+    }
+    function onDragMove(e){
+        if (!dragActive) return;
+        const x = (e.type.startsWith('touch') ? e.touches[0].clientX : e.clientX) - dragOffset.x;
+        const y = (e.type.startsWith('touch') ? e.touches[0].clientY : e.clientY) - dragOffset.y;
+        // Clamp within viewport
+        const vw = window.innerWidth, vh = window.innerHeight;
+        const w = popupEl.offsetWidth, h = popupEl.offsetHeight;
+        const left = Math.max(0, Math.min(x, vw-w));
+        const top = Math.max(0, Math.min(y, vh-h));
+        popupEl.style.left = left + 'px';
+        popupEl.style.top = top + 'px';
+        popupEl.style.right = '';
+        popupEl.style.bottom = '';
+        lastPos = {top, left};
+    }
+    function onDragEnd(){
+        dragActive = false;
+        document.body.style.userSelect = '';
+    }
+    if (headerEl){
+        headerEl.style.cursor = 'move';
+        headerEl.addEventListener('mousedown', onDragStart);
+        headerEl.addEventListener('touchstart', onDragStart, {passive:false});
+        window.addEventListener('mousemove', onDragMove);
+        window.addEventListener('touchmove', onDragMove, {passive:false});
+        window.addEventListener('mouseup', onDragEnd);
+        window.addEventListener('touchend', onDragEnd);
+    }
+
+    // --- Hide popup when clicking outside (always, even if expanded) ---
+    document.addEventListener('mousedown', function(e){
+        if (!popupEl || popupEl.style.display !== 'flex') return;
+        if (!popupEl.contains(e.target)){
+            popupEl.style.display = 'none';
+            setState({ open: false });
+        }
+    });
+    document.addEventListener('touchstart', function(e){
+        if (!popupEl || popupEl.style.display !== 'flex') return;
+        if (!popupEl.contains(e.target)){
+            popupEl.style.display = 'none';
+            setState({ open: false });
+        }
+    });
+
+    // --- When opening, restore last drag position if any ---
     function openPopup(){
         popupEl.style.display = 'flex';
         setState({ open: true });
         if (popupEl.classList.contains('expanded')) { applyExpandedBounds(); requestAnimationFrame(applyExpandedBounds); }
+        else if (lastPos.top !== null && lastPos.left !== null){
+            popupEl.style.top = lastPos.top + 'px';
+            popupEl.style.left = lastPos.left + 'px';
+            popupEl.style.right = '';
+            popupEl.style.bottom = '';
+        }
         if (!allGroups.length) { fetchGroups(); }
     }
-    // Make opening callable globally and keep delegated listener
     window.openChat = openPopup; window.openPopup = openPopup;
     document.addEventListener('click', function(e){
         const btn = e.target.closest('#chatToggle');
         if (btn){ e.preventDefault(); openPopup(); }
     });
-    // Also expose open on keyboard shortcut (optional)
     document.addEventListener('keydown', function(e){ if ((e.ctrlKey||e.metaKey) && e.key === 'i'){ openPopup(); } });
 
     // Expose globals for external notifications

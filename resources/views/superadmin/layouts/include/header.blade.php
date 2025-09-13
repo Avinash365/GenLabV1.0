@@ -127,3 +127,49 @@
 </div>
 
 @include('superadmin.layouts.include.chat')
+
+<script>
+// Toggle fullscreen on expand icon
+(function(){
+	// Avoid duplicate binding
+	if (window.__HEADER_FS_WIRED__) return; window.__HEADER_FS_WIRED__ = true;
+
+	const btn = document.getElementById('expandToggle');
+	if (!btn) return;
+	const icon = btn.querySelector('i');
+
+	function isFs(){
+		return !!(document.fullscreenElement || document.webkitFullscreenElement || document.msFullscreenElement);
+	}
+	function enterFs(){
+		const el = document.documentElement;
+		(el.requestFullscreen || el.webkitRequestFullscreen || el.msRequestFullscreen)?.call(el);
+	}
+	function exitFs(){
+		(document.exitFullscreen || document.webkitExitFullscreen || document.msExitFullscreen)?.call(document);
+	}
+	function syncIcon(){
+		const on = isFs();
+		if (icon){
+			icon.classList.toggle('fa-expand', !on);
+			icon.classList.toggle('fa-compress', on);
+		}
+		btn.title = on ? 'Exit full screen' : 'Full screen';
+		// Optional: if chat popup is expanded, recalc bounds
+		try { if (window.applyExpandedBounds) window.applyExpandedBounds(); } catch(_) {}
+	}
+
+	btn.addEventListener('click', function(e){
+		e.preventDefault();
+		if (isFs()) exitFs(); else enterFs();
+		setTimeout(syncIcon, 50);
+	});
+
+	['fullscreenchange','webkitfullscreenchange','msfullscreenchange'].forEach(evt=>{
+		document.addEventListener(evt, syncIcon);
+	});
+
+	// Init
+	syncIcon();
+})();
+</script>
