@@ -2,13 +2,13 @@
     <!-- Logo -->
     <div class="sidebar-logo active">
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-normal">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img" >
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-white">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img" >
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo-small">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img" >
         </a>
         <a id="toggle_btn" href="">
             <i data-feather="chevrons-left" class="feather-16"></i>
@@ -91,6 +91,7 @@
                         <li class="submenu {{ Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : '' }}">
                             <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                             <ul>
+                                <li><a href="{{ route('superadmin.accountBookingsLetters.index') }}">All Letters</a></li>
                                 <li><a href="{{ route('superadmin.bookingInvoiceStatuses.index') }}">Generate Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'tax_invoice']) }}">Tax Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'proforma_invoice']) }}">PI Invoice</a></li>
@@ -99,13 +100,17 @@
 
                                 
                                 <li><a href="#">CI</a></li>
-                                <li><a href="#">All Invoices</a></li>
-                                <li><a href="#">Client Ledger</a></li>
-                                <li><a href="#">Unpaid Invoices</a></li>
+                                <li>
+                                    <a href="{{ route('superadmin.cashLetter.index') }}">
+                                        Cash Letter
+                                    </a>
+                                </li>      
+                                <li><a href="{{route('superadmin.client-ledger.index')}}">Client Ledger</a></li>
+                                <li><a href="{{route('superadmin.invoices.index',['payment_status' => '0'])}}">Unpaid Invoices</a></li>
                                 <li><a href="#">Unpaid Letter</a></li>
                                 <li><a href="#">Transaction</a></li>
-                                <li><a href="#">Marketing Person Ledger</a></li>
-                                <li><a href="#">Office Expenses</a></li>
+                                <li><a href="{{ route('superadmin.marketing-person-ledger.index') }}">Marketing Person Ledger</a></li>
+                                <li><a href="">Office Expenses</a></li>
                                 <li><a href="#">Marketing Expenses</a></li>
                                 <li><a href="#">Purchase Bill</a></li>
                             </ul>

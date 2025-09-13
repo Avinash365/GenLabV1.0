@@ -7,63 +7,117 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Invoice;
 use App\Models\InvoiceBookingItem;
-use App\Models\NewBooking;
+use App\Models\{NewBooking,Department};
 use Carbon\Carbon;
-use App\Services\BillingService;
+use App\Services\{GetUserActiveDepartment,BillingService};
 use App\Services\InvoicePdfService;
 use App\Http\Requests\GenerateInvoiceRequest;
+
+use App\Models\User;
 
 
 class InvoiceController extends Controller
 {
     protected $billingService;
     protected $invoicePdfService;
+    protected $departmentService; 
     
     // Inject BillingService
-    public function __construct(BillingService $billingService, InvoicePdfService $invoicePdfService)
+    public function __construct(BillingService $billingService, InvoicePdfService $invoicePdfService, GetUserActiveDepartment $departmentService)
     {
+        $this->departmentService = $departmentService;
         $this->billingService = $billingService; 
         $this->invoicePdfService = $invoicePdfService;
     }
 
+  
     public function index(Request $request)
     {
-        try {
-            $search = $request->input('search');
-            $type = $request->input('type'); 
+        $marketingPersons = User::whereHas('role', function ($q) {
+            $q->where('slug', 'marketing_person');
+        })
+        ->get(['id', 'user_code', 'name']);
 
-
-            $invoices = Invoice::with(['relatedBooking.marketingPerson'])
-                ->whereHas('relatedBooking', function($q) use ($search) {
-                    $q->where('client_name', 'like', "%{$search}%");
-                })
-                ->when($type, function ($q) use ($type) {
-                    $q->where('type', $type);
-                })
-                ->latest()
-                ->paginate(3);
-
-            return view('superadmin.accounts.invoiceList.index', compact('invoices')); 
-
-        } catch (\Throwable $e) {
-            Log::error('Invoice index error: ' . $e->getMessage(), [
-                'trace' => $e->getTraceAsString()
-            ]);
-            return back()->withErrors('Unable to load invoices. Please try again later. ' . $e->getMessage());
+        foreach ($marketingPersons as $person) {
+            $person->label = $person->user_code . ' - ' . $person->name;
         }
-    } 
+
+        $query = Invoice::with(['relatedBooking.marketingPerson', 'relatedBooking.department']);
+
+        // Marketing person filter
+        if ($request->filled('marketing_person')) {
+            $this->filterByMarketingPerson($query, $request->marketing_person);
+        }
+
+        // User code filter
+        if ($request->filled('user_code')) {
+            $query->whereHas('relatedBooking.marketingPerson', function ($q) use ($request) {
+                $q->where('user_code', $request->user_code);
+            });
+        }
+
+        // Department filter
+        if ($request->filled('department_id')) {
+            $query->whereHas('relatedBooking.department', function ($q) use ($request) {
+                $q->where('id', $request->department_id);
+            });
+        }
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('invoice_no', 'like', "%$search%")
+                ->orWhereHas('relatedBooking', function ($subQ) use ($search) {
+                    $subQ->where('client_name', 'like', "%$search%");
+                });
+            });
+        }
+
+        // Payment status filter
+        if ($request->filled('payment_status')) {
+            $query->where('status', $request->payment_status);
+        }
+
+        // Type filter
+        if ($request->filled('type')) {
+            $query->where('type', $request->type);
+        }
+
+        $invoices = $query->paginate(10)->withQueryString();
+        $departments = $this->departmentService->getDepartment();
+
+        return view('superadmin.accounts.invoiceList.index', compact('invoices', 'marketingPersons', 'departments'));
+    }
+
 
     public function edit(string $InvoiceId)
     {
-        try {
-
+        try { 
+            
             $invoice = Invoice::with([
-                            'bookingItems',
-                            'relatedBooking.marketingPerson'
-                        ])->findOrFail($InvoiceId);
+                'bookingItems',
+                'relatedBooking.marketingPerson'
+            ])->findOrFail($InvoiceId);
+
+            if(!empty($invoice->invoice_booking_ids)) {
+                return back()->withSuccess('Currently service is not available');
+            } 
+
+            if (!empty($invoice->invoice_booking_ids)) {
+            
+                $bookingIds = explode(',', $invoice->invoice_booking_ids);
+
+                // Get all bookings with these IDs
+                $relatedBookings = NewBooking::with(['items'])
+                    ->whereIn('id', $bookingIds)
+                    ->get(); 
+
+                return view('superadmin.accounts.invoiceList.bulk_edit', compact('invoice', 'relatedBookings'));
+            }
 
             return view('superadmin.accounts.invoiceList.edit', compact('invoice'));
-             
+
         } catch (\Throwable $e) {
             Log::error('Invoice edit error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()
@@ -181,8 +235,6 @@ class InvoiceController extends Controller
         }
     } 
 
-
-
     public function destroy(Invoice $invoice)
     {
         try {
@@ -226,6 +278,17 @@ class InvoiceController extends Controller
         $invoice->save();
 
         return back()->with('success', "File uploaded successfully: $fileName");
+    }
+
+    private function filterByMarketingPerson($query, $personId)
+    {
+        $user = User::find($personId);
+
+        if ($user && $user->user_code) {
+            $query->whereHas('relatedBooking', function ($q) use ($user) {
+                $q->where('marketing_id', $user->user_code);
+            });
+        }
     }
 
 }

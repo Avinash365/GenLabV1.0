@@ -42,6 +42,16 @@ use App\Http\Controllers\Accounts\InvoiceController;
 use App\Http\Controllers\Accounts\QuotationController;
 use App\Http\Controllers\Accounts\BlankInvoiceController;
 use App\Http\Controllers\Accounts\PaymentSettingController;
+use App\Http\Controllers\Accounts\MarketingPersonLedger; 
+
+use App\Http\Controllers\Accounts\AccountsLetterController;
+
+use App\Http\Controllers\Client\ClientController; 
+use App\Http\Controllers\Client\ClientLedgerController; 
+
+
+use App\Http\Controllers\Transactions\CashPaymentController;
+use App\Http\Controllers\Transactions\WithoutBillTransactionController;
 
 
 // =======================
@@ -156,12 +166,20 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('documents', DocumentController::class);
         Route::resource('calibrations', CalibrationController::class);
         Route::resource('iscodes', ISCodeController::class);
-        Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
+        
         Route::resource('blank-invoices', BlankInvoiceController::class);
+        
+        Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
         
         Route::post('bookingInvoiceStatuses/generate-invoice/{booking}', [GenerateInvoiceStatusController::class, 'generateInvoice'])
               ->name('bookingInvoiceStatuses.generateInvoice');
+
+        Route::get('booking-invoice-statuses/bulk-generate', [GenerateInvoiceStatusController::class, 'bulkGenerate'])
+                ->name('bookingInvoiceStatuses.bulkGenerate'); 
         
+        Route::post('/booking-invoice-statuses/store-bulk', [GenerateInvoiceStatusController::class, 'storeBulk'])
+             ->name('bookingInvoiceStatuses.storeBulk'); 
+
         Route::resource('invoices', InvoiceController::class);
         Route::PUT('invoices/generate-invoice/{invoices}', [InvoiceController::class, 'generateInvoice'])
               ->name('invoices.generateInvoice');
@@ -169,12 +187,29 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('quotations', QuotationController::class);
         Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])
               ->name('quotations.generateQuotations');
-
+        
         Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
         
         Route::resource('payment-settings', PaymentSettingController::class);
 
+        Route::get('payment-settings/call-function/{id}', [PaymentSettingController::class, 'callFunction'])->name('payment-settings.callFunction');
+
+        Route::resource('marketing-person-ledger', MarketingPersonLedger::class);
+
+        Route::resource('clients', ClientController::class)->only(['index','store','destroy']);
+        Route::post('clients/{client}/assign-booking', [ClientController::class, 'assignBooking'])->name('clients.assignBooking');
+        Route::get('client-ledger', [ClientLedgerController::class, 'index'])->name('client-ledger.index');
+        Route::get('client-ledger/{id}', [ClientLedgerController::class, 'show'])->name('client-ledger.show');
+
+
+        Route::get('cash-payments/create/{id}', [CashPaymentController::class, 'create'])->name('cashPayments.create');
+        Route::post('cash-payments/store', [CashPaymentController::class, 'store'])->name('cashPayments.store');
+        Route::post('/withoutbilltransactions/store', [WithoutBillTransactionController::class, 'store'])->name('withoutbilltransactions.store');
+        Route::get('cash-letter/index', [WithoutBillTransactionController::class, 'index'])->name('cashLetter.index');
+
+        Route::resource('accountBookingsLetters', AccountsLetterController::class); 
         
+
         // Store
         Route::prefix('store')->name('store.')->group(function () {
             Route::get('/', [StoreController::class, 'index'])->name('Store');
@@ -243,5 +278,3 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
         });
 });
-
-

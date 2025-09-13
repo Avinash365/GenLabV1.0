@@ -13,6 +13,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'new_booking_id', 
+        'invoice_booking_ids',
         'generated_by', 
         'invoice_no',
         'type', 
@@ -74,6 +75,13 @@ class Invoice extends Model
     public function getInvoiceDateAttribute($value)
     {
         return Carbon::parse($value)->format('d-m-Y');
+    } 
+
+    public function calculateTotalAmount()
+    {
+        return $this->bookingItems->sum(function ($item) {
+            return ($item->qty ?? 0) * ($item->rate ?? 0);
+        });
     }
 
 }

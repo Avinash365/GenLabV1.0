@@ -18,6 +18,7 @@ class PaymentSettingController extends Controller
         return view('payment_settings.index', compact('settings'));
     }
 
+    
     // Show create form
     public function create()
     {

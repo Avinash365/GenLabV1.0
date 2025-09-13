@@ -71,5 +71,16 @@ class NewBooking extends Model
     public function generatedInvoice()
     {
         return $this->hasOne(Invoice::class, 'new_booking_id');
+    }  
+    
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
     } 
+
+     public function getTotalAmountAttribute(): float
+    {
+        return $this->items()->sum('amount') ?? 0;
+    }
+
 }
