@@ -218,8 +218,14 @@ class ChatController extends Controller
                 });
             }
         }
-        $list = $q->orderBy('id')->limit(200)->get()
-            ->map(function(ChatMessage $m) use ($user) { return $this->serializeMessage($m, $user); });
+        // Old (problem): ->orderBy('id')->limit(200)->get()
+        // New: get latest 200 first, then sort ascending for proper chronology
+        $msgs = $q->orderBy('id','desc')->limit(200)->get();
+        $msgs = $msgs->sortBy('id')->values();
+
+        $list = $msgs->map(function(ChatMessage $m) use ($user) {
+            return $this->serializeMessage($m, $user);
+        });
 
         return response()->json($list);
     }
@@ -346,8 +352,16 @@ class ChatController extends Controller
         }
 
         $msg->load('user:id,name,email');
-        event(new \App\Events\ChatMessageBroadcast($this->serializeMessage($msg, $user)));
-        return response()->json($this->serializeMessage($msg, $user), 201);
+
+        // Build two payloads:
+        // - payload: scoped for current requester (keeps correct "mine")
+        // - broadcast: neutral so every receiver can compute "mine" locally
+        $payload = $this->serializeMessage($msg, $user);
+        $broadcast = $payload;
+        unset($broadcast['mine']); // ensure neutral; receivers will set it
+
+        event(new \App\Events\ChatMessageBroadcast($broadcast));
+        return response()->json($payload, 201);
     }
 
     public function react(Request $request, ChatMessage $message)

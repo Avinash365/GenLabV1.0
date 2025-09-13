@@ -18,12 +18,145 @@ function extract_keywords($text) {
 
 class ChatbotController extends Controller
 {
+    // Helper: parse timeframe words -> date range
+    protected function parseTimeframe(string $text): array
+    {
+        $today = now()->startOfDay();
+        $endToday = now()->endOfDay();
+        $lower = strtolower($text);
+        if (preg_match('/today/', $lower)) {
+            return [$today, $endToday, 'today'];
+        }
+        if (preg_match('/this\s+week|current\s+week/', $lower)) {
+            return [now()->startOfWeek(), now()->endOfWeek(), 'this week'];
+        }
+        if (preg_match('/this\s+month|current\s+month/', $lower)) {
+            return [now()->startOfMonth(), now()->endOfMonth(), 'this month'];
+        }
+        if (preg_match('/this\s+year|current\s+year/', $lower)) {
+            return [now()->startOfYear(), now()->endOfYear(), 'this year'];
+        }
+        // Default: all time
+        return [null, null, 'all time'];
+    }
+
+    protected function htmlList($label, $items, $limit = null)
+    {
+        if ($items->isEmpty()) return 'No data found for ' . e($label) . '.';
+        if ($limit && $items->count() > $limit) {
+            $shown = $items->take($limit)->map(fn($v)=>e($v))->implode('<br>');
+            return e($label) . ':<br>' . $shown . '<br><em>+' . ($items->count()-$limit) . ' more</em>';
+        }
+        return e($label) . ':<br>' . $items->map(fn($v)=>e($v))->implode('<br>');
+    }
+
     public function query(Request $request)
     {
-        $question = $request->input('question');
+        $question = $request->input('question', '');
         Log::info('Chatbot received question: ' . $question);
         $keywords = extract_keywords($question);
+        $lowerQ = strtolower($question);
 
+        // 1. Invoices today (count & sum)
+        if (preg_match('/invoice.*today|today.*invoice/', $lowerQ)) {
+            $count = DB::table('invoices')->whereDate('invoice_date', now()->toDateString())->count();
+            $sum = DB::table('invoices')->whereDate('invoice_date', now()->toDateString())->sum('total_amount');
+            return response()->json(['answer' => 'Invoices today: ' . $count . ' | Total amount: ' . number_format($sum,2)]);
+        }
+
+        // 1b. Total amount of invoices (all time or timeframe)
+        if (preg_match('/total\s+amount.*invoice|invoice.*total\s+amount|sum.*invoice|invoice.*sum/', $lowerQ)) {
+            [$start,$end,$label] = $this->parseTimeframe($lowerQ);
+            $query = DB::table('invoices');
+            if ($start) { $query->whereBetween('invoice_date', [$start, $end]); }
+            $sum = $query->sum('total_amount');
+            return response()->json(['answer' => 'Total invoice amount ' . $label . ': ' . number_format($sum,2)]);
+        }
+
+        // 2. Bookings count (optionally timeframe + department)
+        if (preg_match('/how\s+many.*booking/', $lowerQ)) {
+            [$start,$end,$label] = $this->parseTimeframe($lowerQ);
+            $query = DB::table('new_bookings');
+            // department filter
+            if (preg_match('/department\s+([a-z0-9 \-_]+)/', $lowerQ, $m)) {
+                $deptName = trim($m[1]);
+                $deptId = DB::table('departments')->where('name','like','%'.$deptName.'%')->value('id');
+                if ($deptId) $query->where('department_id',$deptId);
+            }
+            if ($start) { $query->whereBetween('created_at', [$start, $end]); }
+            $count = $query->count();
+            return response()->json(['answer' => 'Bookings ' . $label . ': ' . $count]);
+        }
+
+        // 3. Bookings by client (timeframe) e.g. "bookings of ACME this month"
+        if (preg_match('/booking[s]?\s+.*(client|of)\s+([a-z0-9 \-]+)/', $lowerQ, $m)) {
+            $clientFragment = trim($m[2]);
+            [$start,$end,$label] = $this->parseTimeframe($lowerQ);
+            $query = DB::table('new_bookings')->where('client_name','like','%'.$clientFragment.'%');
+            if ($start) $query->whereBetween('created_at', [$start,$end]);
+            $count = $query->count();
+            return response()->json(['answer' => 'Bookings for client ('.$clientFragment.') '.$label.': '.$count]);
+        }
+
+        // 4. Recent bookings of marketing person (assumes new_bookings.marketing_id -> users.id and role_name contains marketing)
+        if (preg_match('/recent.*booking.*(marketing|marketer)\s+([a-z0-9 \-]+)/', $lowerQ, $m)) {
+            $person = trim($m[2]);
+            $userId = DB::table('users')
+                ->join('roles','users.role_id','=','roles.id')
+                ->where('roles.role_name','like','%market%')
+                ->where('users.name','like','%'.$person.'%')
+                ->value('users.id');
+            if (!$userId) return response()->json(['answer'=>'No marketing person matched: '.$person]);
+            $rows = DB::table('new_bookings')
+                ->where('marketing_id',$userId)
+                ->orderByDesc('created_at')
+                ->limit(5)
+                ->get(['id','client_name','created_at']);
+            if ($rows->isEmpty()) return response()->json(['answer'=>'No recent bookings for '.$person]);
+            $list = $rows->map(fn($r)=>'#'.$r->id.' '.$r->client_name.' ('.\Carbon\Carbon::parse($r->created_at)->format('d M').')')->implode('<br>');
+            return response()->json(['answer'=>'Recent bookings for '.$person.':<br>'.$list]);
+        }
+
+        // 5. Job order status (assumes reference_no column)
+        if (preg_match('/status.*job\s*order.*(\d+)/', $lowerQ, $m)) {
+            $ref = $m[1];
+            $row = DB::table('new_bookings')->where('reference_no','like','%'.$ref.'%')->first();
+            if (!$row) return response()->json(['answer'=>'No job order found matching '.$ref]);
+            // Placeholder: no explicit status column; using hold_status or created_at
+            $status = property_exists($row,'hold_status') ? ($row->hold_status ?: 'N/A') : 'N/A';
+            return response()->json(['answer'=>'Job order '.$ref.' status: '.$status]);
+        }
+
+        // 6. When job order booked
+        if (preg_match('/when.*job\s*order.*(\d+)/', $lowerQ, $m)) {
+            $ref = $m[1];
+            $row = DB::table('new_bookings')->where('reference_no','like','%'.$ref.'%')->first();
+            if (!$row) return response()->json(['answer'=>'No job order found matching '.$ref]);
+            $date = \Carbon\Carbon::parse($row->created_at)->toDayDateTimeString();
+            return response()->json(['answer'=>'Job order '.$ref.' booked on '.$date]);
+        }
+
+        // 7. Open my profile (link)
+        if (preg_match('/open.*my.*profile|my\s+profile/', $lowerQ)) {
+            return response()->json(['answer'=>'Profile: <a href="'.url('/superadmin/profile').'" target="_blank">Open Profile</a>']);
+        }
+
+        // 8. TODO intents requiring schema clarification
+        $todoPatterns = [
+            'ledger' => 'Ledger feature not implemented. Provide table & column details.',
+            'expense' => 'Expenses feature not implemented. Provide table & column details.',
+            'payment due' => 'Payment due feature not implemented. Provide table & column details.',
+            'attendance' => 'Attendance feature not implemented. Provide table & column details.',
+            'expected date' => 'Lab expected date feature not implemented. Provide table & column details.',
+            'work done' => 'Work done tracking not implemented. Provide table & column details.'
+        ];
+        foreach ($todoPatterns as $phrase=>$msg) {
+            if (str_contains($lowerQ,$phrase)) {
+                return response()->json(['answer'=>$msg]);
+            }
+        }
+
+        // === Existing generic intent + fallback logic below ===
         // Improved intent mapping: allow plural/synonyms
         $intentMap = [
             'marketing' => ['table' => 'users', 'role' => 'marketing', 'type' => 'role_list', 'label' => 'Marketing Persons'],
@@ -56,10 +189,10 @@ class ChatbotController extends Controller
 
         if ($foundIntent) {
             if ($foundIntent['type'] === 'role_list') {
-                // Join users and roles to get names by role
+                // Join users and roles to get names by role_name
                 $results = DB::table('users')
                     ->join('roles', 'users.role_id', '=', 'roles.id')
-                    ->where('roles.name', 'like', '%' . $foundIntent['role'] . '%')
+                    ->where('roles.role_name', 'like', '%' . $foundIntent['role'] . '%')
                     ->pluck('users.name');
                 if ($results->count() > 0) {
                     $answer = $foundIntent['label'] . ':<br>' . $results->implode('<br>');

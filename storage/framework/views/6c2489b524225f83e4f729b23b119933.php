@@ -119,9 +119,9 @@
                         <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr>
                             <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                            <td><?php echo e($booking->client_name); ?></td>
-                            <td><?php echo e($booking->reference_no); ?></td>
-                            <td><?php echo e($booking->marketingPerson->name); ?></td>
+                            <td><?php echo e($booking->client_name ?? ''); ?></td>
+                            <td><?php echo e($booking->reference_no ?? ''); ?></td>
+                            <td><?php echo e($booking->marketingPerson->name ?? ''); ?></td>
                             <td>
                                 <?php if($booking->upload_letter_path): ?>
                                     <a href="<?php echo e(url($booking->upload_letter_path)); ?>" target="_blank">View</a>
@@ -142,7 +142,7 @@
                                         <div class="modal-dialog modal-dialog-centered modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">Booking Items for <?php echo e($booking->client_name); ?></h5>
+                                                    <h5 class="modal-title">Booking Items for <?php echo e($booking->client_name ?? ''); ?></h5>
                                                      <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                                                         <span aria-hidden="true">&times;</span> 
                                                     </button>
@@ -164,13 +164,13 @@
                                                             <tbody>
                                                                 <?php $__currentLoopData = $booking->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                                 <tr>
-                                                                    <td><?php echo e($item->sample_description); ?></td>
-                                                                    <td><?php echo e($item->sample_quality); ?></td>
-                                                                    <td><?php echo e($item->lab_analysis_code); ?></td>
-                                                                    <td><?php echo e($item->particulars); ?></td>
+                                                                    <td><?php echo e($item->sample_description ?? ''); ?></td>
+                                                                    <td><?php echo e($item->sample_quality ?? ''); ?></td>
+                                                                    <td><?php echo e($item->lab_analysis_code ?? ''); ?></td>
+                                                                    <td><?php echo e($item->particulars ?? ''); ?></td>
                                                                     <td><?php echo e(\Carbon\Carbon::parse($item->lab_expected_date)->format('d-m-Y')); ?></td>
-                                                                    <td><?php echo e($item->amount); ?></td>
-                                                                    <td><?php echo e($item->job_order_no); ?></td>
+                                                                    <td><?php echo e($item->amount ?? ''); ?></td>
+                                                                    <td><?php echo e($item->job_order_no  ?? ''); ?></td>
                                                                 </tr>
                                                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                             </tbody>

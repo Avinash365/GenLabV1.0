@@ -13,15 +13,11 @@
         </div>
         <button id="chatbot-close" aria-label="Close" title="Close"><i class="fas fa-times"></i></button>
     </div>
-    <div id="chatbot-suggestions" class="chatbot-suggestions">
-        <button type="button" class="chatbot-suggestion">How many bookings made today?</button>
-        <button type="button" class="chatbot-suggestion">Price of booking?</button>
-        <button type="button" class="chatbot-suggestion">How to contact support?</button>
-    </div>
     <div id="chatbot-messages" aria-live="polite" aria-relevant="additions"></div>
     <div id="chatbot-typing" class="chatbot-typing" aria-hidden="true" style="display:none;">
         <span></span><span></span><span></span>
     </div>
+    <div id="chatbot-autocomplete" aria-label="Suggestions" style="display:none;"></div>
     <form id="chatbot-input-area" autocomplete="off">
         <input type="text" id="chatbot-input" placeholder="Type your question..." required />
         <button type="submit" id="chatbot-send" aria-label="Send"><i class="fas fa-paper-plane"></i></button>

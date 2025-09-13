@@ -91,9 +91,9 @@
 .chat-popup{
   position:fixed;
   right: max(20px, env(safe-area-inset-right));
-  bottom: max(20px, env(safe-area-inset-bottom));
+  bottom: max(10px, env(safe-area-inset-bottom));
   width: min(700px, calc(100vw - 40px));
-  height: min(640px, calc(100dvh - 40px));
+  height: min(620px, calc(100dvh - 40px));
   background:#fff;
   border:1px solid var(--chat-border);
   border-radius:12px;
@@ -332,6 +332,9 @@
     <?php $authUser = auth('admin')->user() ?: auth('web')->user(); $isAdmin = auth('admin')->check(); ?>
     const currentUser = { id: <?php echo e($authUser ? (int)$authUser->id : 'null'); ?>, name: <?php echo json_encode($authUser->name ?? 'Guest', 15, 512) ?> };
     const isSuperAdmin = <?php echo e($isAdmin ? 'true' : 'false'); ?>;
+    window.currentUser = currentUser;
+    window.isSuperAdmin = isSuperAdmin;
+
     const routes = {
         groups: '<?php echo e(url('/chat/groups')); ?>',
         messages: '<?php echo e(url('/chat/messages')); ?>',
@@ -341,10 +344,10 @@
         direct: (userId) => `${'<?php echo e(url('/chat/direct')); ?>'}/${userId}`,
         searchUsers: (q) => `${'<?php echo e(url('/chat/users/search')); ?>'}?q=${encodeURIComponent(q)}`,
         directWith: (id) => `${'<?php echo e(url('/chat/direct-with')); ?>'}/${id}`,
-        // new: mark seen endpoint
-        markSeen: '<?php echo e(url('/chat/mark-seen')); ?>'
+        markSeen: '<?php echo e(url('/chat/mark-seen')); ?>',
+        // NEW: unread counts endpoint
+        unreadCounts: '<?php echo e(url('/chat/unread-counts')); ?>'
     };
-    // Expose routes and badge globally for external listeners
     window.routes = routes;
     window.chatNotifBadge = document.getElementById('chatNotifBadge');
 
@@ -378,6 +381,43 @@
     const activeTitle = document.getElementById('chatActiveTitle');
     const activeAvatar = document.getElementById('chatActiveAvatar');
     const popupEl = document.getElementById('chatPopup');
+
+    // Central badge updater: sums unread from allGroups and updates the header badge in real-time
+    function updateHeaderBadge(){
+        try {
+            const badge = window.chatNotifBadge || document.getElementById('chatNotifBadge');
+            const total = Array.isArray(allGroups) ? allGroups.reduce((s,g)=> s + (parseInt(g.unread)||0), 0) : 0;
+            if (!badge) return;
+            if (total > 0) {
+                badge.textContent = total > 99 ? '99+' : String(total);
+                badge.style.display = 'flex';
+            } else {
+                badge.textContent = '';
+                badge.style.display = 'none';
+            }
+        } catch(_) {}
+    }
+    window.__CHAT_UPDATE_BADGE__ = updateHeaderBadge;
+
+    // Server-truth fetch for unread counts; updates allGroups.unread and header badge
+    window.__CHAT_FETCH_COUNTS__ = async function(){
+        try {
+            const res = await fetch(routes.unreadCounts, { headers:{ 'Accept':'application/json' } });
+            if (!res.ok) return;
+            const data = await res.json();
+            const groupsCounts = (data && Array.isArray(data.groups)) ? data.groups : [];
+            const map = new Map(groupsCounts.map(x=> [String(x.group_id), parseInt(x.count)||0]));
+            if (Array.isArray(allGroups)) {
+                for (let i=0;i<allGroups.length;i++){
+                    const g = allGroups[i];
+                    const n = map.get(String(g.id)) || 0;
+                    g.unread = n;
+                }
+            }
+            if (typeof renderGroups === 'function') renderGroups(allGroups);
+            updateHeaderBadge();
+        } catch(_) {}
+    };
 
     // Ensure the messages padding matches composer height (remove extra gap)
     function syncMessagesPadding(){
@@ -576,7 +616,7 @@
         // Clear unread locally for this group so the dot disappears immediately
         try {
             const g = allGroups.find(x => String(x.id) === String(id));
-            if (g) { g.unread = 0; renderGroups(allGroups); }
+            if (g) { g.unread = 0; renderGroups(allGroups); updateHeaderBadge(); }
         } catch(_) {}
 
         // Show filter buttons only for Bookings group
@@ -1241,8 +1281,10 @@
         const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
         const data = await res.json();
         allGroups = Array.isArray(data) ? data : [];
-        window.allGroups = allGroups; // Keep global in sync
+        window.allGroups = allGroups;
         renderGroups(allGroups);
+        // Update header badge based on initial unread snapshot
+        updateHeaderBadge();
         // Restore previously active group after refresh/open
         try {
             const state = getState();
@@ -1269,6 +1311,7 @@
         // mark this group as seen and refresh header badge
         try {
             await markGroupSeen(groupId, lastMessageId);
+            updateHeaderBadge(); // reflect that active group is seen
             if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
         } catch(e) { /* ignore */ }
     }
@@ -1283,6 +1326,7 @@
             const res = await fetch(url, { headers: { 'Accept':'application/json' } });
 
             const data = await res.json();
+           
             if (Array.isArray(data) && data.length){
                 const fresh = [];
                 for (const m of data){ if (!m || idIndex.has(m.id)) continue; idIndex.add(m.id); fresh.push(m); }
@@ -1618,7 +1662,11 @@
         const handler = function(e){
             const msg = e && e.message ? e.message : e;
             const isMine = window.currentUser && Number(msg.user_id) === Number(window.currentUser.id);
-            // Detect DM group by slug
+
+            // Ensure correct orientation per viewer
+            msg.mine = !!isMine;
+
+            // Detect DM group by slug (optional)
             let groupSlug = '';
             let foundIdx = -1;
             if (Array.isArray(window.allGroups)) {
@@ -1630,13 +1678,9 @@
                     }
                 }
             }
-            // Only increment unread and show notification for receiver (not sender)
-            let shouldIncrementUnread = false;
-            if (groupSlug.startsWith('dm-') || groupSlug.startsWith('dm2-')) {
-                shouldIncrementUnread = !isMine;
-            } else {
-                shouldIncrementUnread = !isMine;
-            }
+            // Only increment unread for receiver (not sender)
+            const shouldIncrementUnread = !isMine;
+
             try {
                 if (Array.isArray(window.allGroups)) {
                     let found = false;
@@ -1656,6 +1700,7 @@
                             g.last_msg_id = msg.id;
                             g.last_msg_at = msg.created_at;
                             if (shouldIncrementUnread) g.unread = (g.unread || 0) + 1;
+                            // Move updated group to top
                             window.allGroups.splice(i, 1);
                             window.allGroups.unshift(g);
                             found = true;
@@ -1685,7 +1730,8 @@
                     }
                     if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
                 }
-                // Floating toast only for receiver (not sender)
+
+                // Floating toast only for receiver (optional)
                 if (shouldIncrementUnread && typeof showLiveNotification === 'function') {
                     showLiveNotification(msg);
                     // Real-time update for floating badge only if chat popup is truly hidden
@@ -1708,20 +1754,17 @@
                         }
                     }
                 }
-                // Badge only for receiver (not sender)
-                if (shouldIncrementUnread && window.chatNotifBadge) {
-                    const n = parseInt(window.chatNotifBadge.textContent) || 0;
-                    window.chatNotifBadge.style.display = 'flex';
-                    window.chatNotifBadge.textContent = (n + 1);
-                }
-                // Active chat: append without fetch
+
+                // UPDATE: refresh header badge off the allGroups snapshot
+                if (typeof window.__CHAT_UPDATE_BADGE__ === 'function') window.__CHAT_UPDATE_BADGE__();
+
+                // Active chat: append without fetch and clear unread for this group
                 if (window.activeGroupId && Number(msg.group_id) === Number(window.activeGroupId)) {
                     try {
                         if (typeof messageRow === 'function' && window.messagesEl) {
                             window.messagesEl.appendChild(messageRow(msg));
                             window.messagesEl.scrollTop = window.messagesEl.scrollHeight;
                         }
-                        // Clear unread badge for active group immediately
                         if (Array.isArray(window.allGroups)) {
                             for (let i = 0; i < window.allGroups.length; ++i) {
                                 if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
@@ -1731,10 +1774,12 @@
                             }
                             if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
                         }
+                        if (typeof window.__CHAT_UPDATE_BADGE__ === 'function') window.__CHAT_UPDATE_BADGE__();
                     } catch (_) { }
                 }
             } catch (_) { }
         };
+
         try{
             window.Echo.channel('chat')
                 .listen('ChatMessageBroadcast', handler)
@@ -1744,6 +1789,7 @@
             try { if (window.__CHAT_POLL_INTERVAL){ clearInterval(window.__CHAT_POLL_INTERVAL); } } catch{}
         } catch(_) {}
     }
+
     function attachDiagnostics(){
         try{
             const p = window.Echo && window.Echo.connector && window.Echo.connector.pusher;

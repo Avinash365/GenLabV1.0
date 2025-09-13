@@ -117,10 +117,7 @@
                         <th>Invoice Date</th>
                         <td contenteditable="true" class="editable" id="td_invoice_date"><?php echo e(date('d-m-Y') ??''); ?></td>
                         <th>Letter Date</th>
-                        <td class="noteditable" id="td_letter_date">
-                            <?php echo e(isset($booking->job_order_date) && $booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('d-m-Y') : ''); ?>
-
-                        </td>
+                        <td class="noteditable" id="td_letter_date"><?php echo e($booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('d-m-Y') : ''); ?></td>
                     </tr>
                     <tr>
                         <th>Name of Work</th>
@@ -364,7 +361,12 @@
                 name_of_work: document.getElementById('td_name_of_work').textContent,
                 bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
                 client_gstin: document.getElementById('td_client_gstin').textContent,
-                address: document.getElementById('td_address').textContent
+                address: document.getElementById('td_address').innerHTML
+                                .replace(/<div>/g, '\n')  // convert <div> to newline
+                                .replace(/<\/div>/g, '')  // remove closing div
+                                .replace(/<br>/g, '\n')   // convert <br> to newline
+                                .replace(/&nbsp;/g, ' ') 
+                                .trim()
             },
             items: [],
             totals: {
