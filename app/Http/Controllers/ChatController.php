@@ -13,6 +13,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Str;
 use App\Models\User;
 use Illuminate\Support\Facades\File;
+use App\Events\MessageSent;
 
 class ChatController extends Controller
 {
@@ -153,11 +154,37 @@ class ChatController extends Controller
                 }
             }
 
-            $latest = (clone $base)->with('user:id,name') // user for preview only
+            $latest = (clone $base)->with('user:id,name')
                                    ->orderBy('id','desc')->first();
+
+            // Unread: compute against "other side" after last seen, with fallback when no membership exists
             $mem = ChatGroupMember::where('group_id', $g->id)->where('user_id', $uid)->first();
-            $lastSeen = (int)($mem->last_seen_id ?? 0);
-            $unread = (int) ((clone $base)->where('id', '>', $lastSeen)->count());
+            $lastIdInGroup = (int) (ChatMessage::where('group_id', $g->id)->max('id') ?? 0);
+            $lastSeen = $mem && (int)($mem->last_seen_id ?? 0) > 0 ? (int)$mem->last_seen_id : $lastIdInGroup;
+
+            $unreadQ = ChatMessage::where('group_id', $g->id)->where('id', '>', $lastSeen);
+            if ($isAdmin) {
+                // Admin sees unread user messages (non-admin guard)
+                $unreadQ->where(function($w){ $w->whereNull('sender_guard')->orWhere('sender_guard','!=','admin'); });
+            } else {
+                $slug = $g->slug;
+                $isUsersDM = $slug === ('dm-' . $uid);
+                $isDM2 = Str::startsWith($slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
+                if ($isUsersDM) {
+                    // legacy admin<->user DM: unread are admin messages
+                    $unreadQ->where('sender_guard', 'admin');
+                } elseif ($isDM2) {
+                    // user<->user DM: unread are messages not authored by me
+                    $unreadQ->where('user_id', '!=', $uid);
+                } else {
+                    // public groups: keep existing behavior (admin replies to my messages)
+                    $unreadQ->where('sender_guard', 'admin')
+                            ->whereIn('reply_to_message_id', function($sq) use ($uid){
+                                $sq->select('id')->from('chat_messages')->where('user_id', $uid);
+                            });
+                }
+            }
+            $unread = (int) $unreadQ->count();
 
             $result[] = [
                 'id' => $g->id,
@@ -386,6 +413,7 @@ class ChatController extends Controller
         unset($broadcast['mine']); // ensure neutral; receivers will set it
 
         event(new \App\Events\ChatMessageBroadcast($broadcast));
+        broadcast(new MessageSent($msg))->toOthers();
         return response()->json($payload, 201);
     }
 
@@ -500,9 +528,10 @@ class ChatController extends Controller
         $total = 0;
         foreach ($groups as $g) {
             if (!$g) continue;
-            // Do NOT create or update membership here; assume 0 if not found
             $mem = ChatGroupMember::where('group_id', $g->id)->where('user_id', $uid)->first();
-            $lastSeen = (int)($mem->last_seen_id ?? 0);
+            $lastIdInGroup = (int) (ChatMessage::where('group_id', $g->id)->max('id') ?? 0);
+            // Fallback to current latest id if membership not found (no flood on first visit)
+            $lastSeen = $mem && (int)($mem->last_seen_id ?? 0) > 0 ? (int)$mem->last_seen_id : $lastIdInGroup;
 
             $q = ChatMessage::where('group_id', $g->id)
                 ->where('id', '>', $lastSeen);
@@ -518,13 +547,10 @@ class ChatController extends Controller
                            && preg_match('/^dm2-(\d+)-(\d+)$/', $slug, $m)
                            && ((int)$m[1] === $uid || (int)$m[2] === $uid);
                 if ($isUsersDM) {
-                    // Legacy admin<->user DM: count admin messages to the user
                     $q->where('sender_guard', 'admin');
                 } elseif ($isDM2) {
-                    // User-to-user DM: count messages not authored by me
                     $q->where('user_id', '!=', $uid);
                 } else {
-                    // Public groups: count admin replies to my messages
                     $q->where('sender_guard', 'admin')
                       ->whereIn('reply_to_message_id', function($sq) use ($uid){
                           $sq->select('id')->from('chat_messages')->where('user_id', $uid);
