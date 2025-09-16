@@ -21,7 +21,7 @@
   <i class="fas fa-users fs-24"></i>
 </span>
                         <div class="ms-2">
-                            <p class="text-white mb-1">Total Employee</p>
+                            <p class="text-white mb-1">Total Users</p>
                             <div class="d-inline-flex align-items-center flex-wrap gap-2">
                                 <h4 class="text-white">48,988,078</h4>
                                 
@@ -37,7 +37,7 @@
             <i class="ti ti-school fs-24"></i>
         </span>
         <div class="ms-2">
-            <p class="text-white mb-1">Total Student</p>
+            <p class="text-white mb-1">Total Invoice</p>
             <div class="d-inline-flex align-items-center flex-wrap gap-2">
                 <h4 class="text-white">16,478,145</h4>
             </div>
@@ -52,7 +52,7 @@
                             <i class="ti ti-gift fs-24"></i>
                         </span>
                         <div class="ms-2">
-                            <p class="text-white mb-1">Parents</p>
+                            <p class="text-white mb-1">Letters</p>
                             <div class="d-inline-flex align-items-center flex-wrap gap-2">
                                 <h4 class="text-white">24,145,789</h4>
                                 
@@ -68,7 +68,7 @@
             <i class="ti ti-chalkboard fs-24"></i>
         </span>
         <div class="ms-2">
-            <p class="text-white mb-1">Total Teacher</p>
+            <p class="text-white mb-1">Total Bookings</p>
             <div class="d-inline-flex align-items-center flex-wrap gap-2">
                 <h4 class="text-white">18,458,747</h4>
             </div>
@@ -89,14 +89,14 @@
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
                             <div>
                                 <h4 class="mb-1">798</h4>
-                                <p>Admission</p>
+                                <p>Active </p>
                             </div>
                             <span class="revenue-icon bg-cyan-transparent text-cyan">
                                 <i class="fa-solid fa-layer-group fs-16"></i>
                             </span>
                         </div>
                         <div class="d-flex align-items-center justify-content-between">
-                            <p class="mb-0"><span class="fs-13 fw-bold text-success">30 Days</span> Interval</p>
+                            <p class="mb-0"><span class="fs-13 fw-bold text-success">Last 30 Days</span> </p>
                             <a href="profit-and-loss.html" class="text-decoration-underline fs-13 fw-medium">View All</a>
                         </div>
                     </div>
@@ -111,7 +111,7 @@
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
                             <div>
                                 <h4 class="mb-1">48,988,78</h4>
-                                <p>Vouchers</p>
+                                <p>Paid</p>
                             </div>
                             <span class="revenue-icon bg-teal-transparent text-teal">
                                 <i class="ti ti-chart-pie fs-16"></i>
@@ -129,14 +129,14 @@
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
                             <div>
                                 <h4 class="mb-1">8,980,097</h4>
-                                <p>Transport</p>
+                                <p>Genreted</p>
                             </div>
                             <span class="revenue-icon bg-orange-transparent text-orange">
                                 <i class="ti ti-lifebuoy fs-16"></i>
                             </span>
                         </div>
                         <div class="d-flex align-items-center justify-content-between">
-                            <p class="mb-0"><span class="fs-13 fw-bold text-success"></span> Total Route</p>
+                            <p class="mb-0"><span class="fs-13 fw-bold text-success"></span> Total Amount</p>
                         </div>
                     </div>
                 </div>
@@ -150,14 +150,14 @@
                         <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
                             <div>
                                 <h4 class="mb-1">78,458,798</h4>
-                                <p>Hostel</p>
+                                <p>Genreted</p>
                             </div>
                             <span class="revenue-icon bg-indigo-transparent text-indigo">
                                 <i class="ti ti-hash fs-16"></i>
                             </span>
                         </div>
                         <div class="d-flex align-items-center justify-content-between">
-                            <p class="mb-0"><span class="fs-13 fw-bold text-danger"></span> Total Rooms</p>
+                            <p class="mb-0"><span class="fs-13 fw-bold text-danger"></span> Total Amount</p>
                         </div>
                     </div>
                 </div>

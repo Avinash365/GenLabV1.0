@@ -13,6 +13,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'new_booking_id', 
+        'invoice_booking_ids',
         'generated_by', 
         'invoice_no',
         'type', 
@@ -50,30 +51,37 @@ class Invoice extends Model
 
      // Mutator → runs when saving to DB
     public function setInvoiceDateAttribute($value)
-{   
-    if (!empty($value)) {
-        $cleanValue = trim($value); // remove \n, spaces, tabs
+    {   
+        if (!empty($value)) {
+            $cleanValue = trim($value); // remove \n, spaces, tabs
 
-        try {
-            $this->attributes['invoice_date'] =
-                Carbon::createFromFormat('d-m-Y', $cleanValue)->format('Y-m-d');
-        } catch (\Exception $e) {
-            // fallback if format doesn't match
             try {
                 $this->attributes['invoice_date'] =
-                    Carbon::parse($cleanValue)->format('Y-m-d');
-            } catch (\Exception $e2) {
-                $this->attributes['invoice_date'] = null;
+                    Carbon::createFromFormat('d-m-Y', $cleanValue)->format('Y-m-d');
+            } catch (\Exception $e) {
+                // fallback if format doesn't match
+                try {
+                    $this->attributes['invoice_date'] =
+                        Carbon::parse($cleanValue)->format('Y-m-d');
+                } catch (\Exception $e2) {
+                    $this->attributes['invoice_date'] = null;
+                }
             }
+        } else {
+            $this->attributes['invoice_date'] = null;
         }
-    } else {
-        $this->attributes['invoice_date'] = null;
     }
-}
 
     public function getInvoiceDateAttribute($value)
     {
         return Carbon::parse($value)->format('d-m-Y');
+    } 
+
+    public function calculateTotalAmount()
+    {
+        return $this->bookingItems->sum(function ($item) {
+            return ($item->qty ?? 0) * ($item->rate ?? 0);
+        });
     }
 
 }

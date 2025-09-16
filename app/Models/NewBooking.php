@@ -71,5 +71,28 @@ class NewBooking extends Model
     public function generatedInvoice()
     {
         return $this->hasOne(Invoice::class, 'new_booking_id');
+    }  
+    
+    public function client()
+    {
+        return $this->belongsTo(Client::class);
     } 
+
+     public function getTotalAmountAttribute(): float
+    {
+        return $this->items()->sum('amount') ?? 0;
+    }
+
+    public function cashLetterPayments()
+    {
+        return $this->belongsToMany(
+            CashLetterPayment::class,            // Related model
+            'cash_letter_payment_bookings',      // Pivot table
+            'booking_id',                        // Foreign key on pivot for this model (NewBooking)
+            'cash_letter_payment_id'             // Foreign key on pivot for related model (CashLetterPayment)
+        )
+        ->withPivot('payment_status')
+        ->withTimestamps();
+    }
+
 }

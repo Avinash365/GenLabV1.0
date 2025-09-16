@@ -114,9 +114,7 @@
             <!-- <td>{{ $index + 1 }}</td> -->
             <td class="text-uppercase">{{ $item['description'] ?? '' }}</td>
             <td class="text-uppercase">{{ $item['job_order_no'] ?? '' }}</td>
-             @if($index == 0)
-                <td rowspan="{{ count($invoiceData['items']) }}">{{ $invoiceData['invoice']['sac_code'] ?? '' }}</td>
-             @endif
+            <td >{{ $invoiceData['invoice']['sac_code'] ?? '' }}</td>
             <td>{{ $item['qty'] ?? 1 }}</td>
             <td>{{ number_format($item['rate'] ?? 0,2) }}</td>
             <td>{{ number_format($item['amount'] ?? 0,2) }}</td>

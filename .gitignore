@@ -1,21 +1,44 @@
-/.phpunit.cache
+# Laravel
+/vendor
 /node_modules
-/public/build
-/public/hot
 /public/storage
 /storage/*.key
-/vendor
-.env
-.env.backup
-.env.production
-Homestead.json
-Homestead.yaml
-auth.json
-npm-debug.log
-yarn-error.log
-/.fleet
 /.idea
 /.vscode
+Homestead.yaml
+Homestead.json
+.env
+.env.*.backup
+.phpunit.result.cache
 
-# Web settings uploads stored in storage/app/public/site and served via public/storage
-# Ensure you have run: php artisan storage:link
+# Cache & Logs
+/storage/logs
+/storage/framework/cache
+/storage/framework/sessions
+/storage/framework/views
+/storage/framework/testing
+bootstrap/cache/*.php
+
+# Composer & npm debug
+composer.lock
+npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# OS generated files
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+desktop.ini
+
+# IDE / Editor
+*.sublime-workspace
+*.sublime-project
+*.code-workspace
+
+# Misc
+*.bak
+*.tmp
+*.swp
+*.zip

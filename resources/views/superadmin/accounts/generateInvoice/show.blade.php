@@ -13,11 +13,19 @@
     </div>
 @endif
 
+@if (session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
+
 @if (session('success'))
     <div class="alert alert-success">
         {{ session('success') }}
     </div>
 @endif
+
+
 <div class="row g-3">
 
     <!-- Card 1: GSTIN Search -->
@@ -39,7 +47,7 @@
     </div>
 
     <!-- Card 2: File Upload -->
-    <div class="col-sm-6">
+    <!-- <div class="col-sm-6">
         <div class="card">
             <div class="card-body">
                 <form id="gstinUploadForm" class="d-flex flex-column" enctype="multipart/form-data" method="POST" action="">
@@ -51,7 +59,7 @@
                 </form>
             </div>
         </div>
-    </div>
+    </div> -->
 </div>
 
 <!-- GSTIN Details / Error Modal -->
@@ -89,11 +97,11 @@
                 <h4 class="fw-bold">Invoice Report</h4>
                 <h6>Preview Invoice in PDF Style</h6>
             </div>
-            <div class="page-btn">
+            <!-- <div class="page-btn">
                 <button type="submit"  class="btn btn-danger" formaction="{{ route('superadmin.bookingInvoiceStatuses.generateInvoice', $booking->id) }}">
                     <i class="fa fa-file-pdf me-2"></i>Download PDF
                 </button>
-            </div>
+            </div> -->
         </div>
 
         <div class="card">
@@ -104,7 +112,7 @@
                 <table class="table table-bordered mb-4">
                     <tr>
                         <th>Client Name</th>
-                        <td class="noteditable" id="td_client_name">{{ $booking->client_name ?? 'N/A' }}</td>
+                        <td class="noteditable" id="td_client_name">{{ $booking->client->name ?? 'N/A' }}</td>
                         <th>Marketing Person</th>
                         <td class="noteditable" id="td_marketing_person">{{ $booking->marketingPerson->name ?? '-' }}</td>
                     </tr>
@@ -270,6 +278,8 @@
                 </div>
                 
             </div>
+
+
         </div>
     </form>
 </div>
@@ -431,7 +441,10 @@ document.getElementById('gstinForm').addEventListener('submit', function(e) {
 
     let gstin = document.getElementById('gstinInput').value;
 
-    fetch(`http://sheet.gstincheck.co.in/check/c3b7f08e18bb7426407abad5af5d7712/${gstin}`)
+    const gstinApiUrl = @json($gstinApiUrl);
+    const gstinApiKey = @json($gstinApiKey);
+
+    fetch(`${gstinApiUrl}/${gstinApiKey}/${gstin}`)
         .then(response => response.json())
         .then(data => {
             var gstinModal = new bootstrap.Modal(document.getElementById('gstinModal'));

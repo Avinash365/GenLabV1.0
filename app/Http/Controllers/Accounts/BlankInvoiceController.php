@@ -5,17 +5,32 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\BlankInvoiceRequest;
 
 use App\Models\BlankInvoice;
-use App\Models\SiteSetting;
+use App\Models\{SiteSetting,PaymentSetting};
 
 use Illuminate\Http\Request;
 
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 
+use App\Services\{InvoicePdfService, NumberToWordsService}; 
+
 
 
 class BlankInvoiceController extends Controller
 {
+
+   
+    protected $invoicePdfService;
+    protected $numberToWordsService; 
+
+    public function __construct( InvoicePdfService $invoicePdfService, NumberToWordsService $numberToWordsService)
+    {
+    
+        $this->invoicePdfService = $invoicePdfService; 
+        $this->numberToWordsService = $numberToWordsService; 
+
+    }
+
     public function index(Request $request)
     {
         $search = $request->input('search');
@@ -120,15 +135,33 @@ class BlankInvoiceController extends Controller
     {
             $invoice = $blankInvoice->load('items');  
             $companyName = SiteSetting::value('company_name'); 
-            $WordAmout = app('App\Services\NumberToWordsService')->convert($invoice->payable_amount);
+            $WordAmout = $this->numberToWordsService->convert($invoice->payable_amount);
             
-            $SACCODE = "998346"; 
+            $qrcode = $this->invoicePdfService->generateQrCode($invoice->payable_amount, "Invoice #{$invoice->invoice_no}"); 
+
+            $SACCODE = "998346";  
+
+            $paymentSetting = PaymentSetting::latest()->first(); 
+            $bankDetails = [
+                            'instructions'       => $paymentSetting->instructions ?? '',
+                            'bank_name'          => $paymentSetting->bank_name ?? '',
+                            'account_no'         => $paymentSetting->account_no ?? '',
+                            'branch_name'        => $paymentSetting->branch ?? '',
+                            'branch_holder_name' => $paymentSetting->branch_holder_name ?? '',
+                            'ifsc_code'          => $paymentSetting->ifsc_code ?? '',
+                            'pan_code'           => $paymentSetting->pan_code ?? '',
+                            'pan_no'             => $paymentSetting->pan_no ?? '',
+                            'gstin'              => $paymentSetting->gstin ?? '',
+                            'upi'                => $paymentSetting->upi ?? '',
+                        ]; 
 
             $pdf = Pdf::loadView('superadmin.accounts.invoiceList.blank_invoice_pdf', [
-                'invoice' => $invoice, 
-                'WordAmout' => $WordAmout, 
-                'companyName' => $companyName, 
-                'SACCODE'   => $SACCODE 
+                'invoice'        => $invoice, 
+                'WordAmout'      => $WordAmout, 
+                'companyName'    => $companyName, 
+                'SACCODE'        => $SACCODE, 
+                'bankDetails'    => $bankDetails, 
+                'qrcode'         => $qrcode,
             ]);
 
             // Stream PDF in browser (opens in new tab if target="_blank")

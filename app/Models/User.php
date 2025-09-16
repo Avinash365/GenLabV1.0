@@ -112,6 +112,11 @@ class User extends Authenticatable
         return $this->permissions()
                     ->where('permission_name', $permissionName)
                     ->exists();
+    }  
+
+    public function marketingBookings()
+    {
+        return $this->hasMany(NewBooking::class, 'marketing_id', 'user_code'); 
     } 
 
 }

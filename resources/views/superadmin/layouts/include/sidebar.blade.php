@@ -91,6 +91,7 @@
                         <li class="submenu {{ Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : '' }}">
                             <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                             <ul>
+                                <li><a href="{{ route('superadmin.accountBookingsLetters.index') }}">All Letters</a></li>
                                 <li><a href="{{ route('superadmin.bookingInvoiceStatuses.index') }}">Generate Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'tax_invoice']) }}">Tax Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'proforma_invoice']) }}">PI Invoice</a></li>
@@ -99,13 +100,17 @@
 
                                 
                                 <li><a href="#">CI</a></li>
-                                <li><a href="#">All Invoices</a></li>
-                                <li><a href="#">Client Ledger</a></li>
-                                <li><a href="#">Unpaid Invoices</a></li>
+                                <li>
+                                    <a href="{{ route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill']) }}">
+                                        Cash Letter
+                                    </a>
+                                </li>     
+                                <li><a href="{{route('superadmin.client-ledger.index')}}">Client Ledger</a></li>
+                                <li><a href="{{route('superadmin.invoices.index',['payment_status' => '0'])}}">Unpaid Invoices</a></li>
                                 <li><a href="#">Unpaid Letter</a></li>
                                 <li><a href="#">Transaction</a></li>
-                                <li><a href="#">Marketing Person Ledger</a></li>
-                                <li><a href="#">Office Expenses</a></li>
+                                <li><a href="{{ route('superadmin.marketing-person-ledger.index') }}">Marketing Person Ledger</a></li>
+                                <li><a href="">Office Expenses</a></li>
                                 <li><a href="#">Marketing Expenses</a></li>
                                 <li><a href="#">Purchase Bill</a></li>
                             </ul>
@@ -171,7 +176,10 @@
                                     <a href="{{ route('superadmin.websettings.edit') }}" class="{{ Request::routeIs('superadmin.websettings.*') ? 'active' : '' }}">
                                         Web Settings
                                     </a>
-                                </li>
+                                </li> 
+                                <li><a href="{{ route('superadmin.payment-settings.index') }}" class="{{ Request::routeIs('superadmin.websettings.*') ? 'active' : '' }}">
+                                        Bank Details
+                                    </a></li>
                                 <li>
                                         @if(auth()->check() && (auth()->user()->hasPermission('department.view') || auth()->user()->hasPermission('department.create')  || auth()->user() instanceof Admin))                            
                                         <a href="{{route('superadmin.departments.index')}}"

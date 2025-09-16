@@ -12,7 +12,7 @@
 <!-- Table List -->
 <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title">Generated Invoice</h5>
+        <h5 class="card-title">Generated Blank Invoice</h5>
         <!-- Search bar -->
         <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex" role="search">
             <input class="form-control me-2" type="search" name="search" placeholder="Search Document..." value="{{ request('search') }}">
