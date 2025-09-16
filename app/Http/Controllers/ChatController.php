@@ -41,13 +41,9 @@ class ChatController extends Controller
 
     protected function currentGuard(): ?string
     {
-        // Treat superadmin/admin as 'admin' for chat purposes
+        // Treat only real superadmin/admin as 'admin'. Chat-admin (web) stays 'web'.
         if ($this->guardCheck('superadmin') || $this->guardCheck('admin')) return 'admin';
-        if ($this->guardCheck('web')) {
-            $u = auth('web')->user();
-            if ($this->userIsChatAdmin($u)) return 'admin';
-            return 'web';
-        }
+        if ($this->guardCheck('web')) return 'web';
         return null;
     }
 
@@ -121,7 +117,8 @@ class ChatController extends Controller
     public function groups()
     {
         $u = $this->user();
-        $isAdmin = $this->isSuperAdmin();
+        // IMPORTANT: only real admins get admin inbox behavior for list shape (dm2 rejected)
+        $isRoot = $this->isRootAdmin();
 
         // Ensure default groups exist
         $defaults = ['Bookings','Reports','Invoices','Management','Amendment Reports'];
@@ -130,7 +127,7 @@ class ChatController extends Controller
         }
 
         $list = ChatGroup::orderBy('id')->get(['id','name','slug']);
-        if ($isAdmin) {
+        if ($isRoot) {
             $list = $list->reject(function($g){ return Str::startsWith($g->slug, 'dm2-'); });
         } else {
             $uid = (int) ($u->id ?? 0);
@@ -155,7 +152,7 @@ class ChatController extends Controller
             $displayName = $g->name;
             $groupAvatar = null;
             if ($u){
-                if (!$isAdmin && $g->slug === ('dm-' . $uid)) {
+                if (!$isRoot && $g->slug === ('dm-' . $uid)) {
                     $displayName = 'Super Admin';
                     // Optional: you can set a static admin avatar here if available
                 }
@@ -174,12 +171,17 @@ class ChatController extends Controller
             }
 
             $base = ChatMessage::where('group_id', $g->id);
-            if ($isAdmin) {
+
+            // Per-group elevation: root OR (chat-admin and bookings group)
+            $isElevated = $isRoot || ($this->isChatAdminOnly() && strtolower($g->slug) === 'bookings');
+
+            if ($isElevated) {
                 $base->where(function($w){ $w->whereNull('sender_guard')->orWhere('sender_guard','!=','admin'); });
             } else {
+                // ...existing non-admin base restrictions...
                 $slug = $g->slug;
                 $isUsersDM = $slug === ('dm-' . $uid);
-                $isDM2 = Str::startsWith($slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
+                $isDM2 = \Illuminate\Support\Str::startsWith($slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
                 if ($isUsersDM) {
                     $base->where('sender_guard', 'admin');
                 } elseif ($isDM2) {
@@ -201,21 +203,19 @@ class ChatController extends Controller
             $lastSeen = $mem && (int)($mem->last_seen_id ?? 0) > 0 ? (int)$mem->last_seen_id : $lastIdInGroup;
 
             $unreadQ = ChatMessage::where('group_id', $g->id)->where('id', '>', $lastSeen);
-            if ($isAdmin) {
-                // Admin sees unread user messages (non-admin guard)
+            if ($isElevated) {
+                // Admin-like unread for elevated scope
                 $unreadQ->where(function($w){ $w->whereNull('sender_guard')->orWhere('sender_guard','!=','admin'); });
             } else {
+                // ...existing non-admin unread rules...
                 $slug = $g->slug;
                 $isUsersDM = $slug === ('dm-' . $uid);
-                $isDM2 = Str::startsWith($slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
+                $isDM2 = \Illuminate\Support\Str::startsWith($slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
                 if ($isUsersDM) {
-                    // legacy admin<->user DM: unread are admin messages
                     $unreadQ->where('sender_guard', 'admin');
                 } elseif ($isDM2) {
-                    // user<->user DM: unread are messages not authored by me
                     $unreadQ->where('user_id', '!=', $uid);
                 } else {
-                    // public groups: keep existing behavior (admin replies to my messages)
                     $unreadQ->where('sender_guard', 'admin')
                             ->whereIn('reply_to_message_id', function($sq) use ($uid){
                                 $sq->select('id')->from('chat_messages')->where('user_id', $uid);
@@ -251,7 +251,8 @@ class ChatController extends Controller
             return $bi <=> $ai;
         });
 
-        return $result;
+        // CHANGED: always return a JSON response
+        return response()->json($result);
     }
 
     protected function membership(int $groupId, int $userId)
@@ -280,30 +281,34 @@ class ChatController extends Controller
     {
         $request->validate(['group_id' => 'required|integer|exists:chat_groups,id']);
         $user = $this->user();
-        $isAdmin = $this->isSuperAdmin();
-
         $groupId = $request->integer('group_id');
         $group = ChatGroup::find($groupId);
-        if ($isAdmin && $group && Str::startsWith($group->slug, 'dm2-')) {
+
+        // Admin (root) cannot open dm2 in admin view
+        $isRoot = $this->isRootAdmin();
+        if ($isRoot && $group && \Illuminate\Support\Str::startsWith($group->slug, 'dm2-')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-        // CHANGED: eager-load user with is_chat_admin when column exists
+
+        // Elevation only for Bookings when user is promoted (chat-admin)
+        $isElevated = $isRoot || ($this->isChatAdminOnly() && $group && strtolower($group->slug) === 'bookings');
+
         $q = ChatMessage::with([
                 'reactions.user:id,name',
                 'user' => function($q){
                     $cols = ['id','name','email'];
-                    if (Schema::hasColumn('users','is_chat_admin')) $cols[] = 'is_chat_admin';
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('users','is_chat_admin')) $cols[] = 'is_chat_admin';
                     $q->select($cols);
                 }
             ])
             ->where('group_id', $groupId);
 
-        if (!$isAdmin && $user) {
+        if (!$isElevated && $user) {
+            // ...existing non-admin visibility restriction...
             $uid = (int)$user->id;
             $isUsersDM = $group && $group->slug === ('dm-' . $uid);
-            $isDM2 = $group && Str::startsWith($group->slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $group->slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
+            $isDM2 = $group && \Illuminate\Support\Str::startsWith($group->slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $group->slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
             if (!$isUsersDM && !$isDM2) {
-                // Restrict non-admins in non-DM groups to own messages and admin replies to them
                 $q->where(function($qr) use ($uid) {
                     $qr->where('user_id', $uid)
                        ->orWhere(function($sub) use ($uid) {
@@ -313,6 +318,7 @@ class ChatController extends Controller
                 });
             }
         }
+
         // Old (problem): ->orderBy('id')->limit(200)->get()
         // New: get latest 200 first, then sort ascending for proper chronology
         $msgs = $q->orderBy('id','desc')->limit(200)->get();
@@ -329,29 +335,32 @@ class ChatController extends Controller
     {
         $request->validate(['group_id' => 'required|integer|exists:chat_groups,id', 'after_id' => 'required|integer']);
         $user = $this->user();
-        $isAdmin = $this->isSuperAdmin();
-
         $groupId = $request->integer('group_id');
         $group = ChatGroup::find($groupId);
-        if ($isAdmin && $group && Str::startsWith($group->slug, 'dm2-')) {
+
+        $isRoot = $this->isRootAdmin();
+        if ($isRoot && $group && \Illuminate\Support\Str::startsWith($group->slug, 'dm2-')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-        // CHANGED: eager-load user with is_chat_admin when column exists
+
+        $isElevated = $isRoot || ($this->isChatAdminOnly() && $group && strtolower($group->slug) === 'bookings');
+
         $q = ChatMessage::with([
                 'reactions.user:id,name',
                 'user' => function($q){
                     $cols = ['id','name','email'];
-                    if (Schema::hasColumn('users','is_chat_admin')) $cols[] = 'is_chat_admin';
+                    if (\Illuminate\Support\Facades\Schema::hasColumn('users','is_chat_admin')) $cols[] = 'is_chat_admin';
                     $q->select($cols);
                 }
             ])
             ->where('group_id', $groupId)
             ->where('id', '>', $request->integer('after_id'));
 
-        if (!$isAdmin && $user) {
+        if (!$isElevated && $user) {
+            // ...existing non-admin restriction...
             $uid = (int)$user->id;
             $isUsersDM = $group && $group->slug === ('dm-' . $uid);
-            $isDM2 = $group && Str::startsWith($group->slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $group->slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
+            $isDM2 = $group && \Illuminate\Support\Str::startsWith($group->slug, 'dm2-') && preg_match('/^dm2-(\d+)-(\d+)$/', $group->slug, $m) && ((int)$m[1] === $uid || (int)$m[2] === $uid);
             if (!$isUsersDM && !$isDM2) {
                 $q->where(function($qr) use ($uid) {
                     $qr->where('user_id', $uid)
@@ -510,7 +519,8 @@ class ChatController extends Controller
 
     public function direct(User $user)
     {
-        if (!$this->isSuperAdmin()) { return response()->json(['message' => 'Forbidden'], 403); }
+        // Only real admins can open legacy dm-<user> threads
+        if (!$this->isRootAdmin()) { return response()->json(['message' => 'Forbidden'], 403); }
         $slug = 'dm-' . $user->id;
         $group = ChatGroup::firstOrCreate(['slug' => $slug], [ 'name' => $user->name ?: 'Direct Message' ]);
         // If name is still a legacy value like "DM: name", update to plain user name
@@ -543,8 +553,8 @@ class ChatController extends Controller
     public function directWith(User $user)
     {
         $me = $this->user(); if (!$me) return response()->json(['message' => 'Unauthorized'], 401);
-        // Admins should use legacy dm-<user> threads to avoid duplicates
-        if ($this->isSuperAdmin()) { return $this->direct($user); }
+        // CHANGED: only real admins use legacy dm-<user>; chat-admins use dm2
+        if ($this->isRootAdmin()) { return $this->direct($user); }
         $a = min((int)$me->id, (int)$user->id); $b = max((int)$me->id, (int)$user->id);
         $slug = 'dm2-'.$a.'-'.$b; $name = $user->name ?: ('User '.$user->id);
         $group = ChatGroup::firstOrCreate(['slug' => $slug], [ 'name' => $name ]);
@@ -562,7 +572,8 @@ class ChatController extends Controller
         if (!$me) {
             return response()->json(['total' => 0, 'groups' => []]);
         }
-        $isAdmin = $this->isSuperAdmin();
+        // Only real admins get admin unread logic
+        $isAdmin = $this->isRootAdmin();
         $uid = (int) $me->id;
 
         $all = ChatGroup::orderBy('id')->get(['id','name','slug']);
@@ -595,14 +606,18 @@ class ChatController extends Controller
             $q = ChatMessage::where('group_id', $g->id)
                 ->where('id', '>', $lastSeen);
 
-            if ($isAdmin) {
+            // Per-group elevation: root OR (chat-admin and bookings)
+            $isElevated = $isAdmin || ($this->isChatAdminOnly() && strtolower($g->slug) === 'bookings');
+
+            if ($isElevated) {
                 $q->where(function($w){
                     $w->whereNull('sender_guard')->orWhere('sender_guard', '!=', 'admin');
                 });
             } else {
+                // ...existing non-admin unread query...
                 $slug = $g->slug;
                 $isUsersDM = $slug === ('dm-' . $uid);
-                $isDM2 = Str::startsWith($slug, 'dm2-')
+                $isDM2 = \Illuminate\Support\Str::startsWith($slug, 'dm2-')
                            && preg_match('/^dm2-(\d+)-(\d+)$/', $slug, $m)
                            && ((int)$m[1] === $uid || (int)$m[2] === $uid);
                 if ($isUsersDM) {
@@ -777,5 +792,13 @@ class ChatController extends Controller
             'name' => $user->name,
             'is_chat_admin' => (bool)$user->is_chat_admin
         ]);
+    }
+
+    // NEW: returns true only for promoted web users (non-root)
+    protected function isChatAdminOnly(): bool
+    {
+        return !$this->isRootAdmin()
+            && $this->guardCheck('web')
+            && $this->userIsChatAdmin(auth('web')->user());
     }
 }

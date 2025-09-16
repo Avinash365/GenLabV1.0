@@ -718,8 +718,8 @@
     // Add: open symmetric direct chat with peer
     async function openPeerChat(userId){
         try{
-            // Admin forced to admin<->user DM; users to dm2
-            const url = isSuperAdmin ? routes.direct(userId) : routes.directWith(userId);
+            // Only real admin uses admin<->user DM; everyone else uses user<->user DM2
+            const url = isRootAdmin ? routes.direct(userId) : routes.directWith(userId);
             const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
             if (!res.ok) throw new Error('dm-open-fail');
             const g = await res.json();
@@ -962,7 +962,8 @@
         // Show sender's name only (no sender_guard)
         const senderNameText = m.sender_name || (m.user && m.user.name) || 'User';
         const nameEl = document.createElement('div'); nameEl.className = 'wa-sender'; nameEl.textContent = senderNameText;
-        if (isSuperAdmin && m.user && m.user.id){
+        // Only real admin should open legacy direct chats on name click
+        if (isRootAdmin && m.user && m.user.id){
             nameEl.classList.add('text-primary');
             nameEl.style.cursor = 'pointer';
             nameEl.title = 'Open direct chat';
@@ -1415,63 +1416,93 @@
 
     // Backend
     async function fetchGroups(){
-        const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
-        const data = await res.json();
-        allGroups = Array.isArray(data) ? data : [];
-        window.allGroups = allGroups;
-        renderGroups(allGroups);
-        updateHeaderBadge();
-        // NEW: sync unread counts from server once groups are in
-        if (window.__CHAT_FETCH_COUNTS__) { try { await window.__CHAT_FETCH_COUNTS__(); } catch(_){} }
-
-        // Restore previously active group after refresh/open
         try {
-            const state = getState();
-            if (state && state.activeGroupId){
-                const item = groupsEl.querySelector(`.list-group-item[data-group-id="${state.activeGroupId}"]`);
-                if (item) { selectGroup(state.activeGroupId, item.dataset.groupName || '', item); }
+            const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
+            if (!res.ok) {
+                console.error('chat/groups failed:', res.status, res.statusText);
+                groupsEl.innerHTML = '<div class="p-3 text-muted small">Unable to load chats.</div>';
+                return;
             }
-        } catch(_) {}
+            let data;
+            try { data = await res.json(); }
+            catch(e){
+                console.error('chat/groups JSON parse failed');
+                groupsEl.innerHTML = '<div class="p-3 text-muted small">Unable to load chats.</div>';
+                return;
+            }
+            allGroups = Array.isArray(data) ? data : [];
+            window.allGroups = allGroups;
+            renderGroups(allGroups);
+            updateHeaderBadge();
+            if (window.__CHAT_FETCH_COUNTS__) { try { await window.__CHAT_FETCH_COUNTS__(); } catch(_){} }
+            try {
+                const state = getState();
+                if (state && state.activeGroupId){
+                    const item = groupsEl.querySelector(`.list-group-item[data-group-id="${state.activeGroupId}"]`);
+                    if (item) { selectGroup(state.activeGroupId, item.dataset.groupName || '', item); }
+                }
+            } catch(_) {}
+        } catch (err) {
+            console.error('chat/groups error:', err);
+            groupsEl.innerHTML = '<div class="p-3 text-muted small">Unable to load chats.</div>';
+        }
     }
     window.fetchGroups = fetchGroups;
 
     async function fetchMessages(groupId){
         loadingEl.style.display = 'block';
-        const url = new URL(routes.messages, window.location.origin); url.searchParams.set('group_id', groupId);
-        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-        const data = await res.json();
-        // Build fresh cache and id index
-        cache = Array.isArray(data) ? data : [];
-        idIndex = new Set(cache.map(m=> m && m.id));
-        lastMessageId = cache.length ? cache[cache.length-1].id : 0;
-        window.lastMessageId = lastMessageId;
-        renderMessages(cache); loadingEl.style.display = 'none';
-        // mark this group as seen and refresh header badge
         try {
-            await markGroupSeen(groupId, lastMessageId);
-            updateHeaderBadge(); // reflect that active group is seen
-           
-            if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
-        } catch(e) { /* ignore */ }
+            const url = new URL(routes.messages, window.location.origin);
+            url.searchParams.set('group_id', groupId);
+            const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+            if (!res.ok) throw new Error('messages-http-' + res.status);
+            let data;
+            try { data = await res.json(); } catch { throw new Error('messages-json-parse'); }
+            // Build fresh cache and id index
+            cache = Array.isArray(data) ? data : [];
+            idIndex = new Set(cache.map(m=> m && m.id));
+            lastMessageId = cache.length ? cache[cache.length-1].id : 0;
+            window.lastMessageId = lastMessageId;
+            renderMessages(cache);
+            // mark this group as seen and refresh header badge
+            try {
+                await markGroupSeen(groupId, lastMessageId);
+                updateHeaderBadge();
+                if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
+            } catch(_) {}
+        } catch(err){
+            console.error('fetchMessages error:', err);
+            emptyEl.style.display = 'flex';
+        } finally {
+            loadingEl.style.display = 'none';
+        }
     }
-    // Expose for realtime and external calls
     window.fetchMessages = fetchMessages;
 
     async function poll(){
-        if (polling) return; if (!activeGroupId || lastMessageId === null) return; polling = true;
+        if (polling) return;
+        if (!activeGroupId || lastMessageId === null) return;
+        polling = true;
         try{
             const url = new URL(routes.messagesSince, window.location.origin);
-            url.searchParams.set('group_id', activeGroupId); url.searchParams.set('after_id', lastMessageId);
+            url.searchParams.set('group_id', activeGroupId);
+            url.searchParams.set('after_id', lastMessageId);
             const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-
-            const data = await res.json();
-           
+            if (!res.ok) return; // silently skip
+            let data = [];
+            try { data = await res.json(); } catch { data = []; }
             if (Array.isArray(data) && data.length){
                 const fresh = [];
                 for (const m of data){ if (!m || idIndex.has(m.id)) continue; idIndex.add(m.id); fresh.push(m); }
-                if (fresh.length){ cache = cache.concat(fresh); lastMessageId = cache[cache.length-1].id; renderMessages(cache); }
+                if (fresh.length){
+                    cache = cache.concat(fresh);
+                    lastMessageId = cache[cache.length-1].id;
+                    renderMessages(cache);
+                }
             }
-        } finally { polling = false; }
+        } finally {
+            polling = false;
+        }
     }
 
     // Ensure only one polling interval exists globally
