@@ -51,5 +51,18 @@ class InvoicePdfService
         $canvas->page_text(500, 85, "Page {PAGE_NUM} of {PAGE_COUNT}", $fontMetrics->getFont('Arial', 'normal'), 10);
 
         return $pdf->stream($filename);
+    } 
+
+    public function generateQrCode(float $totalAmount, string $description = 'Invoice Payment')
+    {
+        $paymentSetting = PaymentSetting::latest()->first();
+
+        $upiId = $paymentSetting->upi ?? "7739136208.etb@icici";
+        $payeeName = $paymentSetting->branch_holder_name ?? "Avinash Kumar Jha";
+
+        $upiLink = "upi://pay?pa={$upiId}&pn=" . urlencode($payeeName) . "&am={$totalAmount}&cu=INR&tn=" . urlencode($description);
+
+        // Return base64 QR code that can be embedded in Blade templates
+        return base64_encode(QrCode::format('svg')->size(200)->generate($upiLink));
     }
 }

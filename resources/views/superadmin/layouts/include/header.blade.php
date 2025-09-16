@@ -1,16 +1,16 @@
 <div class="header" style="background:#fff; border-bottom:1px solid #e5e7eb; padding:0;">
     <!-- Mobile Header & Logo -->
     <div class="header-left active">
-        <a href="index.html" class="logo logo-normal">
-            <img src="{{ url('assets/img/logo.svg') }}" alt="Logo">
+        <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-normal">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img" >
         </a>
-        <a href="index.html" class="logo logo-white">
-            <img src="{{ url('assets/img/logo-white.svg') }}" alt="Logo White">
+        <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-white">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img" >
         </a>
-        <a href="index.html" class="logo-small">
-            <img src="{{ url('assets/img/logo-small.png') }}" alt="Logo Small">
+        <a href="{{ route('superadmin.dashboard.index') }}" class="logo-small">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img" >
         </a>
-    </div>
+    </div>  
 
     <!-- Mobile toggle -->
     <a id="mobile_btn" class="mobile_btn" href="#sidebar">

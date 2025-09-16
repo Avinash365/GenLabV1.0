@@ -51,8 +51,9 @@
             padding: 6px 4px;
         }
         .footer { margin-top: 20px; font-size: 12px; text-align: center; }
+
         .colw { width: 30%; }
-        .col4 { width: 70%; }
+        .col4 { width: 52%; }
     </style>
 </head>
 <body>
@@ -61,8 +62,9 @@
 <table>
     <thead>
         <tr>
-            <th class="colw text-uppercase">GSTIN: {{ $invoice->client_gstin ?? '' }}</th>
+            <th class="colw text-uppercase">GSTIN: {{ $bankDetails['gstin'] ?? '' }}</th>
             <th class="text-uppercase">{{ $invoice->invoice_type ?? '' }}</th>
+            <th>Scan to Pay</Th>
         </tr>
     </thead>
     <tbody>
@@ -73,16 +75,17 @@
                 {!! nl2br($invoice->address ?? '') !!}
                 <br>
                 <span class="text-uppercase">GSTIN: {{ $invoice->client_gstin ?? '' }}</span>
-            </td>
+            </td> 
+            <td><img src="data:image/svg+xml;base64,{{ $qrcode }}" alt="UPI QR Code" width="100"></td>
         </tr>
-        <tr><th class="colw text-start">Invoice No:</th><td class="col4 text-uppercase">{{ $invoice->invoice_no ?? '' }}</td></tr>
-        <tr><th class="colw text-start">Invoice Date:</th><td class="col4">{{ $invoice->invoice_date ?? now()->format('d-m-Y') }}</td></tr>
+        <tr><th class="colw text-start">Invoice No:</th><td colspan="2" class="col4 text-uppercase">{{ $invoice->invoice_no ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Invoice Date:</th><td  colspan="2"class="col4">{{ $invoice->invoice_date ?? now()->format('d-m-Y') }}</td></tr>
         <tr><th class="colw text-start">Ref. No & Date:</th>
-            <td class="col4 text-uppercase">
+            <td colspan="2" class="col4 text-uppercase">
                 {{ $invoice->reference_no ?? '' }} & {{ $invoice->letter_date ?? '' }}
             </td>
         </tr>
-        <tr><th class="colw text-start">Name of Work:</th><td class="col4">{{ $invoice->name_of_work ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Name of Work:</th><td colspan="2" class="col4">{{ $invoice->name_of_work ?? '' }}</td></tr>
     </tbody>
 </table>
 
@@ -103,9 +106,7 @@
         <tr>
             <td class="text-uppercase">{{ $item->description ?? '' }}</td>
             <td class="text-uppercase">{{ $item->job_order_no ?? '' }}</td>
-            @if($index == 0)
-                <td rowspan="{{ $invoice->items->count() }}">{{ $SACCODE ?? '' }}</td>
-            @endif
+            <td >{{ $SACCODE ?? '' }}</td>
             <td>{{ $item->qty ?? 0 }}</td>
             <td>{{ number_format($item->rate ?? 0,2) }}</td>
             <td>{{ number_format($item->amount ?? 0,2) }}</td>
@@ -154,5 +155,29 @@
     </tbody>
 </table>
 
-</body>
+
+<!-- Bank Details -->
+<table class="bank-table">
+    <tbody>
+        <tr>
+            <th class="text-start">INSTRUCTIONS:</th>
+            <td colspan="2">{{ $bankDetails['instructions'] ?? '' }}</td>
+        </tr>
+        <tr>
+            <th class="text-start">BANK NAME:</th>
+            <td>{{ $bankDetails['bank_name'] ?? '' }}</td>
+            <td class="text-centre text-uppercase">For {{$companyName}}</td>
+        </tr>
+        <tr>
+            <th class="text-start">ACCOUNT NO:</th>
+            <td>{{ $bankDetails['account_no'] ?? '' }}</td>
+            <td rowspan="5" class="text-bottom">Authorised Signatory</td>
+        </tr>
+        <tr><th class="text-start">BRANCH:</th><td class="text-uppercase">{{ $bankDetails['branch_name'] ?? '' }}</td></tr>
+        <tr><th class="text-start">IFSC CODE:</th><td class="text-uppercase">{{ $bankDetails['ifsc_code'] ?? '' }}</td></tr>
+        <tr><th class="text-start">PAN NO:</th><td class="text-uppercase">{{ $bankDetails['pan_no'] ?? '' }}</td></tr>
+        <tr><th class="text-start">GSTIN:</th><td class="text-uppercase">{{ $bankDetails['gstin'] ?? '' }}</td></tr>
+    </tbody>
+</table>
+</body> 
 </html>

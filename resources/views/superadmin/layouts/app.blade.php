@@ -57,6 +57,7 @@
     <!-- Fontawesome CSS -->
     <link rel="stylesheet" href="{{ url('assets/plugins/fontawesome/css/fontawesome.min.css') }}">
     <link rel="stylesheet" href="{{ url('assets/plugins/fontawesome/css/all.min.css') }}">
+    
 
     <!-- Color Picker Css -->
     <link rel="stylesheet" href="{{ url('assets/plugins/%40simonwep/pickr/themes/nano.min.css') }}">

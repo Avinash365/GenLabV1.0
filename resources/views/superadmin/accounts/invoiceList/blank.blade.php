@@ -282,6 +282,22 @@
 
 @push('scripts')
 <script>
+    // Get today's date in dd-mm-yyyy format
+    const today = new Date();
+    const dd = String(today.getDate()).padStart(2, '0');
+    const mm = String(today.getMonth() + 1).padStart(2, '0'); // Months are 0-based
+    const yyyy = today.getFullYear();
+    const formattedDate = dd + '-' + mm + '-' + yyyy;
+
+    // Set the content of the editable TDs
+    document.getElementById('td_invoice_date').innerText = formattedDate;
+    document.getElementById('td_letter_date').innerText = formattedDate;
+</script>
+@endpush
+
+
+@push('scripts')
+<script>
     function updateAmounts() {
         let total = 0;
         document.querySelectorAll('#invoiceTable tbody tr').forEach(function(row) {
