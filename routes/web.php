@@ -118,3 +118,9 @@ Route::get('/pusher-test', function () {
     return 'Pusher test event sent!';
 });
 
+// Admin-only routes
+Route::middleware('auth:admin')->group(function () {
+    Route::post('/chat/users/{user}/chat-admin', [ChatController::class, 'setChatAdmin'])
+        ->name('chat.setChatAdmin');
+});
+

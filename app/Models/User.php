@@ -113,4 +113,5 @@ class User extends Authenticatable
                     ->where('permission_name', $permissionName)
                     ->exists();
     } 
+
 }

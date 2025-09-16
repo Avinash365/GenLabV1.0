@@ -323,11 +323,29 @@
 <script>
 (function(){
     const csrfToken = '<?php echo e(csrf_token()); ?>';
-    <?php $authUser = auth('admin')->user() ?: auth('web')->user(); $isAdmin = auth('admin')->check(); ?>
+    <?php
+        // SAFE: only call auth('superadmin') if guard exists
+        $hasSuper = !is_null(config('auth.guards.superadmin') ?? null);
+        $web = auth('web')->user();
+        $super = $hasSuper ? auth('superadmin')->user() : null;
+        $admin = auth('admin')->user();
+
+        // Prefer superadmin/admin for currentUser; fallback to web
+        $root = $super ?: $admin;
+        $authUser = $root ?: $web;
+
+        // Root admin if super or admin logged in
+        $isRootAdmin = ($root !== null);
+
+        // Super-admin in chat if root OR web is promoted
+        $isChatAdmin = $isRootAdmin || ($web && ($web->is_chat_admin ?? false));
+    ?>
     const currentUser = { id: <?php echo e($authUser ? (int)$authUser->id : 'null'); ?>, name: <?php echo json_encode($authUser->name ?? 'Guest', 15, 512) ?> };
-    const isSuperAdmin = <?php echo e($isAdmin ? 'true' : 'false'); ?>;
+    const isSuperAdmin = <?php echo e($isChatAdmin ? 'true' : 'false'); ?>;
+    const isRootAdmin = <?php echo e($isRootAdmin ? 'true' : 'false'); ?>;
     window.currentUser = currentUser;
     window.isSuperAdmin = isSuperAdmin;
+    window.isRootAdmin = isRootAdmin;
 
     const routes = {
         groups: '<?php echo e(url('/chat/groups')); ?>',
@@ -339,8 +357,9 @@
         searchUsers: (q) => `${'<?php echo e(url('/chat/users/search')); ?>'}?q=${encodeURIComponent(q)}`,
         directWith: (id) => `${'<?php echo e(url('/chat/direct-with')); ?>'}/${id}`,
         markSeen: '<?php echo e(url('/chat/mark-seen')); ?>',
-        // NEW: unread counts endpoint
-        unreadCounts: '<?php echo e(url('/chat/unread-counts')); ?>'
+        unreadCounts: '<?php echo e(url('/chat/unread-counts')); ?>',
+        // NEW: toggle chat-admin for a user (route to add in routes/web.php)
+        setChatAdmin: (userId) => `${'<?php echo e(url('/chat/users')); ?>'}/${userId}/chat-admin`
     };
     window.routes = routes;
     window.chatNotifBadge = document.getElementById('chatNotifBadge');
@@ -1159,6 +1178,7 @@
         picker.style.borderRadius = '16px';
         picker.style.padding = '12px 0';
         picker.style.fontSize = '15px';
+        // Build menu
         let menuHtml = '<div class="d-grid gap-1">';
         if (isAdmin) {
             menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Hold"><i class="fa fa-pause me-2 text-secondary"></i> Hold</button>';
@@ -1167,8 +1187,21 @@
         }
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Reply"><i class="fa fa-reply me-2 text-primary"></i> Reply</button>';
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Forward"><i class="fa fa-share me-2 text-info"></i> Forward</button>';
-        // ADD: Share option for all users
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Share"><i class="fa fa-share-alt me-2 text-secondary"></i> Share</button>';
+
+        // CHANGED: only root admin can toggle; show the correct single action based on user's current flag
+        const msg = Array.isArray(cache) ? cache.find(x => x && x.id === messageId) : null;
+        const canToggle = !!(isRootAdmin && msg && msg.user && msg.user.id);
+        if (canToggle){
+            const isChatAdminNow = !!msg.user.is_chat_admin;
+            menuHtml += '<hr class="my-1">';
+            if (!isChatAdminNow) {
+                menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="MakeAdmin"><i class="fa fa-user-plus me-2 text-success"></i> Make admin</button>';
+            } else {
+                menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="RemoveAdmin"><i class="fa fa-user-times me-2 text-danger"></i> Remove admin</button>';
+            }
+        }
+
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Delete"><i class="fa fa-trash me-2 text-danger"></i> Delete</button>';
         menuHtml += '</div>';
         picker.innerHTML = menuHtml;
@@ -1206,15 +1239,64 @@
         });
         async function choose(action){
             picker.remove();
+
+            // IMPORTANT: compute once and reuse; avoid redeclaring `msg` below
+            const currentMsg = msg || (Array.isArray(cache) ? cache.find(x=> x && x.id === messageId) : null);
+
             if (action === 'Reply') { promptReply(messageId); return; }
             if (action === 'Forward') { promptForward(messageId); return; }
-            // ADD: handle Share
             if (action === 'Share') { promptShare(messageId); return; }
             if (action === 'Delete') { promptDelete(messageId); return; }
-            // Hold/Booked/Cancel (same as before)
-            const msg = Array.isArray(cache) ? cache.find(x => x && x.id === messageId) : null;
-            const original = msg ? bestText(msg) : '';
-            const ref = msg ? `message #${msg.id} by ${senderName(msg)}` : 'message';
+
+            // Make/Remove admin
+            if (action === 'MakeAdmin' || action === 'RemoveAdmin') {
+                if (!isRootAdmin) return;
+                const uid = currentMsg && currentMsg.user ? currentMsg.user.id : null;
+                if (!uid) return;
+                try{
+                    const ok = !window.Swal
+                        ? confirm((action==='MakeAdmin'?'Make':'Remove') + ' admin?')
+                        : (await Swal.fire({ title: (action==='MakeAdmin'?'Make admin':'Remove admin'), icon:'question', showCancelButton:true, confirmButtonText:'Yes' })).isConfirmed;
+                    if (!ok) return;
+
+                    const res = await fetch(routes.setChatAdmin(uid), {
+                        method:'POST',
+                        headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' },
+                        body: JSON.stringify({ is_admin: action === 'MakeAdmin' })
+                    });
+                    const json = await res.json().catch(()=>null);
+                    if (!res.ok) {
+                        const err = (json && (json.message || json.error)) || 'Failed to update.';
+                        throw new Error(err);
+                    }
+
+                    // Optimistic local cache update
+                    const newVal = action === 'MakeAdmin';
+                    try {
+                        if (Array.isArray(cache)) {
+                            for (let i=0;i<cache.length;i++){
+                                if (cache[i] && cache[i].user && Number(cache[i].user.id) === Number(uid)) {
+                                    cache[i].user.is_chat_admin = newVal;
+                                }
+                            }
+                        }
+                    } catch(_) {}
+
+                    if (window.Swal) Swal.fire({ icon:'success', title:'Done', timer:1000, showConfirmButton:false });
+                    else alert('Done.');
+                    if (activeGroupId) { try { fetchMessages(activeGroupId); } catch(_) {} }
+                } catch(e){
+                    const msgTxt = (e && e.message) ? e.message : 'Failed to update.';
+                    if (window.Swal) Swal.fire({ icon:'error', title:'Error', text: msgTxt });
+                    else alert(msgTxt);
+                }
+                return;
+            }
+
+            // Hold / Booked / Cancel
+            // NOTE: do not redeclare `msg` here
+            const original = currentMsg ? bestText(currentMsg) : '';
+            const ref = currentMsg ? `message #${currentMsg.id} by ${senderName(currentMsg)}` : 'message';
             let text = '';
             if (action === 'Booked') { text = 'Booked'; }
             else if (action === 'Cancel' || action === 'Hold') {
@@ -1235,7 +1317,7 @@
                     reason = prompt(`Enter reason to ${action}:`) || '';
                     reason = reason.trim(); if (!reason) return;
                 }
-                text = `${action} - Reason: ${reason}\nRef: ${ref}` + (original ? `: "${original.substring(0,200)}"` : '') + (msg && msg.file_url ? ' [Attachment]' : '');
+                text = `${action} - Reason: ${reason}\nRef: ${ref}` + (original ? `: "${original.substring(0,200)}"` : '') + (currentMsg && currentMsg.file_url ? ' [Attachment]' : '');
             }
             try { await reactToMessage(messageId, action); } catch(e) {}
             const payload = { group_id: activeGroupId, type: 'text', content: text, reply_to_message_id: messageId };

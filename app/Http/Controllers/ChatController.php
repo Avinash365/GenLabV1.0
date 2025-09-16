@@ -17,22 +17,60 @@ use App\Events\MessageSent;
 
 class ChatController extends Controller
 {
+    // NEW: helpers to safely access optional guards (e.g., 'superadmin')
+    protected function guardAvailable(string $name): bool
+    {
+        return (bool) config("auth.guards.$name");
+    }
+    protected function guardUser(string $name)
+    {
+        return $this->guardAvailable($name) ? auth($name)->user() : null;
+    }
+    protected function guardCheck(string $name): bool
+    {
+        return $this->guardAvailable($name) ? auth($name)->check() : false;
+    }
+
     protected function user()
     {
-        // Prefer admin, then web, to be consistent with currentGuard()
-        return auth('admin')->user() ?: auth('web')->user();
+        // Prefer superadmin, then admin, then web
+        return $this->guardUser('superadmin')
+            ?: $this->guardUser('admin')
+            ?: $this->guardUser('web');
     }
 
     protected function currentGuard(): ?string
     {
-        if (auth('admin')->check()) return 'admin';
-        if (auth('web')->check()) return 'web';
+        // Treat superadmin/admin as 'admin' for chat purposes
+        if ($this->guardCheck('superadmin') || $this->guardCheck('admin')) return 'admin';
+        if ($this->guardCheck('web')) {
+            $u = auth('web')->user();
+            if ($this->userIsChatAdmin($u)) return 'admin';
+            return 'web';
+        }
         return null;
+    }
+
+    // Root admin = either real superadmin (if guard exists) or real admin
+    protected function isRootAdmin(): bool
+    {
+        return $this->guardCheck('superadmin') || $this->guardCheck('admin');
+    }
+
+    // NEW: helper to check if a web user is chat admin via users.is_chat_admin
+    protected function userIsChatAdmin(?User $u): bool
+    {
+        if (!$u) return false;
+        if (!Schema::hasColumn('users', 'is_chat_admin')) return false;
+        try { return (bool) $u->is_chat_admin; } catch (\Throwable $e) { return false; }
     }
 
     protected function isSuperAdmin(): bool
     {
-        return auth('admin')->check();
+        // Root admin OR a web user flagged as chat admin
+        if ($this->isRootAdmin()) return true;
+        if ($this->guardCheck('web')) return $this->userIsChatAdmin(auth('web')->user());
+        return false;
     }
 
     // NEW: copy storage/app/public/<relative> to public/storage/<relative> if not present
@@ -249,7 +287,15 @@ class ChatController extends Controller
         if ($isAdmin && $group && Str::startsWith($group->slug, 'dm2-')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-        $q = ChatMessage::with(['user:id,name,email', 'reactions.user:id,name']) // include email for avatar
+        // CHANGED: eager-load user with is_chat_admin when column exists
+        $q = ChatMessage::with([
+                'reactions.user:id,name',
+                'user' => function($q){
+                    $cols = ['id','name','email'];
+                    if (Schema::hasColumn('users','is_chat_admin')) $cols[] = 'is_chat_admin';
+                    $q->select($cols);
+                }
+            ])
             ->where('group_id', $groupId);
 
         if (!$isAdmin && $user) {
@@ -290,7 +336,15 @@ class ChatController extends Controller
         if ($isAdmin && $group && Str::startsWith($group->slug, 'dm2-')) {
             return response()->json(['message' => 'Forbidden'], 403);
         }
-        $q = ChatMessage::with(['user:id,name,email', 'reactions.user:id,name']) // include email for avatar
+        // CHANGED: eager-load user with is_chat_admin when column exists
+        $q = ChatMessage::with([
+                'reactions.user:id,name',
+                'user' => function($q){
+                    $cols = ['id','name','email'];
+                    if (Schema::hasColumn('users','is_chat_admin')) $cols[] = 'is_chat_admin';
+                    $q->select($cols);
+                }
+            ])
             ->where('group_id', $groupId)
             ->where('id', '>', $request->integer('after_id'));
 
@@ -387,7 +441,7 @@ class ChatController extends Controller
             'original_name' => $original,
         ];
         if (Schema::hasColumn('chat_messages', 'sender_guard')) {
-            $data['sender_guard'] = $this->currentGuard();
+            $data['sender_guard'] = $this->currentGuard(); // CHANGED: promoted users emit 'admin'
         }
         if (Schema::hasColumn('chat_messages', 'sender_name')) {
             // Use actual display name for both admin and user so recipients see proper names
@@ -403,7 +457,12 @@ class ChatController extends Controller
             $this->membership($request->integer('group_id'), (int)$user->id);
         }
 
-        $msg->load('user:id,name,email');
+        // CHANGED: include is_chat_admin in the eager load if column exists
+        if (\Illuminate\Support\Facades\Schema::hasColumn('users','is_chat_admin')) {
+            $msg->load(['user' => function($q){ $q->select('id','name','email','is_chat_admin'); }]);
+        } else {
+            $msg->load('user:id,name,email');
+        }
 
         // Build two payloads:
         // - payload: scoped for current requester (keeps correct "mine")
@@ -642,6 +701,8 @@ class ChatController extends Controller
                 'id' => $m->user->id,
                 'name' => $m->user->name,
                 'avatar' => $this->avatarUrl($m->user),
+                // NEW: include chat-admin flag if present
+                'is_chat_admin' => (Schema::hasColumn('users','is_chat_admin') ? (bool)($m->user->is_chat_admin ?? false) : false),
             ];
         }
 
@@ -699,5 +760,22 @@ class ChatController extends Controller
             return response()->json(['status' => 'deleted']);
         }
         return response()->json(['message' => 'Forbidden'], 403);
+    }
+
+    // NEW: promote/demote a user to chat admin (root admin only)
+    public function setChatAdmin(Request $request, User $user)
+    {
+        if (!$this->isRootAdmin()) return response()->json(['message' => 'Forbidden'], 403);
+        $request->validate(['is_admin' => 'required|boolean']);
+        if (!Schema::hasColumn('users','is_chat_admin')) {
+            return response()->json(['message' => 'Missing users.is_chat_admin column'], 422);
+        }
+        $user->is_chat_admin = $request->boolean('is_admin');
+        $user->save();
+        return response()->json([
+            'id' => (int)$user->id,
+            'name' => $user->name,
+            'is_chat_admin' => (bool)$user->is_chat_admin
+        ]);
     }
 }

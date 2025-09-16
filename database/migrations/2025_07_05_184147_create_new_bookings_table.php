@@ -4,15 +4,15 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
+class CreateNewBookingsTable extends Migration
 {
-    public function up(): void
+    public function up()
     {
         Schema::create('new_bookings', function (Blueprint $table) {
             $table->id();
             
             //foreign key
-            $table->string('marketing_id', 50);  
+            $table->string('marketing_id', 255);  
             
             $table->foreignId('department_id')
                     ->constrained('departments') // plural table name
@@ -36,20 +36,14 @@ return new class extends Migration
             $table->string('created_by_type');
 
             $table->timestamps();
-            $table->softDeletes();
 
-            // Add foreign key
-            $table->foreign('marketing_id')
-                ->references('user_code')
-                ->on('users')
-                ->onDelete('cascade'); 
-
-            $table->index(['created_by_id', 'created_by_type', 'client_name']);
+            // Foreign key: marketing_id references users.user_code (both must be string(255))
+            $table->foreign('marketing_id')->references('user_code')->on('users')->onDelete('cascade');
         });
     }
 
-    public function down(): void
+    public function down()
     {
         Schema::dropIfExists('new_bookings');
     }
-};
+}
