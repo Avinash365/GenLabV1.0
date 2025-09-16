@@ -1,12 +1,3 @@
-<?php
-// PHP code here (if any)
-?>
-
-<script>
-// Legacy Echo init via require disabled. WebSocket init is handled later with a robust fallback.
-// This avoids "require is not defined" errors in browsers without a bundler.
-</script>
-
 <!-- Floating Chat Popup (replaces offcanvas) -->
 <div id="chatPopup" class="chat-popup" style="display:none;">
     <div class="chat-popup-header">
@@ -300,9 +291,12 @@
 .filter-active.btn-outline-danger { background:#fee2e2; border-color:#fecaca; color:#991b1b; }
 
 /* Sidebar unread marker */
-.chat-dot{ width:10px; height:10px; border-radius:50%; background:#22c55e; display:inline-block; }
-.chat-unread{ font-size:12px; background:#ef4444; color:#fff; border-radius:999px; padding:1px 6px; }
-.chat-preview{ font-size:12px; color:#6b7280; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; max-width: 260px; }
+/* Remove visual dot usage; keep count badge only */
+.chat-unread{ font-size:12px; background:#22c55e; color:#fff; border-radius:999px; padding:1px 8px; line-height:18px; min-width:22px; text-align:center; }
+
+/* WhatsApp-like: unread chats look bolder */
+#chatGroups .list-group-item.has-unread .chat-title{ font-weight:700; color:#111827; }
+#chatGroups .list-group-item.has-unread .chat-preview{ color:#111827; }
 
 /* Day separator chip centered */
 .wa-day{ display:flex; justify-content:center; margin:10px 0; }
@@ -329,11 +323,29 @@
 <script>
 (function(){
     const csrfToken = '{{ csrf_token() }}';
-    @php $authUser = auth('admin')->user() ?: auth('web')->user(); $isAdmin = auth('admin')->check(); @endphp
+    @php
+        // SAFE: only call auth('superadmin') if guard exists
+        $hasSuper = !is_null(config('auth.guards.superadmin') ?? null);
+        $web = auth('web')->user();
+        $super = $hasSuper ? auth('superadmin')->user() : null;
+        $admin = auth('admin')->user();
+
+        // Prefer superadmin/admin for currentUser; fallback to web
+        $root = $super ?: $admin;
+        $authUser = $root ?: $web;
+
+        // Root admin if super or admin logged in
+        $isRootAdmin = ($root !== null);
+
+        // Super-admin in chat if root OR web is promoted
+        $isChatAdmin = $isRootAdmin || ($web && ($web->is_chat_admin ?? false));
+    @endphp
     const currentUser = { id: {{ $authUser ? (int)$authUser->id : 'null' }}, name: @json($authUser->name ?? 'Guest') };
-    const isSuperAdmin = {{ $isAdmin ? 'true' : 'false' }};
+    const isSuperAdmin = {{ $isChatAdmin ? 'true' : 'false' }};
+    const isRootAdmin = {{ $isRootAdmin ? 'true' : 'false' }};
     window.currentUser = currentUser;
     window.isSuperAdmin = isSuperAdmin;
+    window.isRootAdmin = isRootAdmin;
 
     const routes = {
         groups: '{{ url('/chat/groups') }}',
@@ -345,8 +357,9 @@
         searchUsers: (q) => `${'{{ url('/chat/users/search') }}'}?q=${encodeURIComponent(q)}`,
         directWith: (id) => `${'{{ url('/chat/direct-with') }}'}/${id}`,
         markSeen: '{{ url('/chat/mark-seen') }}',
-        // NEW: unread counts endpoint
-        unreadCounts: '{{ url('/chat/unread-counts') }}'
+        unreadCounts: '{{ url('/chat/unread-counts') }}',
+        // NEW: toggle chat-admin for a user (route to add in routes/web.php)
+        setChatAdmin: (userId) => `${'{{ url('/chat/users') }}'}/${userId}/chat-admin`
     };
     window.routes = routes;
     window.chatNotifBadge = document.getElementById('chatNotifBadge');
@@ -599,25 +612,53 @@
             const item = document.createElement('a');
             item.href = '#'; item.className = 'list-group-item d-flex align-items-center';
             item.dataset.groupId = g.id; item.dataset.groupName = g.name;
+
             const initials2 = (g.name||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
-            // CHANGED: ensure avatar URL is absolute and valid
             const absAvatar = g.avatar ? toAbsoluteUrl(g.avatar) : null;
-            const avatarHtml = absAvatar ? `<div class="wa-avatar me-2"><img src="${absAvatar}" alt="${g.name||'Group'}" loading="lazy"></div>`
-                                         : `<div class="wa-avatar me-2">${initials2}</div>`;
-            const right = document.createElement('div'); right.className='ms-auto d-flex align-items-center';
-            // Only show unread badge if latest message is not from current user
+            const avatarHtml = absAvatar
+                ? `<div class="wa-avatar me-2"><img src="${absAvatar}" alt="${g.name||'Group'}" loading="lazy"></div>`
+                : `<div class="wa-avatar me-2">${initials2}</div>`;
+
             const latest = g.latest || {};
-            const isMine = window.currentUser && Number(latest.user_id) === Number(window.currentUser.id);
-            if (g.unread && g.unread > 0 && !isMine){ right.innerHTML = `<span class="me-2 chat-dot"></span><span class="chat-unread">${g.unread>99?'99+':g.unread}</span>`; }
-            const meta = document.createElement('div'); meta.className='flex-grow-1';
-            const previewText = ((latest.content || latest.original_name || (latest.type==='image' ? '[Image]' : latest.type==='pdf' ? '[PDF]' : latest.type==='voice' ? '[Audio]' : '') || '') + '').slice(0, 60);
-            meta.innerHTML = `<div class="d-flex align-items-center justify-content-between"><div>${g.name}</div><div class="text-muted small">${g.last_msg_at? new Date(g.last_msg_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}):''}</div></div><div class="chat-preview">${previewText}</div>`;
+            const unreadCount = parseInt(g.unread)||0;
+            const hasUnread = unreadCount > 0;
+
+            // Mark item as unread for bold styling
+            if (hasUnread) item.classList.add('has-unread'); else item.classList.remove('has-unread');
+
+            const right = document.createElement('div');
+            right.className='ms-auto d-flex align-items-center';
+            right.innerHTML = hasUnread ? `<span class="chat-unread">${unreadCount>99?'99+':unreadCount}</span>` : '';
+
+            const meta = document.createElement('div');
+            meta.className='flex-grow-1';
+
+            // --- LIMIT PREVIEW LENGTH ---
+            let previewText =
+                ((latest.content || latest.original_name ||
+                 (latest.type==='image' ? '[Image]' :
+                  latest.type==='pdf' ? '[PDF]' :
+                  latest.type==='voice' ? '[Audio]' : '') || '') + '');
+
+            const PREVIEW_LIMIT = 15;
+            if (previewText.length > PREVIEW_LIMIT) {
+                previewText = previewText.slice(0, PREVIEW_LIMIT) + '...';
+            }
+
+            meta.innerHTML =
+                `<div class="d-flex align-items-center justify-content-between">
+                    <div class="chat-title">${g.name}</div>
+                    <div class="text-muted small">${g.last_msg_at? new Date(g.last_msg_at).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}):''}</div>
+                 </div>
+                 <div class="chat-preview">${previewText}</div>`;
+
             item.innerHTML = avatarHtml + meta.outerHTML + right.outerHTML;
             item.addEventListener('click', (e)=>{ e.preventDefault(); selectGroup(g.id, g.name, item); });
             groupsEl.appendChild(item);
         });
+        // Refresh header badge
+        if (typeof updateHeaderBadge === 'function') { try { updateHeaderBadge(); } catch(_){} }
     }
-    // Expose render for realtime handlers
     window.renderGroups = renderGroups;
 
     function selectGroup(id, name, node){
@@ -677,8 +718,8 @@
     // Add: open symmetric direct chat with peer
     async function openPeerChat(userId){
         try{
-            // Admin forced to admin<->user DM; users to dm2
-            const url = isSuperAdmin ? routes.direct(userId) : routes.directWith(userId);
+            // Only real admin uses admin<->user DM; everyone else uses user<->user DM2
+            const url = isRootAdmin ? routes.direct(userId) : routes.directWith(userId);
             const res = await fetch(url, { headers:{ 'Accept':'application/json' } });
             if (!res.ok) throw new Error('dm-open-fail');
             const g = await res.json();
@@ -690,6 +731,7 @@
         } catch(e){ alert('Failed to open chat'); }
     }
 
+    // Keep ONLY this async search handler (remote search)
     let searchAbort = null;
     searchEl.addEventListener('input', async ()=>{
         const q = (searchEl.value||'').trim();
@@ -920,7 +962,8 @@
         // Show sender's name only (no sender_guard)
         const senderNameText = m.sender_name || (m.user && m.user.name) || 'User';
         const nameEl = document.createElement('div'); nameEl.className = 'wa-sender'; nameEl.textContent = senderNameText;
-        if (isSuperAdmin && m.user && m.user.id){
+        // Only real admin should open legacy direct chats on name click
+        if (isRootAdmin && m.user && m.user.id){
             nameEl.classList.add('text-primary');
             nameEl.style.cursor = 'pointer';
             nameEl.title = 'Open direct chat';
@@ -1136,6 +1179,7 @@
         picker.style.borderRadius = '16px';
         picker.style.padding = '12px 0';
         picker.style.fontSize = '15px';
+        // Build menu
         let menuHtml = '<div class="d-grid gap-1">';
         if (isAdmin) {
             menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Hold"><i class="fa fa-pause me-2 text-secondary"></i> Hold</button>';
@@ -1144,41 +1188,116 @@
         }
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Reply"><i class="fa fa-reply me-2 text-primary"></i> Reply</button>';
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Forward"><i class="fa fa-share me-2 text-info"></i> Forward</button>';
-        // ADD: Share option for all users
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Share"><i class="fa fa-share-alt me-2 text-secondary"></i> Share</button>';
+
+        // CHANGED: only root admin can toggle; show the correct single action based on user's current flag
+        const msg = Array.isArray(cache) ? cache.find(x => x && x.id === messageId) : null;
+        const canToggle = !!(isRootAdmin && msg && msg.user && msg.user.id);
+        if (canToggle){
+            const isChatAdminNow = !!msg.user.is_chat_admin;
+            menuHtml += '<hr class="my-1">';
+            if (!isChatAdminNow) {
+                menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="MakeAdmin"><i class="fa fa-user-plus me-2 text-success"></i> Make admin</button>';
+            } else {
+                menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="RemoveAdmin"><i class="fa fa-user-times me-2 text-danger"></i> Remove admin</button>';
+            }
+        }
+
         menuHtml += '<button class="btn btn-sm btn-light text-start px-3 py-2" data-act="Delete"><i class="fa fa-trash me-2 text-danger"></i> Delete</button>';
         menuHtml += '</div>';
         picker.innerHTML = menuHtml;
-        // Position menu near anchor, but not too far down or left/right
-        document.body.appendChild(picker);
-        const rect = anchor.getBoundingClientRect();
+
+        // Append picker inside chat popup instead of document.body
+        popupEl.appendChild(picker);
+
+        // Position menu relative to anchor inside chat popup
+        const anchorRect = anchor.getBoundingClientRect();
+        const popupRect = popupEl.getBoundingClientRect();
         const pickerRect = picker.getBoundingClientRect();
-        let top = window.scrollY + rect.bottom + 8;
-        let left = window.scrollX + rect.left;
+        let top = anchorRect.bottom - popupRect.top + 8;
+        let left = anchorRect.left - popupRect.left;
         // Prevent overflow right
-        if (left + pickerRect.width > window.innerWidth - 16) left = window.innerWidth - pickerRect.width - 16;
+        if (left + pickerRect.width > popupRect.width - 16) left = popupRect.width - pickerRect.width - 16;
         // Prevent overflow left
         if (left < 8) left = 8;
         // Prevent overflow bottom
-        if (top + pickerRect.height > window.innerHeight - 16) top = window.innerHeight - pickerRect.height - 16;
+        if (top + pickerRect.height > popupRect.height - 16) top = popupRect.height - pickerRect.height - 16;
+        picker.style.position = 'absolute';
         picker.style.top = top + 'px';
         picker.style.left = left + 'px';
-        const closer = (e)=>{ if(!picker.contains(e.target)){ picker.remove(); document.removeEventListener('mousedown', closer);} };
+
+        const closer = (e)=>{
+            // Only close if click is outside picker and outside anchor
+            if(!picker.contains(e.target) && e.target !== anchor){
+                picker.remove();
+                document.removeEventListener('mousedown', closer);
+            }
+        };
         document.addEventListener('mousedown', closer);
+
         picker.querySelectorAll('button[data-act]').forEach(btn=>{
             btn.addEventListener('click', (e)=>{ e.preventDefault(); choose(btn.dataset.act); });
         });
         async function choose(action){
             picker.remove();
+
+            // IMPORTANT: compute once and reuse; avoid redeclaring `msg` below
+            const currentMsg = msg || (Array.isArray(cache) ? cache.find(x=> x && x.id === messageId) : null);
+
             if (action === 'Reply') { promptReply(messageId); return; }
             if (action === 'Forward') { promptForward(messageId); return; }
-            // ADD: handle Share
             if (action === 'Share') { promptShare(messageId); return; }
             if (action === 'Delete') { promptDelete(messageId); return; }
-            // Hold/Booked/Cancel (same as before)
-            const msg = Array.isArray(cache) ? cache.find(x => x && x.id === messageId) : null;
-            const original = msg ? bestText(msg) : '';
-            const ref = msg ? `message #${msg.id} by ${senderName(msg)}` : 'message';
+
+            // Make/Remove admin
+            if (action === 'MakeAdmin' || action === 'RemoveAdmin') {
+                if (!isRootAdmin) return;
+                const uid = currentMsg && currentMsg.user ? currentMsg.user.id : null;
+                if (!uid) return;
+                try{
+                    const ok = !window.Swal
+                        ? confirm((action==='MakeAdmin'?'Make':'Remove') + ' admin?')
+                        : (await Swal.fire({ title: (action==='MakeAdmin'?'Make admin':'Remove admin'), icon:'question', showCancelButton:true, confirmButtonText:'Yes' })).isConfirmed;
+                    if (!ok) return;
+
+                    const res = await fetch(routes.setChatAdmin(uid), {
+                        method:'POST',
+                        headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' },
+                        body: JSON.stringify({ is_admin: action === 'MakeAdmin' })
+                    });
+                    const json = await res.json().catch(()=>null);
+                    if (!res.ok) {
+                        const err = (json && (json.message || json.error)) || 'Failed to update.';
+                        throw new Error(err);
+                    }
+
+                    // Optimistic local cache update
+                    const newVal = action === 'MakeAdmin';
+                    try {
+                        if (Array.isArray(cache)) {
+                            for (let i=0;i<cache.length;i++){
+                                if (cache[i] && cache[i].user && Number(cache[i].user.id) === Number(uid)) {
+                                    cache[i].user.is_chat_admin = newVal;
+                                }
+                            }
+                        }
+                    } catch(_) {}
+
+                    if (window.Swal) Swal.fire({ icon:'success', title:'Done', timer:1000, showConfirmButton:false });
+                    else alert('Done.');
+                    if (activeGroupId) { try { fetchMessages(activeGroupId); } catch(_) {} }
+                } catch(e){
+                    const msgTxt = (e && e.message) ? e.message : 'Failed to update.';
+                    if (window.Swal) Swal.fire({ icon:'error', title:'Error', text: msgTxt });
+                    else alert(msgTxt);
+                }
+                return;
+            }
+
+            // Hold / Booked / Cancel
+            // NOTE: do not redeclare `msg` here
+            const original = currentMsg ? bestText(currentMsg) : '';
+            const ref = currentMsg ? `message #${currentMsg.id} by ${senderName(currentMsg)}` : 'message';
             let text = '';
             if (action === 'Booked') { text = 'Booked'; }
             else if (action === 'Cancel' || action === 'Hold') {
@@ -1199,7 +1318,7 @@
                     reason = prompt(`Enter reason to ${action}:`) || '';
                     reason = reason.trim(); if (!reason) return;
                 }
-                text = `${action} - Reason: ${reason}\nRef: ${ref}` + (original ? `: "${original.substring(0,200)}"` : '') + (msg && msg.file_url ? ' [Attachment]' : '');
+                text = `${action} - Reason: ${reason}\nRef: ${ref}` + (original ? `: "${original.substring(0,200)}"` : '') + (currentMsg && currentMsg.file_url ? ' [Attachment]' : '');
             }
             try { await reactToMessage(messageId, action); } catch(e) {}
             const payload = { group_id: activeGroupId, type: 'text', content: text, reply_to_message_id: messageId };
@@ -1247,7 +1366,7 @@
                 // For simplicity, just send text; file forwarding needs backend support
                 payload.content += '\n[Forwarded attachment: ' + (msg.original_name||'file') + ']';
             }
-            await fetch(routes.send, { method:'POST', headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json', 'Content-Type':'application/json' }, body: JSON.stringify(payload) });
+            await fetch(routes.send, { method:'POST', headers:{ 'X-CSRF-TOKEN': csrfToken, 'Accept':'application/json' }, body: JSON.stringify(payload) });
             alert('Message forwarded.');
         } catch(e){ alert('Failed to forward.'); }
     }
@@ -1297,62 +1416,93 @@
 
     // Backend
     async function fetchGroups(){
-        const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
-        const data = await res.json();
-        allGroups = Array.isArray(data) ? data : [];
-        window.allGroups = allGroups;
-        renderGroups(allGroups);
-        // Update header badge based on initial unread snapshot
-        updateHeaderBadge();
-        // Restore previously active group after refresh/open
         try {
-            const state = getState();
-            if (state && state.activeGroupId){
-                const item = groupsEl.querySelector(`.list-group-item[data-group-id="${state.activeGroupId}"]`);
-                if (item) { selectGroup(state.activeGroupId, item.dataset.groupName || '', item); }
+            const res = await fetch(routes.groups, { headers: { 'Accept':'application/json' } });
+            if (!res.ok) {
+                console.error('chat/groups failed:', res.status, res.statusText);
+                groupsEl.innerHTML = '<div class="p-3 text-muted small">Unable to load chats.</div>';
+                return;
             }
-        } catch(_) {}
+            let data;
+            try { data = await res.json(); }
+            catch(e){
+                console.error('chat/groups JSON parse failed');
+                groupsEl.innerHTML = '<div class="p-3 text-muted small">Unable to load chats.</div>';
+                return;
+            }
+            allGroups = Array.isArray(data) ? data : [];
+            window.allGroups = allGroups;
+            renderGroups(allGroups);
+            updateHeaderBadge();
+            if (window.__CHAT_FETCH_COUNTS__) { try { await window.__CHAT_FETCH_COUNTS__(); } catch(_){} }
+            try {
+                const state = getState();
+                if (state && state.activeGroupId){
+                    const item = groupsEl.querySelector(`.list-group-item[data-group-id="${state.activeGroupId}"]`);
+                    if (item) { selectGroup(state.activeGroupId, item.dataset.groupName || '', item); }
+                }
+            } catch(_) {}
+        } catch (err) {
+            console.error('chat/groups error:', err);
+            groupsEl.innerHTML = '<div class="p-3 text-muted small">Unable to load chats.</div>';
+        }
     }
-    // Expose for realtime and external calls
     window.fetchGroups = fetchGroups;
 
     async function fetchMessages(groupId){
         loadingEl.style.display = 'block';
-        const url = new URL(routes.messages, window.location.origin); url.searchParams.set('group_id', groupId);
-        const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-        const data = await res.json();
-        // Build fresh cache and id index
-        cache = Array.isArray(data) ? data : [];
-        idIndex = new Set(cache.map(m=> m && m.id));
-        lastMessageId = cache.length ? cache[cache.length-1].id : 0;
-        window.lastMessageId = lastMessageId;
-        renderMessages(cache); loadingEl.style.display = 'none';
-        // mark this group as seen and refresh header badge
         try {
-            await markGroupSeen(groupId, lastMessageId);
-            updateHeaderBadge(); // reflect that active group is seen
-           
-            if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
-        } catch(e) { /* ignore */ }
+            const url = new URL(routes.messages, window.location.origin);
+            url.searchParams.set('group_id', groupId);
+            const res = await fetch(url, { headers: { 'Accept':'application/json' } });
+            if (!res.ok) throw new Error('messages-http-' + res.status);
+            let data;
+            try { data = await res.json(); } catch { throw new Error('messages-json-parse'); }
+            // Build fresh cache and id index
+            cache = Array.isArray(data) ? data : [];
+            idIndex = new Set(cache.map(m=> m && m.id));
+            lastMessageId = cache.length ? cache[cache.length-1].id : 0;
+            window.lastMessageId = lastMessageId;
+            renderMessages(cache);
+            // mark this group as seen and refresh header badge
+            try {
+                await markGroupSeen(groupId, lastMessageId);
+                updateHeaderBadge();
+                if (window.__CHAT_FETCH_COUNTS__) window.__CHAT_FETCH_COUNTS__();
+            } catch(_) {}
+        } catch(err){
+            console.error('fetchMessages error:', err);
+            emptyEl.style.display = 'flex';
+        } finally {
+            loadingEl.style.display = 'none';
+        }
     }
-    // Expose for realtime and external calls
     window.fetchMessages = fetchMessages;
 
     async function poll(){
-        if (polling) return; if (!activeGroupId || lastMessageId === null) return; polling = true;
+        if (polling) return;
+        if (!activeGroupId || lastMessageId === null) return;
+        polling = true;
         try{
             const url = new URL(routes.messagesSince, window.location.origin);
-            url.searchParams.set('group_id', activeGroupId); url.searchParams.set('after_id', lastMessageId);
+            url.searchParams.set('group_id', activeGroupId);
+            url.searchParams.set('after_id', lastMessageId);
             const res = await fetch(url, { headers: { 'Accept':'application/json' } });
-
-            const data = await res.json();
-           
+            if (!res.ok) return; // silently skip
+            let data = [];
+            try { data = await res.json(); } catch { data = []; }
             if (Array.isArray(data) && data.length){
                 const fresh = [];
                 for (const m of data){ if (!m || idIndex.has(m.id)) continue; idIndex.add(m.id); fresh.push(m); }
-                if (fresh.length){ cache = cache.concat(fresh); lastMessageId = cache[cache.length-1].id; renderMessages(cache); }
+                if (fresh.length){
+                    cache = cache.concat(fresh);
+                    lastMessageId = cache[cache.length-1].id;
+                    renderMessages(cache);
+                }
             }
-        } finally { polling = false; }
+        } finally {
+            polling = false;
+        }
     }
 
     // Ensure only one polling interval exists globally
@@ -1423,7 +1573,9 @@
     }
 
     // UI events
-    searchEl.addEventListener('input', ()=>{ const q = searchEl.value.toLowerCase(); const filtered = allGroups.filter(g=> g.name.toLowerCase().includes(q)); renderGroups(filtered); });
+    // REMOVED: duplicate local search handler (filter by name). The remote handler above already handles this.
+    // searchEl.addEventListener('input', async ()=>{ const q = searchEl.value.toLowerCase(); const filtered = allGroups.filter(g=> g.name.toLowerCase().includes(q)); renderGroups(filtered); });
+
     attachBtn.addEventListener('click', ()=> fileInput.click());
     fileInput.addEventListener('change', ()=>{
         if (!activeGroupId) return; const f = fileInput.files[0]; if (!f) return;
@@ -1738,250 +1890,113 @@
 })();
 </script>
 
-<!-- Echo init with CDN fallback + real-time listener binding -->
+<!-- Pusher Cloud JS integration -->
+<script src="https://js.pusher.com/7.2/pusher.min.js"></script>
 <script>
 (function(){
-    if (window.__ECHO_BOOTSTRAPPED__) return; // prevent duplicates
-    function attachListener(){
-        if (!window.Echo || !window.Echo.channel || window.__CHAT_LISTENER_BOUND__) return;
-        const handler = function(e){
-            const msg = e && e.message ? e.message : e;
-            const isMine = window.currentUser && Number(msg.user_id) === Number(window.currentUser.id);
+    // Prevent duplicate Pusher initialization across multiple chat scripts
+    if (window.__CHAT_PUSHER_BOUND__) return;
+    window.__CHAT_PUSHER_BOUND__ = true;
 
-            // Ensure correct orientation per viewer
-            msg.mine = !!isMine;
+    // Pusher Cloud integration
+    Pusher.logToConsole = true;
+    var pusher = new Pusher('500d2fa7a4b11dbfeb91', {
+        cluster: 'ap2',
+        forceTLS: true
+    });
+    var channel = pusher.subscribe('chat');
+    function handleChatEvent(data) {
+        var msg = data && data.message ? data.message : data;
+        msg.mine = window.currentUser && Number(msg.user_id) === Number(window.currentUser.id);
 
-            // Detect DM group by slug (optional)
-            let groupSlug = '';
-            let foundIdx = -1;
+        if (Array.isArray(window.allGroups)) {
+            let found = false;
+            for (let i = 0; i < window.allGroups.length; ++i) {
+                if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
+                    const g = window.allGroups[i];
+                    g.latest = {
+                        id: msg.id,
+                        type: msg.type,
+                        content: msg.content,
+                        original_name: msg.original_name,
+                        sender_guard: msg.sender_guard,
+                        sender_name: msg.sender_name,
+                        user: msg.user || null,
+                        created_at: msg.created_at
+                    };
+                    g.last_msg_id = msg.id;
+                    g.last_msg_at = msg.created_at;
+                    // Only increment unread if not mine and not the active chat
+                    if (!msg.mine && Number(msg.group_id) !== Number(window.activeGroupId)) {
+                        g.unread = (parseInt(g.unread)||0) + 1;
+                    }
+                    window.allGroups.splice(i, 1);
+                    window.allGroups.unshift(g);
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                window.allGroups.unshift({
+                    id: msg.group_id,
+                    slug: msg.group_slug || '',
+                    name: msg.sender_name || 'Chat',
+                    avatar: (msg.user && msg.user.avatar) || '',
+                    latest: {
+                        id: msg.id,
+                        type: msg.type,
+                        content: msg.content,
+                        original_name: msg.original_name,
+                        sender_guard: msg.sender_guard,
+                        sender_name: msg.sender_name,
+                        user: msg.user || null,
+                        created_at: msg.created_at
+                    },
+                    last_msg_id: msg.id,
+                    last_msg_at: msg.created_at,
+                    unread: (!msg.mine && Number(msg.group_id) !== Number(window.activeGroupId)) ? 1 : 0
+                });
+            }
+            if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
+        }
+
+        if (typeof window.__CHAT_UPDATE_BADGE__ === 'function') window.__CHAT_UPDATE_BADGE__();
+
+        // --- FIX: Do NOT append message bubble directly for active group ---
+        // Instead, always rely on fetchMessages to update the UI.
+        if (window.activeGroupId && Number(msg.group_id) === Number(window.activeGroupId)) {
+            // Remove direct append:
+            // if (typeof messageRow === 'function' && window.messagesEl) {
+            //     window.messagesEl.appendChild(messageRow(msg));
+            //     window.messagesEl.scrollTop = window.messagesEl.scrollHeight;
+            // }
+            // Active group is read
             if (Array.isArray(window.allGroups)) {
                 for (let i = 0; i < window.allGroups.length; ++i) {
                     if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
-                        groupSlug = window.allGroups[i].slug || '';
-                        foundIdx = i;
+                        window.allGroups[i].unread = 0;
                         break;
                     }
                 }
+                if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
             }
-            // Only increment unread for receiver (not sender)
-            const shouldIncrementUnread = !isMine;
-
-            try {
-                if (Array.isArray(window.allGroups)) {
-                    let found = false;
-                    for (let i = 0; i < window.allGroups.length; ++i) {
-                        if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
-                            const g = window.allGroups[i];
-                            g.latest = {
-                                id: msg.id,
-                                type: msg.type,
-                                content: msg.content,
-                                original_name: msg.original_name,
-                                sender_guard: msg.sender_guard,
-                                sender_name: msg.sender_name,
-                                user: msg.user || null,
-                                created_at: msg.created_at
-                            };
-                            g.last_msg_id = msg.id;
-                            g.last_msg_at = msg.created_at;
-                            if (shouldIncrementUnread) g.unread = (g.unread || 0) + 1;
-                            // Move updated group to top
-                            window.allGroups.splice(i, 1);
-                            window.allGroups.unshift(g);
-                            found = true;
-                            break;
-                        }
-                    }
-                    if (!found) {
-                        window.allGroups.unshift({
-                            id: msg.group_id,
-                            slug: msg.group_slug || '',
-                            name: msg.sender_name || 'Chat',
-                            avatar: (msg.user && msg.user.avatar) || '',
-                            latest: {
-                                id: msg.id,
-                                type: msg.type,
-                                content: msg.content,
-                                original_name: msg.original_name,
-                                sender_guard: msg.sender_guard,
-                                sender_name: msg.sender_name,
-                                user: msg.user || null,
-                                created_at: msg.created_at
-                            },
-                            last_msg_id: msg.id,
-                            last_msg_at: msg.created_at,
-                            unread: shouldIncrementUnread ? 1 : 0
-                        });
-                    }
-                    if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
-                }
-
-                // Floating toast only for receiver (optional)
-                if (shouldIncrementUnread && typeof showLiveNotification === 'function') {
-                    showLiveNotification(msg);
-                    // Real-time update for floating badge only if chat popup is truly hidden
-                    var chatPopup = document.getElementById('chatPopup');
-                    var isChatClosed = true;
-                    if (chatPopup) {
-                        var style = window.getComputedStyle(chatPopup);
-                        isChatClosed = style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0';
-                    }
-                    if (isChatClosed) {
-                        if (window.__FLOAT_BADGE && typeof window.__FLOAT_BADGE.update === 'function') {
-                            window.__FLOAT_BADGE.update(msg.group_id, msg);
-                        } else {
-                            var badge = document.querySelector('.float-chat-badge[data-group-id="' + msg.group_id + '"]');
-                            if (badge) {
-                                var count = parseInt(badge.textContent) || 0;
-                                badge.textContent = count + 1;
-                                badge.style.display = 'flex';
-                            }
-                        }
-                    }
-                }
-
-                // UPDATE: refresh header badge off the allGroups snapshot
-                if (typeof window.__CHAT_UPDATE_BADGE__ === 'function') window.__CHAT_UPDATE_BADGE__();
-
-                // Active chat: append without fetch and clear unread for this group
-                if (window.activeGroupId && Number(msg.group_id) === Number(window.activeGroupId)) {
-                    try {
-                        if (typeof messageRow === 'function' && window.messagesEl) {
-                            window.messagesEl.appendChild(messageRow(msg));
-                            window.messagesEl.scrollTop = window.messagesEl.scrollHeight;
-                        }
-                        if (Array.isArray(window.allGroups)) {
-                            for (let i = 0; i < window.allGroups.length; ++i) {
-                                if (Number(window.allGroups[i].id) === Number(msg.group_id)) {
-                                    window.allGroups[i].unread = 0;
-                                    break;
-                                }
-                            }
-                            if (typeof window.renderGroups === 'function') window.renderGroups(window.allGroups);
-                        }
-                        if (typeof window.__CHAT_UPDATE_BADGE__ === 'function') window.__CHAT_UPDATE_BADGE__();
-                    } catch (_) { }
-                }
-            } catch (_) { }
-        };
-
-        try{
-            window.Echo.channel('chat')
-                .listen('ChatMessageBroadcast', handler)
-                .listen('.ChatMessageBroadcast', handler);
-            window.__CHAT_LISTENER_BOUND__ = true;
-            // Stop polling when WS is ready to cut duplication/latency
-            try { if (window.__CHAT_POLL_INTERVAL){ clearInterval(window.__CHAT_POLL_INTERVAL); } } catch{}
-        } catch(_) {}
-    }
-
-    function attachDiagnostics(){
-        try{
-            const p = window.Echo && window.Echo.connector && window.Echo.connector.pusher;
-            if (!p || !p.connection) return;
-            p.connection.bind('connecting', ()=> console.log('[WS] connecting...'));
-            p.connection.bind('connected', ()=> console.log('[WS] connected'));
-            p.connection.bind('unavailable', ()=> console.warn('[WS] unavailable'));
-            p.connection.bind('failed', ()=> console.error('[WS] failed'));
-            p.connection.bind('disconnected', ()=> console.warn('[WS] disconnected'));
-            p.connection.bind('state_change', (s)=> console.log('[WS] state:', s))
-            p.connection.bind('error', (err)=> console.error('[WS] error:', err));
-        } catch(_) {}
-    }
-    function initEcho(){
-        if (window.Echo && window.Echo.connector){ attachListener(); attachDiagnostics(); return; }
-        // Raw WebSocket diagnostic if Echo fails to init
-        function testRawWS(){
-            try{
-                const host = (window.location.hostname || '127.0.0.1');
-                const url = `ws://${host}:6001/app/local?protocol=7&client=js&version=8.3.0`;
-                const ws = new WebSocket(url);
-                ws.onopen = ()=> console.log('[WS] raw: open -> server reachable');
-                ws.onerror = (e)=> console.error('[WS] raw: error -> cannot reach ws server', e);
-                ws.onclose = (e)=> console.warn('[WS] raw: closed', e && e.code);
-            } catch(err){ console.error('[WS] raw: failed to start', err); }
+            if (typeof window.__CHAT_UPDATE_BADGE__ === 'function') window.__CHAT_UPDATE_BADGE__();
+            // Always fetch messages to update UI
+            fetchMessages(window.activeGroupId);
         }
-        setTimeout(()=>{ try{ const st = window.Echo?.connector?.pusher?.connection?.state; if (!st) testRawWS(); } catch{ testRawWS(); } }, 3000);
-        if (typeof window.require === 'function'){
-            try{
-                window.Pusher = window.Pusher || window.require('pusher-js');
-                const Echo = window.require('laravel-echo');
-                window.Echo = new Echo({
-                    broadcaster: 'pusher',
-                    key: 'local',
-                    cluster: 'mt1',
-                    wsHost: (window.location.hostname || '127.0.0.1'),
-                    wsPort: 6001,
-                    forceTLS: false,
-                    disableStats: true,
-                    enabledTransports: ['ws','wss']
-                });
-                attachListener(); attachDiagnostics();
-                return;
-            } catch(_) { /* fall through to CDN */ }
-        }
-        const add = (src)=> new Promise((res,rej)=>{ const s=document.createElement('script'); s.src=src; s.onload=()=>{ console.log('[WS] loaded', src); res(); }; s.onerror=()=>{ console.warn('[WS] failed', src); rej(); }; document.head.appendChild(s); });
-        // Try jsDelivr, then unpkg as fallback
-        add('https://cdn.jsdelivr.net/npm/pusher-js@8.3.0/dist/web/pusher.min.js')
-            .then(()=> add('https://cdn.jsdelivr.net/npm/laravel-echo@1.15.3/dist/echo.iife.js'))
-            .then(()=>{
-                try {
-                    if (window.Pusher) { window.Pusher.logToConsole = true; }
-                    const EchoCtor = window.Echo;
-                    window.Echo = new EchoCtor({
-                        broadcaster: 'pusher',
-                        key: 'local',
-                        cluster: 'mt1',
-                        wsHost: (window.location.hostname || '127.0.0.1'),
-                        wsPort: 6001,
-                        forceTLS: false,
-                        disableStats: true,
-                        enabledTransports: ['ws','wss']
-                    });
-                    console.log('[WS] Echo initialized');
-                    attachListener(); attachDiagnostics();
-                    setTimeout(()=>{
-                        try{
-                            const st = window.Echo.connector.pusher.connection.state;
-                            if (st !== 'connected') console.warn('[WS] not connected after 5s, state=', st);
-                        } catch(_) {}
-                    }, 5000);
-                } catch(err) {
-                    console.error('[WS] Echo init failed', err);
-                    // Fallback to raw Pusher subscription
-                    try {
-                        const host = (window.location.hostname || '127.0.0.1');
-                        const pusher = new Pusher('local', {
-                            cluster: 'mt1',
-                            wsHost: host,
-                            wsPort: 6001,
-                            forceTLS: false,
-                            disableStats: true,
-                            enabledTransports: ['ws','wss']
-                        });
-                        const ch = pusher.subscribe('chat');
-                        const handler = (e)=>{
-                            const msg = e && e.message ? e.message : e;
-                            console.log('[WS][raw] event received', msg);
-                            if (typeof showLiveNotification === 'function') showLiveNotification(msg);
-                            if (window.chatNotifBadge){ const n=parseInt(window.chatNotifBadge.textContent)||0; window.chatNotifBadge.style.display='flex'; window.chatNotifBadge.textContent=(n+1); }
-                            if (window.routes && window.renderGroups){ fetch(window.routes.groups,{headers:{'Accept':'application/json'}}).then(r=>r.json()).then(d=>{ window.allGroups=Array.isArray(d)?d:[]; window.renderGroups(window.allGroups); }); }
-                            if (window.activeGroupId && msg && Number(msg.group_id)===Number(window.activeGroupId) && typeof window.fetchMessages==='function'){ window.fetchMessages(window.activeGroupId); }
-                        };
-                        ch.bind('ChatMessageBroadcast', handler);
-                        ch.bind('.ChatMessageBroadcast', handler);
-                        ch.bind('App\\\Events\\\ChatMessageBroadcast', handler);
-                        const conn = pusher.connection;
-                        conn.bind('state_change', (s)=> console.log('[WS][raw] state:', s));
-                        conn.bind('connected', ()=> console.log('[WS][raw] connected'));
-                        conn.bind('error', (e)=> console.error('[WS][raw] error', e));
-                        console.warn('[WS] fallback: using raw Pusher client');
-                    } catch (e2) { console.error('[WS] raw Pusher fallback failed', e2); }
-                }
-            })
-            .catch((e)=>{ console.error('[WS] Could not load Echo/Pusher libraries'); });
     }
-    window.addEventListener('load', initEcho);
-    window.__ECHO_BOOTSTRAPPED__ = true;
+    channel.bind('App\\Events\\MessageSent', handleChatEvent);
+    channel.bind('ChatMessageBroadcast', handleChatEvent);
+
+    // --- Debugging: log all events ---
+    channel.bind('pusher:subscription_succeeded', function() {
+        console.log('[Pusher] Subscribed to chat channel');
+    });
+    channel.bind('pusher:subscription_error', function(status) {
+        console.error('[Pusher] Subscription error:', status);
+    });
+    channel.bind('pusher:error', function(err) {
+        console.error('[Pusher] Error:', err);
+    });
 })();
 </script>

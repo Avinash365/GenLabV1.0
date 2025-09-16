@@ -36,6 +36,11 @@
             <form id="logout-form-mobile" action="{{ route('superadmin.logout') }}" method="POST" style="display:none;">
                 @csrf
             </form>
+            <button id="chatToggle" class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
+                <i class=""></i>
+                <span style="font-size:13px; margin-left:15px; margin-bottom: 20px;">Chat</span>
+                <span id="chatNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:none; align-items:center; justify-content:center;">1</span>
+            </button>
         </div>
     </div>
 

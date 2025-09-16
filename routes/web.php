@@ -13,6 +13,7 @@ use App\Http\Controllers\Superadmin\LabAnalystsController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Superadmin\ProfileController;
 use App\Http\Controllers\ChatbotController;
+use App\Events\MessageSent;
 
 /*
 |--------------------------------------------------------------------------
@@ -107,4 +108,21 @@ Route::delete('/chat/messages/{id}', [\App\Http\Controllers\ChatController::clas
 
 // Chatbot query
 Route::post('/chatbot/query', [ChatbotController::class, 'query']);
+
+// Test Pusher route
+Route::get('/pusher-test', function () {
+    $dummyMessage = (object)[
+        'content' => 'Test message from Pusher!',
+        'user_id' => 1,
+        'created_at' => now(),
+    ];
+    event(new MessageSent($dummyMessage));
+    return 'Pusher test event sent!';
+});
+
+// Admin-only routes
+Route::middleware('auth:admin')->group(function () {
+    Route::post('/chat/users/{user}/chat-admin', [ChatController::class, 'setChatAdmin'])
+        ->name('chat.setChatAdmin');
+});
 

@@ -211,9 +211,7 @@
         
             {{-- Submit --}} 
             <div class="d-flex align-items-center justify-content-end mb-4 mt-4">
-                <div>
-                    <span id="totalItems">Total Items: 1</span>
-                </div>
+                
                 <button type="button" class="btn btn-secondary me-2">Cancel</button>
                 <button type="submit" class="btn btn-primary">Submit Data</button>
             </div>
