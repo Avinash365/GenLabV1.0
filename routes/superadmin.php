@@ -191,10 +191,11 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         
         Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
         
-        Route::resource('payment-settings', PaymentSettingController::class);
+        Route::resource('payment-settings', PaymentSettingController::class)->only(['index','store', 'update']);
 
         Route::get('payment-settings/call-function/{id}', [PaymentSettingController::class, 'callFunction'])->name('payment-settings.callFunction');
 
+        
         Route::resource('marketing-person-ledger', MarketingPersonLedger::class)->only(['index','show']);
        
      

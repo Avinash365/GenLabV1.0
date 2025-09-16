@@ -51,17 +51,35 @@
 
                 <!-- Project Title (tab title) -->
                 <div class="row">
+                    <!-- Project Title -->
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Project Title</label>
-                            <input id="project_title_input" type="text" name="project_title" value="{{ old('project_title', $projectTitle) }}" class="form-control @error('project_title') is-invalid @enderror" placeholder="Enter project/browser tab title">
-                            @error('project_title')
-                                <div class="invalid-feedback">{{ $message }}</div>
-                            @enderror
-                            <small class="text-muted d-block mt-1">This appears in the browser tab and app header where used.</small>
-                        </div>
+                        <label class="form-label">Project Title</label>
+                        <input id="project_title_input" type="text" name="project_title" value="{{ old('project_title', $projectTitle) }}" class="form-control @error('project_title') is-invalid @enderror" placeholder="Enter project/browser tab title">
+                        @error('project_title')
+                            <div class="invalid-feedback">{{ $message }}</div>
+                        @enderror
+                        <small class="text-muted d-block mt-1">This appears in the browser tab and app header where used.</small>
                     </div>
+
+                    <!-- Backdated Booking Toggle -->
+                    <div class="col-md-6 d-flex flex-column justify-content-start">
+                            <label class="form-label">Backdated Booking</label>
+                            <div class="form-check form-switch mt-2">
+                                <input 
+                                    class="form-check-input" 
+                                    type="checkbox" 
+                                    id="backedBookingToggle" 
+                                    {{ $feature->backed_booking ?? 0 ? 'checked' : '' }}
+                                    onchange="window.location='{{ route('superadmin.websettings.backed_booking') }}?backed_booking=' + (this.checked ? 1 : 0)"
+                                >
+                                <label class="form-check-label" for="backedBookingToggle">
+                                    {{ $feature->backed_booking ?? 0 ? 'Enabled' : 'Disabled' }}
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">Toggle to allow or disallow backdated booking.</small>
+                            </div>
                 </div>
+
 
                 <div class="row">
                     <div class="col-md-6">
@@ -382,5 +400,6 @@
         });
     }
 })();
-</script>
+</script> 
+
 @endpush

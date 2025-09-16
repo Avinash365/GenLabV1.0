@@ -167,9 +167,12 @@ class GenerateInvoiceStatusController extends Controller
 
             $booking->invoice_no = $booking->generatedInvoice?->invoice_no 
                 ?? $this->billingService->generateInvoiceNo();
-        }
+        } 
 
-        return view('superadmin.accounts.generateInvoice.show', compact('booking'));
+        $gstinApiUrl = config('services.gstin.url');
+        $gstinApiKey = config('services.gstin.key');
+
+        return view('superadmin.accounts.generateInvoice.show', compact('booking', 'gstinApiUrl', 'gstinApiKey'));
     }
 
     private function storeInvoiceData(array $invoiceData, string $invoiceType)

@@ -176,7 +176,10 @@
                                     <a href="{{ route('superadmin.websettings.edit') }}" class="{{ Request::routeIs('superadmin.websettings.*') ? 'active' : '' }}">
                                         Web Settings
                                     </a>
-                                </li>
+                                </li> 
+                                <li><a href="{{ route('superadmin.payment-settings.index') }}" class="{{ Request::routeIs('superadmin.websettings.*') ? 'active' : '' }}">
+                                        Bank Details
+                                    </a></li>
                                 <li>
                                         @if(auth()->check() && (auth()->user()->hasPermission('department.view') || auth()->user()->hasPermission('department.create')  || auth()->user() instanceof Admin))                            
                                         <a href="{{route('superadmin.departments.index')}}"

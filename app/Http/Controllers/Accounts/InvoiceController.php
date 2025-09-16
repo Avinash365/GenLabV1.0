@@ -107,7 +107,10 @@ class InvoiceController extends Controller
 
     public function edit(string $InvoiceId)
     {
-        try { 
+        try {  
+
+            $gstinApiUrl = config('services.gstin.url');
+            $gstinApiKey = config('services.gstin.key');
             
             $invoice = Invoice::with([
                 'bookingItems',
@@ -127,10 +130,10 @@ class InvoiceController extends Controller
                     ->whereIn('id', $bookingIds)
                     ->get(); 
 
-                return view('superadmin.accounts.invoiceList.bulk_edit', compact('invoice', 'relatedBookings'));
+                return view('superadmin.accounts.invoiceList.bulk_edit', compact('invoice', 'relatedBookings', 'gstinApiUrl', 'gstinApiKey'));
             }
 
-            return view('superadmin.accounts.invoiceList.edit', compact('invoice'));
+            return view('superadmin.accounts.invoiceList.edit', compact('invoice', 'gstinApiUrl', 'gstinApiKey'));
 
         } catch (\Throwable $e) {
             Log::error('Invoice edit error: ' . $e->getMessage(), [

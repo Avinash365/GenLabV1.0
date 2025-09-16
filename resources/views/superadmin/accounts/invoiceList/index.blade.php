@@ -29,6 +29,7 @@
         <!-- Search Form -->
         <div class="search-set">
             <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex input-group">
+                <input type="hidden" name="type" value="{{ request('type', $type ) }}">
                 <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
                 <button class="btn btn-outline-secondary" type="submit">🔍</button>
             </form>
@@ -37,6 +38,7 @@
         <!-- Month & Year Filter Form -->
         <div class="search-set">
             <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex input-group">
+                <input type="hidden" name="type" value="{{ request('type', $type ?? '') }}">
                 <select name="month" class="form-control">
                     <option value="">Select Month</option>
                     @foreach(range(1,12) as $m)
@@ -70,7 +72,7 @@
 
         <!-- Filters + Search bar -->
         <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex gap-2" role="search">
-            
+            <input type="hidden" name="type" value="{{ request('type', $type ?? '') }}">
             <!-- Marketing Person Filter -->
             <select name="marketing_person" class="form-select" onchange="this.form.submit()">
                 <option value="">All Marketing Persons</option>
@@ -83,6 +85,7 @@
           
             <!-- Client Filter -->
             <select name="client_id" class="form-select" onchange="this.form.submit()">
+                
                 <option value="">All Clients</option>
                 @foreach($clients as $client)
                     <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
@@ -93,6 +96,7 @@
 
             <!-- Paid/Unpaid Filter -->
             <select name="payment_status" class="form-select" onchange="this.form.submit()">
+              
                 <option value="">All</option>
                 <option value="1" {{ request('payment_status') == '1' ? 'selected' : '' }}>Paid</option>
                 <option value="0" {{ request('payment_status') == '0' ? 'selected' : '' }}>Unpaid</option>

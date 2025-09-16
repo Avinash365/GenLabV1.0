@@ -50,10 +50,10 @@
 
                 <!-- Project Title (tab title) -->
                 <div class="row">
+                    <!-- Project Title -->
                     <div class="col-md-6">
-                        <div class="mb-3">
-                            <label class="form-label">Project Title</label>
-                            <input id="project_title_input" type="text" name="project_title" value="<?php echo e(old('project_title', $projectTitle)); ?>" class="form-control <?php $__errorArgs = ['project_title'];
+                        <label class="form-label">Project Title</label>
+                        <input id="project_title_input" type="text" name="project_title" value="<?php echo e(old('project_title', $projectTitle)); ?>" class="form-control <?php $__errorArgs = ['project_title'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
@@ -61,20 +61,40 @@ $message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>" placeholder="Enter project/browser tab title">
-                            <?php $__errorArgs = ['project_title'];
+                        <?php $__errorArgs = ['project_title'];
 $__bag = $errors->getBag($__errorArgs[1] ?? 'default');
 if ($__bag->has($__errorArgs[0])) :
 if (isset($message)) { $__messageOriginal = $message; }
 $message = $__bag->first($__errorArgs[0]); ?>
-                                <div class="invalid-feedback"><?php echo e($message); ?></div>
-                            <?php unset($message);
+                            <div class="invalid-feedback"><?php echo e($message); ?></div>
+                        <?php unset($message);
 if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
-                            <small class="text-muted d-block mt-1">This appears in the browser tab and app header where used.</small>
-                        </div>
+                        <small class="text-muted d-block mt-1">This appears in the browser tab and app header where used.</small>
                     </div>
+
+                    <!-- Backdated Booking Toggle -->
+                    <div class="col-md-6 d-flex flex-column justify-content-start">
+                            <label class="form-label">Backdated Booking</label>
+                            <div class="form-check form-switch mt-2">
+                                <input 
+                                    class="form-check-input" 
+                                    type="checkbox" 
+                                    id="backedBookingToggle" 
+                                    <?php echo e($feature->backed_booking ?? 0 ? 'checked' : ''); ?>
+
+                                    onchange="window.location='<?php echo e(route('superadmin.websettings.backed_booking')); ?>?backed_booking=' + (this.checked ? 1 : 0)"
+                                >
+                                <label class="form-check-label" for="backedBookingToggle">
+                                    <?php echo e($feature->backed_booking ?? 0 ? 'Enabled' : 'Disabled'); ?>
+
+                                </label>
+                            </div>
+                            <small class="text-muted d-block mt-1">Toggle to allow or disallow backdated booking.</small>
+                            </div>
                 </div>
+
 
                 <div class="row">
                     <div class="col-md-6">
@@ -451,7 +471,8 @@ unset($__errorArgs, $__bag); ?>
         });
     }
 })();
-</script>
+</script> 
+
 <?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenTech_bug\GenLab\resources\views/superadmin/settings/web_settings.blade.php ENDPATH**/ ?>

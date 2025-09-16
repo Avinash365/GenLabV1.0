@@ -14,8 +14,9 @@ class PaymentSettingController extends Controller
     // List all payment settings
     public function index()
     {
-        $settings = PaymentSetting::with(['creator', 'updater'])->get();
-        return view('payment_settings.index', compact('settings'));
+        $bank =PaymentSetting::first(); 
+
+        return view('bankDetails.index', compact('bank'));
     }
 
     
@@ -27,7 +28,21 @@ class PaymentSettingController extends Controller
 
     // Store a new payment setting
     public function store(Request $request)
-    {
+    {   
+        $bankId = (int) $request->input('bank_id');
+
+        if ($bankId !== 0) {
+           
+            $paymentSetting = PaymentSetting::find($bankId);
+
+            if ($paymentSetting) {
+                
+                return $this->update($request, $paymentSetting);
+            } else {
+                return redirect()->back()->withErrors('Something went wrong, please try again.');
+            }
+        }
+
         try {
             $validated = $request->validate([
                 'instructions'        => 'nullable|string',
@@ -46,32 +61,24 @@ class PaymentSettingController extends Controller
             $validated['updated_by'] = Auth::id();
 
             PaymentSetting::create($validated);
+            
+            $bank =PaymentSetting::first(); 
 
-            return redirect()
-                ->route('payment-settings.index')
-                ->with('success', 'Payment setting created successfully.');
+            return view('bankDetails.index', compact('bank')); 
+            
 
         } catch (\Exception $e) {
             return back()->withErrors('Failed to create payment setting: ' . $e->getMessage());
         }
     }
 
-    // Show single setting
-    public function show(PaymentSetting $paymentSetting)
-    {
-        return view('payment_settings.show', compact('paymentSetting'));
-    }
-
-    // Show edit form
-    public function edit(PaymentSetting $paymentSetting)
-    {
-        return view('payment_settings.edit', compact('paymentSetting'));
-    }
+   
 
     // Update setting
     public function update(Request $request, PaymentSetting $paymentSetting)
     {
-        try {
+        try { 
+
             $validated = $request->validate([
                 'instructions'        => 'nullable|string',
                 'bank_name'           => 'nullable|string|max:255',
@@ -84,17 +91,17 @@ class PaymentSettingController extends Controller
                 'gstin'               => 'nullable|string|max:255',
                 'upi'                 => 'nullable|string|max:255',
             ]);
-
+           
             $validated['updated_by'] = Auth::id();
 
             $paymentSetting->update($validated);
 
             return redirect()
-                ->route('payment-settings.index')
+                ->back()
                 ->with('success', 'Payment setting updated successfully.');
 
         } catch (ModelNotFoundException $e) {
-            return redirect()->route('payment-settings.index')->withErrors('Payment setting not found.');
+            return redirect()->back()->withErrors('Payment setting not found.');
         } catch (\Exception $e) {
             return back()->withErrors('Failed to update payment setting: ' . $e->getMessage());
         }

@@ -428,11 +428,14 @@
 <?php $__env->startPush('scripts'); ?>
 <script>
 document.getElementById('gstinForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+    e.preventDefault(); 
+
+    const gstinApiUrl = <?php echo json_encode($gstinApiUrl, 15, 512) ?>;
+    const gstinApiKey = <?php echo json_encode($gstinApiKey, 15, 512) ?>;
 
     let gstin = document.getElementById('gstinInput').value;
 
-    fetch(`http://sheet.gstincheck.co.in/check/c3b7f08e18bb7426407abad5af5d7712/${gstin}`)
+    fetch(`${gstinApiUrl}/${gstinApiKey}/${gstin}`)
         .then(response => response.json())
         .then(data => {
             var gstinModal = new bootstrap.Modal(document.getElementById('gstinModal'));

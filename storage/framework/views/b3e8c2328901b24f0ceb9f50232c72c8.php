@@ -177,7 +177,10 @@
                                     <a href="<?php echo e(route('superadmin.websettings.edit')); ?>" class="<?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>">
                                         Web Settings
                                     </a>
-                                </li>
+                                </li> 
+                                <li><a href="<?php echo e(route('superadmin.payment-settings.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>">
+                                        Bank Details
+                                    </a></li>
                                 <li>
                                         <?php if(auth()->check() && (auth()->user()->hasPermission('department.view') || auth()->user()->hasPermission('department.create')  || auth()->user() instanceof Admin)): ?>                            
                                         <a href="<?php echo e(route('superadmin.departments.index')); ?>"

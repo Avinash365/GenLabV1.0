@@ -427,11 +427,14 @@
 @push('scripts')
 <script>
 document.getElementById('gstinForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+    e.preventDefault(); 
+
+    const gstinApiUrl = @json($gstinApiUrl);
+    const gstinApiKey = @json($gstinApiKey);
 
     let gstin = document.getElementById('gstinInput').value;
 
-    fetch(`http://sheet.gstincheck.co.in/check/c3b7f08e18bb7426407abad5af5d7712/${gstin}`)
+    fetch(`${gstinApiUrl}/${gstinApiKey}/${gstin}`)
         .then(response => response.json())
         .then(data => {
             var gstinModal = new bootstrap.Modal(document.getElementById('gstinModal'));

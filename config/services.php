@@ -38,6 +38,11 @@ return [
             'merchant_website' => env('PAYTM_MERCHANT_WEBSITE'),
             'channel' => env('PAYTM_CHANNEL'),
             'industry_type' => env('PAYTM_INDUSTRY_TYPE'),
+    ], 
+
+    'gstin' => [
+        'url' => env('GSTIN_API_URL'),
+        'key' => env('GSTIN_API_KEY'),
     ],
 
 ];

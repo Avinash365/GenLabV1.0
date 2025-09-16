@@ -30,6 +30,7 @@
         <!-- Search Form -->
         <div class="search-set">
             <form method="GET" action="<?php echo e(route('superadmin.invoices.index')); ?>" class="d-flex input-group">
+                <input type="hidden" name="type" value="<?php echo e(request('type', $type )); ?>">
                 <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search...">
                 <button class="btn btn-outline-secondary" type="submit">🔍</button>
             </form>
@@ -38,6 +39,7 @@
         <!-- Month & Year Filter Form -->
         <div class="search-set">
             <form method="GET" action="<?php echo e(route('superadmin.invoices.index')); ?>" class="d-flex input-group">
+                <input type="hidden" name="type" value="<?php echo e(request('type', $type ?? '')); ?>">
                 <select name="month" class="form-control">
                     <option value="">Select Month</option>
                     <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -73,7 +75,7 @@
 
         <!-- Filters + Search bar -->
         <form method="GET" action="<?php echo e(route('superadmin.invoices.index')); ?>" class="d-flex gap-2" role="search">
-            
+            <input type="hidden" name="type" value="<?php echo e(request('type', $type ?? '')); ?>">
             <!-- Marketing Person Filter -->
             <select name="marketing_person" class="form-select" onchange="this.form.submit()">
                 <option value="">All Marketing Persons</option>
@@ -86,6 +88,7 @@
           
             <!-- Client Filter -->
             <select name="client_id" class="form-select" onchange="this.form.submit()">
+                
                 <option value="">All Clients</option>
                 <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <option value="<?php echo e($client->id); ?>" <?php echo e(request('client_id') == $client->id ? 'selected' : ''); ?>>
@@ -97,6 +100,7 @@
 
             <!-- Paid/Unpaid Filter -->
             <select name="payment_status" class="form-select" onchange="this.form.submit()">
+              
                 <option value="">All</option>
                 <option value="1" <?php echo e(request('payment_status') == '1' ? 'selected' : ''); ?>>Paid</option>
                 <option value="0" <?php echo e(request('payment_status') == '0' ? 'selected' : ''); ?>>Unpaid</option>

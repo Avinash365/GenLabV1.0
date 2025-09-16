@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\SuperAdmin;
 
 use App\Http\Controllers\Controller;
-use App\Models\SiteSetting;
+use App\Models\{SiteSetting,SpecialFeature};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
@@ -12,7 +12,10 @@ class WebSettingController extends Controller
     public function edit()
     {
         $setting = SiteSetting::first();
-        return view('superadmin.settings.web_settings', compact('setting'));
+
+        $feature = SpecialFeature::first() ?? new SpecialFeature(['backed_booking' => 0]);
+
+        return view('superadmin.settings.web_settings', compact('setting', 'feature'));
     }
 
     public function update(Request $request)
@@ -42,5 +45,26 @@ class WebSettingController extends Controller
         $setting->save();
 
         return redirect()->route('superadmin.websettings.edit')->with('success', 'Settings updated successfully.');
+    } 
+
+    public function updateBackedBooking(Request $request)
+    {
+
+
+        $feature = SpecialFeature::first();
+        if (!$feature) {
+            $feature = new SpecialFeature();
+        }
+
+        // Update backed_booking value (assume checkbox or toggle sends 1 or 0)
+        $feature->backed_booking = $request->input('backed_booking', 0);
+        $feature->save();
+
+        // Create message based on status
+        $status = $feature->backed_booking ? 'ON' : 'OFF';
+        $message = "Backdated booking feature is now {$status}.";
+
+        return redirect()->back()->with('success', $message);
     }
+
 }

@@ -48,6 +48,8 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     // Web Settings
     Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit');
     Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update');
+    Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking');
+    
 });
 
 
