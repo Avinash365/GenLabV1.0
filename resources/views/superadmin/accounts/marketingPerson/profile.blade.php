@@ -19,10 +19,11 @@
         </div>
     </div>
 
-    {{-- Tabs --}}
-    <div class="mt-3 mb-3">
+    {{-- Tabs + Filters --}}
+    <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
+        {{-- Tabs --}}
         <ul class="nav nav-tabs" id="profileTabs">
-            <li class="nav-item">
+            <li class="nav-item ms-2">
                 <button class="nav-link active" data-type="all" type="button">All</button>
             </li>
             <li class="nav-item">
@@ -32,31 +33,183 @@
                 <button class="nav-link" data-type="without_bill" type="button">Without Bill</button>
             </li>
         </ul>
+
+        {{-- Month & Year Filter --}}
+        <form id="monthYearForm" class="row g-2" method="GET">
+            {{-- Hidden values for JS --}}
+            <input type="hidden" id="filterMonth" value="{{ request('month') }}">
+            <input type="hidden" id="filterYear" value="{{ request('year') }}">
+
+            <div class="col-auto">
+                <select name="month" class="form-select">
+                    <option value="">All Months</option>
+                    @for ($m = 1; $m <= 12; $m++)
+                        <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                            {{ \Carbon\Carbon::create()->month($m)->format('F') }}
+                        </option>
+                    @endfor
+                </select>
+            </div>
+            <div class="col-auto">
+                <select name="year" class="form-select">
+                    <option value="">All Years</option>
+                    @for ($y = now()->year; $y >= now()->year - 5; $y--)
+                        <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                            {{ $y }}
+                        </option>
+                    @endfor
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-primary">Filter</button>
+                <a href="{{ url()->current() }}" class="btn btn-secondary">Reset</a>
+            </div>
+        </form>
     </div>
 
     {{-- Stats Section --}}
     <div class="row mt-4" id="stats-cards">
         @php
             $allCards = [
-                ['id'=>'totalBookings','title'=>'Total Bookings','value'=>$stats['totalBookings'],'class'=>'primary','type'=>'all','route'=>route('superadmin.marketing.bookings',$marketingPerson->user_code)],
-                ['id'=>'withoutBillBookings','title'=>'Without Bill Bookings','value'=>$stats['totalWithoutBillBookings'],'class'=>'warning','type'=>'without_bill','route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code)],
-                ['id'=>'invoiceAmount','title'=>'Generated Invoices','value'=>$stats['totalGeneratedInvoices'],'class'=>'secondary','type'=>'bill','route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code)],
-                ['id'=>'bookingAmount','title'=>'Total Booking Amount','value'=>'₹'.number_format($stats['totalBookingAmount'],2),'class'=>'info','type'=>'all'],
-                ['id'=>'generatedInvoices','title'=>'Total Invoice Amount','value'=>'₹'.number_format($stats['totalInvoiceAmount'],2),'class'=>'success','type'=>'bill'],
-                ['id'=>'paidAmount','title'=>'Paid Amount','value'=>'₹'.number_format($stats['paidAmount'],2),'class'=>'success','type'=>'bill'],
-                ['id'=>'balance','title'=>'Balance','value'=>'₹'.number_format($stats['balance'],2),'class'=>'danger','type'=>'bill'],
+                [
+                    'id'=>'totalBookings',
+                    'title'=>'Total Bookings',
+                    'count'=>$stats['totalBookings'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalBookingAmount'] ?? 0,2),
+                    'class'=>'primary',
+                    'type'=>'all',
+                    'route'=>route('superadmin.marketing.bookings',$marketingPerson->user_code)
+                ],
+                [
+                    'id'=>'billBookings',
+                    'title'=>'Bill Bookings',
+                    'count'=>$stats['billBookings'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalBillBookingAmount'] ?? 0,2),
+                    'class'=>'secondary',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.bookings',[$marketingPerson->user_code, 'payment_option' => 'bill'])
+                ],
+                [
+                    'id'=>'withoutBillBookings',
+                    'title'=>'Without Bill Bookings',
+                    'count'=>$stats['withoutBillBookings'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalWithoutBillBookings'] ?? 0,2),
+                    'class'=>'warning',
+                    'type'=>'without_bill',
+                    'route'=>route('superadmin.marketing.bookings',[$marketingPerson->user_code, 'payment_option'=>'without_bill'])
+                ],
+                [
+                    'id'=>'generatedInvoices',
+                    'title'=>'Generated Invoices',
+                    'count'=>$stats['GeneratedInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalInvoiceAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code)
+                ], 
+                [
+                    'id'=>'notGeneratedInvoices',
+                    'title'=>'Due For Invoicing',
+                    'count'=>$stats['notGeneratedInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalNotGeneratedInvoicesAmount'] ?? 0,2),
+                    'class'=>'secondary',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.bookings', $marketingPerson->user_code). '?payment_option=bill&invoice_status=not_generated'
+                ],
+                [
+                    'id'=>'paidInvoices',
+                    'title'=>'Paid Invoices',
+                    'count'=>$stats['paidInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalPaidInvoiceAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?status=1'
+                ],
+                [
+                    'id'=>'unpaidInvoices',
+                    'title'=>'Unpaid Invoices',
+                    'count'=>$stats['unpaidInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalUnpaidInvoiceAmount'] ?? 0,2),
+                    'class'=>'danger',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?status=0'
+                ], 
+                [
+                    'id'=>'unpaidInvoices',
+                    'title'=>'Canceled Invoices',
+                    'count'=>$stats['canceledGeneratedInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalcanceledGeneratedInvoicesAmount'] ?? 0,2),
+                    'class'=>'danger',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?status=2&type=tax_invoice'
+                ], 
+                [
+                    'id'=>'GeneratedPIs',
+                    'title'=>'Proforma Invoices',
+                    'count'=>$stats['GeneratedPIs'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalPIAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?type=proforma_invoice'
+                ], 
+                [
+                    'id'=>'GeneratedPIs',
+                    'title'=>'Paid Proforma Invoices',
+                    'count'=>$stats['paidPiInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalPaidPIAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?status=1&type=proforma_invoice'
+                ],
+                [
+                    'id'=>'transactions',
+                    'title'=>'Invoice Transactions',
+                    'count'=>$stats['invoiceTransactions'] ?? 0,
+                    'amount'=>'TDS: ₹'.number_format($stats['totalTdsAmount'] ?? 0,2),
+                    'class'=>'info',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.transactions',$marketingPerson->user_code)
+                ],
+                [
+                    'id'=>'cashPaidLetters',
+                    'title'=>'Paid Cash Letters',
+                    'count'=>$stats['cashPaidLetters'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalCashPaidLettersAmounts'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'without_bill',
+                    'route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code).'?transaction_status=2&with_payment=1'
+                ],
+                [
+                    'id'=>'cashUnpaidLetters',
+                    'title'=>'Unpaid Cash Letters',
+                    'count'=>$stats['cashUnpaidLetters'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalCashUnpaidAmounts'] ?? 0,2),
+                    'class'=>'danger',
+                    'type'=>'without_bill',
+                    'route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code)
+                ], 
+                [
+                    'id'=>'cashDefaulter',
+                    'title'=>'Defaulter',
+                    'count'=>$stats['cashDefaulter'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalDefaulterAmount'] ?? 0,2),
+                    'class'=>'danger',
+                    'type'=>'without_bill',
+                    'route'=>route('superadmin.marketing.cashTransactions',$marketingPerson->user_code).'?transaction_status=1'
+                ],
             ];
         @endphp
 
         @foreach($allCards as $c)
-            <div class="col-md-3 col-sm-6 mb-3 stats-card-wrapper" data-type="{{ $c['type'] }}">
-                <div class="card shadow-sm stats-card text-center clickable" 
-                     id="{{ $c['id'] }}"
-                     data-target="#{{ $c['id'] }}" 
-                     data-url="{{ $c['route'] ?? '' }}">
+            <div class="col-md-3 col-sm-2 stats-card-wrapper" data-type="{{ $c['type'] }}">
+                <div class="card shadow-sm stats-card text-center clickable"
+                    id="{{ $c['id'] }}"
+                    data-target="#{{ $c['id'] }}"
+                    data-url="{{ $c['route'] ?? '' }}">
                     <div class="card-body">
-                        <h5>{{ $c['title'] }}</h5>
-                        <h3 class="text-{{ $c['class'] }}">{{ $c['value'] }}</h3>
+                        <h6>{{ $c['title'] }}</h6>
+                        <h4 class="text-{{ $c['class'] }}">{{ $c['count'] }}</h4>
+                        <p class="text-muted mb-0">{{ $c['amount'] }}</p>
                     </div>
                 </div>
             </div>
@@ -75,9 +228,19 @@ document.addEventListener("DOMContentLoaded", function() {
     const cards = document.querySelectorAll("#stats-cards .stats-card-wrapper");
     const container = document.getElementById("dynamic-section");
 
-    // Function to load dynamic content
     function loadContent(url) {
         if(!url) return;
+
+        // Get filter values
+        const month = document.getElementById("filterMonth").value;
+        const year = document.getElementById("filterYear").value;
+
+        const params = new URLSearchParams();
+        if(month) params.append("month", month);
+        if(year) params.append("year", year);
+
+        url += (url.includes("?") ? "&" : "?") + params.toString();
+
         container.innerHTML = `<div class="text-center p-4"><div class="spinner-border text-primary"></div></div>`;
         fetch(url)
             .then(res => res.text())
@@ -85,16 +248,12 @@ document.addEventListener("DOMContentLoaded", function() {
             .catch(() => container.innerHTML = `<div class="alert alert-danger">Failed to load data.</div>`);
     }
 
-    // Tab filter functionality
     tabs.forEach(tab => {
         tab.addEventListener("click", function() {
-            // Activate tab
             tabs.forEach(t => t.classList.remove('active'));
             this.classList.add('active');
 
             let type = this.dataset.type;
-
-            // Show/Hide cards based on type
             cards.forEach(card => {
                 if(type === 'all') {
                     card.style.display = 'block';
@@ -103,7 +262,6 @@ document.addEventListener("DOMContentLoaded", function() {
                 }
             });
 
-            // Load first card's content of selected tab
             const firstCard = Array.from(cards).find(c => type === 'all' || c.dataset.type === type);
             if(firstCard) {
                 const url = firstCard.querySelector('.stats-card').dataset.url;
@@ -114,7 +272,6 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    // Dynamic content fetch for clickable cards
     const statsCards = document.querySelectorAll(".stats-card.clickable");
     statsCards.forEach(card => {
         card.addEventListener("click", function() {
@@ -123,16 +280,20 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
 
-    // Handle pagination clicks dynamically
     container.addEventListener("click", function(e) {
         if (e.target.tagName === "A" && e.target.closest(".pagination")) {
             e.preventDefault();
-            const url = e.target.getAttribute("href");
+            let url = e.target.getAttribute("href");
+
+            const month = document.getElementById("filterMonth").value;
+            const year = document.getElementById("filterYear").value;
+            if(month) url += (url.includes("?") ? "&" : "?") + "month=" + month;
+            if(year) url += (url.includes("?") ? "&" : "?") + "year=" + year;
+
             loadContent(url);
         }
     });
 
-    // Initial load on page load
     const firstVisibleCard = Array.from(cards).find(c => c.style.display !== 'none');
     if(firstVisibleCard) {
         const url = firstVisibleCard.querySelector('.stats-card').dataset.url;

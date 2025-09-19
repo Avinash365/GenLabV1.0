@@ -156,20 +156,28 @@ class InvoiceController extends Controller
             if (empty($invoiceData['invoice'])) {
                 throw new \Exception('Invoice data is missing.');
             }
-            
+            $booking = null; 
+            if ($bookingId) {
+                 $booking = NewBooking::select('client_id', 'marketing_id')->find($bookingId);
+            }
+
             
             // Update main invoice
-            $invoice->update([
+            $invoice->update([ 
+                'client_id'           => $booking->client_id ?? null,
+                'marketing_user_code' => $booking->marketing_id ?? null, 
+
                 'new_booking_id' => $bookingId,
                 'invoice_no'     => $invoice_no,
                 'letter_date'    => !empty($invoiceData['invoice']['ref_date'])
                                     ? Carbon::createFromFormat('d-m-Y', $invoiceData['invoice']['ref_date'])->format('Y-m-d')
-                                    : $invoice->letter_date,
+                                    : $invoice->letter_date, 
+                                    
                 'issue_to'       => $invoiceData['invoice']['bill_issue_to'] ?? $invoice->issue_to,
                 'name_of_work'   => $invoiceData['invoice']['name_of_work'] ?? $invoice->name_of_work,
                 'client_gstin'   => $invoiceData['invoice']['client_gstin'] ?? $invoice->client_gstin,
                 'sac_code'       => $invoiceData['invoice']['sac_code'] ?? $invoice->sac_code,
-
+                'total_job_order_amount' => $invoiceData['bill']['total_amount'], 
                 'discount_percent'       => $invoiceData['bill']['discount_percent'] ?? $invoice->discount_percent,
                 'cgst_percent'           => $invoiceData['bill']['cgst_percent'] ?? $invoice->cgst_percent,
                 'igst_percent'           => $invoiceData['bill']['igst_percent'] ?? $invoice->igst_percent,
@@ -307,5 +315,39 @@ class InvoiceController extends Controller
             });
         }
     }
+
+    public function cancel(Invoice $invoice)
+    {
+        try {
+           if ($invoice->status == 2) {
+                // If already cancelled, set it back to Paid (1)
+                $invoice->status = 0;
+                $message = 'Invoice has been undo.';
+
+            } else {
+                // Otherwise, cancel it
+                $invoice->status = 2;
+                $message = 'Invoice has been cancelled successfully.';
+            }
+            $invoice->save();
+
+            return redirect()
+                ->back()
+                ->with('success', $message);
+
+        } catch (\Exception $e) {
+
+            // Log the error for debugging
+            \Log::error('Invoice cancel failed', [
+                'invoice_id' => $invoice->id,
+                'error' => $e->getMessage(),
+            ]);
+
+            return redirect()
+                ->back()
+                ->with('error', 'Something went wrong while cancelling the invoice.');
+        }
+    }
+
 
 }

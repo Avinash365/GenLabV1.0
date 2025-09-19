@@ -17,6 +17,7 @@ class CashLetterPayment extends Model
         'payment_mode',
         'transaction_date',
         'amount_received',
+        'transaction_status', 
         'notes',
     ];
 

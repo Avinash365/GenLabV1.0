@@ -94,22 +94,20 @@
                             <ul>
                                 <li><a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>">All Letters</a></li>
                                 <li><a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index')); ?>">Generate Invoice</a></li>
-                                <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'tax_invoice'])); ?>">Tax Invoice</a></li>
-                                <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'proforma_invoice'])); ?>">PI Invoice</a></li>
+                                <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'tax_invoice', 'payment_status'=>'0'])); ?>">Tax Invoice</a></li>
+                                <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0'])); ?>">PI Invoice</a></li>
                                 <li><a href="<?php echo e(route('superadmin.blank-invoices.index')); ?>">Blank Invoice</a></li>
                                 <li><a href="<?php echo e(route('superadmin.quotations.index')); ?>">Quotation</a></li>
 
-                                
-                                <li><a href="#">CI</a></li>
                                 <li>
                                     <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill'])); ?>">
                                         Cash Letter
                                     </a>
                                 </li>     
                                 <li><a href="<?php echo e(route('superadmin.client-ledger.index')); ?>">Client Ledger</a></li>
-                                <li><a href="<?php echo e(route('superadmin.invoices.index',['payment_status' => '0'])); ?>">Unpaid Invoices</a></li>
                                 <li><a href="#">Unpaid Letter</a></li>
-                                <li><a href="#">Transaction</a></li>
+                                <li><a href="<?php echo e(route('superadmin.cashLetterTransactions.index')); ?>">Cash Transaction</a></li>
+                                <li><a href="#">Invoice Transaction</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
                                 <li><a href="">Office Expenses</a></li>
                                 <li><a href="#">Marketing Expenses</a></li>

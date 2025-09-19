@@ -34,13 +34,13 @@ class StorePaymentRequest extends FormRequest
             'amount_received' => 'required|numeric|min:0',
             'notes' => 'nullable|string', 
 
-            'tax_amount' => [
+            'subtotal_amount' => [
                     'required',
                     'numeric',
                     function ($attribute, $value, $fail) {
                         $invoice = Invoice::find(request('invoice_id'));
-                        if ($invoice && (float)$invoice->gst_amount !== (float)$value) {
-                            $fail("The {$attribute} must match the invoice tax amount ({$invoice->gst_amount}).");
+                        if ($invoice && (float)$invoice->total_job_order_amount * (1 - $invoice->discount_percent / 100) !== (float)$value) {
+                            $fail("The {$attribute} must match the invoice tax amount ({$invoice->total_job_order_amount}).");
                         }
                     },
                 ],

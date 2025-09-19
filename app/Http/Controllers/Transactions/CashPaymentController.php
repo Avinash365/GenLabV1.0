@@ -17,7 +17,9 @@ class CashPaymentController extends Controller
     {
         $invoice = Invoice::with(['relatedBooking', 'relatedBooking.marketingPerson'])->findOrFail($id);
 
-        return view('superadmin.cashPayments.create', compact('invoice'));
+        $totalAmount = $invoice->total_job_order_amount * (1 - $invoice->discount_percent / 100);
+
+        return view('superadmin.cashPayments.create', compact('invoice', 'totalAmount'));
     }
 
   
@@ -25,22 +27,24 @@ class CashPaymentController extends Controller
     {
         $validated = $request->validated();
         
-
+       
         try {
             DB::beginTransaction();
 
             $invoice = Invoice::findOrFail($validated['invoice_id']);
 
-        
-            $amountAfterTds = $invoice->total_amount - ($invoice->total_amount * $validated['tds_percentage'] / 100);
+            $subtotalAmount = $invoice->total_job_order_amount * (1 - $invoice->discount_percent / 100);
+            $amountAfterTds = $invoice->total_amount - ($subtotalAmount * $validated['tds_percentage'] / 100);
 
+            
             // Create TDS payment
             TdsPayment::create([
                 'invoice_id' => $validated['invoice_id'],
                 'client_id' => $validated['client_id'],
                 'marketing_person_id' => $validated['marketing_person_id'],
                 'tds_percentage' => $validated['tds_percentage'],
-                'tax_amount'    => $validated['tax_amount'], 
+                'subtotal_amount'    => $validated['subtotal_amount'],
+                'tax_amount'        =>  $invoice->gst_amount, 
                 'amount_after_tds' => $amountAfterTds,
                 'payment_mode' => $validated['payment_mode'],
                 'transaction_date' => $validated['transaction_date'],

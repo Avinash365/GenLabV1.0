@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\WithoutBillTransaction;
 use App\Models\NewBooking;
-use App\Models\{Client, CashLetterPayment}; 
+use App\Models\{Client, CashLetterPayment, Department}; 
 
 use Carbon\Carbon;
 
@@ -27,68 +27,18 @@ class WithoutBillTransactionController extends Controller
     public function index(Request $request)
     {
          
+        $CashLetterPayment = CashLetterPayment::all();
+
     
-        $query = NewBooking::with(['items', 'department', 'marketingPerson', 'client'])
-            ->whereDoesntHave('generatedInvoice')
-            ->where('payment_option', 'without_bill');
-
-        // Filter by client if selected
-        if ($request->filled('client_id')) {
-            $query->where('client_id', $request->client_id);
-        }
-
-        // Filter by department
-        if ($request->filled('department_id')) {
-            $query->where('department_id', $request->department_id);
-        }
-
-        // Search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('id', 'like', "%{$search}%")
-                ->orWhere('reference_no', 'like', "%{$search}%")
-                ->orWhere('client_name', 'like', "%{$search}%")
-                ->orWhere('contact_no', 'like', "%{$search}%")
-                ->orWhereHas('department', fn($deptQ) => $deptQ->where('name', 'like', "%{$search}%"))
-                ->orWhereHas('marketingPerson', fn($mpQ) => $mpQ->where('name', 'like', "%{$search}%"))
-                ->orWhereHas('client', fn($clientQ) => $clientQ->where('name', 'like', "%{$search}%"))
-                ->orWhereDate('created_at', $search);
-            });
-        }
-
-        // Filter by month
-        if ($request->filled('month')) {
-            $query->whereMonth('created_at', $request->month);
-        }
-
-        // Filter by year
-        if ($request->filled('year')) {
-            $query->whereYear('created_at', $request->year);
-        }
-
-        // Get all clients for dropdown
-        $clients = Client::select('id', 'name')->get(); 
-
-        // Paginate results
-        $bookings = $query->latest()->paginate(10)->appends($request->all());
-
-        // Get departments
-        $departments = $this->departmentService->getDepartment();
-
-        return view('superadmin.cashPayments.index', compact('bookings', 'departments', 'clients'))
-            ->with([
-                'search' => $request->search,
-                'month' => $request->month,
-                'year' => $request->year,
-                'client_id' => $request->client_id, // pass selected client
-            ]);
+        return view('superadmin.cashPayments.index', compact('CashLetterPayment'));  
+        
     } 
 
     
     public function store(Request $request)
     {
-        try {
+        try { 
+
             $validated = $request->validate([
                 'client_id'           => 'required|exists:clients,id',
                 'marketing_person_id' => 'required|exists:users,user_code',
@@ -98,11 +48,21 @@ class WithoutBillTransactionController extends Controller
                 'transaction_date'    => 'required|date',
                 'amount_received'     => 'required|numeric|min:0',
                 'notes'               => 'nullable|string',
-            ]);
+            ]); 
+
+            if ($validated['amount_received'] == 0) {
+                $status = 0; // pending
+            } elseif ($validated['amount_received'] < $validated['total_amount']) {
+                $status = 1; // partial
+            } else {
+                $status = 2; // paid
+            }
+
 
             // Convert booking_ids to array
             $bookingIds = explode(',', $validated['booking_ids']);
             $validated['booking_ids'] = $bookingIds;
+            $validated['transaction_status'] = $status; 
 
             
 
@@ -143,6 +103,19 @@ class WithoutBillTransactionController extends Controller
                 ->back()
                 ->withErrors(['error' => 'Something went wrong. Please try again later.']);
         }
+    } 
+
+    public function settle(Request $request, $id)
+    { 
+        $payment = CashLetterPayment::findOrFail($id);
+
+        // Update transaction status to Paid
+        $payment->transaction_status = 2; // 2 = Paid
+        // $payment->amount_received = $payment->total_amount; // ensure fully received
+        $payment->save();
+
+        return redirect()->back()->with('success', 'Payment settled successfully!');
     }
+
 
 }
