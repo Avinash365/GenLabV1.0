@@ -182,4 +182,43 @@ class ReportingController extends Controller
         }
         return back()->with('status', 'Issue Dates submitted');
     }
+
+    /**
+     * Generate Report page: similar to received but with format selection.
+     */
+    public function generate(Request $request)
+    {
+        $job = trim((string) $request->get('job'));
+        $baseQuery = BookingItem::query()->with(['booking']);
+        $header = null;
+        $items = collect();
+        if ($job !== '') {
+            $firstItem = (clone $baseQuery)
+                ->where('job_order_no', 'like', "%{$job}%")
+                ->latest('id')
+                ->first();
+            if ($firstItem && $firstItem->booking) {
+                $b = $firstItem->booking;
+                $header = [
+                    'job_card_no'       => $firstItem->job_order_no,
+                    'client_name'       => $b->client_name,
+                    'job_order_date'    => optional($b->job_order_date)->format('Y-m-d'),
+                    'issue_date'        => optional($firstItem->issue_date)->format('Y-m-d'),
+                    'reference_no'      => $b->reference_no,
+                    'sample_description'=> $firstItem->sample_description,
+                    'name_of_work'      => $b->client_address,
+                    'issued_to'         => $b->report_issue_to,
+                    'ms'                => $b->contractor_name,
+                ];
+                $items = $b->items()->with('booking')->latest('id')->paginate(20)->withQueryString();
+            }
+        }
+
+        // Fetch available report formats for dropdown
+        $formats = \App\Models\ReportFormat::orderBy('format_name')->get(['id','format_name']);
+        if (!$items instanceof \Illuminate\Contracts\Pagination\LengthAwarePaginator) {
+            $items = BookingItem::query()->whereRaw('1=0')->paginate(20)->withQueryString();
+        }
+        return view('superadmin.reporting.generate', compact('items','job','header','formats'));
+    }
 }

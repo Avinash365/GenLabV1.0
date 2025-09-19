@@ -257,15 +257,86 @@
                     if (!letters.length) {
                         lettersListEl.innerHTML = '<div class="text-muted">No letters uploaded yet.</div>';
                     } else {
+                        const pdfAnchors = [];
+                        const sanitizePdfUrl = (raw) => {
+                            if (!raw) return raw;
+                            try {
+                                // Split on storage path to encode only filename segment if necessary
+                                const u = new URL(raw, window.location.origin);
+                                // Rebuild pathname encoding each segment that contains spaces or parentheses
+                                u.pathname = u.pathname.split('/').map(seg => /[% ]|\(|\)/.test(seg) ? encodeURIComponent(decodeURIComponent(seg)) : seg).join('/');
+                                return u.toString();
+                            } catch (_) { return raw; }
+                        };
                         letters.forEach(function(l) {
                             const a = document.createElement('a');
-                            a.href = l.url || l.path || '#';
+                            const url = l.download_url || l.encoded_url || l.url || l.path || '#';
+                            const name = (l.name || l.filename || 'Letter');
+                            const dateStr = (l.uploaded_at || l.created_at || '');
+                            const isPdf = url.toLowerCase().endsWith('.pdf');
+                            const pages = (typeof l.pages === 'number' && l.pages > 0) ? l.pages : null;
+                            a.href = url;
                             a.target = '_blank';
                             a.rel = 'noopener';
                             a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-                            a.innerHTML = '<span>' + (l.name || l.filename || 'Letter') + '</span>' + '<span class="small text-muted">' + (l.uploaded_at || l.created_at || '') + '</span>';
+                            // Left: file name, Right: (page count badge if pdf) + date
+                            a.innerHTML = '<span class="me-2 text-truncate" style="max-width:60%">' + name + '</span>' +
+                                '<span class="d-inline-flex align-items-center gap-2 ms-auto">' +
+                                (isPdf ? '<span class="badge rounded-pill bg-light text-dark border pdf-page-count" title="Pages" style="min-width:34px;">' + (pages ? pages + 'p' : '..') + '</span>' : '') +
+                                '<span class="small text-muted">' + dateStr + '</span></span>';
                             lettersListEl.appendChild(a);
+                            if (isPdf && !pages) pdfAnchors.push(a);
                         });
+                        // Dynamically load pdf.js (only once) and compute page counts
+                        if (pdfAnchors.length) {
+                            const ensurePdfJs = () => new Promise((resolve, reject) => {
+                                if (window.pdfjsLib) return resolve();
+                                const s = document.createElement('script');
+                                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                                s.onload = function() {
+                                    if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+                                        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                                    }
+                                    resolve();
+                                };
+                                s.onerror = () => reject(new Error('Failed to load pdf.js'));
+                                document.head.appendChild(s);
+                            });
+                            ensurePdfJs().then(async () => {
+                                for (const a of pdfAnchors) {
+                                    try {
+                                        let raw = a.getAttribute('data-pdf-url') || a.getAttribute('href');
+                                        const attempts = [];
+                                        if (raw) attempts.push(raw);
+                                        // If relative path missing leading slash
+                                        if (raw && raw[0] !== '/') attempts.push('/' + raw);
+                                        // Sanitized
+                                        if (raw) attempts.push(sanitizePdfUrl(raw));
+                                        let pdf = null, lastErr = null;
+                                        for (const candidate of attempts) {
+                                            if (!candidate) continue;
+                                            try {
+                                                const resp = await fetch(candidate, { cache: 'no-store' });
+                                                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                                                const ab = await resp.arrayBuffer();
+                                                const task = window.pdfjsLib.getDocument({ data: ab });
+                                                pdf = await task.promise;
+                                                break;
+                                            } catch (e) { lastErr = e; }
+                                        }
+                                        if (!pdf) throw lastErr || new Error('Unable to load PDF');
+                                        const span = a.querySelector('.pdf-page-count');
+                                        if (span) span.textContent = pdf.numPages + 'p';
+                                    } catch (e) {
+                                        console.warn('PDF page count failed', e);
+                                        const span = a.querySelector('.pdf-page-count');
+                                        if (span) span.textContent = '?p';
+                                    }
+                                }
+                            }).catch(() => {
+                                pdfAnchors.forEach(a => { const span = a.querySelector('.pdf-page-count'); if (span) span.textContent = '?p'; });
+                            });
+                        }
                     }
                 }
                 if (showModal) {

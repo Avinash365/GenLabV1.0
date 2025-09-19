@@ -14,6 +14,7 @@
         content="inventory management, admin dashboard, bootstrap template, invoicing, estimates, business management, responsive admin, POS system">
     <meta name="author" content="Dreams Technologies">
     <meta name="robots" content="index, follow">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
     @php(
         $__appSetting = isset($setting) ? $setting : (View::shared('setting') ?? \App\Models\Setting::first())
     )
@@ -135,9 +136,13 @@
         <!-- /Sidebar -->
 
 
-        <div class="page-wrapper">
-            @yield('content')
-            @include('superadmin.layouts.include.footer')
+        <div class="page-wrapper d-flex flex-column min-vh-100">
+            <div class="flex-grow-1">
+                @yield('content')
+            </div>
+            <footer class="mt-auto">
+                @include('superadmin.layouts.include.footer')
+            </footer>
         </div>
 
     </div>
@@ -207,6 +212,8 @@
         </div>
     </div>
     <!-- /Add Stock -->
+
+    @stack('modals')
 
     <!-- jQuery -->
     <script src="{{ url('assets/js/jquery-3.7.1.min.js') }}"></script>

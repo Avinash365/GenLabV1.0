@@ -74,6 +74,12 @@
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Hold & Unhold</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Print & Upload</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Export PDF</a></li>
+                                <li>
+                                    <a href="{{ route('superadmin.reporting.report-formats.index') }}" class="{{ Request::routeIs('superadmin.reporting.report-formats.*') ? 'active' : '' }}">Upload Report Format</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('superadmin.reporting.generate') }}" class="{{ Request::routeIs('superadmin.reporting.generate') ? 'active' : '' }}">Generate Report</a>
+                                </li>
                             </ul>
                         </li>
 

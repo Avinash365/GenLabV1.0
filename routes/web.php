@@ -58,12 +58,25 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
 Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin/reporting')->name('superadmin.reporting.')->group(function () {
     Route::get('/letters', [ReportingLettersController::class, 'index'])->name('letters.index');
     Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');
+    Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
+        ->where('filename', '.*')
+        ->name('letters.show');
     Route::get('/hold-cancel', [HoldCancelController::class, 'index'])->name('holdcancel.index');
     Route::post('/hold/{id}', [HoldCancelController::class, 'hold'])->name('hold');
     Route::post('/unhold/{id}', [HoldCancelController::class, 'unhold'])->name('unhold');
     Route::post('/cancel/{id}', [HoldCancelController::class, 'cancel'])->name('cancel');
     Route::post('/hold-all', [HoldCancelController::class, 'holdAll'])->name('holdAll');
     Route::post('/cancel-all', [HoldCancelController::class, 'cancelAll'])->name('cancelAll');
+
+    // Collabora DOCX native editing
+    Route::get('/report-formats/{reportFormat}/collabora', [\App\Http\Controllers\SuperAdmin\CollaboraController::class, 'open'])->name('report-formats.collabora');
+});
+
+// Minimal WOPI endpoints (not behind auth to allow Collabora server access; token still required if extended)
+Route::prefix('wopi')->group(function(){
+    Route::get('files/{id}', [\App\Http\Controllers\SuperAdmin\CollaboraController::class, 'checkFileInfo']);
+    Route::get('files/{id}/contents', [\App\Http\Controllers\SuperAdmin\CollaboraController::class, 'getFile']);
+    Route::post('files/{id}/contents', [\App\Http\Controllers\SuperAdmin\CollaboraController::class, 'putFile']);
 });
 
 

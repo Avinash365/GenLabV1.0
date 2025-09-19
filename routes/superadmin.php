@@ -295,5 +295,14 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
             Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
             Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
+            Route::get('/generate', [ReportingController::class, 'generate'])->name('generate');
+
+            // Report Format Upload & Listing
+            Route::get('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'index'])->name('report-formats.index');
+            Route::post('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'store'])->name('report-formats.store');
+            Route::get('/report-formats/{reportFormat}', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'show'])->name('report-formats.show');
+            Route::get('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'edit'])->name('report-formats.content.edit');
+            Route::put('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'update'])->name('report-formats.content.update');
+            Route::get('/report-formats/{reportFormat}/export-pdf', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'exportPdf'])->name('report-formats.content.exportPdf');
         });
 });
