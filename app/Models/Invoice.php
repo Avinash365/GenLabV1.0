@@ -12,6 +12,8 @@ class Invoice extends Model
     use HasFactory;
 
     protected $fillable = [
+        'client_id', 
+        'marketing_user_code', 
         'new_booking_id', 
         'invoice_booking_ids',
         'generated_by', 
@@ -23,6 +25,7 @@ class Invoice extends Model
         'sac_code',
         'invoice_letter_path',
         'issue_to', 
+        'total_job_order_amount', 
         'discount_percent', 
         'cgst_percent', 
         'sgst_percent', 

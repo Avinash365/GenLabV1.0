@@ -50,20 +50,9 @@ class GenerateInvoiceStatusController extends Controller
             });
 
         
-
-        // Apply payment_status filter if payment_option is without_bill and payment_status is provided
-        // if (($request->payment_option ?? 'bill') === 'without_bill' && $request->filled('payment_status')) {
-        //     $paymentStatus = $request->payment_status;
-
-        //     $query->whereIn('id', function ($sub) use ($paymentStatus) {
-        //         $sub->select('booking_id')
-        //             ->from('cash_letter_payment_bookings')
-        //             ->where('payment_status', $paymentStatus);
-        //     });
-        // } 
         
         if (($request->payment_option ?? 'bill') === 'without_bill') {
-                $paymentStatus = "pending";
+                $paymentStatus = 'pending';
 
                 $query->where(function ($q) use ($paymentStatus) {
                     $q->whereDoesntHave('cashLetterPayments') // No payment yet
@@ -177,9 +166,18 @@ class GenerateInvoiceStatusController extends Controller
 
     private function storeInvoiceData(array $invoiceData, string $invoiceType)
     {   
-       
-        
-        $invoice = Invoice::create([
+
+        $bookingId = $invoiceData['booking_id'] ?? null;
+        $booking = null;
+
+        if ($bookingId) {
+           $booking = NewBooking::select('client_id', 'marketing_id')->find($bookingId);
+        }
+
+        $invoice = Invoice::create([ 
+            'client_id'           => $booking->client_id ?? null,
+            'marketing_user_code' => $booking->marketing_id ?? null, 
+
             'new_booking_id' => $invoiceData['booking_id'] ?? null,
             'invoice_no'     => $invoiceData['invoice']['invoice_no'] ?? null,
             'generated_by'   => Auth::id(),
@@ -191,6 +189,7 @@ class GenerateInvoiceStatusController extends Controller
             'name_of_work'   => $invoiceData['invoice']['name_of_work'] ?? null,
             'client_gstin'   => $invoiceData['invoice']['client_gstin'] ?? '001',
             'sac_code'       => $invoiceData['invoice']['sac_code'] ?? null,
+            'total_job_order_amount' => $invoiceData['bill']['total_amount'],
             'discount_percent'       => $invoiceData['bill']['discount_percent'] ?? 0,
             'cgst_percent'           => $invoiceData['bill']['cgst_percent'] ?? 0,
             'igst_percent'           => $invoiceData['bill']['igst_percent'] ?? 0,
@@ -309,6 +308,7 @@ class GenerateInvoiceStatusController extends Controller
             'invoice_data' => 'required',
             'invoice_type' => 'required|string',
         ]);
+       
 
         $invoiceData = json_decode($request->invoice_data, true);
 
@@ -320,12 +320,21 @@ class GenerateInvoiceStatusController extends Controller
 
         try {
             $invoice = null; // so we can use it after transaction
+            $firstBookingId = $bookingIds[0] ?? null;
+            
 
-            DB::transaction(function () use ($invoiceData, $bookingIds, $request, &$invoice) {
+            $booking = $firstBookingId 
+                        ? NewBooking::select('client_id', 'marketing_id')->find($firstBookingId) 
+                        : null;
+
+            DB::transaction(function () use ($invoiceData, $bookingIds, $request, $booking, &$invoice) {
 
                 // Save Invoice Header
                 $invoice = Invoice::create([
                     'status'              => 0,
+                    'client_id'           => $booking->client_id ?? null,
+                    'marketing_user_code' => $booking->marketing_id ?? null,
+
                     'new_booking_id'      => $bookingIds[0] ?? null,
                     'invoice_booking_ids' => implode(',', $bookingIds),
                     'invoice_no'          => $invoiceData['booking_info']['invoice_no'] ?? null,
@@ -343,6 +352,7 @@ class GenerateInvoiceStatusController extends Controller
                     'total_amount'        => $invoiceData['totals']['payable_amount'] ?? 0,
                     'address'             => $invoiceData['booking_info']['address'] ?? null,
                     'invoice_date'        => now(),
+                    'generated_by'        => Auth::id(), 
                 ]);
 
                 // Save Invoice Items

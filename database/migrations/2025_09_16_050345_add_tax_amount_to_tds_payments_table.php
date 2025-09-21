@@ -12,7 +12,7 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('tds_payments', function (Blueprint $table) {
-            $table->decimal('tax_amount', 15, 2)->after('tds_percentage')->nullable()->comment('Tax amount for TDS calculation');
+            $table->decimal('subtotal_amount', 15, 2)->after('tds_percentage')->nullable()->comment('Tax amount for TDS calculation');
         });
     }
 

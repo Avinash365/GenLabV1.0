@@ -90,7 +90,7 @@
                         <th>Total Booking Amount</th>
                         <th>Total Invoice Amount</th>
                         <th>Paid Amount</th>
-                        <th>Balance</th>
+                        <th>Due Invoice</th>
                     </tr>
                 </thead>
                 <tbody>

@@ -23,7 +23,7 @@
         <div class="add-item d-flex">
             <div class="page-title">
                 <h4>Cash Letter </h4>
-                <h6>Pay Invoice By Letter</h6>
+                <h6>Pay By Letter</h6>
             </div>                            
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
@@ -69,12 +69,6 @@
                             @endforeach
                         </select> 
 
-                        <!-- Payment Status Filter -->
-                        <select name="payment_status" class="form-control">
-                            <option value="">Select Payment Status</option>
-                            <option value="pending" {{ request('payment_status') == 'pending' ? 'selected' : '' }}>Pending</option>
-                            <option value="paid" {{ request('payment_status') == 'paid' ? 'selected' : '' }}>Paid</option>
-                        </select>
 
                         <!-- Client Filter -->
                         <select name="client_id" class="form-control">

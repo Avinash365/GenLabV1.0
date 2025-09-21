@@ -16,11 +16,12 @@ class TdsPayment extends Model
         'tds_percentage',
         'amount_after_tds',
         'payment_mode',
+        'tax_amount', 
         'transaction_date',
         'amount_received',
         'notes',
         'created_by',
-        'tax_amount'
+        'subtotal_amount'
     ];
 
     /**

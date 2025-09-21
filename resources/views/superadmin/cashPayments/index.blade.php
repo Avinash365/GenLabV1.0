@@ -1,137 +1,176 @@
 @extends('superadmin.layouts.app')
-@section('title', 'Monthly Booking Transactions')
+@section('title', 'Manage Cash Payments')
 @section('content')
 
-<div class="content">
-    <div class="page-header">
-        <div class="page-title">
-            <h4>Monthly Transactions</h4>
-            <h6>Manage Without Bill Payments</h6>
-        </div>
+@if(session('error'))
+    <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
+        {{ session('error') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-    
+@endif
 
-    <!-- Client Filter -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <form method="GET" action="{{ route('superadmin.cashLetter.index') }}">
-                <div class="row g-3 align-items-end">
-                    <div class="col-md-4">
-                        <label>Select Client</label>
-                        <select name="client_id" class="form-control" onchange="this.form.submit()">
-                            <option value="">-- All Clients --</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}" {{ ($client_id ?? '') == $client->id ? 'selected' : '' }}>
-                                    {{ $client->name }}
-                                </option>
-                            @endforeach
-                        </select>
-                    </div>
-                </div>
+@if(session('success'))
+    <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
+        {{ session('success') }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+@endif
+
+<div class="d-flex justify-content-end mt-3 me-3 mb-4">
+    <a href="" class="btn btn-primary">
+        <i class="bi bi-plus-lg"></i> Add Cash Payment
+    </a>
+</div>  
+
+<div class="card">
+    <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+
+        <!-- Search -->
+        <div class="search-set">
+            <form method="GET" action="{{ route('superadmin.cashLetterTransactions.index') }}" class="d-flex input-group">
+                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
+                <button class="btn btn-outline-secondary" type="submit">🔍</button>
             </form>
         </div>
+
+        <!-- Filter -->
+        <div class="search-set">
+            <form method="GET" action="{{ route('superadmin.cashLetterTransactions.index') }}" class="d-flex input-group">
+
+                <!-- Payment Status -->
+                <select name="transaction_status" class="form-control" onchange="this.form.submit()">
+                    <option value="">All Status</option>
+                    <option value="0" {{ request('transaction_status') == '0' ? 'selected' : '' }}>Pending</option>
+                    <option value="1" {{ request('transaction_status') == '1' ? 'selected' : '' }}>Partial</option>
+                    <option value="2" {{ request('transaction_status') == '2' ? 'selected' : '' }}>Paid</option>
+                </select>
+
+                <!-- Year Filter -->
+                <select name="year" class="form-control" onchange="this.form.submit()">
+                    <option value="">Select Year</option>
+                    @foreach(range(date('Y'), date('Y') - 10) as $y)
+                        <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                            {{ $y }}
+                        </option>
+                    @endforeach
+                </select>
+
+                <button class="btn btn-outline-secondary" type="submit">Filter</button>
+            </form> 
+        </div>
+    </div>
+</div>
+
+<!-- Table -->
+<div class="card mt-4">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="card-title">Cash Payments</h5>
     </div>
 
-    <!-- Bookings Table -->
-    <div class="card">
-        <div class="card-header">
-            <h5>{{ \Carbon\Carbon::now()->format('F Y') }} Bookings</h5>
-        </div>
-
-        <div class="card-body p-0">
-            <div class="table-responsive">
-                <table class="table table-hover">
-                    <thead class="table-light">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle">
+                <thead class="table-light">
+                    <tr>
+                        <th>#</th>
+                        <th>Client</th>
+                        <th>Marketing Person</th>
+                        <th>Total Amount</th>
+                        <th>Received</th>
+                        <th>Payment Mode</th>
+                        <th>Transaction Date</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @forelse($CashLetterPayment as $payment)
                         <tr>
-                            <th>Client Name</th>
-                            <th>Reference No</th>
-                            <th>Total Amount</th>
-                            <th>Items</th>
-                            <th>Status</th>
+                            <td>{{ $loop->iteration }}</td>
+                            <td>{{ $payment->client->name ?? 'N/A' }}</td>
+                            <td>{{ $payment->marketingPerson->name ?? $payment->marketing_person_id }}</td>
+                         
+                            <td>{{ $payment->total_amount ?? '' }}</td>
+                            <td>{{ $payment->amount_received  ?? ''}}</td>
+                            <td>{{$payment->payment_mode}}</td>
+                            <td>{{$payment->transaction_date}}</td> 
+                            <td>
+                                @if($payment->transaction_status == 0)
+                                    <span class="badge bg-warning">Pending</span>
+                                @elseif($payment->transaction_status == 1)
+                                    <span class="badge bg-info">Partial</span>
+                                @elseif($payment->transaction_status == 2)
+                                    <span class="badge bg-success">Paid</span>
+                                @endif
+                            </td>
+                            
+                            <td class="d-flex">
+                               <!-- View Details -->
+                                <button type="button" 
+                                        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none text-primary" 
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#viewDetailsModal{{ $payment->id }}" 
+                                        title="View Details">
+                                    <i data-feather="eye"></i>
+                                </button>
+                
+                                <!-- Settle (only for partial payments) -->
+                                @if($payment->transaction_status == 1) 
+                                     <a href="" 
+                                        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none text-success" 
+                                        title="Add Amount">
+                                            <i data-feather="dollar-sign"></i>
+                                    </a> 
+
+                                   <button type="button" 
+                                            class="p-2 border rounded d-flex align-items-center btn-primary text-white ms-2" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#settleModal{{ $payment->id }}" 
+                                            title="Settle">
+                                        <i data-feather="check-circle"></i>
+                                    </button>
+                                @endif 
+                            </td>
                         </tr>
-                    </thead>
-                    <tbody>
-                        @php 
-                            $monthlyTotal = 0;
-                        @endphp
+                      
+                        <!-- Settle Modal -->
+                        <div class="modal fade" id="settleModal{{ $payment->id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-body text-center p-4">
+                                        <div class="icon-success bg-success-transparent text-success mb-2">
+                                            <i class="ti ti-check"></i>
+                                        </div>
+                                        <h5 class="mb-3">
+                                            Total Settle Amount: ₹{{ number_format($payment->total_amount - $payment->amount_received, 2) }}
+                                        </h5> 
+                                        <h5 class="mb-3">Are you sure you want to settle this payment?</h5>
+                                        <div class="d-flex justify-content-center gap-2">
+                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                            <form action="{{ route('superadmin.cashLetterPaymet.settle', $payment->id) }}" method="POST">
+                                                @csrf
+                                                @method('PATCH')
+                                                <button type="submit" class="btn btn-success">Yes, Settle</button>
+                                            </form>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div> 
 
-                        @forelse($bookings as $booking)
-                            @if(\Carbon\Carbon::parse($booking->created_at)->format('Y-m') == now()->format('Y-m'))
-                                @php 
-                                    $monthlyTotal += $booking->total_amount;
-                                @endphp
-                                <tr>
-                                    <td>{{ $booking->client->name ?? $booking->client_name }}</td>
-                                    <td>{{ $booking->reference_no ?? '' }}</td>
-                                    <td>₹ {{ number_format($booking->total_amount, 2) }}</td>
-                                    <td>{{ $booking->items->count() }}</td>
-                                    <td>
-                                        @if($booking->status == 'paid')
-                                            <span class="badge bg-success">Paid</span>
-                                        @else
-                                            <span class="badge bg-danger">Unpaid</span>
-                                        @endif
-                                    </td>
-                                </tr>
-                            @endif
-                        @empty
-                            <tr>
-                                <td colspan="5" class="text-center">No bookings found for this month.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
+                        <!-- View Details Modal -->
 
-            <!-- Monthly Total -->
-            <div class="p-3">
-                <h5>Total for {{ \Carbon\Carbon::now()->format('F Y') }}: 
-                    <strong>₹ {{ number_format($monthlyTotal, 2) }}</strong>
-                </h5>
-            </div>
-
-            <!-- Payment Entry Form -->
-            <div class="p-3 border-top">
-                <form action="{{ route('superadmin.withoutbilltransactions.store') }}" method="POST">
-                    @csrf
-                    <input type="hidden" name="month" value="{{ now()->month }}">
-                    <input type="hidden" name="year" value="{{ now()->year }}">
-                    <input type="hidden" name="total_amount" value="{{ $monthlyTotal }}">
-
-                    <div class="mb-3">
-                        <label>Select Client</label>
-                        <select name="client_id" class="form-control" required>
-                            <option value="">-- Select Client --</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}">{{ $client->name }}</option>
-                            @endforeach
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Amount Paid</label>
-                        <input type="number" name="amount" class="form-control" required>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Payment Mode</label>
-                        <select name="payment_mode" class="form-control" required>
-                            <option value="cash">Cash</option>
-                            <option value="online">Online</option>
-                            <option value="upi">UPI</option>
-                        </select>
-                    </div>
-
-                    <div class="mb-3">
-                        <label>Reference (Txn ID / UPI Ref)</label>
-                        <input type="text" name="reference" class="form-control">
-                    </div>
-
-                    <button type="submit" class="btn btn-primary">Save Transaction</button>
-                </form>
-            </div>
-
+                    @empty
+                        <tr>
+                            <td colspan="11" class="text-center text-muted">No cash payments found.</td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
         </div>
+
+        <!-- Pagination -->
+      
     </div>
 </div>
 

@@ -187,12 +187,15 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('invoices', InvoiceController::class);
         Route::PUT('invoices/generate-invoice/{invoices}', [InvoiceController::class, 'generateInvoice'])
               ->name('invoices.generateInvoice');
+        
+        Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
+        Route::patch('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
+
+
 
         Route::resource('quotations', QuotationController::class);
         Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])
               ->name('quotations.generateQuotations');
-        
-        Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
         
         Route::resource('payment-settings', PaymentSettingController::class)->only(['index','store', 'update']);
 
@@ -205,7 +208,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // AJAX routes
         Route::get('/{user_code}/bookings', [MarketingPersonLedger::class, 'fetchBookings'])->name('marketing.bookings');
         Route::get('/{user_code}/without-bill', [MarketingPersonLedger::class, 'fetchWithoutBillBookings'])->name('marketing.withoutBill');
-        Route::get('/{user_code}/invoices', [MarketingPersonLedger::class, 'fetchInvoices'])->name('marketing.invoices');
+        Route::get('/{user_code}/invoices', [MarketingPersonLedger::class, 'fetchInvoices'])->name('marketing.invoices'); 
+        Route::get('/{user_code}/transactions', [MarketingPersonLedger::class, 'fetchInvoicesTransactions'])->name('marketing.transactions'); 
+        Route::get('/{user_code}/cash-transactions', [MarketingPersonLedger::class, 'fetchCashTransaction'])->name('marketing.cashTransactions'); 
 
 
         Route::resource('clients', ClientController::class)->only(['index','store','destroy']);
@@ -217,7 +222,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // AJAX routes 
         Route::get('client/{id}/bookings', [ClientLedgerController::class, 'fetchBookings'])->name('client.bookings');
         Route::get('client/{id}/without-bill', [ClientLedgerController::class, 'fetchWithoutBillBookings'])->name('client.withoutBill');
-        Route::get('client/{id}/invoices', [ClientLedgerController::class, 'fetchInvoices'])->name('client.invoices');
+        Route::get('client/{id}/invoices', [ClientLedgerController::class, 'fetchInvoices'])->name('client.invoices'); 
+        
+        Route::get('client/{id}/transactions', [ClientLedgerController::class, 'fetchInvoicesTransactions'])->name('client.transactions'); 
+        Route::get('client/{id}/cash-transactions', [ClientLedgerController::class, 'fetchCashTransaction'])->name('client.cashTransactions');
 
     // Cheque Alignment Setup
     Route::get('banks/create', [BankController::class, 'create'])->name('banks.create');
@@ -229,9 +237,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
 
         Route::get('cash-payments/create/{id}', [CashPaymentController::class, 'create'])->name('cashPayments.create');
-        Route::post('cash-payments/store', [CashPaymentController::class, 'store'])->name('cashPayments.store');
+        Route::post('cash-payments/store', [CashPaymentController::class, 'store'])->name('cashPayments.store'); 
+        
+
+        // Cash Transaction
         Route::post('/withoutbilltransactions/store', [WithoutBillTransactionController::class, 'store'])->name('withoutbilltransactions.store');
-        Route::get('cash-letter/index', [WithoutBillTransactionController::class, 'index'])->name('cashLetter.index');
+        Route::get('cash-letter/index', [WithoutBillTransactionController::class, 'index'])->name('cashLetterTransactions.index');
+        Route::patch('/without-bill-payments/{id}/settle', [WithoutBillTransactionController::class, 'settle'])->name('cashLetterPaymet.settle');
 
         Route::resource('accountBookingsLetters', AccountsLetterController::class); 
         

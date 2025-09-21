@@ -79,7 +79,7 @@
                         <th>Total Booking Amount</th>
                         <th>Total Invoice Amount</th>
                         <th>Paid Amount</th>
-                        <th>Balance</th>
+                        <th>Unpaid / Balance</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -90,31 +90,31 @@
                             <td>{{ $clients->firstItem() + $index }}</td>
                             <td>
                                 <a href="{{ route('superadmin.client-ledger.show', $row['client']->id) }}">
-                                    {{ $row['client']->name }}
+                                    {{ $row['client']->name ?? 'N/A' }}
                                 </a>
                             </td>
-                            <td>{{ $row['client']->email }}</td>
-                            <td>{{ $row['total_bookings'] }}</td>
+                            <td>{{ $row['client']->email ?? 'N/A' }}</td>
+                            <td>{{ $row['total_bookings'] ?? 0 }}</td>
                             <td>{{ number_format($row['total_booking_amount'], 2) }}</td>
                             <td>{{ number_format($row['total_invoice_amount'], 2) }}</td>
                             <td class="text-success">{{ number_format($row['paid_amount'], 2) }}</td>
-                            <td class="text-danger">{{ number_format($row['balance'], 2) }}</td>
+                            <td class="text-danger">{{ number_format($row['unpaid_amount'], 2) }}</td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="10" class="text-center">No records found.</td>
+                            <td colspan="8" class="text-center">No records found.</td>
                         </tr>
                     @endforelse
                 </tbody>
 
-                @if($ledgerData)
+                @if(!empty($totals))
                 <tfoot class="table-light fw-bold">
                     <tr>
                         <td colspan="4" class="text-end">Grand Total:</td>
                         <td>{{ number_format($totals['total_booking_amount'], 2) }}</td>
                         <td>{{ number_format($totals['total_invoice_amount'], 2) }}</td>
                         <td class="text-success">{{ number_format($totals['paid_amount'], 2) }}</td>
-                        <td class="text-danger">{{ number_format($totals['balance'], 2) }}</td>
+                        <td class="text-danger">{{ number_format($totals['unpaid_amount'], 2) }}</td>
                     </tr>
                 </tfoot>
                 @endif

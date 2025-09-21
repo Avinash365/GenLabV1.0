@@ -48,7 +48,7 @@ class StoreBookingRequest extends FormRequest
             'contact_email'      => 'required|email|max:255',
             'name_of_work'       => 'nullable|string|max:500',
             'hold_status'        => 'nullable|boolean',
-            'upload_letter_path' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:2048',
+            'upload_letter_path' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:51200',
 
             'booking_items'                           => 'nullable|array',
             'booking_items.*.sample_description'      => 'required|string|max:255',
