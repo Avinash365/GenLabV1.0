@@ -112,8 +112,9 @@
                                         <?php else: ?>
                                         <button type="button" class="btn btn-sm btn-outline-primary create-btn disabled-create " disabled data-item-id="<?php echo e($item->id); ?>">Create</button>
                                         <?php endif; ?>
+                                        
                                     </td>
-                                     
+                                
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                 <tr>
@@ -308,6 +309,7 @@
                                 if(viewBtn){ viewBtn.disabled = false; viewBtn.dataset.formatId = format.id; }
                                 const editBtn = activeFormatCell.closest('tr').querySelector('.edit-format-btn');
                                 if(editBtn){ editBtn.disabled = false; editBtn.dataset.formatId = format.id; }
+                                
                                 // highlight row after selection
                                 activeFormatCell.closest('tr').classList.add('table-active');
                 // enable create button in this row
@@ -417,6 +419,8 @@
         openEdit(formatId, btn);
     });
 
+    
+
     function attachEditFormHandlers(formatId, triggerBtn){
         const formEl = document.getElementById('report-format-content-form');
         if(!formEl) return;
@@ -425,10 +429,7 @@
             if(window.ClassicEditor){
                 if(window.reportFormatEditor){ try{ window.reportFormatEditor.destroy(); }catch(e){} }
                 ClassicEditor.create(document.querySelector('#rf-body-html'), {
-                    toolbar: ['undo','redo','|','heading','|','bold','italic','link','bulletedList','numberedList','|','insertTable','blockQuote'],
-                    table: {
-                        contentToolbar: ['tableColumn','tableRow','mergeTableCells','tableProperties','tableCellProperties']
-                    }
+                    toolbar: ['undo','redo','|','heading','|','bold','italic','underline','link','bulletedList','numberedList','blockQuote','insertTable','removeFormat']
                 }).then(ed=> window.reportFormatEditor = ed).catch(console.error);
             }
         };

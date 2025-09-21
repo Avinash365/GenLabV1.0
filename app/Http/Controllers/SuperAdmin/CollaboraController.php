@@ -15,13 +15,13 @@ class CollaboraController extends Controller
         $ext = strtolower(pathinfo($reportFormat->stored_file_name, PATHINFO_EXTENSION));
         if(!in_array($ext,['doc','docx','odt'])) abort(400,'Unsupported file');
 
-        $wopiSrc = config('collabora.wopi_base').'/files/'.$reportFormat->id;
-        $token = $this->makeToken(['fid'=>$reportFormat->id,'exp'=>time()+config('collabora.token_ttl')]);
-        $server = config('collabora.server_url');
-        // Collabora discovery would normally be used; for simplicity build URL directly
-        // Generic /loleaflet/dist/loleaflet.html?WOPISrc=...&access_token=...
-        $editorUrl = rtrim($server,'/').'/loleaflet/dist/loleaflet.html?WOPISrc='.urlencode($wopiSrc).'&access_token='.urlencode($token).'&access_token_ttl='.config('collabora.token_ttl');
-        return view('superadmin.reporting.report-formats.collabora-edit', compact('reportFormat','editorUrl'));
+    // Build WOPI src using a base reachable from the Collabora container
+    $publicBase = rtrim(config('collabora.wopi_public_base'), '/');
+    $wopiSrc = $publicBase.'/wopi/files/'.$reportFormat->id;
+    $ttl = (int)config('collabora.token_ttl');
+    $token = $this->makeToken(['fid'=>$reportFormat->id,'exp'=>time()+$ttl]);
+    $serverUrl = rtrim(config('collabora.server_url'), '/');
+    return view('superadmin.reporting.report-formats.collabora-edit', compact('reportFormat','serverUrl','wopiSrc','token','ttl'));
     }
 
     protected function makeToken(array $payload): string

@@ -98,6 +98,12 @@
                             <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ route('superadmin.accountBookingsLetters.index') }}">All Letters</a></li>
+                                <li>
+                                    <a href="{{ route('superadmin.cheques.index') }}" class="{{ Request::routeIs('superadmin.cheques.*') ? 'active' : '' }}">Cheques</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('superadmin.banks.create') }}" class="{{ Request::routeIs('superadmin.banks.*') || Request::routeIs('superadmin.cheque-templates.*') ? 'active' : '' }}">Cheque Template</a>
+                                </li>
                                 <li><a href="{{ route('superadmin.bookingInvoiceStatuses.index') }}">Generate Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'tax_invoice']) }}">Tax Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'proforma_invoice']) }}">PI Invoice</a></li>

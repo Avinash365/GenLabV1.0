@@ -111,8 +111,9 @@
                                         @else
                                         <button type="button" class="btn btn-sm btn-outline-primary create-btn disabled-create " disabled data-item-id="{{ $item->id }}">Create</button>
                                         @endif
+                                        
                                     </td>
-                                     
+                                
                                 </tr>
                             @empty
                                 <tr>
@@ -307,13 +308,7 @@
                                 if(viewBtn){ viewBtn.disabled = false; viewBtn.dataset.formatId = format.id; }
                                 const editBtn = activeFormatCell.closest('tr').querySelector('.edit-format-btn');
                                 if(editBtn){ editBtn.disabled = false; editBtn.dataset.formatId = format.id; }
-                                // Add/enable collabora link if feature enabled
-                                if(@json(config('collabora.enabled'))){
-                                    let colBtn = activeFormatCell.closest('tr').querySelector('.collabora-open-btn');
-                                    if(!colBtn){
-                                        const actionCell = activeFormatCell.closest('tr').querySelector('td:last-child') || activeFormatCell.closest('tr').lastElementChild;
-                                    }
-                                }
+                                
                                 // highlight row after selection
                                 activeFormatCell.closest('tr').classList.add('table-active');
                 // enable create button in this row
@@ -423,13 +418,7 @@
         openEdit(formatId, btn);
     });
 
-    document.addEventListener('click', function(e){
-        const collabBtn = e.target.closest('.collabora-open-btn');
-        if(collabBtn){
-            const fid = collabBtn.getAttribute('data-format-id');
-            if(fid){ window.open(@json(url('superadmin/reporting')) + '/report-formats/'+fid+'/collabora','_blank'); }
-        }
-    });
+    
 
     function attachEditFormHandlers(formatId, triggerBtn){
         const formEl = document.getElementById('report-format-content-form');

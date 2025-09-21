@@ -7,7 +7,18 @@
     <a href="{{ route('superadmin.reporting.generate') }}" class="btn btn-sm btn-secondary">Back</a>
   </div>
   <div class="border rounded" style="height: calc(100vh - 140px);">
-    <iframe src="{{ $editorUrl }}" style="width:100%;height:100%;border:0;" allowfullscreen referrerpolicy="no-referrer"></iframe>
+    <iframe name="collaboraEditor" style="width:100%;height:100%;border:0;" allowfullscreen></iframe>
+    <form id="collabora-launch" method="post" target="collaboraEditor" action="{{ $serverUrl }}/loleaflet/dist/loleaflet.html">
+      <input type="hidden" name="WOPISrc" value="{{ $wopiSrc }}">
+      <input type="hidden" name="access_token" value="{{ $token }}">
+      <input type="hidden" name="access_token_ttl" value="{{ $ttl }}">
+    </form>
+    <script>
+      // Submit after iframe is ready
+      window.addEventListener('DOMContentLoaded', function(){
+        try { document.getElementById('collabora-launch').submit(); } catch(e) { console.error(e); }
+      });
+    </script>
   </div>
   <p class="text-muted mt-2 small">Changes are saved back automatically when you click Save inside the editor toolbar.</p>
 </div>
