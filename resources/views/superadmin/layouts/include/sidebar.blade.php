@@ -97,20 +97,19 @@
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0']) }}">PI Invoice</a></li>
                                 <li><a href="{{ route('superadmin.blank-invoices.index') }}">Blank Invoice</a></li>
                                 <li><a href="{{ route('superadmin.quotations.index') }}">Quotation</a></li>
-
                                 <li>
                                     <a href="{{ route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill']) }}">
                                         Cash Letter
                                     </a>
                                 </li>     
+                                <li><a href="{{ route('superadmin.cashLetterTransactions.index') }}">Paid Letters</a></li>
+                                <li><a href="{{route('superadmin.cashPayments.index')}}">Invoice Transaction</a></li>
                                 <li><a href="{{route('superadmin.client-ledger.index')}}">Client Ledger</a></li>
-                                <li><a href="#">Unpaid Letter</a></li>
-                                <li><a href="{{ route('superadmin.cashLetterTransactions.index') }}">Cash Transaction</a></li>
-                                <li><a href="#">Invoice Transaction</a></li>
                                 <li><a href="{{ route('superadmin.marketing-person-ledger.index') }}">Marketing Person Ledger</a></li>
                                 <li><a href="">Office Expenses</a></li>
                                 <li><a href="#">Marketing Expenses</a></li>
-                                <li><a href="#">Purchase Bill</a></li>
+                                <li><a href="#">Purchase Bill</a></li> 
+                                <li><a href="{{ route('superadmin.bank.upload') }}">Bank Transactions</a></li>
                             </ul>
                         </li>
                         <li class="submenu {{ Request::routeIs('superadmin.attachments.*') ? 'submenu-open' : '' }}">

@@ -68,13 +68,19 @@
                             </div>
 
                             <div class="row mt-3">
-                                <div class="col-sm-6 col-12">
+                                <div class="col-sm-4 col-12">
+                                    <label class="form-label">Letter Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="letter_date" 
+                                        value="{{ old('letter_date', $booking->letter_date ? \Carbon\Carbon::parse($booking->letter_date)->format('Y-m-d') : '') }}" 
+                                        required>
+                                </div>
+                                <div class="col-sm-4 col-12">
                                     <label class="form-label">Job Order Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" name="job_order_date" 
                                         value="{{ old('job_order_date', $booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('Y-m-d') : '') }}" 
                                         required>
                                 </div>
-                                <div class="col-sm-6 col-12">
+                                <div class="col-sm-4 col-12">
                                     <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="report_issue_to" 
                                         value="{{ old('report_issue_to', $booking->report_issue_to) }}" required>

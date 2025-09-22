@@ -96,7 +96,7 @@
                             <th>Sample Description</th>
                             <th>Sample Quality</th>
                             <th>Particulars</th>
-                            <th>Status</th>
+                      
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -109,7 +109,7 @@
                             <td><?php echo e($item->sample_description); ?></td>
                             <td><?php echo e($item->sample_quality); ?></td>
                             <td><?php echo e($item->particulars); ?></td>
-                            <td>Status</td>
+                           
                            
                             <td class="d-flex">
                                 <a href="<?php echo e(route('superadmin.bookings.edit', $item->booking->id ?? 0)); ?>"

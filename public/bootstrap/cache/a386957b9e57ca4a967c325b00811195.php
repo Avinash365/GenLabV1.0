@@ -3,19 +3,35 @@
 <?php $__env->startSection('content'); ?>
 <div class="container mt-4">
     
-    <div class="card p-4 shadow-sm">
-        <div class="d-flex align-items-center">
+     <div class="card p-4 shadow-sm">
+    <div class="row align-items-center">
+        <!-- Left Column: Profile Picture -->
+        <div class="col-md-3 text-center">
             <img src="<?php echo e($client->profile_picture ?? asset('images/default-avatar.png')); ?>" 
-                 class="rounded-circle me-4" width="100" height="100" alt="Profile Picture">
-            <div>
-                <h3 class="mb-1"><?php echo e($client->name); ?></h3>
-                <p class="mb-0 text-muted"><i class="fa fa-envelope"></i> <?php echo e($client->email); ?></p>
-                <p class="mb-0 text-muted"><i class="fa fa-phone"></i> <?php echo e($client->phone ?? 'N/A'); ?></p>
-                <p class="mb-0 text-muted"><i class="fa fa-location"></i> <?php echo e($client->address ?? 'N/A'); ?></p>
-            </div>  
+                 class="rounded-circle img-fluid" width="120" height="120" alt="Profile Picture">
+        </div>
+
+        <!-- Right Column: Details -->
+        <div class="col-md-9">
+            <h3 class="mb-2"><?php echo e($client->name); ?></h3>
+            <div class="row">
+                <!-- Column 1 -->
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted"><i class="fa fa-envelope me-2"></i><?php echo e($client->email); ?></p>
+                    <p class="mb-1 text-muted"><i class="fa fa-phone me-2"></i><?php echo e($client->phone ?? 'N/A'); ?></p>
+                    <p class="mb-1 text-muted"><i class="fa fa-id-card me-2"></i>Address: <?php echo e($client->address); ?></p>
+                </div>
+
+                <!-- Column 2 -->
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted"><i class="fa fa-exchange-alt me-2"></i>Total Transactions: <?php echo e(number_format($stats['transactions'] ?? 0, 0)); ?></p>
+                    <p class="mb-1 text-muted"><i class="fa fa-money-bill-wave me-2"></i>Total Amount Received: ₹<?php echo e(number_format($stats['totalTransactionsAmount'] ?? 0, 2)); ?></p>
+                    <p class="mb-1 text-muted"><i class="fa fa-file-invoice-dollar me-2"></i>TDS Amount: ₹<?php echo e(number_format($stats['tdsAmount'] ?? 0, 2)); ?></p>
+                </div>
+            </div>
         </div>
     </div>
-
+</div>
     
     <div class="d-flex justify-content-between align-items-center mt-3 mb-3 flex-wrap">
         <ul class="nav nav-tabs" id="profileTabs">
@@ -94,7 +110,7 @@
                     'amount'=>'₹'.number_format($stats['totalWithoutBillBookings'] ?? 0,2),
                     'class'=>'warning',
                     'type'=>'without_bill',
-                    'route'=>route('superadmin.client.bookings',$client->id)."?payment_option=without_bill".$filterParams
+                    'route'=>route('superadmin.client.cashAllTransactions',$client->id).$filterParams
                 ],
                 [
                     'id'=>'generatedInvoices',
@@ -103,7 +119,7 @@
                     'amount'=>'₹'.number_format($stats['totalInvoiceAmount'] ?? 0,2),
                     'class'=>'success',
                     'type'=>'bill',
-                    'route'=>route('superadmin.client.invoices',$client->id)."?".$filterParams
+                    'route'=>route('superadmin.client.invoices',$client->id)."?type=tax_invoice".$filterParams
                 ],
                 [
                     'id'=>'notGeneratedInvoices',
@@ -121,7 +137,25 @@
                     'amount'=>'₹'.number_format($stats['totalPaidInvoiceAmount'] ?? 0,2),
                     'class'=>'success',
                     'type'=>'bill',
-                    'route'=>route('superadmin.client.invoices',$client->id)."?status=1".$filterParams
+                    'route'=>route('superadmin.client.invoices',$client->id)."?status=1&type=tax_invoice".$filterParams
+                ],
+                [
+                    'id'=>'partialPaidInvoices',
+                    'title'=>'Partial Paid Invoices',
+                    'count'=>$stats['partialTaxInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalPartialTaxInvoiceAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.client.invoices',$client->id)."?status=3&type=tax_invoice".$filterParams
+                ],
+                [
+                    'id'=>'settledPaidInvoices',
+                    'title'=>'Settled Invoices',
+                    'count'=>$stats['settledTaxInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalSettledTaxInvoicesAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.client.invoices',$client->id)."?status=4&type=tax_invoice".$filterParams
                 ],
                 [
                     'id'=>'unpaidInvoices',
@@ -130,7 +164,7 @@
                     'amount'=>'₹'.number_format($stats['totalUnpaidInvoiceAmount'] ?? 0,2),
                     'class'=>'danger',
                     'type'=>'bill',
-                    'route'=>route('superadmin.client.invoices',$client->id)."?status=0".$filterParams
+                    'route'=>route('superadmin.client.invoices',$client->id)."?status=0&type=tax_invoice".$filterParams
                 ],  
                  [
                     'id'=>'unpaidInvoices',
@@ -162,8 +196,8 @@
                 [
                     'id'=>'transactions',
                     'title'=>'Invoice Transactions',
-                    'count'=>$stats['invoiceTransactions'] ?? 0,
-                    'amount'=>'TDS: ₹'.number_format($stats['totalTdsAmount'] ?? 0,2),
+                    'count'=>$stats['transactions'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalTransactionsAmount'] ?? 0,2),
                     'class'=>'info',
                     'type'=>'bill',
                     'route'=>route('superadmin.client.transactions',$client->id)."?".$filterParams
@@ -172,7 +206,7 @@
                     'id'=>'cashPaidLetters',
                     'title'=>'Paid Cash Letters',
                     'count'=>$stats['cashPaidLetters'] ?? 0,
-                    'amount'=>'₹'.number_format($stats['totalCashPaidLettersAmounts'] ?? 0,2),
+                    'amount'=>'₹'.number_format($stats['totalCashPaidLettersAmount'] ?? 0,2),
                     'class'=>'success',
                     'type'=>'without_bill',
                     'route'=>route('superadmin.client.withoutBill',$client->id)."?transaction_status=2&with_payment=1".$filterParams
@@ -184,16 +218,26 @@
                     'amount'=>'₹'.number_format($stats['totalCashUnpaidAmounts'] ?? 0,2),
                     'class'=>'danger',
                     'type'=>'without_bill',
-                    'route'=>route('superadmin.client.withoutBill',$client->id)."?".$filterParams
-                ],
+                    'route'=>route('superadmin.client.withoutBill',$client->id)."".$filterParams
+                ], 
                 [
-                    'id'=>'cashDefaulter',
-                    'title'=>'Defaulter',
-                    'count'=>$stats['cashDefaulter'] ?? 0,
-                    'amount'=>'₹'.number_format($stats['totalDefaulterAmount'] ?? 0,2),
+                    'id'=>'cashPartialLetters',
+                    'title'=>'Partial Cash Letters',
+                    'count'=>$stats['cashPartialLetters'] ?? 0,
+                    'amount'=>'Due Amount: ₹'.number_format($stats['totalDueAmount'] ?? 0,2),
                     'class'=>'danger',
                     'type'=>'without_bill',
-                    'route'=>route('superadmin.client.cashTransactions',$client->id)."?transaction_status=1".$filterParams
+                    'route'=>route('superadmin.client.withoutBill',$client->id)."?transaction_status=1&with_payment=1".$filterParams
+                ], 
+
+                [
+                    'id'=>'cashSettledLetters',
+                    'title'=>'Settled Cash Letters',
+                    'count'=>$stats['cashSettledLetters'] ?? 0,
+                    'amount'=>'Settled Amount :'.'₹'.number_format($stats['totalSettledAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'without_bill',
+                    'route'=>route('superadmin.client.withoutBill',$client->id)."?transaction_status=3&with_payment=1".$filterParams
                 ],
             ];
         ?>
@@ -205,8 +249,8 @@
                     data-target="#<?php echo e($c['id']); ?>"
                     data-url="<?php echo e($c['route'] ?? ''); ?>">
                     <div class="card-body">
-                        <h5><?php echo e($c['title']); ?></h5>
-                        <h3 class="text-<?php echo e($c['class']); ?>"><?php echo e($c['count']); ?></h3>
+                        <h6><?php echo e($c['title']); ?></h6>
+                        <h4 class="text-<?php echo e($c['class']); ?>"><?php echo e($c['count']); ?></h4>
                         <p class="text-muted mb-0"><?php echo e($c['amount']); ?></p>
                     </div>
                 </div>

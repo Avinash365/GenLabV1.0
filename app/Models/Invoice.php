@@ -49,8 +49,26 @@ class Invoice extends Model
     public function relatedBooking()
     {
         return $this->belongsTo(NewBooking::class, 'new_booking_id');
+    } 
+    
+    public function client(){
+        return $this->belongsTo(client::class, 'client_id');
     }
 
+    public function marketingPerson()
+    {
+        return $this->belongsTo(User::class, 'marketing_user_code', 'user_code');
+    }
+
+    public function tdsTransaction()
+    {
+        return $this->hasOne(InvoiceTds::class, 'invoice_id');
+    }
+    
+    public function transactions()
+    {
+        return $this->hasMany(InvoiceTransaction::class);
+    }
 
      // Mutator → runs when saving to DB
     public function setInvoiceDateAttribute($value)

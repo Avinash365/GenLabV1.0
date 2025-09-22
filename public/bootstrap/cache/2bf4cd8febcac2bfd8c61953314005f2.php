@@ -63,22 +63,6 @@
         </div>
     </div>
 
-    <!-- Department Filter -->
-    <div class="my-3 ms-4">
-        <div class="btn-group flex-wrap">
-            <a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>" 
-               class="btn btn-sm <?php echo e(request('department_id') ? 'btn-outline-primary' : 'btn-primary'); ?>">
-                All 
-            </a>
-            <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                <a href="<?php echo e(route('superadmin.marketing-person-ledger.index', array_merge(request()->query(), ['department_id' => $dept->id]))); ?>"
-                   class="btn btn-sm <?php echo e(request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
-                    <?php echo e($dept->name); ?>
-
-                </a>
-            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-        </div>
-    </div>
 
     <div class="card-body p-0">
         <div class="table-responsive">

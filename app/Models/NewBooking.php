@@ -18,6 +18,7 @@ class NewBooking extends Model
 
         'client_name',
         'client_address',
+        'letter_date',
         'job_order_date',
         'report_issue_to',
         'reference_no',

@@ -38,9 +38,9 @@
                                 <div class="modal-content">
                                     <div class="modal-header">
                                         <h5 class="modal-title">Booking Items for {{ $isClient ? ($booking->marketingPerson?->name ?? 'N/A') : ($booking->client?->name ?? 'N/A') }}</h5>
-                                         <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&times;</span> 
-                                        </button>
+                                            <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                                    <span aria-hidden="true">&times;</span> 
+                                            </button>
                                     </div>
                                     <div class="modal-body">
                                         <div class="table-responsive">
@@ -79,9 +79,16 @@
                 </td>
 
                 <td>
+                    
                     <span class="badge {{ $booking->generatedInvoice?->status ? 'bg-success' : 'bg-warning' }}">
                         {{ $booking->generatedInvoice?->status ? 'Completed' : 'Pending' }}
-                    </span>
+                    </span> 
+                        @if(!$booking->generatedInvoice?->status)
+                        <a href="{{ route('superadmin.bookingInvoiceStatuses.edit', $booking->id) }}" 
+                        class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="bi bi-pencil"></i> Update
+                        </a>
+                    @endif
                 </td>
             </tr>
         @endforeach

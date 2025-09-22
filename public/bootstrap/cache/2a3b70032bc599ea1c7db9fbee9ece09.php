@@ -3,7 +3,7 @@
 
 <div class="card mt-4">
     <div class="card-header">
-        <h5 class="card-title">Cash Payment Entry</h5>
+        <h5 class="card-title">Invoice Payment Entry</h5>
     </div>
 
     <div class="card-body">

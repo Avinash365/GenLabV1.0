@@ -67,21 +67,31 @@
                         </div>
                     @endif
                 </td>
-                <td>
-                    <span class="badge 
-                        @switch($invoice->status)
-                            @case(0) bg-warning @break
-                            @case(1) bg-success @break
-                            @case(2) bg-danger @break
-                        @endswitch">
-                        
-                        @switch($invoice->status)
-                            @case(0) Pending @break
-                            @case(1) Paid @break
-                            @case(2) Canceled @break
-                        @endswitch
-                    </span>
-                </td>
+                    <td>
+    @if($invoice->status == 0)
+        <!-- Unpaid: show link to pay -->
+        <a href="{{ route('superadmin.cashPayments.create', $invoice->id) }}" class="text-decoration-none">
+            <span class="badge bg-warning">Pay</span>
+            <i class="fa fa-link ms-2"></i> <!-- matches your TDS style -->
+        </a>
+    @elseif($invoice->status == 1)
+        <!-- Paid -->
+        <span class="badge bg-success">Paid</span>
+    @elseif($invoice->status == 2)
+        <!-- Cancelled -->
+        <span class="badge bg-danger">Cancelled</span>
+    @elseif($invoice->status == 3)
+        <!-- Partial: show link to repay -->
+        <a href="{{ route('superadmin.cashPayments.repay', $invoice->id) }}" class="text-decoration-none">
+            <span class="badge bg-info">Partial</span>
+            <i class="fa fa-link ms-2"></i> <!-- matches your TDS style -->
+        </a>
+    @elseif($invoice->status == 4)
+        <!-- Settled -->
+        <span class="badge bg-primary">Settled</span>
+    @endif
+</td>
+
             </tr>
         @endforeach
     </tbody>
