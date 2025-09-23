@@ -129,6 +129,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::get('/bookingByLetter', [ShowBookingByLetterController::class, 'index'])->name('bookingByLetter.index'); 
             Route::delete('/bookingByLetter/{bookingItem}', [ShowBookingByLetterController::class, 'destroy'])->name('bookingByLetter.destroy');
+            Route::get('/bookingByLetter/export/pdf', [ShowBookingByLetterController::class, 'exportPdf'])->name('bookingByLetter.exportPdf');
+            Route::get('/bookingByLetter/export/excel', [ShowBookingByLetterController::class, 'exportExcel'])->name('bookingByLetter.exportExcel');
 
             Route::get('/superadmin/bookings/autocomplete', [BookingController::class, 'getAutocomplete'])->name('autocomplete');
 
@@ -300,6 +302,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
          // ShowBooking List 
         Route::prefix('showbooking')->name('showbooking.')->group(function () {
             Route::get('/{department?}', [ShowBookingController::class, 'index'])->name('showBooking');
+            Route::get('/export/pdf/{department?}', [ShowBookingController::class, 'exportPdf'])->name('exportPdf');
+            Route::get('/export/excel/{department?}', [ShowBookingController::class, 'exportExcel'])->name('exportExcel');
         });
 
          // ShowBooking List 
@@ -325,8 +329,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // Reporting
         Route::prefix('reporting')->name('reporting.')->group(function () {
             Route::get('/received', [ReportingController::class, 'received'])->name('received');
+            Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
+            Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
+            Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
             Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
             Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
+            Route::post('/account-receive/{item}', [ReportingController::class, 'accountReceiveOne'])->name('accountReceiveOne');
+            Route::post('/account-receive-bulk', [ReportingController::class, 'accountReceiveBulk'])->name('accountReceiveBulk');
             Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
             Route::get('/generate', [ReportingController::class, 'generate'])->name('generate');
 
