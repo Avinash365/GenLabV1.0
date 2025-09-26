@@ -72,7 +72,7 @@
                                 <li><a href="<?php echo e(route('superadmin.reporting.received')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.received') ? 'active' : ''); ?>">Received</a></li>
                                 <li><a href="<?php echo e(route('superadmin.reporting.holdcancel.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.holdcancel.*') ? 'active' : ''); ?>">Hold & Cancel</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Reported</a></li>
-                                <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Hold & Unhold</a></li>
+                                <li><a href="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">Pendings</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Print & Upload</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Export PDF</a></li>
                                 <li>

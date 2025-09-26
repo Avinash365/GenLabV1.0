@@ -55,6 +55,124 @@ class ReportingController extends Controller
     }
 
     /**
+     * Pendings: show items that have been received but not yet issued (issue_date null).
+     * Supports optional search by job order no (search), and month/year filters based on received_at.
+     */
+    public function pendings(Request $request)
+    {
+        $search = trim((string) $request->get('search'));
+        $month = $request->has('month') ? (int) $request->get('month') : null;
+        $year = $request->has('year') ? (int) $request->get('year') : null;
+        $departmentId = $request->get('department');
+    $marketing = $request->get('marketing'); // user_code of marketing person
+        $mode = $request->get('mode', 'job'); // job | reference
+        if (!in_array($mode, ['job','reference'], true)) { $mode = 'job'; }
+        if ($month !== null && ($month < 1 || $month > 12)) { $month = null; }
+        if ($year !== null && ($year < 2000 || $year > 2100)) { $year = null; }
+        $departments = \App\Models\Department::orderBy('name')->get(['id','name']);
+        // Marketing persons (users with at least one booking) - limit to needed fields
+        $marketingPersons = \App\Models\User::whereHas('marketingBookings')
+            ->orderBy('name')
+            ->get(['id','name','user_code']);
+
+        if ($mode === 'reference') {
+            // Aggregate by booking (reference_no) where at least one pending item
+            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) {
+                $q->whereNotNull('received_at')->whereNull('issue_date');
+            }])->with(['items' => function($q){ $q->whereNotNull('received_at')->whereNull('issue_date'); }]);
+            if ($departmentId) { $bookingQuery->where('department_id', $departmentId); }
+            if ($marketing) { $bookingQuery->where('marketing_id', $marketing); }
+            if ($search !== '') {
+                $bookingQuery->where(function($qq) use ($search) {
+                    $qq->where('client_name','like',"%{$search}%")
+                        ->orWhere('reference_no','like',"%{$search}%");
+                });
+            }
+            if ($month) { $bookingQuery->whereHas('items', function($qi) use ($month){ $qi->whereMonth('received_at',$month); }); }
+            if ($year) { $bookingQuery->whereHas('items', function($qi) use ($year){ $qi->whereYear('received_at',$year); }); }
+            $bookingQuery->having('pending_items_count','>',0)->latest('id');
+            $bookings = $bookingQuery->paginate(20)->withQueryString();
+            $items = collect();
+            return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing'));
+        } else {
+            $q = BookingItem::query()->with(['booking']);
+            $q->whereNotNull('received_at')->whereNull('issue_date');
+            if ($departmentId) {
+                $q->whereHas('booking', function($b) use ($departmentId) { $b->where('department_id', $departmentId); });
+            }
+            if ($marketing) {
+                $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
+            }
+            if ($search !== '') {
+                $q->where(function($qq) use ($search) {
+                    $qq->where('job_order_no', 'like', "%{$search}%")
+                       ->orWhere('sample_description', 'like', "%{$search}%")
+                       ->orWhere('particulars', 'like', "%{$search}%");
+                });
+            }
+            if ($month) { $q->whereMonth('received_at', $month); }
+            if ($year) { $q->whereYear('received_at', $year); }
+            $q->latest('id');
+            $items = $q->paginate(20)->withQueryString();
+            $bookings = collect();
+            return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing'));
+        }
+    }
+
+    protected function buildPendingsQuery(Request $request)
+    {
+        $search = trim((string) $request->get('search'));
+        $month = $request->has('month') ? (int) $request->get('month') : null;
+        $year = $request->has('year') ? (int) $request->get('year') : null;
+        $departmentId = $request->get('department');
+    $marketing = $request->get('marketing');
+        if ($month !== null && ($month < 1 || $month > 12)) { $month = null; }
+        if ($year !== null && ($year < 2000 || $year > 2100)) { $year = null; }
+        $q = BookingItem::query()->with(['booking'])
+            ->whereNotNull('received_at')
+            ->whereNull('issue_date');
+        if ($departmentId) {
+            $q->whereHas('booking', function($b) use ($departmentId) { $b->where('department_id', $departmentId); });
+        }
+        if ($marketing) {
+            $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
+        }
+        if ($search !== '') {
+            $q->where(function($qq) use ($search) {
+                $qq->where('job_order_no', 'like', "%{$search}%")
+                   ->orWhere('sample_description', 'like', "%{$search}%")
+                   ->orWhere('sample_quality', 'like', "%{$search}%")
+                   ->orWhere('particulars', 'like', "%{$search}%")
+                   ->orWhereHas('booking', function($bq) use ($search) {
+                        $bq->where('client_name', 'like', "%{$search}%");
+                   });
+            });
+        }
+        if ($month) { $q->whereMonth('received_at', $month); }
+        if ($year) { $q->whereYear('received_at', $year); }
+        return $q;
+    }
+
+    public function pendingsExportPdf(Request $request)
+    {
+        $items = $this->buildPendingsQuery($request)->latest('id')->get();
+        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('superadmin.reporting.pendings_pdf', [
+            'items' => $items,
+            'search' => $request->get('search'),
+            'month' => $request->get('month'),
+            'year' => $request->get('year'),
+            'department' => $request->get('department'),
+        ])->setPaper('a4','landscape');
+        return $pdf->stream('pending_reports.pdf');
+    }
+
+    public function pendingsExportExcel(Request $request)
+    {
+        $items = $this->buildPendingsQuery($request)->latest('id')->get();
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingItemsExport($items), 'pending_reports.xlsx');
+    }
+
+    /**
      * Receive a single report item (assign to current user).
      */
     public function receiveOne(Request $request, BookingItem $item)

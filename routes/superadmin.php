@@ -232,6 +232,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     // Cheque Alignment Setup
     Route::get('banks/create', [BankController::class, 'create'])->name('banks.create');
     Route::post('banks', [BankController::class, 'store'])->name('banks.store');
+    Route::delete('banks/{bank}', [BankController::class, 'destroy'])->name('banks.destroy');
     Route::get('cheque-templates/{bank}', [ChequeTemplateController::class, 'editor'])->name('cheque-templates.editor');
     Route::post('cheque-templates/{bank}', [ChequeTemplateController::class, 'store'])->name('cheque-templates.store');
     Route::get('cheque-templates/{bank}/fetch', [ChequeTemplateController::class, 'fetch'])->name('cheque-templates.fetch');
@@ -329,6 +330,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // Reporting
         Route::prefix('reporting')->name('reporting.')->group(function () {
             Route::get('/received', [ReportingController::class, 'received'])->name('received');
+            Route::get('/pendings', [ReportingController::class, 'pendings'])->name('pendings');
+            Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
+            Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
             Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
             Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
             Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');

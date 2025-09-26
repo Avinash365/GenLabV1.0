@@ -1,0 +1,8 @@
+.range-toggle .btn.active{background-color:#ff9800;color:#fff;border-color:#ff9800}
+.legend-dot{width:10px;height:10px;border-radius:50%;display:inline-block}
+.legend-purchase{background:#ffd9b3}
+.legend-sales{background:#ff8a26}
+.badge.bg-success-subtle{background:#e6f4ea;color:#1e7e34}
+.chart-container{position:relative}
+.low-stock-list .bullet{width:10px;height:10px;border-radius:50%;display:inline-block}
+.low-stock-list .bg-warning{background:#ffc107}
