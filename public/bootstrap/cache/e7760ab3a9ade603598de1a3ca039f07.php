@@ -14,6 +14,7 @@
         content="inventory management, admin dashboard, bootstrap template, invoicing, estimates, business management, responsive admin, POS system">
     <meta name="author" content="Dreams Technologies">
     <meta name="robots" content="index, follow">
+    <meta name="csrf-token" content="<?php echo e(csrf_token()); ?>">
     <?php (
         $__appSetting = isset($setting) ? $setting : (View::shared('setting') ?? \App\Models\Setting::first())
     ); ?>
@@ -41,12 +42,12 @@
     <link rel="stylesheet" href="<?php echo e(url('assets/css/animate.css')); ?>">
     
 	<!-- Bootstrap Tagsinput CSS -->
-	<link rel="stylesheet" href="assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css">
+    <link rel="stylesheet" href="<?php echo e(url('assets/plugins/bootstrap-tagsinput/bootstrap-tagsinput.css')); ?>">
     <!-- Select2 CSS -->
     <link rel="stylesheet" href="<?php echo e(url('assets/plugins/select2/css/select2.min.css')); ?>">
 
     <!-- Datatable CSS -->
-	<link rel="stylesheet" href="assets/css/dataTables.bootstrap5.min.css">
+    <link rel="stylesheet" href="<?php echo e(url('assets/css/dataTables.bootstrap5.min.css')); ?>">
 
     <!-- Daterangepikcer CSS -->
     <link rel="stylesheet" href="<?php echo e(url('assets/plugins/daterangepicker/daterangepicker.css')); ?>">
@@ -135,9 +136,13 @@
         <!-- /Sidebar -->
 
 
-        <div class="page-wrapper">
-            <?php echo $__env->yieldContent('content'); ?>
-            <?php echo $__env->make('superadmin.layouts.include.footer', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        <div class="page-wrapper d-flex flex-column min-vh-100">
+            <div class="flex-grow-1">
+                <?php echo $__env->yieldContent('content'); ?>
+            </div>
+            <footer class="mt-auto">
+                <?php echo $__env->make('superadmin.layouts.include.footer', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+            </footer>
         </div>
 
     </div>
@@ -207,6 +212,8 @@
         </div>
     </div>
     <!-- /Add Stock -->
+
+    <?php echo $__env->yieldPushContent('modals'); ?>
 
     <!-- jQuery -->
     <script src="<?php echo e(url('assets/js/jquery-3.7.1.min.js')); ?>"></script>
