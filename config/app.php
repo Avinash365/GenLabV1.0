@@ -197,6 +197,7 @@ return [
         App\Providers\RouteServiceProvider::class, 
 
         Anand\LaravelPaytmWallet\PaytmWalletServiceProvider::class,
+        Tymon\JWTAuth\Providers\LaravelServiceProvider::class,
 
     ],
 
