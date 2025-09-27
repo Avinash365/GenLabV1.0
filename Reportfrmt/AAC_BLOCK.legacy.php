@@ -1,413 +1,117 @@
-<?php
-session_start();
-// Jika tidak bisa login maka balik ke login.php
-// jika masuk ke halaman ini melalui url, maka langsung menuju halaman login
-if (!isset($_SESSION['login'])) {
-    header('location:login.php');
-    exit;
-}
+@extends('layouts.app') <!-- or your layout file -->
 
-// Memanggil atau membutuhkan file function.php
-require 'function.php';
+@section('content')
+<div class="container">
+    <h3 class="mb-3">Dynamic Test Form</h3>
 
-// Mengambil data dari nis dengan fungsi get
-$JOB_CARD_NO = $_GET['JOB_CARD_NO'];
+    <form id="dynamicForm">
+        <div id="testsContainer"></div>
 
+        <div class="d-flex gap-2 mt-3">
+            <button type="button" id="addTestBtn" class="btn btn-success">+ Add Test (Menu)</button>
+            <button type="submit" class="btn btn-primary">Submit</button>
+        </div>
+    </form>
 
-// Mengambil data dari table siswa dari nis yang tidak sama dengan 0
-$nonulr = query("SELECT * FROM nonulr WHERE `JOB_CARD_NO`='" . $JOB_CARD_NO . "'")[0];
-
-// Jika fungsi ubah lebih dari 0/data terubah, maka munculkan alert dibawah
-
-
-error_reporting(E_ALL & ~E_WARNING & ~E_NOTICE);
-header("content-type: application/vnd.ms-word");
-header("content-Disposition: attachment; Filename=Report.doc");
-?>
+    <h5 class="mt-4">Live JSON preview</h5>
+    <pre id="jsonOutput" class="bg-light p-3" style="min-height:120px;"></pre>
+</div>
+@endsection
 
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <style>
-        table, th {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: left;
-          word-wrap: break-word;
-          font-weight: bold;
-          overflow: hidden;
-          font-size: 14.5px;
-          font-family: 'Times New Roman', Times, serif;
-          padding: 2px;
+@push('scripts')
+<script>
+$(document).ready(function() {
+    const testsContainer = $('#testsContainer');
+    let testCount = 0;
+
+    $('#addTestBtn').click(function() {
+        testCount++;
+        const card = $(`
+            <div class="card mb-3" data-test-index="${testCount}">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <div class="d-flex align-items-center gap-2 w-75">
+                        <strong>Menu ${testCount}:</strong>
+                        <input type="text" class="form-control form-control-sm test-name" 
+                               name="tests[${testCount}][name]" 
+                               placeholder="Enter Test (Menu)" />
+                    </div>
+                    <div>
+                        <button type="button" class="btn btn-sm btn-secondary add-param">+ Add Submenu</button>
+                        <button type="button" class="btn btn-sm btn-danger remove-test">Remove Menu</button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="parameters-container"></div>
+                </div>
+            </div>
+        `);
+        testsContainer.append(card);
+
+        addSubmenuInput(card.find('.parameters-container'), testCount);
+        card.find('.test-name').focus();
+        updatePreview();
+    });
+
+    function addSubmenuInput(container, idx) {
+        const paramRow = $(`
+            <div class="input-group mb-2">
+                <input type="text" class="form-control form-control-sm param-input" 
+                       name="tests[${idx}][parameters][]" 
+                       placeholder="Enter Submenu Item">
+                <button type="button" class="btn btn-outline-danger remove-param">x</button>
+            </div>
+        `);
+        container.append(paramRow);
+        paramRow.find('input').focus();
+    }
+
+    testsContainer.on('click', '.add-param', function() {
+        const card = $(this).closest('.card');
+        const idx = card.data('test-index');
+        addSubmenuInput(card.find('.parameters-container'), idx);
+        updatePreview();
+    });
+
+    testsContainer.on('click', '.remove-param', function() {
+        $(this).closest('.input-group').remove();
+        updatePreview();
+    });
+
+    testsContainer.on('click', '.remove-test', function() {
+        if (confirm('Remove this menu and its submenus?')) {
+            $(this).closest('.card').remove();
+            updatePreview();
         }
-        p {
-            text-align: right;
-            font-weight: bold;
-        }
-        td {
-          border: 1px solid black;
-          border-collapse: collapse;
-          text-align: left;
-          word-wrap: break-word;
-          font-weight: normal;
-          overflow: hidden;
-          font-size: 14.5px;
-          font-family: 'Times New Roman', Times, serif;
-          padding: 2px 4px;
-        }
-        </style>
-        <?php
-        header("content-type: application/vnd.ms-word");
-        header("content-Disposition: attachment; Filename=Report.doc");
-        ?>
-    <meta charset="UTF-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    });
 
-    <title>Table</title>
-</head>
-<body>
-<p style="margin-bottom:-30px; margin-top: 50;">LR 1404</p>
-    <p>Page 1 of 2</p>
-<div style=" margin-left:auto;margin-right:auto;">
-    
-<table style=" width:110%; margin-left:auto;margin-right:auto;">
-        <tr>
-            <th colspan="3" style="width: 65%; text-align: left;">REPORT NO.  <?= $nonulr['JOB_CARD_NO']; ?></th>
-            <th colspan="3" style="text-align: left;">ULR No.: <?= $nonulr['ULR_NO']; ?></th>
-          </tr>
-          <tr>
-              <th rowspan="2" style="width: 18.3%;">Issued To</th>
-              <td rowspan="2">:</td>
-              <td rowspan="2" style="font-weight:bold;"><?= $nonulr['ISSUED_TO']; ?>
-                  
-                  
-              <th>
-                  Date of Receipt
-              </th>
-              <td>:</td>
-              <td style="font-weight:bold;">
-                  <?= $nonulr['JOB_ORDER_DATE']; ?>
-              </td>
-          </tr>
-          <tr>
-              <th>Date of Start of Analysis</th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['JOB_ORDER_DATE']; ?></td>
-          </tr>
-          <tr>
-              <th style="width: 18.3%;">Letter Ref. No. & Date</th>
-              <td style="width: .7%">:</td>
-              <td style="font-weight:bold;"><?= $nonulr['REFRENCE_NO']; ?>
-                  
-                  </td>
-              <th>
-                  Date of Completion of Analysis
-              </th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['ISSUE_DATE']; ?></td>
-          </tr>
-          <tr>
-              <th style="width: 18.3%;">Sample Description
-                  </th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['SAMPLE_DISCRIPTION']; ?> 
-                  
-                    </td>
-              <th>Date of Issue</th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['ISSUE_DATE']; ?></td>
-          </tr>
-          <tr>
-              <th style="width: 18.3%;">Name of Work</th>
-              <td style="width: .7%;">:</td>
-              <td colspan="4" style="font-weight:bold;"><?= $nonulr['NAME_OF_WORK']; ?>
-              </td>
-              
-          </tr>
-          <tr>
-              <th style="width: 18.3%;">Agency</th>
-              <td style="width: .7%;">:</td>
-              <td colspan="4" style="font-weight:bold;"><?= $nonulr['CONTRACTOR']; ?>
-              </td>
-              
-          </tr>
-      </table>
-    </div><br>
-    <table style="width: 110%; margin-left:auto;margin-right:;">
-        <tr>
-          <th style="padding: 2px; text-align: center; width:8%;">S.No.</th>
-          <th style="padding: 2px; text-align: center; width:30%; ">Tests</th>
-          <th style="padding: 2px 6px; text-align: center; width:20%; ">Test Methods</th>
-          <th style="padding: 2px 9px; text-align: center; width:18%;">Requirements as per <br>
-IS : 2185(P-3)-1984 With Amendment No. 1 <br>
-Grade - 1
-</th>
-          <th style="padding: 2px; text-align: center; width:12%;">Results</th>
-          <th style="padding: 2px 5px; text-align: center; width:12%;">Conformity</th>
-        </tr>
-        <tr>
-            <td style="text-align: center;">1.</td>
-            <td style="text-align: left;" colspan="5">Dimension, mm</td>
-            
-        </tr>
-        <tr>
-            <td style="text-align: center;">I</td>
-            <td style="text-align: left;">Length</td>
-            <td style="text-align: center;" rowspan="3">IS : 2185(P-3)-1984, RA 2020</td>
-            <td style="text-align: center;">±5</td>
-            <td style="text-align: center;"> </td>
-            <td style="text-align: center;"> </td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Ii</td>
-            <td style="text-align: left;">Width</td>
-            <td style="text-align: center;">±3
-                </td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Iii</td>
-            <td style="text-align: left;">Height</td>
-            <td style="text-align: center;">±3              
-                </td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">2.</td>
-            <td style="text-align: left;" colspan="5">Block Density, kg/m3</td>
-                </td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">I</td>
-            <td style="text-align: left;">Block Density</td>
-            <td style="text-align: center;" rowspan="4">IS : 6441(P-1)-1972, RA 2022</td>
-            <td style="text-align: center;" rowspan="4">551-650</td>
-            <td style="text-align: center;"> </td>
-            <td style="text-align: center;"> </td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Ii</td>
-            <td style="text-align: left;">Block Density</td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Iii</td>
-            <td style="text-align: left;">Block Density</td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Iv</td>
-            <td style="text-align: left;">Average
-                </td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">3.</td>
-            <td style="text-align: left;" colspan="5">Compressive Strength, N/mm2              
-                </td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">I</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-            <td style="text-align: center;" rowspan="7">IS : 6441(P-5)-1972, RA 2022
-                                                
-                </td>
-            <td style="text-align: center;" rowspan="7">4.0 Min.</td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Ii</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Iii</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Iv</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">V</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Vi</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Vii</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        
-    </table>
-    <div style="page-break-after: always;"></div>
+    testsContainer.on('input', '.test-name, .param-input', updatePreview);
 
-    <div style=" margin-left:auto;margin-right:auto;margin-top:50px;">
-        <p style="margin-top: 100px;">LR 1404</p>
-    <p>Page 2 of 2</p>
-    
-    <table style=" width: 110%; margin: left 10px;margin: right 10px; align-self: center;">
-    <tr>
-            <th colspan="3" style="width: 65%; text-align: left;">REPORT NO.  <?= $nonulr['JOB_CARD_NO']; ?></th>
-            <th colspan="3" style="text-align: left;">ULR No.: <?= $nonulr['ULR_NO']; ?></th>
-          </tr>
-          <tr>
-              <th rowspan="2" style="width: 18.3%;">Issued To</th>
-              <td rowspan="2">:</td>
-              <td rowspan="2" style="font-weight:bold;"><?= $nonulr['ISSUED_TO']; ?>
-                  
-                  
-              <th>
-                  Date of Receipt
-              </th>
-              <td>:</td>
-              <td style="font-weight:bold;">
-                  <?= $nonulr['JOB_ORDER_DATE']; ?>
-              </td>
-          </tr>
-          <tr>
-              <th>Date of Start of Analysis</th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['JOB_ORDER_DATE']; ?></td>
-          </tr>
-          <tr>
-              <th style="width: 18.3%;">Letter Ref. No. & Date</th>
-              <td style="width: .7%">:</td>
-              <td style="font-weight:bold;"><?= $nonulr['REFRENCE_NO']; ?>
-                  
-                  </td>
-              <th>
-                  Date of Completion of Analysis
-              </th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['ISSUE_DATE']; ?></td>
-          </tr>
-          <tr>
-              <th style="width: 18.3%;">Sample Description
-                  </th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['SAMPLE_DISCRIPTION']; ?> 
-                  
-                    </td>
-              <th>Date of Issue</th>
-              <td>:</td>
-              <td style="font-weight:bold;"><?= $nonulr['ISSUE_DATE']; ?></td>
-          </tr>
-        
-      </table>
-    </div><br>
-    <table style="width: 110%; margin-left:auto;margin-right:;">
-        <tr>
-          <th style="padding: 2px; text-align: center; width:8%;">S.No.</th>
-          <th style="padding: 2px; text-align: center; width:30%; ">Tests</th>
-          <th style="padding: 2px 6px; text-align: center; width:20%; ">Test Methods</th>
-          <th style="padding: 2px 9px; text-align: center; width:18%;">Requirements as per <br>
-IS : 2185(P-3)-1984 With Amendment No. 1 <br>
-Grade - 1
-</th>
-          <th style="padding: 2px; text-align: center; width:12%;">Results</th>
-          <th style="padding: 2px 5px; text-align: center; width:12%;">Conformity</th>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Viii</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-            <td style="text-align: center;" rowspan="6">IS : 6441(P-5)-1972, RA 2022
-                                                
-                </td>
-            <td style="text-align: center;" rowspan="6">4.0 Min.</td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Ix</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">X</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Xi</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Xii</td>
-            <td style="text-align: left;">Compressive Strength                               
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">Xiii</td>
-            <td style="text-align: left;">Average                              
-                </td>
-                <td></td>
-                <td></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">4</td>
-            <td style="text-align: left;">Drying Shrinkage, %                               
-                </td>
-            <td style="text-align: center;">IS : 6441(P-2)-1972, RA 2022
-                                                
-                </td>
-            <td style="text-align: center;">0.05 Max.</td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        <tr>
-            <td style="text-align: center;">5</td>
-            <td style="text-align: left;">Thermal Conductivity 
-                (at 50°C  Mean Temp.), W/m.k
-                                               
-                </td>
-            <td style="text-align: center;">IS : 3346-1980, RA 2022
-                                                
-                </td>
-            <td style="text-align: center;">0.24 Max.</td>
-            <td style="text-align: center;"></td>
-            <td style="text-align: center;"></td>
-        </tr>
-        
-      </table>
+    function buildJSON() {
+        const formData = $('#dynamicForm').serializeArray();
+        const tests = {};
+        formData.forEach(f => {
+            const match = f.name.match(/^tests\[(\d+)\]\[(\w+)\](?:\[\])?$/);
+            if (!match) return;
+            const idx = match[1], field = match[2];
+            if (!tests[idx]) tests[idx] = { name: '', parameters: [] };
+            if (field === 'name') tests[idx].name = f.value;
+            else if (field === 'parameters') tests[idx].parameters.push(f.value);
+        });
+        return Object.values(tests);
+    }
 
-</body>
-</html>
+    function updatePreview() {
+        $('#jsonOutput').text(JSON.stringify(buildJSON(), null, 2));
+    }
+
+    $('#dynamicForm').submit(function(e) {
+        e.preventDefault();
+        console.log('Submitted JSON:', buildJSON());
+        alert('Form submitted — check console.');
+    });
+});
+</script>
+@endpush
+
+

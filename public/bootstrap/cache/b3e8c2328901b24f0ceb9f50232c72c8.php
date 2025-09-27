@@ -137,7 +137,8 @@
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
-            
+
+                        <li><a href="<?php echo e(route('editor.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>ReportForm</span></a></li>
                         
                         <li><a href="<?php echo e(route('superadmin.calibrations.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Calibration</span></a></li>
                         <li><a href="<?php echo e(route('superadmin.leave.Leave')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>

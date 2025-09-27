@@ -58,6 +58,10 @@ use App\Http\Controllers\Transactions\CashPaymentController;
 use App\Http\Controllers\Transactions\WithoutBillTransactionController;
 
 
+use App\Http\Controllers\ReportEditorController; 
+use App\Http\Controllers\OnlyOfficeController;
+
+
 // =======================
 // Super Admin Login Routes
 // =======================
@@ -352,3 +356,23 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/report-formats/{reportFormat}/export-pdf', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'exportPdf'])->name('report-formats.content.exportPdf');
         });
 });
+
+        // list of clients 
+        Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');
+        Route::get('/invoices/list', [ListController::class, 'invoices'])->name('api.invoices.list');
+        Route::get('/refnos/list', [ListController::class, 'refNos'])->name('api.refnos.list');
+
+        Route::get('/test/list', [ListController::class, 'view'])->name('test.list');  
+
+        //report editor
+      
+        Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index');
+        Route::post('/editor/store', [ReportEditorController::class, 'store'])->name('editor.store');
+        Route::put('/editor/update/{id}', [ReportEditorController::class, 'update'])->name('editor.update');
+        Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save');
+        Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete');   
+
+
+
+        Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
+        Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');

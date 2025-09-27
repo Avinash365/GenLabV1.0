@@ -42,7 +42,6 @@ class CreateNewBookingsTable extends Migration
 
             $table->timestamps();
             $table->softDeletes();
-
             // Foreign key: marketing_id references users.user_code (both must be string(255))
             $table->foreign('marketing_id')->references('user_code')->on('users')->onDelete('cascade');
         });
