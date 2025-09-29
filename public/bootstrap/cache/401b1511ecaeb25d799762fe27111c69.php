@@ -68,21 +68,31 @@
                         </div>
                     <?php endif; ?>
                 </td>
-                <td>
-                    <span class="badge 
-                        <?php switch($invoice->status):
-                            case (0): ?> bg-warning <?php break; ?>
-                            <?php case (1): ?> bg-success <?php break; ?>
-                            <?php case (2): ?> bg-danger <?php break; ?>
-                        <?php endswitch; ?>">
-                        
-                        <?php switch($invoice->status):
-                            case (0): ?> Pending <?php break; ?>
-                            <?php case (1): ?> Paid <?php break; ?>
-                            <?php case (2): ?> Canceled <?php break; ?>
-                        <?php endswitch; ?>
-                    </span>
-                </td>
+                    <td>
+    <?php if($invoice->status == 0): ?>
+        <!-- Unpaid: show link to pay -->
+        <a href="<?php echo e(route('superadmin.cashPayments.create', $invoice->id)); ?>" class="text-decoration-none">
+            <span class="badge bg-warning">Pay</span>
+            <i class="fa fa-link ms-2"></i> <!-- matches your TDS style -->
+        </a>
+    <?php elseif($invoice->status == 1): ?>
+        <!-- Paid -->
+        <span class="badge bg-success">Paid</span>
+    <?php elseif($invoice->status == 2): ?>
+        <!-- Cancelled -->
+        <span class="badge bg-danger">Cancelled</span>
+    <?php elseif($invoice->status == 3): ?>
+        <!-- Partial: show link to repay -->
+        <a href="<?php echo e(route('superadmin.cashPayments.repay', $invoice->id)); ?>" class="text-decoration-none">
+            <span class="badge bg-info">Partial</span>
+            <i class="fa fa-link ms-2"></i> <!-- matches your TDS style -->
+        </a>
+    <?php elseif($invoice->status == 4): ?>
+        <!-- Settled -->
+        <span class="badge bg-primary">Settled</span>
+    <?php endif; ?>
+</td>
+
             </tr>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </tbody>

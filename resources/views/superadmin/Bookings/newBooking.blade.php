@@ -64,12 +64,27 @@
                                 </div>
                             </div>
 
-                            <div class="row mt-3">
-                                <div class="col-sm-6 col-12">
-                                    <label class="form-label">Job Order Date <span class="text-danger">*</span></label>
-                                    <input type="date" class="form-control" name="job_order_date" value="{{ old('job_order_date') }}" required>
+                            <div class="row mt-3"> 
+                                 <div class="col-sm-4 col-12">
+                                    <label class="form-label">Letter Date <span class="text-danger">*</span></label>
+                                    <input type="date" class="form-control" name="letter_date" value="{{ old('letter_date') }}" required>
                                 </div>
-                                <div class="col-sm-6 col-12">
+                                <div class="col-sm-4 col-12">
+    <label class="form-label">Job Order Date <span class="text-danger">*</span></label>
+    <input 
+        type="date" 
+        class="form-control" 
+        name="job_order_date" 
+        value="{{ old('job_order_date') }}" 
+        {{ $firstBackedBooking == 0 ? 'min=' . date('Y-m-d') : '' }}
+        required
+    >
+    @if($firstBackedBooking == 0)
+        <small class="text-danger">You cannot select a past date.</small>
+    @endif
+</div>
+
+                                <div class="col-sm-4 col-12">
                                     <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="report_issue_to" value="{{ old('report_issue_to') }}" placeholder="Enter person/team to report issue to" required >
                                 </div>
@@ -77,10 +92,10 @@
 
                             <div class="row mt-3">
                                 <div class="col-lg-4 col-sm-6 col-12 position-relative">
-    <label class="form-label">Reference No <span class="text-danger">*</span></label>
-    <input type="text" class="form-control reference_no_input" name="reference_no" autocomplete="off" required>
-    <div class="dropdown-menu w-100 referenceDropdown overflow-auto" style="max-height:200px;"></div>
-</div>
+                                        <label class="form-label">Reference No <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control reference_no_input" name="reference_no" autocomplete="off" required>
+                                        <div class="dropdown-menu w-100 referenceDropdown overflow-auto" style="max-height:200px;"></div>
+                                    </div>
                    
                                 <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                     <label class="form-label">Marketing Person <span class="text-danger">*</span></label>
@@ -132,7 +147,7 @@
                     </h2>
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
-                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf">
+                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" required>
                         </div>
                     </div>
                 </div>
@@ -156,43 +171,42 @@
                                     <label class="form-check-label" for="holdStatus">Hold</label>
                         </div>  
                            <div id="itemsContainer">
-    <div class="item-group border p-3 mb-3 rounded">
-        <div class="row g-3">
-            <div class="col-lg-4 col-sm-6 col-12">
-                <label class="form-label">Sample Description *</label>
-                <input type="text" name="booking_items[0][sample_description]" class="form-control" required>
-            </div> 
-            <div class="col-lg-4 col-sm-6 col-12">
-                <label class="form-label">Particulars *</label>
-                <input type="text" name="booking_items[0][particulars]" class="form-control" required>
-            </div>
-            <div class="col-lg-4 col-sm-6 col-12 position-relative">
-                <label class="form-label">Job Order No *</label>
-                <input type="text" name="booking_items[0][job_order_no]" class="form-control job_order_no" autocomplete="off" required>
-                <div class="dropdown-menu w-100 jobOrderList overflow-auto"></div>
-            </div>
-            <div class="col-lg-2 col-sm-6 col-12">
-                <label class="form-label">Amount *</label>
-                <input type="text" name="booking_items[0][amount]" class="form-control amount" required>
-            </div>
-            <div class="col-lg-2 col-sm-6 col-12">
-                <label class="form-label">Sample Quality *</label>
-                <input type="text" name="booking_items[0][sample_quality]" class="form-control" required>
-            </div>
-            <div class="col-lg-4 col-sm-6 col-12 position-relative">
-                <label class="form-label">Lab Analysis <span class="text-danger">*</span></label>
-                <input type="text" class="form-control lab_analysis_input" autocomplete="off" required>
-                <input type="hidden" name="booking_items[0][lab_analysis_code]" class="lab_analysis_code_hidden">
-                <div class="dropdown-menu w-100 labAnalysisDropdown overflow-auto" style="display: none; max-height: 200px;"></div>
-            </div>
-            <div class="col-lg-4 col-sm-6 col-12">
-                <label class="form-label">Lab Expected Date *</label>
-                <input type="date" name="booking_items[0][lab_expected_date]" class="form-control" required>
-            </div>
-        </div>
-        <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="display: none;">Remove</button>
-    </div>
-   
+            <div class="item-group border p-3 mb-3 rounded">
+                <div class="row g-3">
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <label class="form-label">Sample Description *</label>
+                        <input type="text" name="booking_items[0][sample_description]" class="form-control" required>
+                    </div> 
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <label class="form-label">Particulars *</label>
+                        <input type="text" name="booking_items[0][particulars]" class="form-control" required>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12 position-relative">
+                        <label class="form-label">Job Order No *</label>
+                        <input type="text" name="booking_items[0][job_order_no]" class="form-control job_order_no" autocomplete="off" required>
+                        <div class="dropdown-menu w-100 jobOrderList overflow-auto"></div>
+                    </div>
+                    <div class="col-lg-2 col-sm-6 col-12">
+                        <label class="form-label">Amount *</label>
+                        <input type="text" name="booking_items[0][amount]" class="form-control amount" required>
+                    </div>
+                    <div class="col-lg-2 col-sm-6 col-12">
+                        <label class="form-label">Sample Quality *</label>
+                        <input type="text" name="booking_items[0][sample_quality]" class="form-control" required>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12 position-relative">
+                        <label class="form-label">Lab Analysis <span class="text-danger">*</span></label>
+                        <input type="text" class="form-control lab_analysis_input" autocomplete="off" required>
+                        <input type="hidden" name="booking_items[0][lab_analysis_code]" class="lab_analysis_code_hidden">
+                        <div class="dropdown-menu w-100 labAnalysisDropdown overflow-auto" style="display: none; max-height: 200px;"></div>
+                    </div>
+                    <div class="col-lg-4 col-sm-6 col-12">
+                        <label class="form-label">Lab Expected Date *</label>
+                        <input type="date" name="booking_items[0][lab_expected_date]" class="form-control" required>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="display: none;">Remove</button>
+    </div> 
 </div>
 
 <div class="d-flex justify-content-end mt-3">

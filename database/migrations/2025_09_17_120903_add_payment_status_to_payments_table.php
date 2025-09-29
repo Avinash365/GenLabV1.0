@@ -14,7 +14,7 @@ return new class extends Migration
         Schema::table('cash_letter_payments', function (Blueprint $table) {
             $table->tinyInteger('transaction_status')
                     ->default(0)
-                    ->comment('0=pending,1=partial,2=paid')
+                    ->comment('0=pending,1=partial,2=paid, 3=settled')
                     ->after('amount_received');
         });  
     }

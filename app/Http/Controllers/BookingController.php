@@ -11,7 +11,7 @@ use App\Models\BookingItem;
 use App\Services\JobOrderService;
 use App\Models\User;
 use App\Enums\Role; 
-use App\Models\Department; 
+use App\Models\{Department,SpecialFeature}; 
 use App\Services\GetUserActiveDepartment;
 use App\Services\FileUploadService;
 use App\Jobs\GenerateBookingCards;
@@ -61,15 +61,16 @@ class BookingController extends Controller
     public function create()
     {
         $departments = $this->departmentService->getDepartment();
-        return view('superadmin.Bookings.newBooking', compact('departments'));
+        $firstBackedBooking = SpecialFeature::orderBy('id')->first()?->backed_booking ?? 0;
+
+        return view('superadmin.Bookings.newBooking', compact('departments', 'firstBackedBooking'));
     }
 
    
 
     public function store(StoreBookingRequest $request)
     {   
-        // dd($request->all()); 
-        // exit; 
+        
         try {
             // Determine creator dynamically
             if (auth('admin')->check()) {
@@ -88,6 +89,7 @@ class BookingController extends Controller
                 $bookingData = $request->only([
                     'client_name',
                     'client_address',
+                    'letter_date',
                     'job_order_date',
                     'department_id', 
                     'report_issue_to',
@@ -159,6 +161,7 @@ class BookingController extends Controller
                 $bookingData = $request->only([
                     'client_name',
                     'client_address',
+                    'letter_date',
                     'job_order_date',
                     'report_issue_to',
                     'reference_no',

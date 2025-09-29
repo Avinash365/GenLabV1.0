@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\WithoutBillTransaction;
 use App\Models\NewBooking;
-use App\Models\{Client, CashLetterPayment, Department}; 
+use App\Models\{Client, CashLetterPayment, CashLetterPartialPaymentEntry, Department}; 
 
 use Carbon\Carbon;
 
@@ -26,13 +26,58 @@ class WithoutBillTransactionController extends Controller
 
     public function index(Request $request)
     {
-         
-        $CashLetterPayment = CashLetterPayment::all();
+        // Start query
+        $query = CashLetterPayment::query()->orderBy('created_at', 'desc');
 
-    
-        return view('superadmin.cashPayments.index', compact('CashLetterPayment'));  
-        
-    } 
+        // Filter by Year
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+
+        // Filter by Month
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+
+        // Filter by Transaction Status
+        if ($request->filled('transaction_status')) {
+            $query->where('transaction_status', $request->transaction_status);
+        }
+
+        // Pagination
+        $CashLetterPayment = $query->paginate(10)->withQueryString();
+
+        // Get all Booking IDs
+        $allBookingIds = $CashLetterPayment->pluck('booking_ids')
+            ->map(function ($ids) {
+                if (is_array($ids)) return $ids;
+                return $ids ? explode(',', $ids) : [];
+            })
+            ->flatten()
+            ->unique()
+            ->toArray();
+
+        // Get bookings
+        $allBookings = NewBooking::whereIn('id', $allBookingIds)
+            ->get()
+            ->keyBy('id');
+
+        // Map bookings to each payment
+        foreach ($CashLetterPayment as $payment) {
+            $bookingIds = is_array($payment->booking_ids)
+                ? $payment->booking_ids
+                : ($payment->booking_ids ? explode(',', $payment->booking_ids) : []);
+
+            $payment->bookings = collect($bookingIds)
+                ->map(fn($id) => $allBookings[$id] ?? null)
+                ->filter();
+        }
+
+        return view('superadmin.cashPayments.index', compact('CashLetterPayment'));
+    }
+
+
+
 
     
     public function store(Request $request)
@@ -85,6 +130,18 @@ class WithoutBillTransactionController extends Controller
                         ]
                     );
             }
+            
+            // Create entry in partial payment table
+            CashLetterPartialPaymentEntry::create([
+                'client_id'             => $validated['client_id'],
+                'marketing_person_id'   => $validated['marketing_person_id'],
+                'cash_letter_payment_id'=> $cashLetterPayment->id,
+                'payment_mode'          => $validated['payment_mode'],
+                'transaction_date'      => $validated['transaction_date'],
+                'amount_received'       => $validated['amount_received'],
+                'note'                  => $validated['notes'] ?? null,
+                'created_by'            => auth()->id(),
+            ]);
 
             \DB::commit();
 
@@ -105,12 +162,73 @@ class WithoutBillTransactionController extends Controller
         }
     } 
 
+    public function storeRepay(Request $request, $id)
+    {   
+        try { 
+          
+            $request->validate([
+                'payment_mode' => 'required|string',
+                'transaction_date' => 'required|date',
+                'amount_received' => 'required|numeric|min:0',
+                'notes' => 'nullable|string',
+            ]);
+
+            // Find the original Cash Letter Payment
+            $cashLetterPayment = CashLetterPayment::findOrFail($id);
+
+            // Create partial payment entry
+            $partialPayment = \DB::table('cash_letter_partial_payment_entry')->insertGetId([
+                'client_id' => $cashLetterPayment->client_id,
+                'marketing_person_id' => $cashLetterPayment->marketing_person_id,
+                'cash_letter_payment_id' => $cashLetterPayment->id,
+                'payment_mode' => $request->payment_mode,
+                'transaction_date' => $request->transaction_date,
+                'amount_received' => $request->amount_received,
+                'note' => $request->notes,
+                'created_by' => auth()->id(),
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+
+            // Calculate total received so far
+            $totalReceived = \DB::table('cash_letter_partial_payment_entry')
+                ->where('cash_letter_payment_id', $cashLetterPayment->id)
+                ->sum('amount_received');
+
+            // Update cash_letter_payments table
+            $cashLetterPayment->amount_received = $totalReceived;
+         
+            if ($totalReceived == 0) {
+                $cashLetterPayment->transaction_status = 0; // pending
+            } elseif ($totalReceived < $cashLetterPayment->total_amount) {
+                $cashLetterPayment->transaction_status = 1; // partial
+            } else {
+                $cashLetterPayment->transaction_status = 2; // paid
+            }
+
+            $cashLetterPayment->save();
+
+            return redirect()->back()->with('success', 'Partial payment recorded successfully.');
+
+        } catch (\Throwable $e) {
+            \Log::error('Cash Letter Partial Payment Error: '.$e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return redirect()->back()->withErrors(['error' => 'Something went wrong.']);
+        }
+    }
+
+
+
+
+
+
     public function settle(Request $request, $id)
     { 
         $payment = CashLetterPayment::findOrFail($id);
 
         // Update transaction status to Paid
-        $payment->transaction_status = 2; // 2 = Paid
+        $payment->transaction_status = 3; // 2 = Paid
         // $payment->amount_received = $payment->total_amount; // ensure fully received
         $payment->save();
 

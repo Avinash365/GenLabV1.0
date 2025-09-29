@@ -63,21 +63,6 @@
         </div>
     </div>
 
-    <!-- Department Filter -->
-    <div class="my-3 ms-4">
-        <div class="btn-group flex-wrap">
-            <a href="{{ route('superadmin.marketing-person-ledger.index') }}" 
-               class="btn btn-sm {{ request('department_id') ? 'btn-outline-primary' : 'btn-primary' }}">
-                All 
-            </a>
-            @foreach($departments as $dept)
-                <a href="{{ route('superadmin.marketing-person-ledger.index', array_merge(request()->query(), ['department_id' => $dept->id])) }}"
-                   class="btn btn-sm {{ request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary' }}">
-                    {{ $dept->name }}
-                </a>
-            @endforeach
-        </div>
-    </div>
 
     <div class="card-body p-0">
         <div class="table-responsive">

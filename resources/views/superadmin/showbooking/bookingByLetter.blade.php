@@ -94,7 +94,7 @@
                             <th>Sample Description</th>
                             <th>Sample Quality</th>
                             <th>Particulars</th>
-                            <th>Status</th>
+                      
                             <th>Action</th>
                         </tr>
                     </thead>
@@ -107,7 +107,7 @@
                             <td>{{ $item->sample_description }}</td>
                             <td>{{ $item->sample_quality }}</td>
                             <td>{{ $item->particulars }}</td>
-                            <td>Status</td>
+                           
                            
                             <td class="d-flex">
                                 <a href="{{ route('superadmin.bookings.edit', $item->booking->id ?? 0) }}"
