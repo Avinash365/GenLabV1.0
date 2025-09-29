@@ -365,10 +365,12 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::post('/account-receive/{item}', [ReportingController::class, 'accountReceiveOne'])->name('accountReceiveOne');
             Route::post('/account-receive-bulk', [ReportingController::class, 'accountReceiveBulk'])->name('accountReceiveBulk');
             Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
-        }); 
+            Route::get('/generate', [ReportingController::class, 'generate'])->name('generate'); 
+            
+            Route::post('/reporting/assign/{item}', [ReportingController::class, 'assignReport'])->name('assignReport');
 
-            Route::get('/generate', [ReportingController::class, 'generate'])->name('reporting.generate');
-
+        });  
+        
             // Report Format Upload & Listing
             Route::get('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'index'])->name('reporting.report-formats.index');
             Route::post('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'store'])->name('reporting.report-formats.store');
@@ -376,7 +378,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'edit'])->name('report-formats.content.edit');
             Route::put('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'update'])->name('report-formats.content.update');
             Route::get('/report-formats/{reportFormat}/export-pdf', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'exportPdf'])->name('report-formats.content.exportPdf');
-        });
+    });
 
         // list of clients 
         Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');
@@ -386,14 +388,16 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/test/list', [ListController::class, 'view'])->name('test.list');  
 
         //report editor
-      
         Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index');
-        Route::post('/editor/store', [ReportEditorController::class, 'store'])->name('editor.store');
-        Route::put('/editor/update/{id}', [ReportEditorController::class, 'update'])->name('editor.update');
         Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save');
         Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete');   
-
+        
+        Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])->name('generateReportPDF.generatePdf');
+        
+        Route::get('generateReportPDF/generate/{item}', [ReportEditorController::class, 'generate'])->name('generateReportPDF.generate');
+        Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
 
 
         Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
-        Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');
+        Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save'); 
+

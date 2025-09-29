@@ -167,4 +167,4 @@
 
 <?php $__env->stopSection(); ?>
 
-<?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenTech_bug\GenLab\resources\views/superadmin/showbooking/bookingByLetter.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenTech_bug\bankTransaction\GenLab\resources\views/superadmin/showbooking/bookingByLetter.blade.php ENDPATH**/ ?>

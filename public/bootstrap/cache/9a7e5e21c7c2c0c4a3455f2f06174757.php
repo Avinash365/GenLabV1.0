@@ -10,4 +10,4 @@
     // Initialize the ONLYOFFICE editor
     const docEditor = new DocsAPI.DocEditor("placeholder", config);
 </script>
-<?php /**PATH A:\GenTech\htdocs\GenTech_bug\GenLab\resources\views/Reportfrmt/editor.blade.php ENDPATH**/ ?>
+<?php /**PATH A:\GenTech\htdocs\GenTech_bug\bankTransaction\GenLab\resources\views/Reportfrmt/editor.blade.php ENDPATH**/ ?>
