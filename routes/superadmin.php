@@ -60,6 +60,10 @@ use App\Http\Controllers\Transactions\WithoutBillTransactionController;
 use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\ListController;
 
+use App\Http\Controllers\ReportEditorController; 
+use App\Http\Controllers\OnlyOfficeController;
+
+
 // =======================
 // Super Admin Login Routes
 // =======================
@@ -72,7 +76,7 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
 // ==============================
 // Super Admin Protected Routes
-// ==============================
+// ============================== 
 Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
 
     // Dashboard
@@ -131,6 +135,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::get('/bookingByLetter', [ShowBookingByLetterController::class, 'index'])->name('bookingByLetter.index'); 
             Route::delete('/bookingByLetter/{bookingItem}', [ShowBookingByLetterController::class, 'destroy'])->name('bookingByLetter.destroy');
+            Route::get('/bookingByLetter/export/pdf', [ShowBookingByLetterController::class, 'exportPdf'])->name('bookingByLetter.exportPdf');
+            Route::get('/bookingByLetter/export/excel', [ShowBookingByLetterController::class, 'exportExcel'])->name('bookingByLetter.exportExcel');
 
             Route::get('/superadmin/bookings/autocomplete', [BookingController::class, 'getAutocomplete'])->name('autocomplete');
 
@@ -235,6 +241,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     // Cheque Alignment Setup
     Route::get('banks/create', [BankController::class, 'create'])->name('banks.create');
     Route::post('banks', [BankController::class, 'store'])->name('banks.store');
+    Route::delete('banks/{bank}', [BankController::class, 'destroy'])->name('banks.destroy');
     Route::get('cheque-templates/{bank}', [ChequeTemplateController::class, 'editor'])->name('cheque-templates.editor');
     Route::post('cheque-templates/{bank}', [ChequeTemplateController::class, 'store'])->name('cheque-templates.store');
     Route::get('cheque-templates/{bank}/fetch', [ChequeTemplateController::class, 'fetch'])->name('cheque-templates.fetch');
@@ -320,6 +327,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
          // ShowBooking List 
         Route::prefix('showbooking')->name('showbooking.')->group(function () {
             Route::get('/{department?}', [ShowBookingController::class, 'index'])->name('showBooking');
+            Route::get('/export/pdf/{department?}', [ShowBookingController::class, 'exportPdf'])->name('exportPdf');
+            Route::get('/export/excel/{department?}', [ShowBookingController::class, 'exportExcel'])->name('exportExcel');
         });
 
          // ShowBooking List 
@@ -345,8 +354,16 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // Reporting
         Route::prefix('reporting')->name('reporting.')->group(function () {
             Route::get('/received', [ReportingController::class, 'received'])->name('received');
+            Route::get('/pendings', [ReportingController::class, 'pendings'])->name('pendings');
+            Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
+            Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
+            Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
+            Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
+            Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
             Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
             Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
+            Route::post('/account-receive/{item}', [ReportingController::class, 'accountReceiveOne'])->name('accountReceiveOne');
+            Route::post('/account-receive-bulk', [ReportingController::class, 'accountReceiveBulk'])->name('accountReceiveBulk');
             Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
         }); 
 
@@ -366,3 +383,17 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/invoices/list', [ListController::class, 'invoices'])->name('api.invoices.list');
         Route::get('/refnos/list', [ListController::class, 'refNos'])->name('api.refnos.list');
 
+        Route::get('/test/list', [ListController::class, 'view'])->name('test.list');  
+
+        //report editor
+      
+        Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index');
+        Route::post('/editor/store', [ReportEditorController::class, 'store'])->name('editor.store');
+        Route::put('/editor/update/{id}', [ReportEditorController::class, 'update'])->name('editor.update');
+        Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save');
+        Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete');   
+
+
+
+        Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
+        Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');

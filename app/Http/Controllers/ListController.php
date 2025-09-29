@@ -9,6 +9,10 @@ use App\Models\NewBooking;
 
 class ListController extends Controller
 {
+    
+    public function view(){
+        return view('Reportfrmt.index');
+    }    
     // Clients
     public function clients(Request $request)
     { 

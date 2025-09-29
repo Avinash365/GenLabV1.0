@@ -33,4 +33,20 @@ class BankController extends Controller
             ->route('superadmin.cheque-templates.editor', $bank->id)
             ->with('success', 'Bank created. Configure cheque alignment.');
     }
+
+    public function destroy(Bank $bank)
+    {
+        // Delete stored cheque image if exists
+        if ($bank->cheque_image_path && \Storage::disk('public')->exists($bank->cheque_image_path)) {
+            \Storage::disk('public')->delete($bank->cheque_image_path);
+        }
+
+        // Delete related templates
+        $bank->templates()->delete();
+
+        // Delete bank
+        $bank->delete();
+
+        return back()->with('success', 'Bank and its templates deleted successfully.');
+    }
 }

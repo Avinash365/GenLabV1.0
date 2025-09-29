@@ -18,11 +18,28 @@
     </div>
 <?php endif; ?>
 
-<div class="d-flex justify-content-end mt-3 me-3 mb-4">
-    <a href="<?php echo e(route('superadmin.blank-invoices.create')); ?>" class="btn btn-primary">
-        <i class="bi bi-plus-lg"></i> Generate Blank PI
-    </a>
-</div>  
+    <div class="page-header ps-3 px-3">
+        <div class="d-flex justify-content-end mt-3 me-3 mb-4">
+            <a href="<?php echo e(route('superadmin.blank-invoices.create')); ?>" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Generate Blank PI
+            </a>
+        </div>  
+
+        <ul class="table-top-head list-inline d-flex gap-3">
+            <li class="list-inline-item">
+                <a href="#" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+            </li>
+            <li class="list-inline-item">
+                <a href="#" data-bs-toggle="tooltip" title="Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
+                        <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
+                    </svg>
+                </a>
+            </li>
+            <li><a data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a></li>
+            <li><a data-bs-toggle="tooltip" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a></li>
+        </ul>
+    </div> 
 
 <div class="card">
     <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -104,6 +121,7 @@
                 <option value="">All</option>
                 <option value="1" <?php echo e(request('payment_status') == '1' ? 'selected' : ''); ?>>Paid</option>
                 <option value="0" <?php echo e(request('payment_status') == '0' ? 'selected' : ''); ?>>Unpaid</option>
+                <option value="2" <?php echo e(request('payment_status') == '2' ? 'selected' : ''); ?>>Cancel</option>
             </select>
 
             <!-- Search bar -->
@@ -115,7 +133,7 @@
     <!-- Department Filter -->
 <div class="my-3 ms-4">
     <div class="btn-group flex-wrap">
-        <a href="<?php echo e(route('superadmin.invoices.index')); ?>" 
+        <a href="<?php echo e(route('superadmin.invoices.index', ['type' => request('type', $type ?? '')])); ?>" 
            class="btn btn-sm <?php echo e(request('department_id') ? 'btn-outline-primary' : 'btn-primary'); ?>">
             All 
         </a>
@@ -214,10 +232,12 @@
                             <td>
                                 <?php if($invoice->status == 0): ?>
                                     <a href="<?php echo e(route('superadmin.cashPayments.create', $invoice->id)); ?>">
-                                      <span class="badge bg-warning">Pay</span>
+                                        <span class="badge bg-warning">Pay</span>
                                     </a>
-                                <?php else: ?>
+                                <?php elseif($invoice->status == 1): ?>
                                     <span class="badge bg-success">Paid</span>
+                                <?php elseif($invoice->status == 2): ?>
+                                    <span class="badge bg-danger">Cancelled</span>
                                 <?php endif; ?>
                             </td>
                             <td class="d-flex"> 
@@ -234,22 +254,35 @@
                                          <i data-feather="file-text"></i>
                                     </span>
                                 <?php endif; ?>  
-                            
-                                <!-- Edit Button -->
-                                <a href="<?php echo e(route('superadmin.invoices.edit', $invoice->id)); ?>" 
-                                   class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-                                   title="Edit">
-                                    <i data-feather="edit" class="feather-edit"></i>
-                                </a>
 
-                                <!-- Delete Button -->
-                                <button type="button" 
-                                        class="p-2 border rounded d-flex align-items-center btn-delete" 
-                                        data-bs-toggle="modal" 
-                                        data-bs-target="#deleteModal<?php echo e($invoice->id); ?>"
-                                        title="Delete">
-                                    <i data-feather="trash-2" class="feather-trash-2"></i>
-                                </button>
+                                <form action="<?php echo e(route('superadmin.invoices.cancel', $invoice->id)); ?>" method="POST" class="d-inline">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('PATCH'); ?>
+                                    <button type="submit" 
+                                            class="me-2 border rounded d-flex align-items-center p-2 btn btn-link text-danger"
+                                            title="Cancel">
+                                        <i data-feather="x-circle"></i>
+                                    </button>
+                                </form> 
+                                
+                                  <?php if($invoice->status != 2): ?>
+                                    <!-- Edit Button -->
+                                    <a href="<?php echo e(route('superadmin.invoices.edit', $invoice->id)); ?>" 
+                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+                                    title="Edit">
+                                        <i data-feather="edit" class="feather-edit"></i>
+                                    </a>
+                                <?php endif; ?>
+                              
+                                    <!-- Delete Button -->
+                                    <button type="button" 
+                                            class="p-2 border rounded d-flex align-items-center btn-delete" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal<?php echo e($invoice->id); ?>"
+                                            title="Delete">
+                                        <i data-feather="trash-2" class="feather-trash-2"></i>
+                                    </button> 
+                                
                             </td>
                         </tr>
                         
@@ -281,7 +314,7 @@
                 </tbody> 
             </table> 
         </div>
-
+        
         <!-- Pagination --> 
         <div class="mt-3">
             <?php echo e($invoices->appends(request()->query())->links('pagination::bootstrap-5')); ?>

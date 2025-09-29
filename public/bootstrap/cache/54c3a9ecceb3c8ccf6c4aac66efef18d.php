@@ -72,7 +72,7 @@
                                 <li><a href="<?php echo e(route('superadmin.reporting.received')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.received') ? 'active' : ''); ?>">Received</a></li>
                                 <li><a href="<?php echo e(route('superadmin.reporting.holdcancel.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.holdcancel.*') ? 'active' : ''); ?>">Hold & Cancel</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Reported</a></li>
-                                <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Hold & Unhold</a></li>
+                                <li><a href="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">Pendings</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Print & Upload</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Export PDF</a></li>
                                 <li>
@@ -142,7 +142,11 @@
                             </ul>
                         </li>
                         <!-- Other single links -->
-                        <li><a href="#"><i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span></a></li>
+                        <li>
+                            <a href="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatch') ? 'active' : ''); ?>">
+                                <i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span>
+                            </a>
+                        </li>
                         <li><a href="#"><i class="ti ti-target fs-16 me-2"></i><span>Marketing</span></a></li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-calendar-check fs-16 me-2"></i><span>Attendance</span></a></li>

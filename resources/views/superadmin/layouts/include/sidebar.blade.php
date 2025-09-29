@@ -71,7 +71,7 @@
                                 <li><a href="{{ route('superadmin.reporting.received') }}" class="{{ Request::routeIs('superadmin.reporting.received') ? 'active' : '' }}">Received</a></li>
                                 <li><a href="{{ route('superadmin.reporting.holdcancel.index') }}" class="{{ Request::routeIs('superadmin.reporting.holdcancel.*') ? 'active' : '' }}">Hold & Cancel</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Reported</a></li>
-                                <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Hold & Unhold</a></li>
+                                <li><a href="{{ route('superadmin.reporting.pendings') }}" class="{{ Request::routeIs('superadmin.reporting.pendings') ? 'active' : '' }}">Pendings</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Print & Upload</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Export PDF</a></li>
                                 <li>
@@ -140,14 +140,19 @@
                             </ul>
                         </li>
                         <!-- Other single links -->
-                        <li><a href="#"><i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span></a></li>
+                        <li>
+                            <a href="{{ route('superadmin.reporting.dispatch') }}" class="{{ Request::routeIs('superadmin.reporting.dispatch') ? 'active' : '' }}">
+                                <i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span>
+                            </a>
+                        </li>
                         <li><a href="#"><i class="ti ti-target fs-16 me-2"></i><span>Marketing</span></a></li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-calendar-check fs-16 me-2"></i><span>Attendance</span></a></li>
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
-            
+
+                        <li><a href="{{ route('editor.index') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>ReportForm</span></a></li>
                         
                         <li><a href="{{ route('superadmin.calibrations.index') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Calibration</span></a></li>
                         <li><a href="{{ route('superadmin.leave.Leave') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>
