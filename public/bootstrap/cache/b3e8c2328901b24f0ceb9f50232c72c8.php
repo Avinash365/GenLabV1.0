@@ -72,9 +72,15 @@
                                 <li><a href="<?php echo e(route('superadmin.reporting.received')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.received') ? 'active' : ''); ?>">Received</a></li>
                                 <li><a href="<?php echo e(route('superadmin.reporting.holdcancel.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.holdcancel.*') ? 'active' : ''); ?>">Hold & Cancel</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Reported</a></li>
-                                <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Hold & Unhold</a></li>
+                                <li><a href="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">Pendings</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Print & Upload</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Export PDF</a></li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.reporting.report-formats.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.report-formats.*') ? 'active' : ''); ?>">Upload Report Format</a>
+                                </li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.reporting.generate')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.generate') ? 'active' : ''); ?>">Generate Report</a>
+                                </li>
                             </ul>
                         </li>
 
@@ -93,24 +99,31 @@
                             <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>">All Letters</a></li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.cheques.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.cheques.*') ? 'active' : ''); ?>">Cheques</a>
+                                </li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.banks.create')); ?>" class="<?php echo e(Request::routeIs('superadmin.banks.*') || Request::routeIs('superadmin.cheque-templates.*') ? 'active' : ''); ?>">Cheque Template</a>
+                                </li>
                                 <li><a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index')); ?>">Generate Invoice</a></li>
                                 <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'tax_invoice', 'payment_status'=>'0'])); ?>">Tax Invoice</a></li>
                                 <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0'])); ?>">PI Invoice</a></li>
                                 <li><a href="<?php echo e(route('superadmin.blank-invoices.index')); ?>">Blank Invoice</a></li>
                                 <li><a href="<?php echo e(route('superadmin.quotations.index')); ?>">Quotation</a></li>
+
                                 <li>
                                     <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill'])); ?>">
                                         Cash Letter
                                     </a>
                                 </li>     
-                                <li><a href="<?php echo e(route('superadmin.cashLetterTransactions.index')); ?>">Paid Letters</a></li>
-                                <li><a href="<?php echo e(route('superadmin.cashPayments.index')); ?>">Invoice Transaction</a></li>
                                 <li><a href="<?php echo e(route('superadmin.client-ledger.index')); ?>">Client Ledger</a></li>
+                                <li><a href="#">Unpaid Letter</a></li>
+                                <li><a href="<?php echo e(route('superadmin.cashLetterTransactions.index')); ?>">Cash Transaction</a></li>
+                                <li><a href="#">Invoice Transaction</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
                                 <li><a href="">Office Expenses</a></li>
                                 <li><a href="#">Marketing Expenses</a></li>
-                                <li><a href="#">Purchase Bill</a></li> 
-                                <li><a href="<?php echo e(route('superadmin.bank.upload')); ?>">Bank Transactions</a></li>
+                                <li><a href="#">Purchase Bill</a></li>
                             </ul>
                         </li>
                         <li class="submenu <?php echo e(Request::routeIs('superadmin.attachments.*') ? 'submenu-open' : ''); ?>">
@@ -129,15 +142,22 @@
                             </ul>
                         </li>
                         <!-- Other single links -->
-                        <li><a href="#"><i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span></a></li>
+                        <li>
+                            <a href="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatch') ? 'active' : ''); ?>">
+                                <i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span>
+                            </a>
+                        </li>
                         <li><a href="#"><i class="ti ti-target fs-16 me-2"></i><span>Marketing</span></a></li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-calendar-check fs-16 me-2"></i><span>Attendance</span></a></li>
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
-            
-                        
+
+                        <li><a href="<?php echo e(route('editor.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Report Format</span></a></li>
+                        <li><a href=" "><i class="ti ti-clipboard-list fs-16 me -2"></i><span>Generate Report</span></a></li>
+                        <li><a href="<?php echo e(route('onlyoffice.new')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>OnlyOfficeController</span></a></li>
+
                         <li><a href="<?php echo e(route('superadmin.calibrations.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Calibration</span></a></li>
                         <li><a href="<?php echo e(route('superadmin.leave.Leave')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>
 

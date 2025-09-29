@@ -44,6 +44,9 @@ use App\Http\Controllers\Accounts\BlankInvoiceController;
 use App\Http\Controllers\Accounts\PaymentSettingController;
 use App\Http\Controllers\Accounts\MarketingPersonLedger; 
 use App\Http\Controllers\Accounts\CashLetterController; 
+use App\Http\Controllers\Accounts\ChequeController; 
+use App\Http\Controllers\Accounts\BankController; 
+use App\Http\Controllers\Accounts\ChequeTemplateController; 
 
 use App\Http\Controllers\Accounts\AccountsLetterController;
 
@@ -227,6 +230,15 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('client/{id}/transactions', [ClientLedgerController::class, 'fetchInvoicesTransactions'])->name('client.transactions'); 
         Route::get('client/{id}/cash-transactions', [ClientLedgerController::class, 'fetchCashTransaction'])->name('client.cashTransactions'); 
         Route::get('client/{id}/cash-all-transactions', [ClientLedgerController::class, 'fetchClientAllBookings'])->name('client.cashAllTransactions'); 
+        Route::get('client/{id}/cash-transactions', [ClientLedgerController::class, 'fetchCashTransaction'])->name('client.cashTransactions');
+
+    // Cheque Alignment Setup
+    Route::get('banks/create', [BankController::class, 'create'])->name('banks.create');
+    Route::post('banks', [BankController::class, 'store'])->name('banks.store');
+    Route::get('cheque-templates/{bank}', [ChequeTemplateController::class, 'editor'])->name('cheque-templates.editor');
+    Route::post('cheque-templates/{bank}', [ChequeTemplateController::class, 'store'])->name('cheque-templates.store');
+    Route::get('cheque-templates/{bank}/fetch', [ChequeTemplateController::class, 'fetch'])->name('cheque-templates.fetch');
+
 
 
         Route::get('cash-payments/create/{id}', [CashPaymentController::class, 'create'])->name('cashPayments.create');
@@ -246,6 +258,17 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
 
         Route::resource('accountBookingsLetters', AccountsLetterController::class); 
+        
+    // Cheques
+    Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
+    Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
+    Route::post('cheques/{cheque}/receive', [ChequeController::class, 'receive'])->name('cheques.receive');
+    Route::post('cheques/receive', [ChequeController::class, 'storeReceived'])->name('cheques.storeReceived');
+    Route::post('cheques/{cheque}/toggle-deposit', [ChequeController::class, 'toggleDeposit'])->name('cheques.toggleDeposit');
+    Route::get('cheques/{cheque}/edit', [ChequeController::class, 'edit'])->name('cheques.edit');
+    Route::put('cheques/{cheque}', [ChequeController::class, 'update'])->name('cheques.update');
+    Route::delete('cheques/{cheque}', [ChequeController::class, 'destroy'])->name('cheques.destroy');
+    Route::get('cheques/{cheque}/print-preview', [ChequeController::class, 'printPreview'])->name('cheques.printPreview');
         
 
         Route::get('cash-letter/payments', [CashLetterController::class, 'showMultiple'])->name('cashLetter.payments.showMultiple');
@@ -327,7 +350,16 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
         }); 
 
-});
+            Route::get('/generate', [ReportingController::class, 'generate'])->name('reporting.generate');
+
+            // Report Format Upload & Listing
+            Route::get('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'index'])->name('reporting.report-formats.index');
+            Route::post('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'store'])->name('reporting.report-formats.store');
+            Route::get('/report-formats/{reportFormat}', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'show'])->name('report-formats.show');
+            Route::get('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'edit'])->name('report-formats.content.edit');
+            Route::put('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'update'])->name('report-formats.content.update');
+            Route::get('/report-formats/{reportFormat}/export-pdf', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'exportPdf'])->name('report-formats.content.exportPdf');
+        });
 
         // list of clients 
         Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');

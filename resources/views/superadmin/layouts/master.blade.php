@@ -11,8 +11,9 @@
 
     <!-- Global Styles -->
     <link rel="stylesheet" href="{{ url('assets/css/bootstrap.min.css') }}">
-    <link rel="stylesheet" href="{{ url('assets/plugins/feather/feather.css') }}">
-    <link rel="stylesheet" href="{{ url('assets/plugins/tabler-icons/tabler-icons.min.css') }}">
+    <link rel="stylesheet" href="{{ url('assets/css/feather.css') }}">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.47.0/tabler-icons.min.css">
+    <link rel="stylesheet" href="{{ url('assets/plugins/fontawesome/css/all.min.css') }}">
     <link rel="stylesheet" href="{{ url('assets/css/style.css') }}">
     <style>
       /* Fallback: always allow sidebar to scroll */
@@ -24,16 +25,20 @@
     <div class="main-wrapper">
         @include('superadmin.layouts.include.sidebar')
 
+        @include('superadmin.layouts.include.header')
+
         <div class="page-wrapper">
             @yield('content')
+
+            @include('superadmin.layouts.include.footer')
         </div>
     </div>
 
     <!-- Global Scripts -->
-    <script src="{{ url('assets/js/jquery-3.6.0.min.js') }}"></script>
+    <script src="{{ url('assets/js/jquery-3.7.1.min.js') }}"></script>
     <script src="{{ url('assets/js/bootstrap.bundle.min.js') }}"></script>
     <script src="{{ url('assets/js/feather.min.js') }}"></script>
-    <script src="{{ url('assets/plugins/slimscroll/jquery.slimscroll.min.js') }}"></script>
+    <script src="{{ url('assets/js/jquery.slimscroll.min.js') }}"></script>
     <script>
         if (window.feather) { window.feather.replace(); }
         (function($){

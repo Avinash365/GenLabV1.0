@@ -74,6 +74,12 @@
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Hold & Unhold</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Print & Upload</a></li>
                                 <li><a href="#" class="{{ Request::routeIs('#') ? 'active' : '' }}">Export PDF</a></li>
+                                <li>
+                                    <a href="{{ route('superadmin.reporting.report-formats.index') }}" class="{{ Request::routeIs('superadmin.reporting.report-formats.*') ? 'active' : '' }}">Upload Report Format</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('superadmin.reporting.generate') }}" class="{{ Request::routeIs('superadmin.reporting.generate') ? 'active' : '' }}">Generate Report</a>
+                                </li>
                             </ul>
                         </li>
 
@@ -92,6 +98,12 @@
                             <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                             <ul>
                                 <li><a href="{{ route('superadmin.accountBookingsLetters.index') }}">All Letters</a></li>
+                                <li>
+                                    <a href="{{ route('superadmin.cheques.index') }}" class="{{ Request::routeIs('superadmin.cheques.*') ? 'active' : '' }}">Cheques</a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('superadmin.banks.create') }}" class="{{ Request::routeIs('superadmin.banks.*') || Request::routeIs('superadmin.cheque-templates.*') ? 'active' : '' }}">Cheque Template</a>
+                                </li>
                                 <li><a href="{{ route('superadmin.bookingInvoiceStatuses.index') }}">Generate Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'tax_invoice', 'payment_status'=>'0']) }}">Tax Invoice</a></li>
                                 <li><a href="{{ route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0']) }}">PI Invoice</a></li>

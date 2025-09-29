@@ -11,6 +11,7 @@
     },
     "dependencies": {
         "laravel-echo": "^2.2.0",
+        "mammoth": "^1.10.0",
         "puppeteer": "^24.17.1",
         "pusher-js": "^8.4.0"
     }
