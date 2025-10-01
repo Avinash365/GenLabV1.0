@@ -42,12 +42,12 @@
         <div class="col-md-6">
             <label for="report_no" class="form-label">REPORT NO:</label>
             <input type="text" name="report_no" id="report_no" class="form-control" 
-                   value="{{ old('report_no') }}" required>
+                   value="{{ old('report_no', $item->job_order_no) }}" required>
         </div>
         <div class="col-md-6">
             <label for="ulr_no" class="form-label">ULR No:</label>
             <input type="text" name="ulr_no" id="ulr_no" class="form-control" 
-                   value="{{ old('ulr_no') }}" required>
+                   value="{{ old('ulr_no', $pivotRecord->ult_r_no ?? '') }}" required>
         </div>
     </div>
 
@@ -60,12 +60,14 @@
         <div class="col-md-3">
             <label for="date_of_receipt" class="form-label">Date of Receipt:</label>
             <input type="date" name="date_of_receipt" id="date_of_receipt" class="form-control" 
-                value="{{ old('date_of_receipt', $assignedReport->date_of_receipt ?? '') }}" required>
+                value="{{ old('date_of_receipt', isset($pivotRecord) && $pivotRecord->date_of_receipt ? \Carbon\Carbon::parse($pivotRecord->date_of_receipt)->format('Y-m-d') : '') }}" 
+                required>
         </div>
         <div class="col-md-3">
             <label for="another_date" class="form-label">Date of Start of Analysis:</label>
             <input type="date" name="date_of_start_analysis" id="another_date" class="form-control" 
-                value="{{ old('date_of_start_analysis') }}" required>
+                value="{{ old('date_of_start_analysis', isset($pivotRecord) && $pivotRecord->date_of_start_of_analysis ? \Carbon\Carbon::parse($pivotRecord->date_of_start_of_analysis)->format('Y-m-d') : '') }}" 
+                required>
         </div>
     </div>
 
@@ -79,12 +81,13 @@
         <div class="col-md-3">
             <label for="letter_ref_date" class="form-label">Letter Ref Date:</label>
             <input type="date" name="letter_ref_date" id="letter_ref_date" class="form-control" 
-                   value="{{ old('letter_ref_date', $booking->job_order_date ?? '') }}" required>
+                   value="{{ old('letter_ref_date', $booking->letter_date ?? '') }}" required>
         </div>
         <div class="col-md-3">
             <label for="completion_date" class="form-label">Date of Completion of Analysis:</label>
             <input type="date" name="completion_date" id="completion_date" class="form-control" 
-                   value="{{ old('completion_date') }}" required>
+                value="{{ old('completion_date', isset($pivotRecord) && $pivotRecord->date_of_completion_of_analysis ? \Carbon\Carbon::parse($pivotRecord->date_of_completion_of_analysis)->format('Y-m-d') : '') }}" 
+                required>
         </div>
     </div>
 
@@ -101,12 +104,18 @@
         </div>
         <div class="col-md-3">
             <label for="name_of_work" class="form-label">Name of Work:</label>
-            <textarea name="name_of_work" id="name_of_work" class="form-control" rows="2" required>{{ old('name_of_work') }}</textarea>
+            <textarea name="name_of_work" id="name_of_work" class="form-control" rows="2" required>{{ old('name_of_work', $booking->name_of_work ?? '') }}</textarea>
         </div>
     </div>
 
     {{-- Jodit Editor --}}
-    <textarea id="jodit-editor" name="content" class="form-control" style="height: 400px;">{{ old('content', $assignedReport ? Storage::disk('public')->get($assignedReport->file_path) : '') }}</textarea>
+    <textarea id="jodit-editor" name="content" class="form-control" style="height: 400px;">
+        {{ old('content', 
+            (isset($pivotRecord) && $pivotRecord->generated_report_path) 
+                ? Storage::disk('public')->get($pivotRecord->generated_report_path) 
+                : (isset($assignedReport) && $assignedReport->file_path ? Storage::disk('public')->get($assignedReport->file_path) : '') 
+        ) }}
+    </textarea>
 
     {{-- Submit Button --}}
     <div class="d-flex justify-content-end gap-2 mt-3 mb-2">

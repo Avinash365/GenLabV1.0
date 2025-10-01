@@ -107,7 +107,8 @@
                             <th>Client Name</th>
                             <th>Description</th>
                             <th>Status</th> 
-                            <th>Select Report</th> 
+                            <th>Select Report</th>  
+                            <th> view </th> 
                             <th>Action</th> 
                         </tr>
                     </thead>
@@ -140,26 +141,52 @@
                                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </select>
                                     </form>
-                                </td>
-                                <td>
-                                    <?php
-                                        $assignedReport = $item->reports->first(); // get assigned report
-                                    ?>
-                                    <?php if($assignedReport): ?>
-                                        <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
-                                            Generated Report
-                                        </a>
-                                    <?php else: ?>
-                                        <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
-                                            <?php echo csrf_field(); ?>
-                                            <?php if($item->received_at): ?>
-                                                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">Submit</button>
-                                            <?php else: ?>
-                                                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">Receive</button>
-                                            <?php endif; ?>
-                                        </form>
-                                    <?php endif; ?>
-                                </td>
+                                </td> 
+                                    <td>
+                                        <?php
+                                            $assignedReport = $item->reports->first(); // get assigned report
+                                        ?>
+
+                                        
+                                        <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>
+                                            <a href="<?php echo e(route('viewPdf', basename($assignedReport->pivot->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info">
+                                                View PDF
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-muted">-</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td>
+    <?php
+        $assignedReport = $item->reports->first(); // get assigned report
+        $pivotId = $assignedReport->pivot->id ?? null;
+    ?> 
+
+    <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>  
+        <a href="<?php echo e(route('generateReportPDF.editReport', $pivotId)); ?>" target="_blank" class="btn btn-sm btn-success">
+            Edit
+        </a>
+
+    <?php elseif($assignedReport): ?>
+        <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
+            Generated Report
+        </a>
+
+    <?php else: ?>
+        <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
+            <?php echo csrf_field(); ?>
+            <?php if($item->received_at): ?>
+                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
+                    Submit
+                </button>
+            <?php else: ?>
+                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
+                    Receive
+                </button>
+            <?php endif; ?>
+        </form>
+    <?php endif; ?>
+</td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
@@ -192,7 +219,7 @@
                         <input type="hidden" name="job" value="<?php echo e($job); ?>">
                         <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
                     </form>
-                    <a href="" 
+                       <a href="<?php echo e(route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0])); ?>" 
                         class="btn" 
                         style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
                         Get All
