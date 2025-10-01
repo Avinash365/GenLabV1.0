@@ -46,16 +46,16 @@ class ReportingController extends Controller
                 ];
 
                 // Show all items for the same booking/reference
-                $items = $b->items()->with(['booking', 'analyst', 'receivedBy'])->latest('id')->paginate(20)->withQueryString();
+                $items = $b->items()->with(['booking', 'analyst', 'reports','receivedBy'])->latest('id')->paginate(20)->withQueryString();
                 $reports = ReportEditorFile::latest()->get();
 
                 return view('superadmin.reporting.received', compact('items', 'job', 'header', 'reports'));
             }
         }
 
-    // Default: no auto-listing; show empty when no search or not found
-    $items = BookingItem::query()->whereRaw('1=0')->paginate(20)->withQueryString();
-    return view('superadmin.reporting.received', compact('items', 'job', 'header'));
+        // Default: no auto-listing; show empty when no search or not found
+        $items = BookingItem::query()->whereRaw('1=0')->paginate(20)->withQueryString();
+        return view('superadmin.reporting.received', compact('items', 'job', 'header'));
     }
 
     /**

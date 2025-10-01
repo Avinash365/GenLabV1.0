@@ -154,9 +154,6 @@
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
 
                         <li><a href="<?php echo e(route('editor.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Report Format</span></a></li>
-                        <li><a href=" "><i class="ti ti-clipboard-list fs-16 me -2"></i><span>Generate Report</span></a></li>
-                        <li><a href="<?php echo e(route('onlyoffice.new')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>OnlyOfficeController</span></a></li>
-
                         <li><a href="<?php echo e(route('superadmin.calibrations.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Calibration</span></a></li>
                         <li><a href="<?php echo e(route('superadmin.leave.Leave')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>
 

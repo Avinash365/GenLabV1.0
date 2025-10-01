@@ -67,7 +67,7 @@ class BookingItem extends Model
             'booking_item_report',   // pivot table name
             'booking_item_id',       // foreign key on pivot for this model
             'report_editor_file_id'  // foreign key on pivot for related model
-        )->withPivot('booking_id')->withTimestamps();
-    }
+        )->withPivot('id','booking_id', 'pdf_path', 'generated_report_path')->withTimestamps();
+    } 
 
 }

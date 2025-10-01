@@ -38,6 +38,43 @@ class ReportEditorController extends Controller
 
         return view('Reportfrmt.generate', compact('reports', 'assignedReport', 'item', 'booking'));
     }
+    
+    public function editReport($pivotId)
+    {
+      
+        $pivotRecord = \DB::table('booking_item_report')->where('id', $pivotId)->first();
+
+        if (!$pivotRecord) {
+            abort(404, 'Report not found');
+        }
+
+        $item = BookingItem::with(['booking', 'analyst', 'receivedBy', 'reports'])->find($pivotRecord->booking_item_id);
+        if (!$item) {
+            abort(404, 'Booking item not found');
+        }
+
+        
+        $assignedReport = ReportEditorFile::find($pivotRecord->report_editor_file_id);
+
+  
+        $booking = $item->booking;
+
+ 
+        $reports = ReportEditorFile::latest()->get();
+
+        return view('Reportfrmt.generate', compact('reports', 'assignedReport', 'item', 'booking', 'pivotRecord'));
+    }
+
+    public function viewPdf($filename)
+    {
+        $path = storage_path('app/public/' . $filename); // e.g., storage/generatedReports/1759307649_report.pdf
+
+        if (!file_exists($path)) {
+            abort(404);
+        }
+
+        return response()->file($path);
+    }
 
 
     public function save(Request $request)
@@ -140,6 +177,7 @@ class ReportEditorController extends Controller
             'issued_to' => $request->input('issued_to') ?? "", 
             'date_of_receipt' => $request->input('date_of_receipt') ?? "",
             'date_of_start_analysis' => $request->input('date_of_start_analysis') ?? "",
+            'letter_ref_date' => $request->input('letter_ref_date') ?? "", 
             'letter_ref' => $request->input('letter_ref_no') ?? "", 
             'date_of_completion' => $request->input('completion_date') ?? "",
             'sample_description' => $request->input('sample_description') ?? "", 
@@ -180,8 +218,9 @@ class ReportEditorController extends Controller
     
 
         // Delete old PDF if exists
-        if ($oldRecord && $oldRecord->pdf_path) {
-            Storage::disk('public')->delete($oldRecord->pdf_path);
+        if ($oldRecord && $oldRecord->pdf_path) { 
+            $filePath = 'public/' . ltrim($oldRecord->pdf_path, '/');
+            Storage::disk('local')->delete($filePath);
         }
  
         // Update DB with new HTML and PDF paths
@@ -193,7 +232,11 @@ class ReportEditorController extends Controller
             ],
             [
                 'generated_report_path' => $htmlFileName,
-                'pdf_path' => $pdfRelativePath,
+                'pdf_path' => $pdfRelativePath, 
+                'ult_r_no' => $headerData['ulr_no'], 
+                'date_of_start_of_analysis' => $headerData['date_of_start_analysis'], 
+                'date_of_completion_of_analysis' => $headerData['date_of_completion'], 
+                'date_of_receipt'   => $headerData['date_of_receipt'], 
                 'updated_at' => now(),
             ]
         ); 
@@ -204,6 +247,8 @@ class ReportEditorController extends Controller
 
     public function downloadMergedBookingPDF($bookingId)
     {
+   
+
         // 1. Get all PDF paths for the given booking_id
         $pdfPaths = \DB::table('booking_item_report')
             ->where('booking_id', $bookingId)
@@ -211,6 +256,7 @@ class ReportEditorController extends Controller
             ->pluck('pdf_path')
             ->toArray();
 
+        
         if (empty($pdfPaths)) {
             return response()->json(['message' => 'No PDFs found for this booking.'], 404);
         }

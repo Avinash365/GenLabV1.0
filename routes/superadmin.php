@@ -394,10 +394,15 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         
         Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])->name('generateReportPDF.generatePdf');
         
-        Route::get('generateReportPDF/generate/{item}', [ReportEditorController::class, 'generate'])->name('generateReportPDF.generate');
+        Route::get('generateReportPDF/generate/{item}', [ReportEditorController::class, 'generate'])->name('generateReportPDF.generate');  
+        Route::get('generateReportPDF/edit/{pivotId}', [ReportEditorController::class, 'editReport'])->name('generateReportPDF.editReport');  
+        Route::get('/view-pdf/{filename}', [ReportEditorController::class, 'viewPdf'])->name('viewPdf');
+
+        
         Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
 
 
         Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
         Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save'); 
 
+        

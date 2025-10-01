@@ -31,8 +31,6 @@ class ReportPdfGenerationService
         $extraMargin = 0;
         if (isset($headerData['line_breaks']['total_n'])) {  
             $pix = 5; 
-            if($headerData['line_breaks']['total_n'] > 11)
-                $pix = 4;
             $extraMargin = $pix * (int) $headerData['line_breaks']['total_n'];
         }  
 
@@ -40,7 +38,7 @@ class ReportPdfGenerationService
         $this->mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'margin_top' => 100 + $extraMargin,
+            'margin_top' => 110 + $extraMargin,
             'margin_bottom' => 20,
             'margin_left' => 15,
             'margin_right' => 15
@@ -49,9 +47,9 @@ class ReportPdfGenerationService
         // Prepare header HTML with page numbers
         $headerHtml = view('Reportfrmt.tableHadder', $headerData)->render();
 
-        $pageNumOffset = 400; // in mm
+        $pageNumOffset = 65+$extraMargin; // in mm
         $headerHtmlWithPageNum = $headerHtml . '
-            <div style="text-align: right; font-size: 10pt; margin-top:' . $pageNumOffset . 'mm;">
+            <div style="text-align: right; font-size: 10pt; margin-top:' .'-'. $pageNumOffset . 'mm;">
                 Page {PAGENO} of {nbpg}
             </div>
         '; 
