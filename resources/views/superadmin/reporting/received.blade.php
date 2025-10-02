@@ -219,9 +219,9 @@
                         <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; {{ $allReceived ? 'display:none;' : '' }}">Receive All</button>
                     </form>
                        <a href="{{ route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0]) }}" 
-                        class="btn" 
-                        style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
-                        Get All
+                            class="btn" 
+                            style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
+                            Get All
                         </a>
                 </div>
             </div>

@@ -178,7 +178,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('documents', DocumentController::class);
         Route::resource('calibrations', CalibrationController::class);
         Route::resource('iscodes', ISCodeController::class);
-        
+
+
+    Route::middleware(['permission:account.edit'])->group(function () { 
+
         Route::resource('blank-invoices', BlankInvoiceController::class);
         
         Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
@@ -203,9 +206,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::resource('quotations', QuotationController::class);
         Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])
-              ->name('quotations.generateQuotations');
+              ->name('quotations.generateQuotations'); 
+
         
-        Route::resource('payment-settings', PaymentSettingController::class)->only(['index','store', 'update']);
+       
 
         Route::get('payment-settings/call-function/{id}', [PaymentSettingController::class, 'callFunction'])->name('payment-settings.callFunction');
 
@@ -238,14 +242,14 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('client/{id}/cash-all-transactions', [ClientLedgerController::class, 'fetchClientAllBookings'])->name('client.cashAllTransactions'); 
         Route::get('client/{id}/cash-transactions', [ClientLedgerController::class, 'fetchCashTransaction'])->name('client.cashTransactions');
 
-    // Cheque Alignment Setup
-    Route::get('banks/create', [BankController::class, 'create'])->name('banks.create');
-    Route::post('banks', [BankController::class, 'store'])->name('banks.store');
-    Route::delete('banks/{bank}', [BankController::class, 'destroy'])->name('banks.destroy');
-    Route::get('cheque-templates/{bank}', [ChequeTemplateController::class, 'editor'])->name('cheque-templates.editor');
-    Route::post('cheque-templates/{bank}', [ChequeTemplateController::class, 'store'])->name('cheque-templates.store');
-    Route::get('cheque-templates/{bank}/fetch', [ChequeTemplateController::class, 'fetch'])->name('cheque-templates.fetch');
 
+        // Cheque Alignment Setup
+        Route::get('banks/create', [BankController::class, 'create'])->name('banks.create');
+        Route::post('banks', [BankController::class, 'store'])->name('banks.store');
+        Route::delete('banks/{bank}', [BankController::class, 'destroy'])->name('banks.destroy');
+        Route::get('cheque-templates/{bank}', [ChequeTemplateController::class, 'editor'])->name('cheque-templates.editor');
+        Route::post('cheque-templates/{bank}', [ChequeTemplateController::class, 'store'])->name('cheque-templates.store');
+        Route::get('cheque-templates/{bank}/fetch', [ChequeTemplateController::class, 'fetch'])->name('cheque-templates.fetch');
 
 
         Route::get('cash-payments/create/{id}', [CashPaymentController::class, 'create'])->name('cashPayments.create');
@@ -266,17 +270,16 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::resource('accountBookingsLetters', AccountsLetterController::class); 
         
-    // Cheques
-    Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
-    Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
-    Route::post('cheques/{cheque}/receive', [ChequeController::class, 'receive'])->name('cheques.receive');
-    Route::post('cheques/receive', [ChequeController::class, 'storeReceived'])->name('cheques.storeReceived');
-    Route::post('cheques/{cheque}/toggle-deposit', [ChequeController::class, 'toggleDeposit'])->name('cheques.toggleDeposit');
-    Route::get('cheques/{cheque}/edit', [ChequeController::class, 'edit'])->name('cheques.edit');
-    Route::put('cheques/{cheque}', [ChequeController::class, 'update'])->name('cheques.update');
-    Route::delete('cheques/{cheque}', [ChequeController::class, 'destroy'])->name('cheques.destroy');
-    Route::get('cheques/{cheque}/print-preview', [ChequeController::class, 'printPreview'])->name('cheques.printPreview');
-        
+        // Cheques
+        Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
+        Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
+        Route::post('cheques/{cheque}/receive', [ChequeController::class, 'receive'])->name('cheques.receive');
+        Route::post('cheques/receive', [ChequeController::class, 'storeReceived'])->name('cheques.storeReceived');
+        Route::post('cheques/{cheque}/toggle-deposit', [ChequeController::class, 'toggleDeposit'])->name('cheques.toggleDeposit');
+        Route::get('cheques/{cheque}/edit', [ChequeController::class, 'edit'])->name('cheques.edit');
+        Route::put('cheques/{cheque}', [ChequeController::class, 'update'])->name('cheques.update');
+        Route::delete('cheques/{cheque}', [ChequeController::class, 'destroy'])->name('cheques.destroy');
+        Route::get('cheques/{cheque}/print-preview', [ChequeController::class, 'printPreview'])->name('cheques.printPreview');
 
         Route::get('cash-letter/payments', [CashLetterController::class, 'showMultiple'])->name('cashLetter.payments.showMultiple');
         
@@ -288,6 +291,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         
         Route::post('/bank/note/{id}', [BankTransactionController::class, 'addNote'])->name('bank.addNote');
         Route::patch('/bank/soft-delete/{id}', [BankTransactionController::class, 'softDeleteOrUndo'])->name('bank.softDeleteOrUndo');
+
+    });
+
 
         // Store
         Route::prefix('store')->name('store.')->group(function () {
@@ -324,52 +330,65 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/', [PurchaseAddController::class, 'index'])->name('purchaseAdd');
         });
 
-         // ShowBooking List 
-        Route::prefix('showbooking')->name('showbooking.')->group(function () {
-            Route::get('/{department?}', [ShowBookingController::class, 'index'])->name('showBooking');
-            Route::get('/export/pdf/{department?}', [ShowBookingController::class, 'exportPdf'])->name('exportPdf');
-            Route::get('/export/excel/{department?}', [ShowBookingController::class, 'exportExcel'])->name('exportExcel');
-        });
+            // ShowBooking List 
+            Route::prefix('showbooking')->name('showbooking.')->group(function () {
+                Route::get('/{department?}', [ShowBookingController::class, 'index'])->name('showBooking');
+                Route::get('/export/pdf/{department?}', [ShowBookingController::class, 'exportPdf'])->name('exportPdf');
+                Route::get('/export/excel/{department?}', [ShowBookingController::class, 'exportExcel'])->name('exportExcel');
+            });
 
-         // ShowBooking List 
-        Route::prefix('department')->name('department.')->group(function () {
-            Route::get('/', [DeptController::class, 'index'])->name('Department');
-        });
+            // ShowBooking List 
+            Route::prefix('department')->name('department.')->group(function () {
+                Route::get('/', [DeptController::class, 'index'])->name('Department');
+            });
         
-        // Caqlibration List / Leaves
-        Route::prefix('leaves')->name('leave.')->group(function () {
-            Route::get('/', [LeaveController::class, 'index'])->name('Leave');
-        });
+            // Caqlibration List / Leaves
+            Route::prefix('leaves')->name('leave.')->group(function () {
+                Route::get('/', [LeaveController::class, 'index'])->name('Leave');
+            });
 
-        // Lab Analysts - reports dropdown and viewer
-        Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
-            Route::get('/', [LabAnalystController::class, 'index'])->name('index');
-            Route::get('/view', [LabAnalystController::class, 'view'])->name('view');
-            Route::get('/render', [LabAnalystController::class, 'render'])->name('render');
-            Route::get('/preview', [LabAnalystController::class, 'preview'])->name('preview');
-            Route::get('/pdf', [LabAnalystController::class, 'pdf'])->name('pdf');
-            Route::post('/save', [LabAnalystController::class, 'save'])->name('save');
-        });
+            // Lab Analysts - reports dropdown and viewer
+            Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
+                Route::get('/', [LabAnalystController::class, 'index'])
+                    ->middleware('permission:lab-analysts.view')->name('index');
 
-        // Reporting
-        Route::prefix('reporting')->name('reporting.')->group(function () {
-            Route::get('/received', [ReportingController::class, 'received'])->name('received');
-            Route::get('/pendings', [ReportingController::class, 'pendings'])->name('pendings');
-            Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
-            Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
-            Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
-            Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
-            Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
-            Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
-            Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
-            Route::post('/account-receive/{item}', [ReportingController::class, 'accountReceiveOne'])->name('accountReceiveOne');
-            Route::post('/account-receive-bulk', [ReportingController::class, 'accountReceiveBulk'])->name('accountReceiveBulk');
-            Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
-            Route::get('/generate', [ReportingController::class, 'generate'])->name('generate'); 
-            
-            Route::post('/reporting/assign/{item}', [ReportingController::class, 'assignReport'])->name('assignReport');
+                Route::get('/view', [LabAnalystController::class, 'view'])
+                    ->middleware('permission:lab-analysts.view')->name('view');
 
-        });  
+                Route::get('/render', [LabAnalystController::class, 'render'])
+                    ->middleware('permission:lab-analysts.view')->name('render'); 
+
+                Route::get('/preview', [LabAnalystController::class, 'preview'])
+                    ->middleware('permission:lab-analysts.view')->name('preview'); 
+
+                Route::get('/pdf', [LabAnalystController::class, 'pdf'])
+                    ->middleware('permission:lab-analysts.view')->name('pdf'); 
+
+                Route::post('/save', [LabAnalystController::class, 'save'])
+                    ->middleware('permission:lab-analysts.create')->name('save');
+            });
+
+
+
+            // Reporting
+            Route::prefix('reporting')->middleware('permission:reporting.edit')->name('reporting.')->group(function () {
+                Route::get('/received', [ReportingController::class, 'received'])->name('received');
+                Route::get('/pendings', [ReportingController::class, 'pendings'])->name('pendings');
+                Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
+                Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
+                Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
+                Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
+                Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
+                Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
+                Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
+                Route::post('/account-receive/{item}', [ReportingController::class, 'accountReceiveOne'])->name('accountReceiveOne');
+                Route::post('/account-receive-bulk', [ReportingController::class, 'accountReceiveBulk'])->name('accountReceiveBulk');
+                Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
+                Route::get('/generate', [ReportingController::class, 'generate'])->name('generate'); 
+                
+                Route::post('/reporting/assign/{item}', [ReportingController::class, 'assignReport'])->name('assignReport');
+
+            });  
         
             // Report Format Upload & Listing
             Route::get('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'index'])->name('reporting.report-formats.index');
@@ -378,7 +397,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'edit'])->name('report-formats.content.edit');
             Route::put('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'update'])->name('report-formats.content.update');
             Route::get('/report-formats/{reportFormat}/export-pdf', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'exportPdf'])->name('report-formats.content.exportPdf');
+
+
+            // bank details 
+            Route::resource('payment-settings', PaymentSettingController::class)
+                ->middleware('permission:bank-details.view')->only(['index','store', 'update']);
     });
+    
 
         // list of clients 
         Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');
@@ -388,19 +413,25 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/test/list', [ListController::class, 'view'])->name('test.list');  
 
         //report editor
-        Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index');
-        Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save');
-        Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete');   
+        Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index')->middleware('permission:report-format.create');
+        Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save')->middleware('permission:report-format.create');
+        Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete')->middleware('permission:report-format.delete');   
         
-        Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])->name('generateReportPDF.generatePdf');
+        // report genration 
+        Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])
+            ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf');
         
-        Route::get('generateReportPDF/generate/{item}', [ReportEditorController::class, 'generate'])->name('generateReportPDF.generate');  
-        Route::get('generateReportPDF/edit/{pivotId}', [ReportEditorController::class, 'editReport'])->name('generateReportPDF.editReport');  
+        Route::get('generateReportPDF/generate/{item}', [ReportEditorController::class, 'generate'])
+            ->middleware('permission:report-generate.view')->name('generateReportPDF.generate');  
+        
+        Route::get('generateReportPDF/edit/{pivotId}', [ReportEditorController::class, 'editReport'])
+            ->middleware('permission:report-generate.edit')->name('generateReportPDF.editReport');
+
         Route::get('/view-pdf/{filename}', [ReportEditorController::class, 'viewPdf'])->name('viewPdf');
 
         
         Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
-
+        
 
         Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
         Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save'); 
