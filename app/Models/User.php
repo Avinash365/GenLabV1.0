@@ -46,7 +46,25 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $casts = [
         'user_verified_at' => 'datetime',
-    ]; 
+    ];
+
+    /**
+     * Get the chat groups this user belongs to
+     */
+    public function chatGroups()
+    {
+        return $this->belongsToMany(ChatGroup::class, 'chat_group_members', 'user_id', 'group_id')
+                    ->withPivot('joined_at')
+                    ->withTimestamps();
+    }
+
+    /**
+     * Get the chat messages sent by this user
+     */
+    public function chatMessages()
+    {
+        return $this->hasMany(ChatMessage::class, 'user_id');
+    } 
 
 
     public function getJWTIdentifier()
