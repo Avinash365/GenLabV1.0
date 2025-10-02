@@ -118,6 +118,8 @@
                 <option value="1" {{ request('payment_status') == '1' ? 'selected' : '' }}>Paid</option>
                 <option value="0" {{ request('payment_status') == '0' ? 'selected' : '' }}>Unpaid</option>
                 <option value="2" {{ request('payment_status') == '2' ? 'selected' : '' }}>Cancel</option>
+                <option value="3" {{ request('payment_status') == '3' ? 'selected' : '' }}>Partial</option>
+                <option value="4" {{ request('payment_status') == '4' ? 'selected' : '' }}>Settle</option>
             </select>
 
             <!-- Search bar -->
@@ -226,13 +228,22 @@
                             <td>
                                 @if($invoice->status == 0)
                                     <a href="{{ route('superadmin.cashPayments.create', $invoice->id) }}">
-                                        <span class="badge bg-warning">Pay</span>
+                                        <span class="badge bg-warning">Pay <i class="fa fa-credit-card ms-2"></i></span>
+
+
                                     </a>
                                 @elseif($invoice->status == 1)
                                     <span class="badge bg-success">Paid</span>
                                 @elseif($invoice->status == 2)
                                     <span class="badge bg-danger">Cancelled</span>
-                                @endif
+                                @elseif($invoice->status == 3)
+                                    <a href="{{ route('superadmin.cashPayments.repay', $invoice->id) }}">
+                                       <span class="badge bg-info">Partial <i class="fa fa-hand-holding-dollar ms-2"></i></span> 
+                                    </a>    
+                                @elseif($invoice->status == 4)
+                                    <span class="badge bg-primary">Settled</span>
+                                @endif 
+                                
                             </td>
                             <td class="d-flex"> 
                                
@@ -259,24 +270,23 @@
                                     </button>
                                 </form> 
                                 
-                                  @if($invoice->status != 2)
+                                  @if($invoice->status == 0)
                                     <!-- Edit Button -->
                                     <a href="{{ route('superadmin.invoices.edit', $invoice->id) }}" 
                                     class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
                                     title="Edit">
                                         <i data-feather="edit" class="feather-edit"></i>
-                                    </a>
-                                @endif
-                              
-                                    <!-- Delete Button -->
+                                    </a> 
+                                   
+                                 <!-- Delete Button -->
                                     <button type="button" 
                                             class="p-2 border rounded d-flex align-items-center btn-delete" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#deleteModal{{ $invoice->id }}"
                                             title="Delete">
                                         <i data-feather="trash-2" class="feather-trash-2"></i>
-                                    </button> 
-                                
+                                    </button>   
+                                @endif                    
                             </td>
                         </tr>
                         

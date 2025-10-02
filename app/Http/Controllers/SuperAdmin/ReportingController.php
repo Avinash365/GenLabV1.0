@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\BookingItem;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use App\Models\ReportEditorFile;  
+
 
 class ReportingController extends Controller
 {
@@ -30,7 +32,8 @@ class ReportingController extends Controller
             if ($firstItem && $firstItem->booking) {
                 $b = $firstItem->booking;
                 // Build header data
-                $header = [
+                $header = [ 
+                    'id'               => $b->id,       
                     'job_card_no'      => $firstItem->job_order_no,
                     'client_name'      => $b->client_name,
                     'job_order_date'   => optional($b->job_order_date)->format('Y-m-d'),
@@ -43,15 +46,16 @@ class ReportingController extends Controller
                 ];
 
                 // Show all items for the same booking/reference
-                $items = $b->items()->with(['booking', 'analyst', 'receivedBy'])->latest('id')->paginate(20)->withQueryString();
+                $items = $b->items()->with(['booking', 'analyst', 'reports','receivedBy'])->latest('id')->paginate(20)->withQueryString();
+                $reports = ReportEditorFile::latest()->get();
 
-                return view('superadmin.reporting.received', compact('items', 'job', 'header'));
+                return view('superadmin.reporting.received', compact('items', 'job', 'header', 'reports'));
             }
         }
 
-    // Default: no auto-listing; show empty when no search or not found
-    $items = BookingItem::query()->whereRaw('1=0')->paginate(20)->withQueryString();
-    return view('superadmin.reporting.received', compact('items', 'job', 'header'));
+        // Default: no auto-listing; show empty when no search or not found
+        $items = BookingItem::query()->whereRaw('1=0')->paginate(20)->withQueryString();
+        return view('superadmin.reporting.received', compact('items', 'job', 'header'));
     }
 
     /**
@@ -59,12 +63,12 @@ class ReportingController extends Controller
      * Supports optional search by job order no (search), and month/year filters based on received_at.
      */
     public function pendings(Request $request)
-    {
+    {    
         $search = trim((string) $request->get('search'));
         $month = $request->has('month') ? (int) $request->get('month') : null;
         $year = $request->has('year') ? (int) $request->get('year') : null;
         $departmentId = $request->get('department');
-    $marketing = $request->get('marketing'); // user_code of marketing person
+        $marketing = $request->get('marketing'); // user_code of marketing person
         $mode = $request->get('mode', 'job'); // job | reference
         if (!in_array($mode, ['job','reference'], true)) { $mode = 'job'; }
         if ($month !== null && ($month < 1 || $month > 12)) { $month = null; }
@@ -262,6 +266,7 @@ class ReportingController extends Controller
 
     return back()->with('status', 'All matching reports marked as received');
     }
+
 
     /**
      * Submit Issue Dates in bulk for received items.
@@ -517,5 +522,27 @@ class ReportingController extends Controller
             return response()->json(['ok' => true]);
         }
         return back()->with('status', 'Selected reports marked In Account');
+    } 
+
+    // Assign a report file to a booking item 
+
+    public function assignReport(Request $request, BookingItem $item)
+    {
+        $request->validate([
+            'report_id' => 'required|exists:report_editor_files,id',
+        ]);
+
+        $report = ReportEditorFile::find($request->report_id);
+
+        $item->reports()->detach();
+
+        $item->reports()->attach($request->report_id, [
+            'booking_id' => $item->new_booking_id
+        ]);
+
+        $reportNo = $report->report_no;
+
+        return back()->with('success', "Report: {$reportNo} assigned successfully.");
     }
+
 }

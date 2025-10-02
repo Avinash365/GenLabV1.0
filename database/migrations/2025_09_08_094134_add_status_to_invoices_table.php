@@ -12,7 +12,7 @@ return new class extends Migration
             $table->boolean('status')
                   ->default(false)
                   ->after('id')
-                  ->comment('Invoice payment status: false = not paid, true = paid');
+                  ->comment('Invoice payment status: 0 = unpiad, 1=paid,2 = cancelled , 3 = partially paid, 4 = settled');
         });
     }
 

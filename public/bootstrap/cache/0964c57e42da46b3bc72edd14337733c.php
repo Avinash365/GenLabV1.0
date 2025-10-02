@@ -1,4 +1,3 @@
-
 <?php $__env->startSection('title', 'Cash Letter Payment Entry'); ?>
 <?php $__env->startSection('content'); ?>
 

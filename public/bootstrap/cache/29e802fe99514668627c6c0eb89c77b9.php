@@ -78,12 +78,31 @@
                         </div>
                     <?php endif; ?>
                 </td>
-
                 <td>
-                    <span class="badge <?php echo e($booking->generatedInvoice?->status ? 'bg-success' : 'bg-warning'); ?>">
-                        <?php echo e($booking->generatedInvoice?->status ? 'Completed' : 'Pending'); ?>
+                    <?php
+                        $status = $bookingStatusMap[$booking->id] ?? null;
+                    ?>
 
-                    </span>
+                    <?php if(!is_null($status)): ?>
+                        <?php switch($status):
+                            case (0): ?>
+                                <span class="badge bg-warning">Pending</span>
+                                <?php break; ?>
+                            <?php case (1): ?>
+                                <span class="badge bg-info">Partial</span>
+                                <?php break; ?>
+                            <?php case (2): ?>
+                                <span class="badge bg-success">Paid</span>
+                                <?php break; ?>
+                            <?php case (3): ?>
+                                <span class="badge bg-primary">Settled</span>
+                                <?php break; ?>
+                            <?php default: ?>
+                                <span class="badge bg-secondary">Unknown</span>
+                        <?php endswitch; ?>
+                    <?php else: ?>
+                        <span class="badge bg-secondary">No Payment</span>
+                    <?php endif; ?>
                 </td>
             </tr>
         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>

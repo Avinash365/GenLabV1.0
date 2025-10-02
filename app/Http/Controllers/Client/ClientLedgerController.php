@@ -160,7 +160,6 @@ class ClientLedgerController extends Controller
     }
 
 
-    // AJAX - Without Bill Bookings
     public function fetchWithoutBillBookings(Request $request, $id)
     {
         $client = Client::findOrFail($id);
@@ -169,26 +168,38 @@ class ClientLedgerController extends Controller
             ->when($request->filled('transaction_status'), function ($q) use ($request) {
                 $q->where('transaction_status', $request->transaction_status);
             })
-            ->pluck('booking_ids');
-        
-        $bookingIds = $cashPayments
-            ->flatMap(function ($ids) {
-                return explode(',', is_array($ids) ? implode(',', $ids) : (string) $ids);
-            })
-            ->map(fn($id) => (int) trim($id))
-            ->unique()
-            ->filter()
-            ->values();
-        
-        $query = NewBooking::query();
+            ->get(['id', 'booking_ids', 'transaction_status']);
 
-        if ($request->get('with_payment') == 1) {
-            $query->whereIn('id', $bookingIds);
-        } else {
-            $query->whereNotIn('id', $bookingIds)
-                ->where('payment_option','without_bill')
-                ->where('client_id', $client->id);
+        // Build booking_id => status map
+        $bookingStatusMap = collect();
+
+        foreach ($cashPayments as $payment) {
+            $ids = $payment->booking_ids;
+
+            if (is_string($ids)) {
+                $ids = json_decode($ids, true);
+            }
+
+            if (is_array($ids)) {
+                foreach ($ids as $bid) {
+                    $bookingStatusMap[$bid] = $payment->transaction_status;
+                }
+            }
         }
+
+        $allBookingIds = $bookingStatusMap->keys();
+
+        // Base query → all client bookings with "without_bill"
+        $query = NewBooking::where('client_id', $client->id)
+            ->where('payment_option', 'without_bill');
+
+        // If user explicitly filters by with_payment
+        if ($request->get('with_payment') == 1) {
+            $query->whereIn('id', $allBookingIds);
+        } elseif ($request->get('with_payment') == 0) {
+            $query->whereNotIn('id', $allBookingIds);
+        }
+        // Else → no filter → fetch ALL bookings for this client
 
         // Year + Month filter
         if ($request->filled('year')) {
@@ -200,9 +211,23 @@ class ClientLedgerController extends Controller
 
         $bookings = $query->latest()->paginate(10);
 
-        $isClient = true; 
-        return view('superadmin.accounts.marketingPerson.partials_without_bill', compact('bookings', 'isClient'))->render();
+        // Attach payment status (default "noPayments")
+        $bookings->getCollection()->transform(function ($booking) use ($bookingStatusMap) {
+            $booking->payment_status = $bookingStatusMap[$booking->id] ?? 'noPayments';
+            return $booking;
+        });
+
+        $isClient = true;
+
+        return view('superadmin.accounts.marketingPerson.partials_without_bill', [
+            'bookings' => $bookings,
+            'isClient' => $isClient,
+            'bookingStatusMap' => $bookingStatusMap
+        ])->render();
     }
+
+
+
 
 
     // AJAX - Invoices
@@ -295,6 +320,64 @@ class ClientLedgerController extends Controller
         
         return view('superadmin.accounts.client.profile', compact('client', 'stats', 'month', 'year')); 
 
-    } 
+    }  
+
+
+
+    public function fetchClientAllBookings(Request $request, $id)
+    {
+        $client = Client::findOrFail($id);
+
+        // Get all payments for this client
+        $cashPayments = CashLetterPayment::where('client_id', $client->id)
+            ->when($request->filled('transaction_status'), function ($q) use ($request) {
+                $q->where('transaction_status', $request->transaction_status);
+            })
+            ->get(['id', 'booking_ids', 'transaction_status']);
+
+        // Build booking_id => status map
+        $bookingStatusMap = collect();
+
+        foreach ($cashPayments as $payment) {
+            $ids = $payment->booking_ids;
+
+            if (is_string($ids)) {
+                $ids = json_decode($ids, true);
+            }
+
+            if (is_array($ids)) {
+                foreach ($ids as $bid) {
+                    $bookingStatusMap[$bid] = $payment->transaction_status;
+                }
+            }
+        }
+
+        $allBookingIds = $bookingStatusMap->keys();
+
+        // Fetch ALL bookings of the client
+        $query = NewBooking::where('client_id', $client->id)->where('payment_option', 'without_bill');
+
+        // Apply Month/Year filter
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+
+        $bookings = $query->latest()->paginate(10);
+
+        // Attach status to each booking
+        $bookings->getCollection()->transform(function ($booking) use ($bookingStatusMap) {
+            $booking->payment_status = $bookingStatusMap[$booking->id] ?? 'noPayments';
+            return $booking;
+        });
+
+        return view('superadmin.accounts.marketingPerson.partials_client_all_bookings', [
+            'bookings' => $bookings,
+            'isClient' => true
+        ])->render();
+    }
+
 
 }

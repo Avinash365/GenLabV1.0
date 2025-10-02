@@ -1,12 +1,12 @@
 <div id="placeholder" style="width: 100%; height: 800px;"></div>
 
+<!-- ONLYOFFICE DocumentServer API -->
 <script src="{{ $documentServerUrl }}/web-apps/apps/api/documents/api.js"></script>
 
 <script>
-    // decode the config as JS object and assign the JWT
+    // Pass editor config directly (no JWT required)
     const config = {!! $config !!};
-    config.token = @json($jwtToken);
 
-    // Initialize ONLYOFFICE editor
+    // Initialize the ONLYOFFICE editor
     const docEditor = new DocsAPI.DocEditor("placeholder", config);
 </script>

@@ -108,9 +108,10 @@
                             <th>Job No.</th>
                             <th>Client Name</th>
                             <th>Description</th>
-                            <th>Status</th>
-                            <th>Issue Date</th>
-                            <th>Action</th>
+                            <th>Status</th> 
+                            <th>Select Report</th>  
+                            <th> view </th> 
+                            <th>Action</th> 
                         </tr>
                     </thead>
                     <tbody>
@@ -128,23 +129,68 @@
                                         In Lab / Analyst TBD
                                     @endif
                                 </td>
-                                <td class="issue-date-cell" data-id="{{ $item->id }}">
-                                    <input type="date" name="issue_date" value="{{ optional($item->issue_date)->format('Y-m-d') }}" class="form-control issue-date-input {{ $item->received_at ? '' : 'd-none' }}" form="receive-form-{{ $item->id }}">
-                                </td>
                                 <td>
-                                    <form method="POST" action="{{ route('superadmin.reporting.receive', $item) }}" class="receive-form" id="receive-form-{{ $item->id }}" data-id="{{ $item->id }}">
+                                    <form method="POST" action="{{ route('superadmin.reporting.assignReport', $item) }}" id="assign-report-form-{{ $item->id }}">
                                         @csrf
-                                        @if($item->received_at)
-                                            <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">Submit</button>
-                                        @else
-                                            <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">Receive</button>
-                                        @endif
+                                        <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-{{ $item->id }}').submit()">
+                                            <option value="">-- Select Report --</option>
+                                            @foreach($reports as $report)
+                                                <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
+                                                    {{ $report->report_no ?? 'Report #'.$report->id }}
+                                                </option>
+                                            @endforeach
+                                        </select>
                                     </form>
-                                </td>
+                                </td> 
+                                    <td>
+                                        @php
+                                            $assignedReport = $item->reports->first(); // get assigned report
+                                        @endphp
+
+                                        {{-- VIEW PDF --}}
+                                        @if($assignedReport && $assignedReport->pivot->pdf_path)
+                                            <a href="{{ route('viewPdf', basename($assignedReport->pivot->pdf_path)) }}" target="_blank" class="btn btn-sm btn-info">
+                                                View PDF
+                                            </a>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+                                    <td>
+    @php
+        $assignedReport = $item->reports->first(); // get assigned report
+        $pivotId = $assignedReport->pivot->id ?? null;
+    @endphp 
+
+    @if($assignedReport && $assignedReport->pivot->pdf_path)  
+        <a href="{{ route('generateReportPDF.editReport', $pivotId) }}" target="_blank" class="btn btn-sm btn-success">
+            Edit
+        </a>
+
+    @elseif($assignedReport)
+        <a href="{{ route('generateReportPDF.generate', $item->id) }}" target="_blank" class="btn btn-sm btn-success">
+            Generated Report
+        </a>
+
+    @else
+        <form method="POST" action="{{ route('superadmin.reporting.receive', $item) }}" class="receive-form" id="receive-form-{{ $item->id }}" data-id="{{ $item->id }}">
+            @csrf
+            @if($item->received_at)
+                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
+                    Submit
+                </button>
+            @else
+                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
+                    Receive
+                </button>
+            @endif
+        </form>
+    @endif
+</td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="6" class="text-center">No items found</td>
+                                <td colspan="7" class="text-center">No items found</td>
                             </tr>
                         @endforelse
                     </tbody>
@@ -172,11 +218,11 @@
                         <input type="hidden" name="job" value="{{ $job }}">
                         <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; {{ $allReceived ? 'display:none;' : '' }}">Receive All</button>
                     </form>
-                    <form method="POST" action="{{ route('superadmin.reporting.submitAll') }}" id="submit-all-form" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="payload" id="submit-all-payload">
-                        <button class="btn d-none" type="button" id="submit-all-btn" style="background-color:#FE9F43;border-color:#FE9F43;color:#fff;">Submit All</button>
-                    </form>
+                       <a href="{{ route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0]) }}" 
+                        class="btn" 
+                        style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
+                        Get All
+                        </a>
                 </div>
             </div>
         </div>

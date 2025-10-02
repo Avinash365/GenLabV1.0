@@ -26,6 +26,7 @@ class StoreBookingRequest extends FormRequest
         $rules = [
             'client_name'        => 'required|string|max:255',
             'client_address'     => 'nullable|string',
+            'letter_date'        =>  'required|string', 
             'job_order_date'     => ['required', 'date'],
             'report_issue_to'    => 'required|string|max:255',
             'department_id'      => 'required|exists:departments,id',

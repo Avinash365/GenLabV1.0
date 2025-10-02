@@ -13,6 +13,9 @@ use App\Services\{GetUserActiveDepartment,BillingService};
 use App\Services\InvoicePdfService;
 use App\Http\Requests\GenerateInvoiceRequest;
 
+use App\Http\Controllers\Transactions\CashPaymentController;
+
+
 use App\Models\User;
 
 
@@ -21,88 +24,105 @@ class InvoiceController extends Controller
     protected $billingService;
     protected $invoicePdfService;
     protected $departmentService; 
+    protected $cashPaymentController;
     
     // Inject BillingService
-    public function __construct(BillingService $billingService, InvoicePdfService $invoicePdfService, GetUserActiveDepartment $departmentService)
+    public function __construct(BillingService $billingService, InvoicePdfService $invoicePdfService, GetUserActiveDepartment $departmentService, CashPaymentController $cashPaymentController)
     {
         $this->departmentService = $departmentService;
         $this->billingService = $billingService; 
         $this->invoicePdfService = $invoicePdfService;
+        $this->cashPaymentController = $cashPaymentController;
+
     }
 
   
     public function index(Request $request)
-    {
-        $marketingPersons = User::whereHas('role', function ($q) {
-            $q->where('slug', 'marketing_person');
-        })
-        ->get(['id', 'user_code', 'name']);
+{
+    $marketingPersons = User::whereHas('role', function ($q) {
+        $q->where('slug', 'marketing_person');
+    })->get(['id', 'user_code', 'name']);
 
-        foreach ($marketingPersons as $person) {
-            $person->label = $person->user_code . ' - ' . $person->name;
-        }
-
-        $query = Invoice::with(['relatedBooking.marketingPerson', 'relatedBooking.department']);
-        
-        // Marketing person filter
-        if ($request->filled('marketing_person')) {
-            $this->filterByMarketingPerson($query, $request->marketing_person);
-        }
-
-        // User code filter
-        if ($request->filled('user_code')) {
-            $query->whereHas('relatedBooking.marketingPerson', function ($q) use ($request) {
-                $q->where('user_code', $request->user_code);
-            });
-        }
-
-        // Client filter (NEW)
-        if ($request->filled('client_id')) {
-            $query->whereHas('relatedBooking.client', function ($q) use ($request) {
-                $q->where('id', $request->client_id);
-            });
-        }
-
-        // Department filter
-        if ($request->filled('department_id')) {
-            $query->whereHas('relatedBooking.department', function ($q) use ($request) {
-                $q->where('id', $request->department_id);
-            });
-        }
-
-        // Search filter
-        if ($request->filled('search')) {
-            $search = $request->search;
-            $query->where(function ($q) use ($search) {
-                $q->where('invoice_no', 'like', "%$search%")
-                ->orWhereHas('relatedBooking', function ($subQ) use ($search) {
-                    $subQ->where('client_name', 'like', "%$search%");
-                });
-            });
-        }
-
-        // Payment status filter
-        if ($request->filled('payment_status')) {
-            $query->where('status', $request->payment_status);
-        }
-
-        // Type filter
-        if ($request->filled('type')) {
-            $query->where('type', $request->type);
-        }
-
-        $query->orderBy('invoice_no', 'desc');
-        
-        $invoices = $query->paginate(10)->withQueryString();
-        $departments = $this->departmentService->getDepartment();
-
-        $type = $request->type; 
-        $type = ucfirst(str_replace('_', ' ', $type));
-
-        $clients = Client::all(['id', 'name']); 
-
-        return view('superadmin.accounts.invoiceList.index', compact('invoices', 'marketingPersons', 'departments', 'type', 'clients'));
+    foreach ($marketingPersons as $person) {
+        $person->label = $person->user_code . ' - ' . $person->name;
     }
+
+    $query = Invoice::with(['relatedBooking.marketingPerson', 'relatedBooking.department']);
+
+    // Marketing person filter
+    if ($request->filled('marketing_person')) {
+        $this->filterByMarketingPerson($query, $request->marketing_person);
+    }
+
+    // User code filter
+    if ($request->filled('user_code')) {
+        $query->whereHas('relatedBooking.marketingPerson', function ($q) use ($request) {
+            $q->where('user_code', $request->user_code);
+        });
+    }
+
+    // Client filter
+    if ($request->filled('client_id')) {
+        $query->whereHas('relatedBooking.client', function ($q) use ($request) {
+            $q->where('id', $request->client_id);
+        });
+    }
+
+    // Department filter
+    if ($request->filled('department_id')) {
+        $query->whereHas('relatedBooking.department', function ($q) use ($request) {
+            $q->where('id', $request->department_id);
+        });
+    }
+
+    // Search filter
+    if ($request->filled('search')) {
+        $search = $request->search;
+        $query->where(function ($q) use ($search) {
+            $q->where('invoice_no', 'like', "%$search%")
+              ->orWhereHas('relatedBooking', function ($subQ) use ($search) {
+                  $subQ->where('client_name', 'like', "%$search%");
+              });
+        });
+    }
+
+    // Payment status filter
+    if ($request->filled('payment_status')) {
+        $query->where('status', $request->payment_status);
+    }
+
+    // Type filter
+    if ($request->filled('type')) {
+        $query->where('type', $request->type);
+    }
+
+    // **Month and Year filter**
+    if ($request->filled('month') || $request->filled('year')) {
+        $month = $request->month;
+        $year  = $request->year;
+
+        $query->when($month, function ($q, $month) {
+            $q->whereMonth('created_at', $month);
+        })->when($year, function ($q, $year) {
+            $q->whereYear('created_at', $year);
+        });
+    }
+
+    $query->orderBy('invoice_no', 'desc');
+
+    $invoices = $query->paginate(10)->withQueryString();
+    $departments = $this->departmentService->getDepartment();
+
+    $type = $request->type; 
+    $type = ucfirst(str_replace('_', ' ', $type));
+
+    $clients = Client::all(['id', 'name']); 
+
+    return view('superadmin.accounts.invoiceList.index', compact(
+        'invoices', 'marketingPersons', 'departments', 'type', 'clients'
+    ));
+}
+
 
 
     public function edit(string $InvoiceId)
@@ -319,35 +339,44 @@ class InvoiceController extends Controller
     public function cancel(Invoice $invoice)
     {
         try {
-           if ($invoice->status == 2) {
-                // If already cancelled, set it back to Paid (1)
-                $invoice->status = 0;
-                $message = 'Invoice has been undo.';
-
-            } else {
-                // Otherwise, cancel it
+            // Case 1: Pending invoice (0) → Cancel
+            if ($invoice->status == 0) {
                 $invoice->status = 2;
+                $invoice->save();
                 $message = 'Invoice has been cancelled successfully.';
-            }
-            $invoice->save();
 
-            return redirect()
-                ->back()
-                ->with('success', $message);
+            // Case 2: Already cancelled (2) → Undo cancel
+            } elseif ($invoice->status == 2) {
+                $invoice->status = 0;
+                $invoice->save();
+                $message = 'Invoice cancellation has been undone.';
+
+            // Case 3: Paid (1), Partial (3), Settled (4) → Delete transactions then reset
+            } elseif (in_array($invoice->status, [1, 3, 4])) {
+                // Call destroy method (should return true/false)
+                $success = $this->cashPaymentController->destroyInvoiceTransactions($invoice->id);
+
+                if ($success) {
+                    $message = 'All transactions and TDS entries have been deleted. Invoice status reset to Pending.';
+                } else {
+                    return redirect()->back()->with('error', 'Failed to delete transactions for this invoice.');
+                }
+
+            // Case 4: Other statuses → Not allowed
+            } else {
+                return redirect()->back()->with('error', 'This invoice cannot be cancelled.');
+            }
+
+            return redirect()->back()->with('success', $message);
 
         } catch (\Exception $e) {
-
-            // Log the error for debugging
-            \Log::error('Invoice cancel failed', [
+            \Log::error('Invoice cancel/undo failed', [
                 'invoice_id' => $invoice->id,
                 'error' => $e->getMessage(),
             ]);
 
-            return redirect()
-                ->back()
-                ->with('error', 'Something went wrong while cancelling the invoice.');
+            return redirect()->back()->with('error', 'Something went wrong while processing the invoice.');
         }
     }
-
 
 }

@@ -106,9 +106,9 @@
                             <th>Job No.</th>
                             <th>Client Name</th>
                             <th>Description</th>
-                            <th>Status</th>
-                            <th>Issue Date</th>
-                            <th>Action</th>
+                            <th>Status</th> 
+                            <th>Select Report</th> 
+                            <th>Action</th> 
                         </tr>
                     </thead>
                     <tbody>
@@ -127,23 +127,43 @@
                                         In Lab / Analyst TBD
                                     <?php endif; ?>
                                 </td>
-                                <td class="issue-date-cell" data-id="<?php echo e($item->id); ?>">
-                                    <input type="date" name="issue_date" value="<?php echo e(optional($item->issue_date)->format('Y-m-d')); ?>" class="form-control issue-date-input <?php echo e($item->received_at ? '' : 'd-none'); ?>" form="receive-form-<?php echo e($item->id); ?>">
+                                <td>
+                                    <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
+                                        <?php echo csrf_field(); ?>
+                                        <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
+                                            <option value="">-- Select Report --</option>
+                                            <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                    <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+
+                                                </option>
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                        </select>
+                                    </form>
                                 </td>
                                 <td>
-                                    <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
-                                        <?php echo csrf_field(); ?>
-                                        <?php if($item->received_at): ?>
-                                            <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">Submit</button>
-                                        <?php else: ?>
-                                            <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">Receive</button>
-                                        <?php endif; ?>
-                                    </form>
+                                    <?php
+                                        $assignedReport = $item->reports->first(); // get assigned report
+                                    ?>
+                                    <?php if($assignedReport): ?>
+                                        <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
+                                            Generated Report
+                                        </a>
+                                    <?php else: ?>
+                                        <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
+                                            <?php echo csrf_field(); ?>
+                                            <?php if($item->received_at): ?>
+                                                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">Submit</button>
+                                            <?php else: ?>
+                                                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">Receive</button>
+                                            <?php endif; ?>
+                                        </form>
+                                    <?php endif; ?>
                                 </td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
-                                <td colspan="6" class="text-center">No items found</td>
+                                <td colspan="7" class="text-center">No items found</td>
                             </tr>
                         <?php endif; ?>
                     </tbody>
@@ -172,11 +192,11 @@
                         <input type="hidden" name="job" value="<?php echo e($job); ?>">
                         <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
                     </form>
-                    <form method="POST" action="<?php echo e(route('superadmin.reporting.submitAll')); ?>" id="submit-all-form" class="d-inline">
-                        <?php echo csrf_field(); ?>
-                        <input type="hidden" name="payload" id="submit-all-payload">
-                        <button class="btn d-none" type="button" id="submit-all-btn" style="background-color:#FE9F43;border-color:#FE9F43;color:#fff;">Submit All</button>
-                    </form>
+                    <a href="" 
+                        class="btn" 
+                        style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
+                        Get All
+                        </a>
                 </div>
             </div>
         </div>
@@ -257,15 +277,86 @@
                     if (!letters.length) {
                         lettersListEl.innerHTML = '<div class="text-muted">No letters uploaded yet.</div>';
                     } else {
+                        const pdfAnchors = [];
+                        const sanitizePdfUrl = (raw) => {
+                            if (!raw) return raw;
+                            try {
+                                // Split on storage path to encode only filename segment if necessary
+                                const u = new URL(raw, window.location.origin);
+                                // Rebuild pathname encoding each segment that contains spaces or parentheses
+                                u.pathname = u.pathname.split('/').map(seg => /[% ]|\(|\)/.test(seg) ? encodeURIComponent(decodeURIComponent(seg)) : seg).join('/');
+                                return u.toString();
+                            } catch (_) { return raw; }
+                        };
                         letters.forEach(function(l) {
                             const a = document.createElement('a');
-                            a.href = l.url || l.path || '#';
+                            const url = l.download_url || l.encoded_url || l.url || l.path || '#';
+                            const name = (l.name || l.filename || 'Letter');
+                            const dateStr = (l.uploaded_at || l.created_at || '');
+                            const isPdf = url.toLowerCase().endsWith('.pdf');
+                            const pages = (typeof l.pages === 'number' && l.pages > 0) ? l.pages : null;
+                            a.href = url;
                             a.target = '_blank';
                             a.rel = 'noopener';
                             a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
-                            a.innerHTML = '<span>' + (l.name || l.filename || 'Letter') + '</span>' + '<span class="small text-muted">' + (l.uploaded_at || l.created_at || '') + '</span>';
+                            // Left: file name, Right: (page count badge if pdf) + date
+                            a.innerHTML = '<span class="me-2 text-truncate" style="max-width:60%">' + name + '</span>' +
+                                '<span class="d-inline-flex align-items-center gap-2 ms-auto">' +
+                                (isPdf ? '<span class="badge rounded-pill bg-light text-dark border pdf-page-count" title="Pages" style="min-width:34px;">' + (pages ? pages + 'p' : '..') + '</span>' : '') +
+                                '<span class="small text-muted">' + dateStr + '</span></span>';
                             lettersListEl.appendChild(a);
+                            if (isPdf && !pages) pdfAnchors.push(a);
                         });
+                        // Dynamically load pdf.js (only once) and compute page counts
+                        if (pdfAnchors.length) {
+                            const ensurePdfJs = () => new Promise((resolve, reject) => {
+                                if (window.pdfjsLib) return resolve();
+                                const s = document.createElement('script');
+                                s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';
+                                s.onload = function() {
+                                    if (window.pdfjsLib && window.pdfjsLib.GlobalWorkerOptions) {
+                                        window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+                                    }
+                                    resolve();
+                                };
+                                s.onerror = () => reject(new Error('Failed to load pdf.js'));
+                                document.head.appendChild(s);
+                            });
+                            ensurePdfJs().then(async () => {
+                                for (const a of pdfAnchors) {
+                                    try {
+                                        let raw = a.getAttribute('data-pdf-url') || a.getAttribute('href');
+                                        const attempts = [];
+                                        if (raw) attempts.push(raw);
+                                        // If relative path missing leading slash
+                                        if (raw && raw[0] !== '/') attempts.push('/' + raw);
+                                        // Sanitized
+                                        if (raw) attempts.push(sanitizePdfUrl(raw));
+                                        let pdf = null, lastErr = null;
+                                        for (const candidate of attempts) {
+                                            if (!candidate) continue;
+                                            try {
+                                                const resp = await fetch(candidate, { cache: 'no-store' });
+                                                if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                                                const ab = await resp.arrayBuffer();
+                                                const task = window.pdfjsLib.getDocument({ data: ab });
+                                                pdf = await task.promise;
+                                                break;
+                                            } catch (e) { lastErr = e; }
+                                        }
+                                        if (!pdf) throw lastErr || new Error('Unable to load PDF');
+                                        const span = a.querySelector('.pdf-page-count');
+                                        if (span) span.textContent = pdf.numPages + 'p';
+                                    } catch (e) {
+                                        console.warn('PDF page count failed', e);
+                                        const span = a.querySelector('.pdf-page-count');
+                                        if (span) span.textContent = '?p';
+                                    }
+                                }
+                            }).catch(() => {
+                                pdfAnchors.forEach(a => { const span = a.querySelector('.pdf-page-count'); if (span) span.textContent = '?p'; });
+                            });
+                        }
                     }
                 }
                 if (showModal) {

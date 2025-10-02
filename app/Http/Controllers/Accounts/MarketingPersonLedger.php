@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\NewBooking;
-use App\Models\{Invoice,TdsPayment,CashLetterPayment};
+use App\Models\{Invoice,InvoiceTransaction,CashLetterPayment};
 
 use App\Services\GetUserActiveDepartment; 
 
@@ -71,7 +71,7 @@ class MarketingPersonLedger extends Controller
 
 
             $paidInvoiceAmount = $bookings->flatMap(function ($b) {
-                return $b->generatedInvoice && $b->generatedInvoice->status
+                return ($b->generatedInvoice && $b->generatedInvoice->status === 'tax_invoice')
                     ? [$b->generatedInvoice]
                     : [];
             })->sum('total_amount');
@@ -152,23 +152,34 @@ class MarketingPersonLedger extends Controller
             ->when($request->filled('transaction_status'), function ($q) use ($request) {
                 $q->where('transaction_status', $request->transaction_status);
             })
-            ->pluck('booking_ids');
+            ->get(['id','booking_ids','transaction_status']);
 
-        $bookingIds = $cashPayments
-            ->flatMap(function ($ids) {
-                return explode(',', is_array($ids) ? implode(',', $ids) : (string) $ids);
-            })
-            ->map(fn($id) => (int) trim($id))
-            ->unique()
-            ->filter()
-            ->values();
+        // Build booking_id => status map
+        $bookingStatusMap = collect();
+
+        foreach ($cashPayments as $payment) {
+            // If booking_ids is JSON string, decode, else keep as array
+            $ids = $payment->booking_ids;
+
+            if (is_string($ids)) {
+                $ids = json_decode($ids, true);
+            }
+
+            if (is_array($ids)) {
+                foreach ($ids as $id) {
+                    $bookingStatusMap[$id] = $payment->transaction_status;
+                }
+            }
+        }
+       
+        $allBookingIds = $bookingStatusMap->keys();
 
         $query = NewBooking::query();
 
         if ($request->get('with_payment') == 1) {
-            $query->whereIn('id', $bookingIds);
+            $query->whereIn('id', $allBookingIds);
         } else {
-            $query->whereNotIn('id', $bookingIds)->where('payment_option', 'without_bill');
+            $query->whereNotIn('id', $allBookingIds)->where('payment_option', 'without_bill');
         }
 
         //  Apply Month/Year filter
@@ -182,9 +193,13 @@ class MarketingPersonLedger extends Controller
         $bookings = $query->latest()->paginate(10);
 
         $isClient = false;
-        return view('superadmin.accounts.marketingPerson.partials_without_bill', compact('bookings', 'isClient'))->render();
-    }
 
+        return view('superadmin.accounts.marketingPerson.partials_without_bill', [
+            'bookings' => $bookings,
+            'isClient' => $isClient,
+            'bookingStatusMap' => $bookingStatusMap
+        ])->render();
+    }
 
     // AJAX - Invoices
     public function fetchInvoices(Request $request, $user_code)
@@ -223,7 +238,8 @@ class MarketingPersonLedger extends Controller
 
     public function fetchInvoicesTransactions(Request $request, $user_code)
     {
-        $query = TdsPayment::where('marketing_person_id', $user_code);
+
+        $query = InvoiceTransaction::with(['invoice', 'client', 'marketingPerson'])->where('marketing_person_id', $user_code);
 
         //  Apply Month/Year filter
         if ($request->filled('year')) {
@@ -233,10 +249,10 @@ class MarketingPersonLedger extends Controller
             $query->whereMonth('created_at', $request->month);
         }
 
-        $tdsPayments = $query->latest()->paginate(10);
+        $transactions = $query->orderBy('transaction_date', 'desc')->paginate(10);
 
         $isClient = false;
-        return view('superadmin.accounts.marketingPerson.partials_tds_payments', compact('tdsPayments', 'isClient'))->render();
+        return view('superadmin.accounts.marketingPerson.partials_trasactions', compact('transactions', 'isClient'))->render();
     }
 
 
@@ -284,5 +300,63 @@ class MarketingPersonLedger extends Controller
 
         return view('superadmin.accounts.marketingPerson.profile', compact('marketingPerson', 'stats', 'month', 'year'));
     }
+
+
+    public function fetchClientAllBookings(Request $request, $userCode)
+    {
+        $marketingPerson = User::findOrFail($userCode);
+
+        // Get all payments for this client
+        $cashPayments = CashLetterPayment::where('marketing_person_id', $marketingPerson->user_code)
+            ->when($request->filled('transaction_status'), function ($q) use ($request) {
+                $q->where('transaction_status', $request->transaction_status);
+            })
+            ->get(['id', 'booking_ids', 'transaction_status']);
+
+        // Build booking_id => status map
+        $bookingStatusMap = collect();
+
+        foreach ($cashPayments as $payment) {
+            $ids = $payment->booking_ids;
+
+            if (is_string($ids)) {
+                $ids = json_decode($ids, true);
+            }
+
+            if (is_array($ids)) {
+                foreach ($ids as $bid) {
+                    $bookingStatusMap[$bid] = $payment->transaction_status;
+                }
+            }
+        }
+
+        $allBookingIds = $bookingStatusMap->keys();
+
+        // Fetch ALL bookings of the client
+        $query = NewBooking::where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'without_bill');
+
+        // Apply Month/Year filter
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+
+        $bookings = $query->latest()->paginate(10);
+
+        // Attach status to each booking
+        $bookings->getCollection()->transform(function ($booking) use ($bookingStatusMap) {
+            $booking->payment_status = $bookingStatusMap[$booking->id] ?? 'noPayments';
+            return $booking;
+        });
+
+        return view('superadmin.accounts.marketingPerson.partials_client_all_bookings', [
+            'bookings' => $bookings,
+            'isClient' => false
+        ])->render();
+    }
+
+
 
 }

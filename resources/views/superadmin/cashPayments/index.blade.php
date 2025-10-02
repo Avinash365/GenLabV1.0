@@ -28,43 +28,60 @@
         <!-- Search -->
         <div class="search-set">
             <form method="GET" action="{{ route('superadmin.cashLetterTransactions.index') }}" class="d-flex input-group">
+                <!-- Preserve existing filters -->
+                <input type="hidden" name="transaction_status" value="{{ request('transaction_status') }}">
+                <input type="hidden" name="year" value="{{ request('year') }}">
+                <input type="hidden" name="month" value="{{ request('month') }}">
+
                 <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
                 <button class="btn btn-outline-secondary" type="submit">🔍</button>
             </form>
         </div>
 
         <!-- Filter -->
-        <div class="search-set">
-            <form method="GET" action="{{ route('superadmin.cashLetterTransactions.index') }}" class="d-flex input-group">
+        <!-- Filter -->
+<div class="search-set">
+    <form method="GET" action="{{ route('superadmin.cashLetterTransactions.index') }}" class="d-flex input-group gap-2">
+       
 
-                <!-- Payment Status -->
-                <select name="transaction_status" class="form-control" onchange="this.form.submit()">
-                    <option value="">All Status</option>
-                    <option value="0" {{ request('transaction_status') == '0' ? 'selected' : '' }}>Pending</option>
-                    <option value="1" {{ request('transaction_status') == '1' ? 'selected' : '' }}>Partial</option>
-                    <option value="2" {{ request('transaction_status') == '2' ? 'selected' : '' }}>Paid</option>
-                </select>
+        <!-- Transaction Status -->
+        <select name="transaction_status" class="form-control" onchange="this.form.submit()">
+            <option value="">All Status</option>
+            <option value="0" {{ request('transaction_status') == '0' ? 'selected' : '' }}>Pending</option>
+            <option value="1" {{ request('transaction_status') == '1' ? 'selected' : '' }}>Partial</option>
+            <option value="2" {{ request('transaction_status') == '2' ? 'selected' : '' }}>Paid</option>
+            <option value="3" {{ request('transaction_status') == '3' ? 'selected' : '' }}>Settled</option>
+        </select>
 
-                <!-- Year Filter -->
-                <select name="year" class="form-control" onchange="this.form.submit()">
-                    <option value="">Select Year</option>
-                    @foreach(range(date('Y'), date('Y') - 10) as $y)
-                        <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
-                            {{ $y }}
-                        </option>
-                    @endforeach
-                </select>
+        <!-- Month Filter -->
+        <select name="month" class="form-control" onchange="this.form.submit()">
+            <option value="">Select Month</option>
+            @foreach(range(1,12) as $m)
+                <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
+                    {{ \Carbon\Carbon::create()->month($m)->format('F') }}
+                </option>
+            @endforeach
+        </select>
 
-                <button class="btn btn-outline-secondary" type="submit">Filter</button>
-            </form> 
-        </div>
+        <!-- Year Filter -->
+        <select name="year" class="form-control" onchange="this.form.submit()">
+            <option value="">Select Year</option>
+            @foreach(range(date('Y'), date('Y') - 10) as $y)
+                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                    {{ $y }}
+                </option>
+            @endforeach
+        </select>
+    </form>
+</div>
+
     </div>
 </div>
 
 <!-- Table -->
 <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="card-title">Cash Payments</h5>
+        <h5 class="card-title">Paid Letters</h5>
     </div>
 
     <div class="card-body">
@@ -73,27 +90,40 @@
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
+                        <th>Reference No</th>
                         <th>Client</th>
                         <th>Marketing Person</th>
                         <th>Total Amount</th>
                         <th>Received</th>
-                        <th>Payment Mode</th>
-                        <th>Transaction Date</th>
+                       
                         <th>Status</th>
                         <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
                     @forelse($CashLetterPayment as $payment)
-                        <tr>
-                            <td>{{ $loop->iteration }}</td>
+                        <tr> 
+                        <td>{{ $loop->iteration }}</td>
+                            {{-- Ref No --}}
+                            <td>
+                                @php
+                                    $bookingRefs = $payment->bookings->pluck('reference_no')->filter();
+                                    $firstRef = $bookingRefs->first();
+                                @endphp
+
+                                {{ $firstRef ?? 'N/A' }}
+
+                                @if($bookingRefs->count() > 1)
+                                    <a href="#" data-bs-toggle="modal" data-bs-target="#refModal{{ $payment->id }}">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                @endif
+                            </td>
                             <td>{{ $payment->client->name ?? 'N/A' }}</td>
                             <td>{{ $payment->marketingPerson->name ?? $payment->marketing_person_id }}</td>
-                         
-                            <td>{{ $payment->total_amount ?? '' }}</td>
-                            <td>{{ $payment->amount_received  ?? ''}}</td>
-                            <td>{{$payment->payment_mode}}</td>
-                            <td>{{$payment->transaction_date}}</td> 
+                            <td>{{ number_format($payment->total_amount, 2) }}</td>
+                            <td>{{ number_format($payment->amount_received, 2) }}</td>
+                          
                             <td>
                                 @if($payment->transaction_status == 0)
                                     <span class="badge bg-warning">Pending</span>
@@ -101,6 +131,8 @@
                                     <span class="badge bg-info">Partial</span>
                                 @elseif($payment->transaction_status == 2)
                                     <span class="badge bg-success">Paid</span>
+                                @elseif($payment->transaction_status == 3)
+                                    <span class="badge bg-primary">Settled</span>
                                 @endif
                             </td>
                             
@@ -113,16 +145,19 @@
                                         title="View Details">
                                     <i data-feather="eye"></i>
                                 </button>
-                
-                                <!-- Settle (only for partial payments) -->
-                                @if($payment->transaction_status == 1) 
-                                     <a href="" 
-                                        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none text-success" 
-                                        title="Add Amount">
-                                            <i data-feather="dollar-sign"></i>
+
+                                <!-- Add Partial Payment (Dollar Icon) -->
+                                @if($payment->transaction_status == 1)
+                                    <a href="javascript:void(0);" 
+                                       class="me-2 border rounded d-flex align-items-center p-2 text-success" 
+                                       data-bs-toggle="modal" 
+                                       data-bs-target="#addAmountModal{{ $payment->id }}" 
+                                       title="Add Amount">
+                                        <i data-feather="dollar-sign"></i>
                                     </a> 
 
-                                   <button type="button" 
+                                    <!-- Settle Button -->
+                                    <button type="button" 
                                             class="p-2 border rounded d-flex align-items-center btn-primary text-white ms-2" 
                                             data-bs-toggle="modal" 
                                             data-bs-target="#settleModal{{ $payment->id }}" 
@@ -132,7 +167,64 @@
                                 @endif 
                             </td>
                         </tr>
-                      
+
+                        <!-- Add Partial Payment Modal -->
+                        <div class="modal fade" id="addAmountModal{{ $payment->id }}" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered">
+                                <div class="modal-content">
+                                    <div class="modal-body p-4">
+                                        <h5 class="mb-3 text-center">Add Partial Payment</h5>
+                                        <form action="{{ route('superadmin.withoutbilltransactions.storeRepay', $payment->id) }}" method="POST">
+                                            @csrf
+                                            <input type="hidden" name="client_id" value="{{ $payment->client_id }}">
+                                            <input type="hidden" name="marketing_person_id" value="{{ $payment->marketing_person_id }}">
+                                            <input type="hidden" name="cash_letter_payment_id" value="{{ $payment->id }}">
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Due Amount</label>
+                                                <input type="text" class="form-control" value="₹{{ number_format($payment->total_amount - $payment->amount_received, 2) }}" readonly>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Amount Received</label>
+                                                <input type="number" name="amount_received"  
+                                                    step="any" 
+                                                       max="{{ $payment->total_amount - $payment->amount_received }}" 
+                                                       class="form-control" required>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Transaction Date</label>
+                                                <input type="date" name="transaction_date" class="form-control" required>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Payment Mode</label>
+                                                <select name="payment_mode" class="form-control" required>
+                                                    <option value="">-- Select Mode --</option>
+                                                    <option value="cash">Cash</option>
+                                                    <option value="cheque">Cheque</option>
+                                                    <option value="online">Online</option>
+                                                    <option value="account_transfer">Account Transfer</option>
+                                                    <option value="upi">UPI</option>
+                                                </select>
+                                            </div>
+
+                                            <div class="mb-3">
+                                                <label class="form-label">Notes</label>
+                                                <textarea name="notes" class="form-control" placeholder="Optional"></textarea>
+                                            </div>
+
+                                            <div class="d-flex justify-content-center gap-2">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                <button type="submit" class="btn btn-success">Save Payment</button>
+                                            </div>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Settle Modal -->
                         <div class="modal fade" id="settleModal{{ $payment->id }}" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered">
@@ -156,9 +248,7 @@
                                     </div>
                                 </div>
                             </div>
-                        </div> 
-
-                        <!-- View Details Modal -->
+                        </div>
 
                     @empty
                         <tr>
@@ -168,10 +258,13 @@
                 </tbody>
             </table>
         </div>
-
-        <!-- Pagination -->
-      
     </div>
 </div>
+
+<!-- Feather Icons -->
+<script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+<script>
+    feather.replace();
+</script>
 
 @endsection

@@ -6,18 +6,35 @@
 <div class="container mt-4">
     {{-- Profile Header --}}
     <div class="card p-4 shadow-sm">
-        <div class="d-flex align-items-center">
+    <div class="row align-items-center">
+        <!-- Left Column: Profile Picture -->
+        <div class="col-md-3 text-center">
             <img src="{{ $marketingPerson->profile_picture ?? asset('images/default-avatar.png') }}" 
-                 class="rounded-circle me-4" width="100" height="100" alt="Profile Picture">
+                 class="rounded-circle img-fluid" width="120" height="120" alt="Profile Picture">
+        </div>
 
-            <div>
-                <h3 class="mb-1">{{ $marketingPerson->name }}</h3>
-                <p class="mb-0 text-muted"><i class="fa fa-envelope"></i> {{ $marketingPerson->email }}</p>
-                <p class="mb-0 text-muted"><i class="fa fa-phone"></i> {{ $marketingPerson->phone ?? 'N/A' }}</p>
-                <p class="mb-0 text-muted"><i class="fa fa-id-card"></i> Code: {{ $marketingPerson->user_code }}</p>
-            </div>  
+        <!-- Right Column: Details -->
+        <div class="col-md-9">
+            <h3 class="mb-2">{{ $marketingPerson->name }}</h3>
+            <div class="row">
+                <!-- Column 1 -->
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted"><i class="fa fa-envelope me-2"></i>{{ $marketingPerson->email }}</p>
+                    <p class="mb-1 text-muted"><i class="fa fa-phone me-2"></i>{{ $marketingPerson->phone ?? 'N/A' }}</p>
+                    <p class="mb-1 text-muted"><i class="fa fa-id-card me-2"></i>Code: {{ $marketingPerson->user_code }}</p>
+                </div>
+
+                <!-- Column 2 -->
+                <div class="col-md-6">
+                    <p class="mb-1 text-muted"><i class="fa fa-exchange-alt me-2"></i>Total Transactions: {{ number_format($stats['transactions'] ?? 0, 0) }}</p>
+                    <p class="mb-1 text-muted"><i class="fa fa-money-bill-wave me-2"></i>Total Amount Received: ₹{{ number_format($stats['totalTransactionsAmount'] ?? 0, 2) }}</p>
+                    <p class="mb-1 text-muted"><i class="fa fa-file-invoice-dollar me-2"></i>TDS Amount: ₹{{ number_format($stats['tdsAmount'] ?? 0, 2) }}</p>
+                </div>
+            </div>
         </div>
     </div>
+</div>
+
 
     {{-- Tabs + Filters --}}
     <div class="d-flex justify-content-between align-items-center mb-3 mt-3">
@@ -96,7 +113,7 @@
                     'amount'=>'₹'.number_format($stats['totalWithoutBillBookings'] ?? 0,2),
                     'class'=>'warning',
                     'type'=>'without_bill',
-                    'route'=>route('superadmin.marketing.bookings',[$marketingPerson->user_code, 'payment_option'=>'without_bill'])
+                    'route'=>route('superadmin.marketing.cashAllTransactions',[$marketingPerson->user_code])
                 ],
                 [
                     'id'=>'generatedInvoices',
@@ -125,6 +142,25 @@
                     'type'=>'bill',
                     'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?status=1'
                 ],
+                [
+                    'id'=>'partialPaidInvoices',
+                    'title'=>'Partial Paid Invoices',
+                    'count'=>$stats['partialTaxInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalPartialTaxInvoiceAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?status=3'
+                ], 
+                [
+                    'id'=>'settledPaidInvoices',
+                    'title'=>'Settled Invoices',
+                    'count'=>$stats['settledTaxInvoices'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalSettledTaxInvoicesAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'bill',
+                    'route'=>route('superadmin.marketing.invoices',$marketingPerson->user_code).'?status=4'
+                ],
+
                 [
                     'id'=>'unpaidInvoices',
                     'title'=>'Unpaid Invoices',
@@ -164,8 +200,8 @@
                 [
                     'id'=>'transactions',
                     'title'=>'Invoice Transactions',
-                    'count'=>$stats['invoiceTransactions'] ?? 0,
-                    'amount'=>'TDS: ₹'.number_format($stats['totalTdsAmount'] ?? 0,2),
+                    'count'=>$stats['transactions'] ?? 0,
+                    'amount'=>'₹'.number_format($stats['totalTransactionsAmount'] ?? 0,2),
                     'class'=>'info',
                     'type'=>'bill',
                     'route'=>route('superadmin.marketing.transactions',$marketingPerson->user_code)
@@ -174,7 +210,7 @@
                     'id'=>'cashPaidLetters',
                     'title'=>'Paid Cash Letters',
                     'count'=>$stats['cashPaidLetters'] ?? 0,
-                    'amount'=>'₹'.number_format($stats['totalCashPaidLettersAmounts'] ?? 0,2),
+                    'amount'=>'₹'.number_format($stats['totalCashPaidLettersAmount'] ?? 0,2),
                     'class'=>'success',
                     'type'=>'without_bill',
                     'route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code).'?transaction_status=2&with_payment=1'
@@ -187,15 +223,24 @@
                     'class'=>'danger',
                     'type'=>'without_bill',
                     'route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code)
-                ], 
+                ],  
                 [
-                    'id'=>'cashDefaulter',
-                    'title'=>'Defaulter',
-                    'count'=>$stats['cashDefaulter'] ?? 0,
-                    'amount'=>'₹'.number_format($stats['totalDefaulterAmount'] ?? 0,2),
-                    'class'=>'danger',
+                    'id'=>'cashPartialLetters',
+                    'title'=>'Partial Cash Letters',
+                    'count'=>$stats['cashPartialLetters'] ?? 0,
+                    'amount'=>'Due Amount :'. '₹'.number_format($stats['totalDueAmount'] ?? 0,2),
+                    'class'=>'success',
                     'type'=>'without_bill',
-                    'route'=>route('superadmin.marketing.cashTransactions',$marketingPerson->user_code).'?transaction_status=1'
+                    'route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code).'?transaction_status=1&with_payment=1'
+                ],  
+                [
+                    'id'=>'cashSettledLetters',
+                    'title'=>'Settled Cash Letters',
+                    'count'=>$stats['cashSettledLetters'] ?? 0,
+                    'amount'=>'Settled Amount :'.'₹'.number_format($stats['totalSettledAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'without_bill',
+                    'route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code).'?transaction_status=3&with_payment=1'
                 ],
             ];
         @endphp

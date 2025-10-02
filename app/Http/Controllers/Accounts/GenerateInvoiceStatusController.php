@@ -174,13 +174,18 @@ class GenerateInvoiceStatusController extends Controller
            $booking = NewBooking::select('client_id', 'marketing_id')->find($bookingId);
         }
 
+        $generatedBy = Auth::id(); 
+        if (!User::where('id', $generatedBy)->exists()) {
+            $generatedBy = null; // automatically set NULL if user not found
+        }
+
         $invoice = Invoice::create([ 
             'client_id'           => $booking->client_id ?? null,
             'marketing_user_code' => $booking->marketing_id ?? null, 
 
             'new_booking_id' => $invoiceData['booking_id'] ?? null,
             'invoice_no'     => $invoiceData['invoice']['invoice_no'] ?? null,
-            'generated_by'   => Auth::id(),
+            'generated_by'   => $generatedBy, 
            
             'letter_date'    => !empty($invoiceData['invoice']['ref_date'])
                                 ? Carbon::createFromFormat('d-m-Y', $invoiceData['invoice']['ref_date'])->format('Y-m-d')

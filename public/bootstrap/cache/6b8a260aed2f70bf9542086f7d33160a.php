@@ -1,4 +1,3 @@
-
 <?php $__env->startSection('title', 'Show Booking List'); ?>
 <?php $__env->startSection('content'); ?>
 

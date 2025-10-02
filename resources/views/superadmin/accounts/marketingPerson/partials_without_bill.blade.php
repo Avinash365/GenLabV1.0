@@ -75,11 +75,31 @@
                         </div>
                     @endif
                 </td>
-
                 <td>
-                    <span class="badge {{ $booking->generatedInvoice?->status ? 'bg-success' : 'bg-warning' }}">
-                        {{ $booking->generatedInvoice?->status ? 'Completed' : 'Pending' }}
-                    </span>
+                    @php
+                        $status = $bookingStatusMap[$booking->id] ?? null;
+                    @endphp
+
+                    @if(!is_null($status))
+                        @switch($status)
+                            @case(0)
+                                <span class="badge bg-warning">Pending</span>
+                                @break
+                            @case(1)
+                                <span class="badge bg-info">Partial</span>
+                                @break
+                            @case(2)
+                                <span class="badge bg-success">Paid</span>
+                                @break
+                            @case(3)
+                                <span class="badge bg-primary">Settled</span>
+                                @break
+                            @default
+                                <span class="badge bg-secondary">Unknown</span>
+                        @endswitch
+                    @else
+                        <span class="badge bg-secondary">No Payment</span>
+                    @endif
                 </td>
             </tr>
         @endforeach

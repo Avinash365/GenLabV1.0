@@ -56,5 +56,18 @@ class BookingItem extends Model
     public function receivedBy()
     {
         return $this->belongsTo(User::class, 'received_by_id');
-    }
+    } 
+
+    
+
+    public function reports()
+    {
+        return $this->belongsToMany(
+            ReportEditorFile::class,
+            'booking_item_report',   // pivot table name
+            'booking_item_id',       // foreign key on pivot for this model
+            'report_editor_file_id'  // foreign key on pivot for related model
+        )->withPivot('id','booking_id', 'pdf_path', 'generated_report_path')->withTimestamps();
+    } 
+
 }
