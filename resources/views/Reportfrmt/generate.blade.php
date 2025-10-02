@@ -120,9 +120,11 @@
     {{-- Submit Button --}}
     <div class="d-flex justify-content-end gap-2 mt-3 mb-2"> 
         <button type="submit" class="btn btn-primary">Save</button> 
-        <a href="{{ route('viewPdf', basename($pivotRecord->pdf_path)) }}" target="_blank" class="btn btn-sm btn-info pt-2">
-            View
-        </a>
+        @if(isset($pivotRecord) && !empty($pivotRecord->pdf_path))
+            <a href="{{ route('viewPdf', basename($pivotRecord->pdf_path)) }}" target="_blank" class="btn btn-sm btn-info pt-2">
+                View
+            </a>
+        @endif
     </div>   
 </form>
 
