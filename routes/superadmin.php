@@ -22,7 +22,8 @@ use App\Http\Controllers\SuperAdmin\IssueViewController;
 use App\Http\Controllers\SuperAdmin\PurchaseListController;
 use App\Http\Controllers\SuperAdmin\PurchaseAddController;
 use App\Http\Controllers\SuperAdmin\ShowBookingController;
-use App\Http\Controllers\SuperAdmin\ShowBookingByLetterController; 
+use App\Http\Controllers\SuperAdmin\ShowBookingByLetterController;
+use App\Http\Controllers\ListController; 
 
 use App\Http\Controllers\SuperAdmin\IsCodesController;
 
