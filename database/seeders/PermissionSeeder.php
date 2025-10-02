@@ -41,7 +41,27 @@ class PermissionSeeder extends Seeder
             'department.view',
             'department.create',
             'department.edit',
-            'department.delete',
+            'department.delete', 
+
+            // Inventory 
+            'inventory.view', 
+            'inventory.edit', 
+            'inventory.create', 
+            'inventory.delete', 
+
+
+            //Reporting 
+            'reporting.view', 
+            'reporting.edit', 
+            'reporting.create', 
+            'reporting.delete', 
+
+            // lab Analysts 
+            'lab-analysts.view', 
+            'lab-analysts.create', 
+            'lab-analysts.edit', 
+            'lab-analysts.delete', 
+
 
             // Accounts
             'accounts.view',
@@ -95,8 +115,43 @@ class PermissionSeeder extends Seeder
             'profile.view',
             'profile.create',
             'profile.edit',
-            'profile.delete',
-        ];
+            'profile.delete', 
+
+            // report formate 
+            'report-format.view',
+            'report-format.create',
+            'report-format.edit',
+            'report-format.delete', 
+
+            // report generate 
+            'report-generate.view',
+            'report-generate.create',
+            'report-generate.edit',
+            'report-generate.delete',  
+
+
+            // leave 
+            'leave.view', 
+            'leave.edit', 
+            'leave.create', 
+            'leave.delete', 
+
+            // account 
+            'account.view',
+            'account.create',
+            'account.edit',
+            'account.delete',  
+
+            //Web Settings 
+            'web-settings.view', 
+            'web-settings.edit', 
+
+            // bank Settings 
+            'bank-details.view', 
+            'bank-details.edit', 
+
+
+        ]; 
 
         foreach ($defaultPermissions as $permission) {
             Permission::firstOrCreate(

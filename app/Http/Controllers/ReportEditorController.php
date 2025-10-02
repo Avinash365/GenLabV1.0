@@ -67,13 +67,8 @@ class ReportEditorController extends Controller
 
     public function viewPdf($filename)
     {
-        $path = storage_path('app/public/' . $filename); // e.g., storage/generatedReports/1759307649_report.pdf
-
-        if (!file_exists($path)) {
-            abort(404);
-        }
-
-        return response()->file($path);
+        
+        return redirect(asset('storage/generatedReports/' . ltrim($filename, '/')));
     }
 
 
@@ -154,10 +149,10 @@ class ReportEditorController extends Controller
     {    
         $request->validate([
             'report_no' => 'required|string|max:255',
-            'report_description' => 'nullable|string|max:255',
+            'report_description' => 'nullable|string|max:2000',
             'content' => 'required|string',
             'ulr_no' => 'nullable|string|max:255',
-            'issued_to' => 'nullable|string|max:1000',
+            'issued_to' => 'nullable|string|max:2000',
             'date_of_receipt' => 'nullable|date',
             'date_of_start_analysis' => 'nullable|date',
             'letter_ref_no' => 'nullable|string|max:255',
@@ -165,7 +160,7 @@ class ReportEditorController extends Controller
             'completion_date' => 'nullable|date',
             'sample_description' => 'nullable|string|max:2000',
             'date_of_issue' => 'nullable|date',
-            'name_of_work' => 'nullable|string|max:255',
+            'name_of_work' => 'nullable|string|max:2000',
             'booking_item_id' => 'required|integer',
             'booking_id' => 'required|integer',
             'editing_report_id' => 'nullable|integer',
@@ -220,7 +215,7 @@ class ReportEditorController extends Controller
         // Delete old PDF if exists
         if ($oldRecord && $oldRecord->pdf_path) { 
             $filePath = 'public/' . ltrim($oldRecord->pdf_path, '/');
-            Storage::disk('local')->delete($filePath);
+            Storage::disk('public')->delete($filePath);
         }
  
         // Update DB with new HTML and PDF paths
@@ -236,12 +231,19 @@ class ReportEditorController extends Controller
                 'ult_r_no' => $headerData['ulr_no'], 
                 'date_of_start_of_analysis' => $headerData['date_of_start_analysis'], 
                 'date_of_completion_of_analysis' => $headerData['date_of_completion'], 
-                'date_of_receipt'   => $headerData['date_of_receipt'], 
+                'date_of_receipt'   => $headerData['date_of_receipt'],  
+                'issue_to_date'   => $headerData['date_of_issue'],
                 'updated_at' => now(),
             ]
         ); 
+       
+        return back()->with('success', 'Report Genrated successfully!'); 
 
-        // Download the PDF
+    } 
+
+
+    public function downloadReportPdf($pdfRelativePath){ 
+
         return response()->download(storage_path('app/public/' . $pdfRelativePath));
     }
 
