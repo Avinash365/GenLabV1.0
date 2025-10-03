@@ -235,10 +235,16 @@ class ReportEditorController extends Controller
                 'issue_to_date'   => $headerData['date_of_issue'],
                 'updated_at' => now(),
             ]
-        ); 
-       
-        return back()->with('success', 'Report Genrated successfully!'); 
+        );  
 
+        $pivotRecord = \DB::table('booking_item_report')
+                ->where('booking_id', $request->input('booking_id'))
+                ->where('booking_item_id', $request->input('booking_item_id'))
+                ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
+                ->first();
+       
+        return redirect()->route('generateReportPDF.editReport', ['pivotId' => $pivotRecord->id])
+                          ->with('success', 'Report generated successfully!');
     } 
 
 
