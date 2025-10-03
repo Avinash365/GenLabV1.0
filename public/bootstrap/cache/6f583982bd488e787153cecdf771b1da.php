@@ -118,9 +118,11 @@
     
     <div class="d-flex justify-content-end gap-2 mt-3 mb-2"> 
         <button type="submit" class="btn btn-primary">Save</button> 
-        <a href="<?php echo e(route('viewPdf', basename($pivotRecord->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info pt-2">
-            View
-        </a>
+            <?php if(isset($pivotRecord) && !empty($pivotRecord->pdf_path)): ?>
+                <a href="<?php echo e(route('viewPdf', basename($pivotRecord->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info pt-2">
+                    View
+                </a>
+            <?php endif; ?>
     </div>   
 </form>
 
@@ -178,27 +180,6 @@
 
 <script> 
 
-function ensureTableHeader(html) {
-    // Create a temporary DOM element
-    const tempDiv = document.createElement('div');
-    tempDiv.innerHTML = html;
-
-    // Find all tables
-    tempDiv.querySelectorAll('table').forEach(table => {
-        const firstRow = table.querySelector('tr');
-        if (firstRow && !table.querySelector('thead')) {
-            const thead = document.createElement('thead');
-            thead.appendChild(firstRow.cloneNode(true)); // Move the first row to thead
-            table.insertBefore(thead, table.firstChild);
-
-            // Remove the original first row from tbody if exists
-            firstRow.remove();
-        }
-    });
-
-    return tempDiv.innerHTML;
-}
-
 // Initialize Jodit with table border override
 const editor = Jodit.make('#jodit-editor', { 
     height: 400,
@@ -221,7 +202,7 @@ document.querySelectorAll('.load-report').forEach(btn => {
         const description = this.dataset.description;
         const id = this.dataset.id;
 
-        // ✅ Ensure first row goes under <thead>
+        //  Ensure first row goes under <thead>
         editor.value = ensureTableHeader(content);
 
         document.getElementById('report_no').value = name;
