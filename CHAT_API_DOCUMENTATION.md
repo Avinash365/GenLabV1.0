@@ -483,3 +483,54 @@ For technical support or questions about the API implementation, contact the bac
 **Last Updated:** October 2, 2025  
 **API Version:** 1.0  
 **Laravel Version:** 10+
+
+---
+
+## Action Endpoints (Reply, Forward, Share, Status)
+
+These endpoints extend message operations and are available for both user and admin guards.
+
+Get single message
+```
+GET /api/chat/messages/{messageId}
+GET /api/admin/chat/messages/{messageId}
+```
+
+Reply to a message
+```
+POST /api/chat/messages/{messageId}/reply
+POST /api/admin/chat/messages/{messageId}/reply
+Body (JSON): { "type": "text" | "file" | "image", "content": "Reply text (if type=text)" }
+```
+
+Forward/share a message
+```
+POST /api/chat/messages/{messageId}/forward   Body: { "target_group_ids": [12, 13] }
+POST /api/chat/messages/{messageId}/share     Body: { "target_group_id": 12 } or { "target_group_ids": [12,13] }
+```
+
+Set message status (hold/booked/cancel)
+```
+POST /api/chat/messages/{messageId}/status    Body: { "status": "hold" | "booked" | "cancel" }
+POST /api/admin/chat/messages/{messageId}/status    Body: { "status": "hold" | "booked" | "cancel" }
+```
+
+Status mapping and serializer
+- hold   → reaction: "Hold"
+- booked → reaction: "Booked"
+- cancel → reaction: "Unbooked"
+
+The serializer returns `status` based on latest reaction in that set. Action-type messages also include a parsed `action` object.
+
+Windows PowerShell curl examples
+```
+# Reply
+curl.exe -s -X POST http://127.0.0.1:8000/api/chat/messages/123/reply -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json" -d "{\"type\":\"text\",\"content\":\"On it!\"}"
+
+# Forward/share
+curl.exe -s -X POST http://127.0.0.1:8000/api/chat/messages/123/forward -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json" -d "{\"target_group_ids\":[9,10]}"
+curl.exe -s -X POST http://127.0.0.1:8000/api/chat/messages/123/share -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json" -d "{\"target_group_id\":12}"
+
+# Set status
+curl.exe -s -X POST http://127.0.0.1:8000/api/chat/messages/123/status -H "Authorization: Bearer <TOKEN>" -H "Content-Type: application/json" -d "{\"status\":\"booked\"}"
+```

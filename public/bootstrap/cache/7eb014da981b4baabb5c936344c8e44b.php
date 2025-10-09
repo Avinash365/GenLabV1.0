@@ -1,6 +1,5 @@
-@extends('superadmin.layouts.app')
-@section('title', 'Create New User')
-@section('content')
+<?php $__env->startSection('title', 'Create New User'); ?>
+<?php $__env->startSection('content'); ?>
 
 
    
@@ -81,7 +80,7 @@
 										</tr>
 									</thead>
 									<tbody>
-										@forelse($leaves ?? [] as $leave)
+										<?php $__empty_1 = true; $__currentLoopData = $leaves ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $leave): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
 										<tr>
 											<td>
 												<label class="checkboxs">
@@ -89,36 +88,37 @@
 													<span class="checkmarks"></span>
 												</label>
 											</td>
-											<td>{{ $leave->leave_type ?? 'N/A' }}</td>
-											<td>{{ $leave->from_date ? \Carbon\Carbon::parse($leave->from_date)->format('d M Y') : 'N/A' }}</td>
-											<td>{{ $leave->to_date ? \Carbon\Carbon::parse($leave->to_date)->format('d M Y') : 'N/A' }}</td>
-											<td>{{ $leave->days_hours_formatted ?? ($leave->days_hours . ' Days') }}</td>
-											<td>{{ $leave->created_at ? $leave->created_at->format('d M Y') : 'N/A' }}</td>
+											<td><?php echo e($leave->leave_type ?? 'N/A'); ?></td>
+											<td><?php echo e($leave->from_date ? \Carbon\Carbon::parse($leave->from_date)->format('d M Y') : 'N/A'); ?></td>
+											<td><?php echo e($leave->to_date ? \Carbon\Carbon::parse($leave->to_date)->format('d M Y') : 'N/A'); ?></td>
+											<td><?php echo e($leave->days_hours_formatted ?? ($leave->days_hours . ' Days')); ?></td>
+											<td><?php echo e($leave->created_at ? $leave->created_at->format('d M Y') : 'N/A'); ?></td>
 											<td>
-												<span class="badge {{ $leave->status_badge_class ?? 'badge-secondary' }} d-inline-flex align-items-center badge-xs">
-													<i class="ti ti-point-filled me-1"></i>{{ $leave->status ?? 'Unknown' }}
+												<span class="badge <?php echo e($leave->status_badge_class ?? 'badge-secondary'); ?> d-inline-flex align-items-center badge-xs">
+													<i class="ti ti-point-filled me-1"></i><?php echo e($leave->status ?? 'Unknown'); ?>
+
 												</span>
 											</td>
 											<td class="action-table-data justify-content-end">
 												<div class="edit-delete-action">
-													@if(($leave->status ?? '') === 'Applied')
-													<button class="btn btn-sm btn-success me-1" onclick="approveLeave({{ $leave->id }}, 'Approved')">
+													<?php if(($leave->status ?? '') === 'Applied'): ?>
+													<button class="btn btn-sm btn-success me-1" onclick="approveLeave(<?php echo e($leave->id); ?>, 'Approved')">
 														<i class="ti ti-check"></i> Approve
 													</button>
-													<button class="btn btn-sm btn-danger me-1" onclick="approveLeave({{ $leave->id }}, 'Rejected')">
+													<button class="btn btn-sm btn-danger me-1" onclick="approveLeave(<?php echo e($leave->id); ?>, 'Rejected')">
 														<i class="ti ti-x"></i> Reject
 													</button>
-													@endif
-													<a class="me-2 p-2" href="#" onclick="editLeave({{ $leave->id }})" data-bs-toggle="modal" data-bs-target="#edit-leave">
+													<?php endif; ?>
+													<a class="me-2 p-2" href="#" onclick="editLeave(<?php echo e($leave->id); ?>)" data-bs-toggle="modal" data-bs-target="#edit-leave">
 														<i data-feather="edit" class="feather-edit"></i>
 													</a>
-													<a class="p-2" href="javascript:void(0);" onclick="deleteLeave({{ $leave->id }})" data-bs-toggle="modal" data-bs-target="#delete-modal">
+													<a class="p-2" href="javascript:void(0);" onclick="deleteLeave(<?php echo e($leave->id); ?>)" data-bs-toggle="modal" data-bs-target="#delete-modal">
 														<i data-feather="trash-2" class="feather-trash-2"></i>
 													</a>
 												</div>
 											</td>
 										</tr>
-										@empty
+										<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
 										<tr>
 											<td colspan="8" class="text-center py-4">
 												<div class="text-muted">
@@ -128,7 +128,7 @@
 												</div>
 											</td>
 										</tr>
-										@endforelse
+										<?php endif; ?>
 									</tbody>
 								</table>
 							</div>
@@ -151,8 +151,8 @@
 							<span aria-hidden="true">&times;</span>
 						</button>
 					</div>
-					<form action="{{ route('superadmin.leave.store') }}" method="POST">
-						@csrf
+					<form action="<?php echo e(route('superadmin.leave.store')); ?>" method="POST">
+						<?php echo csrf_field(); ?>
 						<div class="modal-body">
 							<div class="row">
 								<div class="col-lg-12">
@@ -160,11 +160,11 @@
 										<label class="form-label">Employee <span class="text-danger">*</span></label>
 										<select class="form-select" name="user_id" required>
 											<option value="">Select Employee</option>
-											@forelse($users ?? [] as $user)
-												<option value="{{ $user->id }}">{{ $user->name ?? 'Unknown User' }}</option>
-											@empty
+											<?php $__empty_1 = true; $__currentLoopData = $users ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $user): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+												<option value="<?php echo e($user->id); ?>"><?php echo e($user->name ?? 'Unknown User'); ?></option>
+											<?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
 												<option value="" disabled>No employees found</option>
-											@endforelse
+											<?php endif; ?>
 										</select>
 									</div>
 								</div>
@@ -374,8 +374,8 @@
 							<div class="modal-footer-btn mt-3 d-flex justify-content-center">
 								<button type="button" class="btn me-2 btn-secondary fs-13 fw-medium p-2 px-3 shadow-none" data-bs-dismiss="modal">Cancel</button>
 								<form id="delete-form" method="POST" style="display:inline;">
-									@csrf
-									@method('DELETE')
+									<?php echo csrf_field(); ?>
+									<?php echo method_field('DELETE'); ?>
 									<button type="submit" class="btn btn-submit fs-13 fw-medium p-2 px-3">Yes Delete</button>
 								</form>
 							</div>						
@@ -398,8 +398,8 @@
 						</button>
 					</div>
 					<form id="approve-form" method="POST">
-						@csrf
-						@method('PUT')
+						<?php echo csrf_field(); ?>
+						<?php echo method_field('PUT'); ?>
 						<div class="modal-body">
 							<div class="row">
 								<div class="col-lg-12">
@@ -459,7 +459,7 @@ function approveLeave(leaveId, status) {
     const title = document.getElementById('approve-title');
     const statusSelect = document.getElementById('approve-status');
     
-    form.action = `{{ route('superadmin.leave.approve', '') }}/${leaveId}`;
+    form.action = `<?php echo e(route('superadmin.leave.approve', '')); ?>/${leaveId}`;
     title.textContent = status === 'Approved' ? 'Approve Leave' : 'Reject Leave';
     statusSelect.value = status;
     
@@ -473,17 +473,18 @@ function editLeave(leaveId) {
 
 function deleteLeave(leaveId) {
     const form = document.getElementById('delete-form');
-    form.action = `{{ route('superadmin.leave.destroy', '') }}/${leaveId}`;
+    form.action = `<?php echo e(route('superadmin.leave.destroy', '')); ?>/${leaveId}`;
 }
 
 // Success/Error alerts
-@if(session('success'))
-    alert('{{ session('success') }}');
-@endif
+<?php if(session('success')): ?>
+    alert('<?php echo e(session('success')); ?>');
+<?php endif; ?>
 
-@if($errors->any())
-    alert('{{ $errors->first() }}');
-@endif
+<?php if($errors->any()): ?>
+    alert('<?php echo e($errors->first()); ?>');
+<?php endif; ?>
 </script>
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV1.0\resources\views/superadmin/leaves/leave.blade.php ENDPATH**/ ?>
