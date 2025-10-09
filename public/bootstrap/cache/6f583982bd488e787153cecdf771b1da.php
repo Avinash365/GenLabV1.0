@@ -97,7 +97,7 @@
         <div class="col-md-3">
             <label for="date_of_issue" class="form-label">Date of Issue:</label>
             <input type="date" name="date_of_issue" id="date_of_issue" class="form-control" 
-                value="<?php echo e(old('date_of_issue')); ?>" required>
+                value="<?php echo e(old('date_of_issue', isset($pivotRecord) && $pivotRecord->issue_to_date ? \Carbon\Carbon::parse($pivotRecord->issue_to_date)->format('Y-m-d') : '')); ?>" required>
         </div>
         <div class="col-md-3">
             <label for="name_of_work" class="form-label">Name of Work:</label>
@@ -116,9 +116,14 @@
     </textarea>
 
     
-    <div class="d-flex justify-content-end gap-2 mt-3 mb-2">
-        <button type="submit" class="btn btn-primary">Download Report</button>
-    </div>
+    <div class="d-flex justify-content-end gap-2 mt-3 mb-2"> 
+        <button type="submit" class="btn btn-primary">Save</button> 
+            <?php if(isset($pivotRecord) && !empty($pivotRecord->pdf_path)): ?>
+                <a href="<?php echo e(route('viewPdf', basename($pivotRecord->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info pt-2">
+                    View
+                </a>
+            <?php endif; ?>
+    </div>   
 </form>
 
 </div>
@@ -173,53 +178,57 @@
     }
 </style>
 
-<script>
-    // Initialize Jodit with table border override
-    const editor = Jodit.make('#jodit-editor', { 
-        height: 400,
-        iframe: true,
-        iframeStyle: `
-            table, th, td {
-                border: 1px solid #000;
-                border-collapse: collapse;
-            }
-        `
+<script> 
+
+// Initialize Jodit with table border override
+const editor = Jodit.make('#jodit-editor', { 
+    height: 400,
+    iframe: true,
+    iframeStyle: `
+        table, th, td {
+            border: 1px solid #000;
+            border-collapse: collapse;
+        }
+    `
+});
+
+const editingIdInput = document.getElementById('editing_report_id');
+
+// Load report into editor
+document.querySelectorAll('.load-report').forEach(btn => {
+    btn.addEventListener('click', function() {
+        const content = this.dataset.content;
+        const name = this.dataset.name;
+        const description = this.dataset.description;
+        const id = this.dataset.id;
+
+        //  Ensure first row goes under <thead>
+        editor.value = ensureTableHeader(content);
+
+        document.getElementById('report_no').value = name;
+        document.getElementById('report_disc').value = description;
+        editingIdInput.value = id;
+
+        // Remove previous highlight
+        document.querySelectorAll('.report-card').forEach(card => card.classList.remove('active-report'));
+
+        // Highlight the currently loaded report
+        this.closest('.report-card').classList.add('active-report');
+
+        bootstrap.Offcanvas.getInstance(document.getElementById('reportList')).hide();
     });
+});
 
-    const editingIdInput = document.getElementById('editing_report_id');
-
-    // Load report into editor
-    document.querySelectorAll('.load-report').forEach(btn => {
-        btn.addEventListener('click', function() {
-            const content = this.dataset.content;
-            const name = this.dataset.name;
-            const description = this.dataset.description;
-            const id = this.dataset.id;
-
-            editor.value = content;
-            document.getElementById('report_no').value = name;
-            document.getElementById('report_disc').value = description;
-            editingIdInput.value = id;
-
-            // Remove previous highlight
-            document.querySelectorAll('.report-card').forEach(card => card.classList.remove('active-report'));
-
-            // Highlight the currently loaded report
-            this.closest('.report-card').classList.add('active-report');
-
-            bootstrap.Offcanvas.getInstance(document.getElementById('reportList')).hide();
-        });
+// 🔍 Search filter
+document.getElementById('searchReports').addEventListener('keyup', function() {
+    const query = this.value.toLowerCase();
+    document.querySelectorAll('.report-card').forEach(card => {
+        const title = card.querySelector('.report-title').textContent.toLowerCase();
+        card.style.display = title.includes(query) ? '' : 'none';
     });
-
-    // 🔍 Search filter
-    document.getElementById('searchReports').addEventListener('keyup', function() {
-        const query = this.value.toLowerCase();
-        document.querySelectorAll('.report-card').forEach(card => {
-            const title = card.querySelector('.report-title').textContent.toLowerCase();
-            card.style.display = title.includes(query) ? '' : 'none';
-        });
-    });
+});
 </script>
+
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenTech_bug\bankTransaction\GenLab\resources\views/Reportfrmt/generate.blade.php ENDPATH**/ ?>

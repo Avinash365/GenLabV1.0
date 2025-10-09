@@ -1,4 +1,4 @@
-<div align="center" style="padding-top:150px;">
+<div align="center" style="padding-top:150px; padding-left:15px;">
     <table class="MsoTableGrid" border="1" cellspacing="0" cellpadding="0" width="718"
         style="width: 72.3169%; margin-left: -2.18487%; margin-bottom:20px; font-weight: bold; text-transform: uppercase; border: 1px solid black; border-collapse: collapse;">
         <tbody>

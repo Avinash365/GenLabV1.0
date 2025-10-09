@@ -48,15 +48,16 @@ Route::get('superadmin/viewproduct/excel/{category?}', [ProductViewController::c
 // Web Settings (protected)
 Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
     // Web Settings
-    Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit');
-    Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update');
-    Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking');
+    Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit')->middleware('permission:web-settings.edit');
+    Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web-settings.edit');
+    Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web-settings.edit');
     
 });
 
 
 // Reporting (protected)
-Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin/reporting')->name('superadmin.reporting.')->group(function () {
+Route::middleware(['web', 'multi_auth:web,admin'])
+    ->middleware('permission:reporting.edit')->prefix('superadmin/reporting')->name('superadmin.reporting.')->group(function () {
     Route::get('/letters', [ReportingLettersController::class, 'index'])->name('letters.index');
     Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');
     Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
@@ -76,8 +77,8 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin/reporting
 
 // Lab Analysts (protected)
 Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->group(function(){
-    Route::get('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render');
-    Route::post('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render');
+    Route::get('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render')->middleware('permission:lab-analysts.view');
+    Route::post('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render')->middleware('permission:lab-analysts.edit');
 });
 
 
