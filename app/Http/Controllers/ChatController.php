@@ -33,24 +33,26 @@ class ChatController extends Controller
 
     protected function user()
     {
-        // Prefer superadmin, then admin, then web
+        // Prefer superadmin, then admin/api_admin, then api, then web
         return $this->guardUser('superadmin')
             ?: $this->guardUser('admin')
+            ?: $this->guardUser('api_admin')
+            ?: $this->guardUser('api')
             ?: $this->guardUser('web');
     }
 
     protected function currentGuard(): ?string
     {
-        // Treat only real superadmin/admin as 'admin'. Chat-admin (web) stays 'web'.
-        if ($this->guardCheck('superadmin') || $this->guardCheck('admin')) return 'admin';
-        if ($this->guardCheck('web')) return 'web';
+        // Treat superadmin/admin/api_admin as 'admin'. Regular users (web/api) as 'web'.
+        if ($this->guardCheck('superadmin') || $this->guardCheck('admin') || $this->guardCheck('api_admin')) return 'admin';
+        if ($this->guardCheck('api') || $this->guardCheck('web')) return 'web';
         return null;
     }
 
     // Root admin = either real superadmin (if guard exists) or real admin
     protected function isRootAdmin(): bool
     {
-        return $this->guardCheck('superadmin') || $this->guardCheck('admin');
+        return $this->guardCheck('superadmin') || $this->guardCheck('admin') || $this->guardCheck('api_admin');
     }
 
     // NEW: helper to check if a web user is chat admin via users.is_chat_admin
@@ -66,6 +68,7 @@ class ChatController extends Controller
         // Root admin OR a web user flagged as chat admin
         if ($this->isRootAdmin()) return true;
         if ($this->guardCheck('web')) return $this->userIsChatAdmin(auth('web')->user());
+        if ($this->guardCheck('api')) return $this->userIsChatAdmin(auth('api')->user());
         return false;
     }
 
@@ -697,9 +700,11 @@ class ChatController extends Controller
         $senderGuard = $m->sender_guard ?: ($m->reply_to_message_id ? 'admin' : ($hasUserRel ? 'web' : 'admin'));
         $senderName = ($senderGuard === 'admin') ? 'Super Admin' : ($m->sender_name ?: ($hasUserRel ? $m->user->name : 'User'));
 
-        $viewerGuard = $this->currentGuard();
-        $viewer = $viewerGuard === 'admin' ? auth('admin')->user() : ($viewerGuard === 'web' ? auth('web')->user() : null);
-        $mine = $viewer ? ((int)$viewer->id === (int)$m->user_id && $viewerGuard === $senderGuard) : false;
+    // Determine viewer and guard category; support api/api_admin as well
+    $viewerGuard = $this->currentGuard();
+    // Prefer the provided viewer (from caller), else resolve via helpers
+    $viewer = $viewer ?: $this->user();
+    $mine = $viewer ? ((int)$viewer->id === (int)$m->user_id && $viewerGuard === $senderGuard) : false;
 
         // Determine status from latest reaction of interest
         $status = null;
@@ -797,8 +802,10 @@ class ChatController extends Controller
     // NEW: returns true only for promoted web users (non-root)
     protected function isChatAdminOnly(): bool
     {
-        return !$this->isRootAdmin()
-            && $this->guardCheck('web')
-            && $this->userIsChatAdmin(auth('web')->user());
+        if ($this->isRootAdmin()) return false;
+        // Allow promoted chat admins via either web or api guard
+        if ($this->guardCheck('web') && $this->userIsChatAdmin(auth('web')->user())) return true;
+        if ($this->guardCheck('api') && $this->userIsChatAdmin(auth('api')->user())) return true;
+        return false;
     }
 }

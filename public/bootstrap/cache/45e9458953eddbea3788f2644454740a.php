@@ -119,89 +119,52 @@
                         <li><a href="#"><i class="ti ti-users fs-16 me-2"></i><span>Employees</span></a></li>
                         <li><a href="#"><i class="ti ti-briefcase fs-16 me-2"></i><span>HR</span></a></li>
 
-                        <!-- Accounts --> 
-                        <?php if($user && ($user instanceof Admin || $user->hasPermission('account.edit'))): ?>
-                            <li class="submenu <?php echo e(Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : ''); ?>">
-                                <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
-                                <ul>
-                                    <li><a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>">All Letters</a></li>
-                                    <li>
-                                        <a href="<?php echo e(route('superadmin.cheques.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.cheques.*') ? 'active' : ''); ?>">Cheques</a>
-                                    </li>
-                                    <li>
-                                        <a href="<?php echo e(route('superadmin.banks.create')); ?>" class="<?php echo e(Request::routeIs('superadmin.banks.*') || Request::routeIs('superadmin.cheque-templates.*') ? 'active' : ''); ?>">Cheque Template</a>
-                                    </li>
-                                    <li><a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index')); ?>">Generate Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'tax_invoice', 'payment_status'=>'0'])); ?>">Tax Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0'])); ?>">PI Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.blank-invoices.index')); ?>">Blank Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.quotations.index')); ?>">Quotation</a></li>
-                                    <li>
-                                        <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill'])); ?>">
-                                            Cash Letter
-                                        </a>
-                                    </li>     
-                                    <li><a href="<?php echo e(route('superadmin.cashLetterTransactions.index')); ?>">Paid Letters</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.cashPayments.index')); ?>">Invoice Transaction</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.client-ledger.index')); ?>">Client Ledger</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
-                                    <li><a href="">Office Expenses</a></li>
-                                    <li><a href="#">Marketing Expenses</a></li>
-                                    <li><a href="#">Purchase Bill</a></li> 
-                                    <li><a href="<?php echo e(route('superadmin.bank.upload')); ?>">Bank Transactions</a></li>
-                                </ul>
-                            </li> 
-                        <?php endif; ?>   
-
-                        <!-- Attachments -->
-                        <?php if($user && (
-                                $user instanceof \App\Models\Admin ||
-                                $user->hasPermission('iscode.view') ||
-                                $user->hasPermission('calibration.view') ||
-                                $user->hasPermission('profile.view') ||
-                                $user->hasPermission('approval.view') ||
-                                $user->hasPermission('letter.view') ||
-                                $user->hasPermission('document.view')
-                            )): ?>
-                            <li class="submenu <?php echo e(Request::routeIs('superadmin.attachments.*') ? 'submenu-open' : ''); ?>">
-                                <a href="javascript:void(0)">
-                                    <i class="ti ti-credit-card fs-16 me-2"></i>
-                                    <span>Attachments</span>
-                                    <span class="menu-arrow"></span>
-                                </a>
-                                <ul> 
-                                    <?php if($user instanceof \App\Models\Admin || $user->hasPermission('iscode.view')): ?>
-                                        <li>
-                                            <a href="<?php echo e(route('superadmin.iscodes.index')); ?>"
-                                            class="<?php echo e(Request::routeIs('superadmin.settingsection.Iscode') ? 'active' : ''); ?>">
-                                            Is Code
-                                            </a>
-                                        </li>
-                                    <?php endif; ?>  
-
-                                    <?php if($user instanceof \App\Models\Admin || $user->hasPermission('calibration.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.calibrations.index')); ?>">Calibration</a></li>
-                                    <?php endif; ?>  
-
-                                    <?php if($user instanceof \App\Models\Admin || $user->hasPermission('profile.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.profiles.index')); ?>">Profile</a></li>
-                                    <?php endif; ?>  
-
-                                    <?php if($user instanceof \App\Models\Admin || $user->hasPermission('approval.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.approvals.index')); ?>">Approval</a></li>
-                                    <?php endif; ?>  
-
-                                    <?php if($user instanceof \App\Models\Admin || $user->hasPermission('letter.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.importantLetter.index')); ?>">Letters</a></li>
-                                    <?php endif; ?>  
-
-                                    <?php if($user instanceof \App\Models\Admin || $user->hasPermission('document.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.documents.index')); ?>">Documents</a></li>
-                                    <?php endif; ?>  
-                                </ul>
-                            </li>
-                        <?php endif; ?>
-
+                        <!-- Accounts -->
+                        <li class="submenu <?php echo e(Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : ''); ?>">
+                            <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
+                            <ul>
+                                <li><a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>">All Letters</a></li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.cheques.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.cheques.*') ? 'active' : ''); ?>">Cheques</a>
+                                </li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.banks.create')); ?>" class="<?php echo e(Request::routeIs('superadmin.banks.*') || Request::routeIs('superadmin.cheque-templates.*') ? 'active' : ''); ?>">Cheque Template</a>
+                                </li>
+                                <li><a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index')); ?>">Generate Invoice</a></li>
+                                <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'tax_invoice', 'payment_status'=>'0'])); ?>">Tax Invoice</a></li>
+                                <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0'])); ?>">PI Invoice</a></li>
+                                <li><a href="<?php echo e(route('superadmin.blank-invoices.index')); ?>">Blank Invoice</a></li>
+                                <li><a href="<?php echo e(route('superadmin.quotations.index')); ?>">Quotation</a></li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill'])); ?>">
+                                        Cash Letter
+                                    </a>
+                                </li>     
+                                <li><a href="<?php echo e(route('superadmin.cashLetterTransactions.index')); ?>">Paid Letters</a></li>
+                                <li><a href="<?php echo e(route('superadmin.cashPayments.index')); ?>">Invoice Transaction</a></li>
+                                <li><a href="<?php echo e(route('superadmin.client-ledger.index')); ?>">Client Ledger</a></li>
+                                <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
+                                <li><a href="">Office Expenses</a></li>
+                                <li><a href="#">Marketing Expenses</a></li>
+                                <li><a href="#">Purchase Bill</a></li> 
+                                <li><a href="<?php echo e(route('superadmin.bank.upload')); ?>">Bank Transactions</a></li>
+                            </ul>
+                        </li>
+                        <li class="submenu <?php echo e(Request::routeIs('superadmin.attachments.*') ? 'submenu-open' : ''); ?>">
+                            <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Attachments</span><span class="menu-arrow"></span></a>
+                            <ul> 
+                                 <li>
+                                    <a href="<?php echo e(route('superadmin.iscodes.index')); ?>"
+                                    class="<?php echo e(Request::routeIs('superadmin.settingsection.Iscode') ? 'active' : ''); ?>">
+                                    Is Code
+                                    </a>
+                                </li>
+                                <li><a href="<?php echo e(route('superadmin.profiles.index')); ?>">Profile</a></li>
+                                <li><a href="<?php echo e(route('superadmin.approvals.index')); ?>">Approval</a></li>
+                                <li><a href="<?php echo e(route('superadmin.importantLetter.index')); ?>">Letters</a></li>
+                                <li><a href="<?php echo e(route('superadmin.documents.index')); ?>">Documents</a></li>
+                            </ul>
+                        </li>
                         <!-- Other single links -->
                         <!-- <li>
                             <a href="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatch') ? 'active' : ''); ?>">
@@ -215,16 +178,11 @@
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
 
-                        <?php if($user && ($user instanceof Admin || $user->hasPermission('report-format.create'))): ?>
-                            <li>
-                                <a href="<?php echo e(route('editor.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Report Format</span></a></li>
-                            </li>
-                        <?php endif; ?>
+                        <li><a href="<?php echo e(route('editor.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Report Format</span></a></li>
+                        <li><a href="<?php echo e(route('superadmin.calibrations.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Calibration</span></a></li>
+                        <li><a href="<?php echo e(route('superadmin.leave.Leave')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>
 
-                        <?php if($user && ($user instanceof Admin || $user->hasPermission('leave.view'))): ?>
-                            <li><a href="<?php echo e(route('superadmin.leave.Leave')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>
-                        <?php endif; ?>
- 
+
                         <!--settings-->
                         <?php if($user && ($user instanceof Admin 
                                 || $user->hasPermission('web-settings.view') 

@@ -1,0 +1,178 @@
+{
+  "info": {
+    "name": "GenLab Chat API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Unified collection for User and Admin Chat APIs (JSON + multipart)"
+  },
+  "item": [
+    {
+      "name": "Auth / User Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{baseUrl}}/user/login", "host": ["{{baseUrl}}"], "path": ["user", "login"]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_code\": \"test123\",\n  \"password\": \"password123\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "Auth / Admin Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{baseUrl}}/admin/login", "host": ["{{baseUrl}}"], "path": ["admin", "login"]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "User / Groups (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"}
+        ],
+        "url": {"raw": "{{baseUrl}}/chat/groups", "host": ["{{baseUrl}}"], "path": ["chat","groups"]}
+      }
+    },
+    {
+      "name": "User / Groups (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{baseUrl}}/chat/groups", "host": ["{{baseUrl}}"], "path": ["chat","groups"]},
+        "body": {"mode": "raw", "raw": "{\n  \"name\": \"My Group\"\n}"}
+      }
+    },
+    {
+      "name": "User / Messages (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"}
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/chat/messages?group_id={{groupId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["chat","messages"],
+          "query": [{"key":"group_id","value":"{{groupId}}"}]
+        }
+      }
+    },
+    {
+      "name": "User / Messages Since (GET)",
+      "request": {
+        "method": "GET",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"}
+        ],
+        "url": {
+          "raw": "{{baseUrl}}/chat/messages/since?group_id={{groupId}}&after_id={{afterId}}",
+          "host": ["{{baseUrl}}"],
+          "path": ["chat","messages","since"],
+          "query": [
+            {"key":"group_id","value":"{{groupId}}"},
+            {"key":"after_id","value":"{{afterId}}"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "User / Send Text (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{baseUrl}}/chat/messages", "host": ["{{baseUrl}}"], "path": ["chat","messages"]},
+        "body": {"mode":"raw","raw":"{\n  \"group_id\": {{groupId}},\n  \"type\": \"text\",\n  \"content\": \"Hello from Postman\"\n}"}
+      }
+    },
+    {
+      "name": "User / Upload Image (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"}
+        ],
+        "url": {"raw": "{{baseUrl}}/chat/messages/upload", "host": ["{{baseUrl}}"], "path": ["chat","messages","upload"]},
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {"key":"group_id","value":"{{groupId}}","type":"text"},
+            {"key":"type","value":"image","type":"text"},
+            {"key":"file","type":"file","src":"/path/to/image.jpg"}
+          ]
+        }
+      }
+    },
+    {
+      "name": "User / React (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{baseUrl}}/chat/messages/{{messageId}}/reactions", "host":["{{baseUrl}}"], "path":["chat","messages","{{messageId}}","reactions"]},
+        "body": {"mode":"raw","raw":"{\n  \"type\": \"like\"\n}"}
+      }
+    },
+    {
+      "name": "User / Mark Seen (POST)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Authorization", "value": "Bearer {{userToken}}"},
+          {"key": "Content-Type", "value": "application/json"}
+        ],
+        "url": {"raw": "{{baseUrl}}/chat/mark-seen", "host": ["{{baseUrl}}"], "path": ["chat","mark-seen"]},
+        "body": {"mode":"raw","raw":"{\n  \"group_id\": {{groupId}},\n  \"last_id\": {{lastId}}\n}"}
+      }
+    },
+    {
+      "name": "User / Unread Counts (GET)",
+      "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],
+        "url": {"raw":"{{baseUrl}}/chat/unread-counts","host":["{{baseUrl}}"],"path":["chat","unread-counts"]}}
+    },
+    {
+      "name": "User / Delete Message (DELETE)",
+      "request": {"method":"DELETE","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],
+        "url": {"raw":"{{baseUrl}}/chat/messages/{{messageId}}","host":["{{baseUrl}}"],"path":["chat","messages","{{messageId}}"]}}
+    },
+
+    {
+      "name": "Admin / Groups (GET)",
+      "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],
+        "url": {"raw":"{{baseUrl}}/admin/chat/groups","host":["{{baseUrl}}"],"path":["admin","chat","groups"]}}
+    },
+    {
+      "name": "Admin / Messages (GET)",
+      "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],
+        "url": {"raw":"{{baseUrl}}/admin/chat/messages?group_id={{groupId}}","host":["{{baseUrl}}"],"path":["admin","chat","messages"],"query":[{"key":"group_id","value":"{{groupId}}"}]}}
+    }
+  ],
+  "variable": [
+    {"key":"baseUrl","value":"http://127.0.0.1:8000/api"},
+    {"key":"userToken","value":""},
+    {"key":"adminToken","value":""},
+    {"key":"groupId","value":"1"},
+    {"key":"afterId","value":"0"},
+    {"key":"messageId","value":"1"},
+    {"key":"lastId","value":"0"}
+  ]
+}

@@ -11,7 +11,7 @@ $userCredentials = [
 ];
 
 $adminCredentials = [
-    'email' => 'superadmin1@example.com',
+    'email' => 'admin@example.com',
     'password' => 'admin123'
 ];
 
