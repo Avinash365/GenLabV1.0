@@ -37,6 +37,8 @@ Route::middleware(['multi_jwt:api'])->prefix('chat')->name('api.chat.')->group(f
     
     // Send a new message
     Route::post('/messages', [ChatApiController::class, 'sendMessage']);
+    // Upload message with file (multipart) via legacy controller
+    Route::post('/messages/upload', [ChatController::class, 'send']);
     
     // React to a message (like/emoji)
     Route::post('/messages/{messageId}/reactions', [ChatApiController::class, 'reactToMessage']);
@@ -66,6 +68,8 @@ Route::middleware(['multi_jwt:api_admin'])->prefix('admin/chat')->name('api.admi
     Route::post('/groups', [ChatApiController::class, 'createGroup']);
     Route::get('/messages', [ChatApiController::class, 'getMessages']);
     Route::post('/messages', [ChatApiController::class, 'sendMessage']);
+    // Upload message with file (multipart) via legacy controller
+    Route::post('/messages/upload', [ChatController::class, 'send']);
     Route::post('/messages/{messageId}/reactions', [ChatApiController::class, 'reactToMessage']);
     Route::get('/users/search', [ChatApiController::class, 'searchUsers']);
     Route::get('/unread-counts', [ChatApiController::class, 'getUnreadCounts']);

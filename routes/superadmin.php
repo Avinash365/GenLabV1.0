@@ -59,7 +59,6 @@ use App\Http\Controllers\Transactions\CashPaymentController;
 use App\Http\Controllers\Transactions\WithoutBillTransactionController;
 
 use App\Http\Controllers\BankTransactionController;
-use App\Http\Controllers\ListController;
 
 use App\Http\Controllers\ReportEditorController; 
 use App\Http\Controllers\OnlyOfficeController;
@@ -337,9 +336,14 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/', [DeptController::class, 'index'])->name('Department');
         });
         
-        // Caqlibration List / Leaves
+        // Leave Management
         Route::prefix('leaves')->name('leave.')->group(function () {
             Route::get('/', [LeaveController::class, 'index'])->name('Leave');
+            Route::post('/', [LeaveController::class, 'store'])->name('store');
+            Route::put('/{leave}', [LeaveController::class, 'update'])->name('update');
+            Route::put('/{leave}/approve', [LeaveController::class, 'approve'])->name('approve');
+            Route::delete('/{leave}', [LeaveController::class, 'destroy'])->name('destroy');
+            Route::post('/calculate-days', [LeaveController::class, 'calculateDays'])->name('calculate-days');
         });
 
         // Lab Analysts - reports dropdown and viewer
