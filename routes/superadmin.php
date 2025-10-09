@@ -341,7 +341,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::prefix('department')->name('department.')->group(function () {
                 Route::get('/', [DeptController::class, 'index'])->name('Department');
             });
-        
         // Leave Management
         Route::prefix('leaves')->name('leave.')->group(function () {
             Route::get('/', [LeaveController::class, 'index'])->name('Leave');

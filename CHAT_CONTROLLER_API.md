@@ -169,3 +169,25 @@ curl -s -X POST http://127.0.0.1:8000/api/chat/messages -H "Authorization: Beare
 
 # Send image
 curl -s -X POST http://127.0.0.1:8000/api/chat/messages -H "Authorization: Bearer <TOKEN>" -F group_id=12 -F type=image -F file=@/path/to/pic.jpg
+
+---
+
+Action endpoints
+
+Get single message
+GET /api/chat/messages/{messageId}
+GET /api/admin/chat/messages/{messageId}
+
+Reply to a message
+POST /api/chat/messages/{messageId}/reply
+POST /api/admin/chat/messages/{messageId}/reply
+Body
+{ "type": "text" | "file" | "image", "content": "Reply text (if type=text)" }
+
+Forward/share a message
+POST /api/chat/messages/{messageId}/forward  (body: { "target_group_ids": [12, 13] })
+POST /api/chat/messages/{messageId}/share    (body: { "target_group_id": 12 } or { "target_group_ids": [12,13] })
+
+Set status (Hold/Booked/Cancel)
+POST /api/chat/messages/{messageId}/status  (body: { "status": "hold" | "booked" | "cancel" })
+Notes: status is recorded via reactions compatible with UI: hold→Hold, booked→Booked, cancel→Unbooked. Serializer exposes latest status.

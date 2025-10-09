@@ -39,6 +39,15 @@ Route::middleware(['multi_jwt:api'])->prefix('chat')->name('api.chat.')->group(f
     Route::post('/messages', [ChatApiController::class, 'sendMessage']);
     // Upload message with file (multipart) via legacy controller
     Route::post('/messages/upload', [ChatController::class, 'send']);
+    // Get a single message details
+    Route::get('/messages/{messageId}', [ChatApiController::class, 'getMessage']);
+    // Reply to a specific message
+    Route::post('/messages/{messageId}/reply', [ChatApiController::class, 'replyToMessage']);
+    // Forward/share a message to one or more groups
+    Route::post('/messages/{messageId}/forward', [ChatApiController::class, 'forwardMessage']);
+    Route::post('/messages/{messageId}/share', [ChatApiController::class, 'shareMessage']);
+    // Set message status (hold/booked/cancel)
+    Route::post('/messages/{messageId}/status', [ChatApiController::class, 'setMessageStatus']);
     
     // React to a message (like/emoji)
     Route::post('/messages/{messageId}/reactions', [ChatApiController::class, 'reactToMessage']);
@@ -70,6 +79,15 @@ Route::middleware(['multi_jwt:api_admin'])->prefix('admin/chat')->name('api.admi
     Route::post('/messages', [ChatApiController::class, 'sendMessage']);
     // Upload message with file (multipart) via legacy controller
     Route::post('/messages/upload', [ChatController::class, 'send']);
+    // Get a single message details
+    Route::get('/messages/{messageId}', [ChatApiController::class, 'getMessage']);
+    // Reply to a specific message
+    Route::post('/messages/{messageId}/reply', [ChatApiController::class, 'replyToMessage']);
+    // Forward/share a message to one or more groups
+    Route::post('/messages/{messageId}/forward', [ChatApiController::class, 'forwardMessage']);
+    Route::post('/messages/{messageId}/share', [ChatApiController::class, 'shareMessage']);
+    // Set message status (hold/booked/cancel)
+    Route::post('/messages/{messageId}/status', [ChatApiController::class, 'setMessageStatus']);
     Route::post('/messages/{messageId}/reactions', [ChatApiController::class, 'reactToMessage']);
     Route::get('/users/search', [ChatApiController::class, 'searchUsers']);
     Route::get('/unread-counts', [ChatApiController::class, 'getUnreadCounts']);

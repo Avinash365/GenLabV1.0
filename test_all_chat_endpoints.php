@@ -150,6 +150,11 @@ function testChatEndpoints($token, $prefix, $type) {
             if (isset($result['data']['data']['id'])) {
                 $messageId = $result['data']['data']['id'];
                 
+                // Get single message
+                echo "Testing: Get Single Message... ";
+                $r2 = makeApiCall("$baseUrl$prefix/messages/$messageId", 'GET', null, $headers);
+                echo ($r2['status_code'] >= 200 && $r2['status_code'] < 300) ? "✅ SUCCESS ({$r2['status_code']})\n" : "❌ FAILED ({$r2['status_code']})\n";
+                
                 echo "Testing: React to Message... ";
                 $reactionData = ['type' => 'like'];
                 $result = makeApiCall("$baseUrl$prefix/messages/$messageId/reactions", 'POST', $reactionData, $headers);
@@ -157,6 +162,43 @@ function testChatEndpoints($token, $prefix, $type) {
                     echo "✅ SUCCESS ({$result['status_code']})\n";
                 } else {
                     echo "❌ FAILED ({$result['status_code']})\n";
+                }
+
+                // Reply to the message
+                echo "Testing: Reply to Message... ";
+                $replyData = ['type' => 'text', 'content' => "Reply from $type at " . date('H:i:s')];
+                $r3 = makeApiCall("$baseUrl$prefix/messages/$messageId/reply", 'POST', $replyData, $headers);
+                if ($r3['status_code'] >= 200 && $r3['status_code'] < 300) {
+                    echo "✅ SUCCESS ({$r3['status_code']})\n";
+                } else {
+                    echo "❌ FAILED ({$r3['status_code']})\n";
+                }
+
+                // Create another group to forward/share
+                echo "Testing: Create 2nd Group (for forward/share)... ";
+                $g2 = makeApiCall("$baseUrl$prefix/groups", 'POST', ['name' => 'Fwd Group via ' . $type . ' ' . date('His')], $headers);
+                if ($g2['status_code'] >= 200 && $g2['status_code'] < 300 && isset($g2['data']['data']['id'])) {
+                    $gid2 = $g2['data']['data']['id'];
+                    echo "✅ SUCCESS ({$g2['status_code']})\n";
+
+                    // Forward
+                    echo "Testing: Forward Message... ";
+                    $r4 = makeApiCall("$baseUrl$prefix/messages/$messageId/forward", 'POST', ['target_group_ids' => [$gid2]], $headers);
+                    echo ($r4['status_code'] >= 200 && $r4['status_code'] < 300) ? "✅ SUCCESS ({$r4['status_code']})\n" : "❌ FAILED ({$r4['status_code']})\n";
+
+                    // Share
+                    echo "Testing: Share Message... ";
+                    $r5 = makeApiCall("$baseUrl$prefix/messages/$messageId/share", 'POST', ['target_group_id' => $gid2], $headers);
+                    echo ($r5['status_code'] >= 200 && $r5['status_code'] < 300) ? "✅ SUCCESS ({$r5['status_code']})\n" : "❌ FAILED ({$r5['status_code']})\n";
+                } else {
+                    echo "❌ FAILED creating 2nd group\n";
+                }
+
+                // Set status (cycle through values)
+                foreach (["hold","booked","cancel"] as $st) {
+                    echo "Testing: Set Status ($st)... ";
+                    $r6 = makeApiCall("$baseUrl$prefix/messages/$messageId/status", 'POST', ['status' => $st], $headers);
+                    echo ($r6['status_code'] >= 200 && $r6['status_code'] < 300) ? "✅ SUCCESS ({$r6['status_code']})\n" : "❌ FAILED ({$r6['status_code']})\n";
                 }
             }
         } else {

@@ -156,6 +156,36 @@
     },
 
     {
+      "name": "User / Get Message (GET)",
+      "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{userToken}}"}],
+        "url": {"raw":"{{baseUrl}}/chat/messages/{{messageId}}","host":["{{baseUrl}}"],"path":["chat","messages","{{messageId}}"]}}
+    },
+    {
+      "name": "User / Reply (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/chat/messages/{{messageId}}/reply","host":["{{baseUrl}}"],"path":["chat","messages","{{messageId}}","reply"]},
+        "body": {"mode":"raw","raw":"{\n  \"type\": \"text\",\n  \"content\": \"Reply from Postman\"\n}"}}
+    },
+    {
+      "name": "User / Forward (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/chat/messages/{{messageId}}/forward","host":["{{baseUrl}}"],"path":["chat","messages","{{messageId}}","forward"]},
+        "body": {"mode":"raw","raw":"{\n  \"target_group_ids\": [{{groupId}}]\n}"}}
+    },
+    {
+      "name": "User / Share (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/chat/messages/{{messageId}}/share","host":["{{baseUrl}}"],"path":["chat","messages","{{messageId}}","share"]},
+        "body": {"mode":"raw","raw":"{\n  \"target_group_id\": {{groupId}}\n}"}}
+    },
+    {
+      "name": "User / Set Status (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{userToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/chat/messages/{{messageId}}/status","host":["{{baseUrl}}"],"path":["chat","messages","{{messageId}}","status"]},
+        "body": {"mode":"raw","raw":"{\n  \"status\": \"booked\"\n}"}}
+    },
+
+    {
       "name": "Admin / Groups (GET)",
       "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],
         "url": {"raw":"{{baseUrl}}/admin/chat/groups","host":["{{baseUrl}}"],"path":["admin","chat","groups"]}}
@@ -164,6 +194,36 @@
       "name": "Admin / Messages (GET)",
       "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],
         "url": {"raw":"{{baseUrl}}/admin/chat/messages?group_id={{groupId}}","host":["{{baseUrl}}"],"path":["admin","chat","messages"],"query":[{"key":"group_id","value":"{{groupId}}"}]}}
+    }
+    ,
+    {
+      "name": "Admin / Get Message (GET)",
+      "request": {"method":"GET","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"}],
+        "url": {"raw":"{{baseUrl}}/admin/chat/messages/{{messageId}}","host":["{{baseUrl}}"],"path":["admin","chat","messages","{{messageId}}"]}}
+    },
+    {
+      "name": "Admin / Reply (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/admin/chat/messages/{{messageId}}/reply","host":["{{baseUrl}}"],"path":["admin","chat","messages","{{messageId}}","reply"]},
+        "body": {"mode":"raw","raw":"{\n  \"type\": \"text\",\n  \"content\": \"Admin reply\"\n}"}}
+    },
+    {
+      "name": "Admin / Forward (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/admin/chat/messages/{{messageId}}/forward","host":["{{baseUrl}}"],"path":["admin","chat","messages","{{messageId}}","forward"]},
+        "body": {"mode":"raw","raw":"{\n  \"target_group_ids\": [{{groupId}}]\n}"}}
+    },
+    {
+      "name": "Admin / Share (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/admin/chat/messages/{{messageId}}/share","host":["{{baseUrl}}"],"path":["admin","chat","messages","{{messageId}}","share"]},
+        "body": {"mode":"raw","raw":"{\n  \"target_group_id\": {{groupId}}\n}"}}
+    },
+    {
+      "name": "Admin / Set Status (POST)",
+      "request": {"method":"POST","header":[{"key":"Authorization","value":"Bearer {{adminToken}}"},{"key":"Content-Type","value":"application/json"}],
+        "url": {"raw":"{{baseUrl}}/admin/chat/messages/{{messageId}}/status","host":["{{baseUrl}}"],"path":["admin","chat","messages","{{messageId}}","status"]},
+        "body": {"mode":"raw","raw":"{\n  \"status\": \"hold\"\n}"}}
     }
   ],
   "variable": [
