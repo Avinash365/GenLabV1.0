@@ -5,6 +5,14 @@ use App\Http\Controllers\MobileControllers\Auth\AdminAuthController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Api\ChatApiController;
 use Illuminate\Support\Facades\Route;
+// Static test file endpoint for client testing
+Route::get('static/test-file', function() {
+    $path = public_path('favicon.ico'); // guaranteed to exist in this project
+    if (!file_exists($path)) {
+        abort(404, 'Test file not found');
+    }
+    return response()->file($path);
+});
 
 // User Auth Routes
 Route::prefix('user')->group(function () {

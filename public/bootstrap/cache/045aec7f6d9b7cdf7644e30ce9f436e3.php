@@ -1,23 +1,21 @@
-@extends('superadmin.layouts.app')
+<?php $__env->startSection('title', 'Received Reports'); ?>
 
-@section('title', 'Received Reports')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="content">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
         <h4 class="mb-0">Received Reports</h4>
     </div>
 
-    @if(session('status'))
-        <div class="alert alert-success">{{ session('status') }}</div>
-    @endif
+    <?php if(session('status')): ?>
+        <div class="alert alert-success"><?php echo e(session('status')); ?></div>
+    <?php endif; ?>
 
     <div class="card mb-3">
         <div class="card-body">
-            <form method="GET" action="{{ route('superadmin.reporting.received') }}" class="row g-2 align-items-end">
+            <form method="GET" action="<?php echo e(route('superadmin.reporting.received')); ?>" class="row g-2 align-items-end">
                 <div class="col-sm-4">
                     <label class="form-label">Job Order No</label>
-                    <input type="text" name="job" value="{{ $job }}" class="form-control" placeholder="Enter Job Order No">
+                    <input type="text" name="job" value="<?php echo e($job); ?>" class="form-control" placeholder="Enter Job Order No">
                 </div>
                 <div class="col-sm-2">
                     <button type="submit" class="btn btn-primary w-100">Search</button>
@@ -26,60 +24,60 @@
         </div>
     </div>
 
-    @if(!empty($header))
+    <?php if(!empty($header)): ?>
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Job Card No.</label>
-                    <input type="text" class="form-control" value="{{ $header['job_card_no'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['job_card_no']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Client Name</label>
-                    <input type="text" class="form-control" value="{{ $header['client_name'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['client_name']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Job Order Date</label>
-                    <input type="date" class="form-control" value="{{ $header['job_order_date'] }}" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['job_order_date']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
-                    <input type="date" class="form-control" value="{{ $header['issue_date'] }}" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Reference No.</label>
-                    <input type="text" class="form-control" value="{{ $header['reference_no'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['reference_no']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Sample Description</label>
-                    <input type="text" class="form-control" value="{{ $header['sample_description'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['sample_description']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Name of Work</label>
-                    <input type="text" class="form-control" value="{{ $header['name_of_work'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['name_of_work']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issued To</label>
-                    <input type="text" class="form-control" value="{{ $header['issued_to'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['issued_to']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="{{ $header['ms'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['ms']); ?>" readonly>
                 </div>
-                {{-- Upload Letter(s) box inserted after M/s --}}
-                @php
+                
+                <?php
                     $uploadRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.upload') ? route('superadmin.reporting.letters.upload') : '#';
                     $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $job]) : '';
-                @endphp
+                ?>
                 <div class="col-md-6">
                     <label class="form-label">Upload Report</label>
-                    <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}">
-                        @csrf
-                        <input type="hidden" name="job" value="{{ $job }}">
-                        <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" {{ $uploadRoute === '#' ? 'disabled' : '' }}>
+                    <form method="POST" action="<?php echo e($uploadRoute); ?>" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="<?php echo e($listRoute); ?>">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="job" value="<?php echo e($job); ?>">
+                        <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>
                         <div class="d-flex gap-2 align-items-center">
-                            <button type="submit" class="btn btn-primary" {{ $uploadRoute === '#' ? 'disabled' : '' }}>Upload</button>
-                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" {{ empty($listRoute) ? 'disabled' : '' }}>
+                            <button type="submit" class="btn btn-primary" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>Upload</button>
+                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" <?php echo e(empty($listRoute) ? 'disabled' : ''); ?>>
                                 View
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
@@ -87,17 +85,17 @@
                         <small class="text-muted d-block">You can upload multiple files.</small>
                     </form>
                 </div>
-                @php
+                <?php
                     $__first = $items->first();
                     $__singleLetter = $__first?->booking?->upload_letter_path ? asset('storage/'.$__first->booking->upload_letter_path) : null;
-                @endphp
-                @if($__singleLetter)
-                    <input type="hidden" id="single-letter-url" value="{{ $__singleLetter }}">
-                @endif
+                ?>
+                <?php if($__singleLetter): ?>
+                    <input type="hidden" id="single-letter-url" value="<?php echo e($__singleLetter); ?>">
+                <?php endif; ?>
             </div>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 
     <div class="card">
         <div class="card-body">
@@ -115,110 +113,113 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($items as $item)
+                        <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
-                                <td>{{ $item->job_order_no }}</td>
-                                <td>{{ $item->booking->client_name ?? '-' }}</td>
-                                <td>{{ $item->sample_description }}</td>
-                                <td class="status-cell" data-id="{{ $item->id }}">
-                                    @if($item->received_at)
-                                        Received by {{ $item->received_by_name ?? ($item->receivedBy->name ?? '-') }} on {{ $item->received_at->format('d M Y, h:i A') }}
-                                    @elseif($item->analyst)
-                                        With Analyst: {{ $item->analyst->name }} ({{ $item->analyst->user_code }})
-                                    @else
+                                <td><?php echo e($item->job_order_no); ?></td>
+                                <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
+                                <td><?php echo e($item->sample_description); ?></td>
+                                <td class="status-cell" data-id="<?php echo e($item->id); ?>">
+                                    <?php if($item->received_at): ?>
+                                        Received by <?php echo e($item->received_by_name ?? ($item->receivedBy->name ?? '-')); ?> on <?php echo e($item->received_at->format('d M Y, h:i A')); ?>
+
+                                    <?php elseif($item->analyst): ?>
+                                        With Analyst: <?php echo e($item->analyst->name); ?> (<?php echo e($item->analyst->user_code); ?>)
+                                    <?php else: ?>
                                         In Lab / Analyst TBD
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                                 <td>
-                                    <form method="POST" action="{{ route('superadmin.reporting.assignReport', $item) }}" id="assign-report-form-{{ $item->id }}">
-                                        @csrf
-                                        <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-{{ $item->id }}').submit()">
+                                    <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
+                                        <?php echo csrf_field(); ?>
+                                        <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
                                             <option value="">-- Select Report --</option>
-                                            @foreach($reports as $report)
-                                                <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
-                                                    {{ $report->report_no ?? 'Report #'.$report->id }}
+                                            <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                    <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+
                                                 </option>
-                                            @endforeach
+                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                         </select>
                                     </form>
                                 </td> 
                                     <td>
-                                        @php
+                                        <?php
                                             $assignedReport = $item->reports->first(); // get assigned report
-                                        @endphp
+                                        ?>
 
-                                        {{-- VIEW PDF --}}
-                                        @if($assignedReport && $assignedReport->pivot->pdf_path)
-                                            <a href="{{ route('viewPdf', basename($assignedReport->pivot->pdf_path)) }}" target="_blank" class="btn btn-sm btn-info">
+                                        
+                                        <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>
+                                            <a href="<?php echo e(route('viewPdf', basename($assignedReport->pivot->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info">
                                                 View PDF
                                             </a>
-                                        @else
+                                        <?php else: ?>
                                             <span class="text-muted">-</span>
-                                        @endif
+                                        <?php endif; ?>
                                     </td>
                                     <td>
-    @php
+    <?php
         $assignedReport = $item->reports->first(); // get assigned report
         $pivotId = $assignedReport->pivot->id ?? null;
-    @endphp 
+    ?> 
 
-    @if($assignedReport && $assignedReport->pivot->pdf_path)  
-        <a href="{{ route('generateReportPDF.editReport', $pivotId) }}" target="_blank" class="btn btn-sm btn-success">
+    <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>  
+        <a href="<?php echo e(route('generateReportPDF.editReport', $pivotId)); ?>" target="_blank" class="btn btn-sm btn-success">
             Edit
         </a>
 
-    @elseif($assignedReport)
-        <a href="{{ route('generateReportPDF.generate', $item->id) }}" target="_blank" class="btn btn-sm btn-success">
+    <?php elseif($assignedReport): ?>
+        <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
             Generated Report
         </a>
 
-    @else
-        <form method="POST" action="{{ route('superadmin.reporting.receive', $item) }}" class="receive-form" id="receive-form-{{ $item->id }}" data-id="{{ $item->id }}">
-            @csrf
-            @if($item->received_at)
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
+    <?php else: ?>
+        <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
+            <?php echo csrf_field(); ?>
+            <?php if($item->received_at): ?>
+                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
                     Submit
                 </button>
-            @else
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
+            <?php else: ?>
+                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
                     Receive
                 </button>
-            @endif
+            <?php endif; ?>
         </form>
-    @endif
+    <?php endif; ?>
 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="7" class="text-center">No items found</td>
                             </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div>
-                    {{ $items->links() }}
+                    <?php echo e($items->links()); ?>
+
                 </div>
                 <div class="d-flex gap-2">
-                    @php
+                    <?php
                         $first = $items->first();
                         $letter = $first?->booking?->upload_letter_path;
                         $allReceived = $items->count() > 0;
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
-                    @endphp
-                    @if($letter)
-                        <a href="{{ asset('storage/'.$letter) }}" target="_blank" class="btn btn-outline-secondary">Show Letter</a>
-                    @else
+                    ?>
+                    <?php if($letter): ?>
+                        <a href="<?php echo e(asset('storage/'.$letter)); ?>" target="_blank" class="btn btn-outline-secondary">Show Letter</a>
+                    <?php else: ?>
                         <button class="btn btn-outline-secondary" type="button" disabled>Show Letter</button>
-                    @endif
-                    <form method="POST" action="{{ route('superadmin.reporting.receiveAll') }}" id="receive-all-form" class="d-inline">
-                        @csrf
-                        <input type="hidden" name="job" value="{{ $job }}">
-                        <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; {{ $allReceived ? 'display:none;' : '' }}">Receive All</button>
+                    <?php endif; ?>
+                    <form method="POST" action="<?php echo e(route('superadmin.reporting.receiveAll')); ?>" id="receive-all-form" class="d-inline">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="job" value="<?php echo e($job); ?>">
+                        <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
                     </form>
-                       <a href="{{ route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0]) }}" 
+                       <a href="<?php echo e(route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0])); ?>" 
                             class="btn" 
                             style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
                             Get All
@@ -228,7 +229,7 @@
         </div>
     </div>
 
-    {{-- Letters Modal --}}
+    
     <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -245,9 +246,9 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 (function initReceivedPage() {
     const init = function() {
@@ -656,7 +657,7 @@
         updateBulkButtons();
         // Flash SweetAlert if there is a server flash status message
         try {
-            const flashMsg = @json(session('status'));
+            const flashMsg = <?php echo json_encode(session('status'), 15, 512) ?>;
             if (flashMsg) {
                 if (window.Swal) {
                     Swal.fire({ icon: 'success', title: 'Success', text: flashMsg });
@@ -674,9 +675,9 @@
     }
 })();
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     /* Sharper button appearance */
     .receive-toggle-btn {
@@ -719,4 +720,6 @@
     .issue-date-input { max-width: 180px; }
     .table td, .table th { vertical-align: middle; }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV1.0\resources\views/superadmin/reporting/received.blade.php ENDPATH**/ ?>
