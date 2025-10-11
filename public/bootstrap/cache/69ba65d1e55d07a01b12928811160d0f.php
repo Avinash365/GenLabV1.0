@@ -42,7 +42,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
-                    <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" >
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Reference No.</label>
@@ -130,16 +130,18 @@
                                 </td>
                                 <td>
                                     <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
-                                        <?php echo csrf_field(); ?>
-                                        <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
-                                            <option value="">-- Select Report --</option>
-                                            <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
-                                                    <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+                                        <?php echo csrf_field(); ?> 
+                                        <?php if($item->received_at): ?>
+                                            <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
+                                                <option value="">-- Select Report --</option>
+                                                <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                        <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
 
-                                                </option>
-                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                        </select>
+                                                    </option>
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                            </select> 
+                                        <?php endif; ?>
                                     </form>
                                 </td> 
                                     <td>
@@ -157,36 +159,36 @@
                                         <?php endif; ?>
                                     </td>
                                     <td>
-    <?php
-        $assignedReport = $item->reports->first(); // get assigned report
-        $pivotId = $assignedReport->pivot->id ?? null;
-    ?> 
+                                        <?php
+                                            $assignedReport = $item->reports->first(); // get assigned report
+                                            $pivotId = $assignedReport->pivot->id ?? null;
+                                        ?> 
 
-    <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>  
-        <a href="<?php echo e(route('generateReportPDF.editReport', $pivotId)); ?>" target="_blank" class="btn btn-sm btn-success">
-            Edit
-        </a>
+                                        <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>  
+                                            <a href="<?php echo e(route('generateReportPDF.editReport', $pivotId)); ?>" target="_blank" class="btn btn-sm btn-success">
+                                                Edit
+                                            </a>
 
-    <?php elseif($assignedReport): ?>
-        <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
-            Generated Report
-        </a>
+                                        <?php elseif($assignedReport): ?>
+                                            <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
+                                                Generated Report
+                                            </a>
 
-    <?php else: ?>
-        <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
-            <?php echo csrf_field(); ?>
-            <?php if($item->received_at): ?>
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
-                    Submit
-                </button>
-            <?php else: ?>
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
-                    Receive
-                </button>
-            <?php endif; ?>
-        </form>
-    <?php endif; ?>
-</td>
+                                        <?php else: ?>
+                                            <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
+                                                <?php echo csrf_field(); ?>
+                                                <?php if($item->received_at): ?>
+                                                    <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
+                                                        Submit
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
+                                                        Receive
+                                                    </button>
+                                                <?php endif; ?>
+                                            </form>
+                                        <?php endif; ?>
+                                    </td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
@@ -196,7 +198,6 @@
                     </tbody>
                 </table>
             </div>
-
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div>
                     <?php echo e($items->links()); ?>
@@ -227,7 +228,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> 
 
     
     <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">
@@ -244,8 +245,12 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </div>  
+
+</div> 
+
+
+
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>

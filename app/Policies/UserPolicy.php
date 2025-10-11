@@ -40,16 +40,16 @@ class UserPolicy
     /**
      * Determine whether the user can update a specific user.
      */
-    public function update(Admin|User $user): bool
+    public function update(Admin|User $user, User $targetUser): bool
     {
         if ($user instanceof Admin) return true;
 
         // Optional: Only allow update if the user has permission and owns the target user
         // return $user->hasPermission('user.edit') && $user->id === $targetUser->id;
-        
-        if ($authUser->id === $user->id) {
-            return false; 
-        } 
+
+        if ($user->id === $targetUser->id) {
+            return false;
+        }
 
         return $user->hasPermission('user.edit');
     }

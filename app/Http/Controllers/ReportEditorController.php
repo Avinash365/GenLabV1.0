@@ -6,7 +6,7 @@ use Illuminate\Support\Facades\Storage;
 use App\Models\ReportEditorFile; 
 use App\Models\BookingItem;
 
-use App\Services\ReportPdfGenerationService; 
+use App\Services\{ReportPdfGenerationService,ReportWordGenerationService}; 
 use App\Services\CountTextLineBreakService;
 
 use Mpdf\Mpdf; 
@@ -14,12 +14,14 @@ use Mpdf\Mpdf;
 class ReportEditorController extends Controller
 {
     protected $pdfService, $countTextLineBreak;
+    protected $wordService;
 
-    public function __construct(ReportPdfGenerationService $pdfService, CountTextLineBreakService $countTextLineBreak)
+
+    public function __construct(ReportPdfGenerationService $pdfService, CountTextLineBreakService $countTextLineBreak, ReportWordGenerationService $wordService)
     {
         $this->pdfService = $pdfService;  
-
-        $this->countTextLineBreak = $countTextLineBreak;
+        $this->wordService = $wordService;
+        $this->countTextLineBreak = $countTextLineBreak; 
     }
      
 
@@ -146,7 +148,7 @@ class ReportEditorController extends Controller
 
 
     public function generateReportPDF(Request $request)
-    {    
+    {     
         $request->validate([
             'report_no' => 'required|string|max:255',
             'report_description' => 'nullable|string|max:2000',
@@ -164,9 +166,11 @@ class ReportEditorController extends Controller
             'booking_item_id' => 'required|integer',
             'booking_id' => 'required|integer',
             'editing_report_id' => 'nullable|integer',
+            'include_header'   => 'nullable', 
         ]);
 
-        $headerData = [ 
+        $headerData = [
+            'booking_item_id' => $request->input('booking_item_id') ?? "",  
             'report_no' => $request->input('report_no') ?? "",
             'ulr_no' => $request->input('ulr_no') ?? "",
             'issued_to' => $request->input('issued_to') ?? "", 
@@ -178,6 +182,7 @@ class ReportEditorController extends Controller
             'sample_description' => $request->input('sample_description') ?? "", 
             'date_of_issue' => $request->input('date_of_issue') ?? "",
             'name_of_work' => $request->input('name_of_work') ?? "", 
+            'include_header' => $request->input('include_header') ?? "0",
         ]; 
 
         // Count line breaks for margin adjustments
@@ -211,7 +216,6 @@ class ReportEditorController extends Controller
             $headerData
         );
     
-
         // Delete old PDF if exists
         if ($oldRecord && $oldRecord->pdf_path) { 
             $filePath = 'public/' . ltrim($oldRecord->pdf_path, '/');
@@ -292,6 +296,103 @@ class ReportEditorController extends Controller
 
         // 4. Return download and delete automatically after sending
         return response()->download($tempFile, "merged_booking_{$bookingId}.pdf")->deleteFileAfterSend(true);
+    }
+
+    public function varify($booking_item_id)
+    {
+        // Check if booking_item_id exists in booking_item_report table
+        $exists = \DB::table('booking_item_report')
+                    ->where('booking_item_id', $booking_item_id) // change 'id' if your column name is different
+                    ->exists();
+
+        $status = $exists ? 'OK' : 'Error';
+        // Return to Blade view with message
+        return view('Reportfrmt.varify', compact('status'));
+    } 
+
+    public function livePreview(Request $request)
+    { 
+    
+        $request->validate([
+            'content' => 'required|string',
+        ]);
+
+        $html = $request->input('content');
+
+        // Store temporary HTML
+        $tempHtmlPath = 'tmp_previews/' . time() . '_preview.html';
+        Storage::disk('public')->put($tempHtmlPath, $html);
+
+        // Use your existing service to generate the PDF
+        $pdfService = new ReportPdfGenerationService(); 
+
+
+        $headerData = [
+            'booking_item_id' => $request->input('booking_item_id') ?? 1,  
+            'report_no' => $request->input('report_no') ?? "",
+            'ulr_no' => $request->input('ulr_no') ?? "",
+            'issued_to' => $request->input('issued_to') ?? "", 
+            'date_of_receipt' => $request->input('date_of_receipt') ?? "",
+            'date_of_start_analysis' => $request->input('date_of_start_analysis') ?? "",
+            'letter_ref_date' => $request->input('letter_ref_date') ?? "", 
+            'letter_ref' => $request->input('letter_ref_no') ?? "", 
+            'date_of_completion' => $request->input('completion_date') ?? "",
+            'sample_description' => $request->input('sample_description') ?? "", 
+            'date_of_issue' => $request->input('date_of_issue') ?? "",
+            'name_of_work' => $request->input('name_of_work') ?? "", 
+            'include_header' => $request->input('include_header') ?? "1",
+        ];  
+
+        // Count line breaks for margin adjustments
+        $lineBreaks = $this->countTextLineBreak->countLineBreaks([
+            $headerData['issued_to'],
+            $headerData['sample_description'],
+            $headerData['name_of_work'],
+        ]); 
+        $headerData['line_breaks'] = $lineBreaks; 
+
+
+         $pdfPath = $pdfService->generateFromHtmlFiles(
+                        [$tempHtmlPath],
+                        $headerData,                       //  use dynamic header data here
+                        'live_preview_' . time() . '.pdf'
+                    );
+
+        return response()->json([
+            'pdf_url' => asset('storage/' . $pdfPath)
+        ]);  
+
+    } 
+
+    public function generateReportWord(Request $request)
+    {
+        $request->validate([
+            'report_no' => 'required|string|max:255',
+            'report_description' => 'nullable|string|max:2000',
+            'content' => 'required|string',
+            'ulr_no' => 'nullable|string|max:255',
+            'issued_to' => 'nullable|string|max:2000',
+            'date_of_receipt' => 'nullable|date',
+            'date_of_start_analysis' => 'nullable|date',
+            'letter_ref_no' => 'nullable|string|max:255',
+            'letter_ref_date' => 'nullable|date',
+            'completion_date' => 'nullable|date',
+            'sample_description' => 'nullable|string|max:2000',
+            'date_of_issue' => 'nullable|date',
+            'name_of_work' => 'nullable|string|max:2000',
+            'booking_item_id' => 'required|integer',
+            'booking_id' => 'required|integer',
+            'editing_report_id' => 'nullable|integer',
+        ]);
+        // Save new HTML content in storage
+        $htmlFileName = 'reports/' . time() . '_report.html';
+        Storage::disk('public')->put($htmlFileName, $request->input('content'));
+
+        // Generate Word report and trigger download
+        $wordService = new \App\Services\ReportWordGenerationService();
+
+        // The service already returns a download response
+        return $wordService->generateFromHtmlFiles([$htmlFileName]);
     }
 
 }

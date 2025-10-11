@@ -421,6 +421,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])
             ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf');
         
+        Route::post('generateReportPDF/word/', [ReportEditorController::class, 'generateReportWord'])
+            ->middleware('permission:report-generate.create')->name('generateReportPDF.generateReportWord');
+        
         Route::get('generateReportPDF/generate/{item}', [ReportEditorController::class, 'generate'])
             ->middleware('permission:report-generate.view')->name('generateReportPDF.generate');  
         
@@ -431,7 +434,12 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         
         Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
+        Route::get('/report/varification/{no}', [ReportEditorController::class, 'varify'])->name('varification.view');
         
+        Route::post('/reports/live-preview', [ReportEditorController::class, 'livePreview'])
+                ->name('reports.livePreview');
+
+
 
         Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
         Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save'); 

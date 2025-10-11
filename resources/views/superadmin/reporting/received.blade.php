@@ -44,7 +44,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
-                    <input type="date" class="form-control" value="{{ $header['issue_date'] }}" readonly>
+                    <input type="date" class="form-control" value="{{ $header['issue_date'] }}" >
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Reference No.</label>
@@ -131,15 +131,17 @@
                                 </td>
                                 <td>
                                     <form method="POST" action="{{ route('superadmin.reporting.assignReport', $item) }}" id="assign-report-form-{{ $item->id }}">
-                                        @csrf
-                                        <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-{{ $item->id }}').submit()">
-                                            <option value="">-- Select Report --</option>
-                                            @foreach($reports as $report)
-                                                <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
-                                                    {{ $report->report_no ?? 'Report #'.$report->id }}
-                                                </option>
-                                            @endforeach
-                                        </select>
+                                        @csrf 
+                                        @if($item->received_at)
+                                            <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-{{ $item->id }}').submit()">
+                                                <option value="">-- Select Report --</option>
+                                                @foreach($reports as $report)
+                                                    <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
+                                                        {{ $report->report_no ?? 'Report #'.$report->id }}
+                                                    </option>
+                                                @endforeach
+                                            </select> 
+                                        @endif
                                     </form>
                                 </td> 
                                     <td>
@@ -157,36 +159,36 @@
                                         @endif
                                     </td>
                                     <td>
-    @php
-        $assignedReport = $item->reports->first(); // get assigned report
-        $pivotId = $assignedReport->pivot->id ?? null;
-    @endphp 
+                                        @php
+                                            $assignedReport = $item->reports->first(); // get assigned report
+                                            $pivotId = $assignedReport->pivot->id ?? null;
+                                        @endphp 
 
-    @if($assignedReport && $assignedReport->pivot->pdf_path)  
-        <a href="{{ route('generateReportPDF.editReport', $pivotId) }}" target="_blank" class="btn btn-sm btn-success">
-            Edit
-        </a>
+                                        @if($assignedReport && $assignedReport->pivot->pdf_path)  
+                                            <a href="{{ route('generateReportPDF.editReport', $pivotId) }}" target="_blank" class="btn btn-sm btn-success">
+                                                Edit
+                                            </a>
 
-    @elseif($assignedReport)
-        <a href="{{ route('generateReportPDF.generate', $item->id) }}" target="_blank" class="btn btn-sm btn-success">
-            Generated Report
-        </a>
+                                        @elseif($assignedReport)
+                                            <a href="{{ route('generateReportPDF.generate', $item->id) }}" target="_blank" class="btn btn-sm btn-success">
+                                                Generated Report
+                                            </a>
 
-    @else
-        <form method="POST" action="{{ route('superadmin.reporting.receive', $item) }}" class="receive-form" id="receive-form-{{ $item->id }}" data-id="{{ $item->id }}">
-            @csrf
-            @if($item->received_at)
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
-                    Submit
-                </button>
-            @else
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
-                    Receive
-                </button>
-            @endif
-        </form>
-    @endif
-</td>
+                                        @else
+                                            <form method="POST" action="{{ route('superadmin.reporting.receive', $item) }}" class="receive-form" id="receive-form-{{ $item->id }}" data-id="{{ $item->id }}">
+                                                @csrf
+                                                @if($item->received_at)
+                                                    <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
+                                                        Submit
+                                                    </button>
+                                                @else
+                                                    <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
+                                                        Receive
+                                                    </button>
+                                                @endif
+                                            </form>
+                                        @endif
+                                    </td>
                             </tr>
                         @empty
                             <tr>
@@ -196,7 +198,6 @@
                     </tbody>
                 </table>
             </div>
-
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div>
                     {{ $items->links() }}
@@ -226,7 +227,7 @@
                 </div>
             </div>
         </div>
-    </div>
+    </div> 
 
     {{-- Letters Modal --}}
     <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">
@@ -243,8 +244,12 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </div>  
+
+</div> 
+
+
+
 @endsection
 
 @push('scripts')
