@@ -416,15 +416,31 @@ class ReportEditorController extends Controller
 
     public function varify($booking_item_id)
     {
-        // Check if booking_item_id exists in booking_item_report table
-        $exists = \DB::table('booking_item_report')
-                    ->where('booking_item_id', $booking_item_id) // change 'id' if your column name is different
-                    ->exists();
+        // Fetch data from booking_item_report along with related booking_item and new_booking info
+        $data = \DB::table('booking_item_report as bir')
+            ->join('booking_items as bi', 'bir.booking_item_id', '=', 'bi.id')
+            ->join('new_bookings as nb', 'bi.new_booking_id', '=', 'nb.id')
+            ->where('bir.booking_item_id', $booking_item_id)
+            ->select(
+                'bir.ult_r_no',
+                'bi.job_order_no',
+                'nb.reference_no as ref_no',
+                'bir.date_of_receipt',
+                'bir.issue_to_date',
+                'bir.generated_report_path',
+                'bir.pdf_path'
+            )
+            ->first(); // Use first() to get a single record
 
-        $status = $exists ? 'OK' : 'Error';
-        // Return to Blade view with message
-        return view('Reportfrmt.varify', compact('status'));
-    } 
+        if ($data) {
+            $status = 'OK';
+        } else {
+            $status = 'Error';
+        }
+
+        // Return to Blade view with status and fetched data
+        return view('Reportfrmt.varify', compact('status', 'data'));
+    }
 
     public function livePreview(Request $request)
     { 
