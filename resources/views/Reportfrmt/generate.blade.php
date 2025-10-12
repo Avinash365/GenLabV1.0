@@ -135,7 +135,17 @@
 
 
                 {{-- Buttons --}}
-                <button type="submit" class="btn btn-primary" formaction="{{ route('generateReportPDF.generatePdf') }}">Save</button> 
+                @if(isset($type) && $type === '28day')
+                    <button type="submit" class="btn btn-primary" formaction="{{ route('generateReportPDF.generatePdf28Days') }}">
+                        Save (28Days)
+                    </button>
+                @else
+                    <button type="submit" class="btn btn-primary" formaction="{{ route('generateReportPDF.generatePdf') }}">
+                        Save
+                    </button>
+                @endif 
+                <button type="submit" class="btn btn-primary" formaction="{{ route('download.qr') }}">QR</button> 
+
                 <button type="submit" class="btn btn-primary" formaction="{{ route('generateReportPDF.generateReportWord') }}">Word Doc</button> 
 
                 @if(isset($pivotRecord) && !empty($pivotRecord->pdf_path))

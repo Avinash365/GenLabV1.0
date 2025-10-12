@@ -68,6 +68,17 @@ class BookingItem extends Model
             'booking_item_id',       // foreign key on pivot for this model
             'report_editor_file_id'  // foreign key on pivot for related model
         )->withPivot('id','booking_id', 'pdf_path', 'generated_report_path')->withTimestamps();
+    }  
+
+    
+    public function reports_28days()
+    {
+        return $this->belongsToMany(
+            ReportEditorFile::class,
+            'booking_item_report_28day',   // pivot table name
+            'booking_item_id',       // foreign key on pivot for this model
+            'report_editor_file_id'  // foreign key on pivot for related model
+        )->withPivot('id','booking_id', 'pdf_path', 'generated_report_path')->withTimestamps();
     } 
 
 }

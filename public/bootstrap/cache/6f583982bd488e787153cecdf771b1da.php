@@ -134,7 +134,17 @@
 
 
                 
-                <button type="submit" class="btn btn-primary" formaction="<?php echo e(route('generateReportPDF.generatePdf')); ?>">Save</button> 
+                <?php if(isset($type) && $type === '28day'): ?>
+                    <button type="submit" class="btn btn-primary" formaction="<?php echo e(route('generateReportPDF.generatePdf28Days')); ?>">
+                        Save (28Days)
+                    </button>
+                <?php else: ?>
+                    <button type="submit" class="btn btn-primary" formaction="<?php echo e(route('generateReportPDF.generatePdf')); ?>">
+                        Save
+                    </button>
+                <?php endif; ?> 
+                <button type="submit" class="btn btn-primary" formaction="<?php echo e(route('download.qr')); ?>">QR</button> 
+
                 <button type="submit" class="btn btn-primary" formaction="<?php echo e(route('generateReportPDF.generateReportWord')); ?>">Word Doc</button> 
 
                 <?php if(isset($pivotRecord) && !empty($pivotRecord->pdf_path)): ?>
