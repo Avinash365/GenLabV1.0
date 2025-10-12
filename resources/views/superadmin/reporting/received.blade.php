@@ -227,7 +227,95 @@
                 </div>
             </div>
         </div>
-    </div> 
+    </div>  
+
+    {{-- ========================= --}}
+    {{-- Cement Reports Table --}}
+    {{-- ========================= --}}
+    @php
+        $cementItems = $items->filter(function($item) {
+            // Check if description includes "cement" and PDF is generated
+            $descMatch = stripos($item->sample_description, 'cement') !== false;
+            $hasGeneratedReport = $item->reports->first()?->pivot?->pdf_path;
+            return $descMatch && $hasGeneratedReport;
+        });
+    @endphp
+
+    @if($cementItems->count() > 0)
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Cement Reports 28 Days(Generated)</h5>
+        </div> 
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Job No.</th>
+                            <th>Client Name</th>
+                            <th>Sample Description</th>
+                            <th>Report No.</th>
+                            <th>Generated On</th>
+                            <th>View PDF</th>
+                            <th>Action </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach($cementItems as $item)
+                            @php
+                                $assignedReport = $item->reports->first();
+                                $pivotId = $assignedReport->pivot->id ?? null;
+
+                                $assignedReport28days = $item->reports_28days->first();
+                                $pivotId28days = $assignedReport28days->pivot->id ?? null;
+
+                            @endphp
+                            <tr>
+                                <td>{{ $item->job_order_no }}</td>
+                                <td>{{ $item->booking->client_name ?? '-' }}</td>
+                                <td>{{ $item->sample_description }}</td>
+                                <td>{{ $assignedReport->report_no ?? 'Report #'.$assignedReport->id }}</td>
+                                <td>
+                                    @if($assignedReport->pivot->updated_at)
+                                        {{ \Carbon\Carbon::parse($assignedReport->pivot->updated_at)->format('d M Y, h:i A') }}
+                                    @else
+                                        -
+                                    @endif
+                                </td> 
+                                <td>
+                                    <a href="{{ route('viewPdf', basename($assignedReport->pivot->pdf_path)) }}" target="_blank" class="btn btn-sm btn-info">
+                                        View PDF
+                                    </a>
+                                </td> 
+                               <td>
+                                    {{-- Generate 28Days Report if not generated yet --}}
+                                    @if($pivotId28days)
+                                        {{-- Edit 28Days Report --}}
+                                        <a href="{{ route('generateReportPDF.editReport', ['pivotId' => $pivotId28days, 'type' => '28day']) }}" target="_blank" class="btn btn-sm btn-success">
+                                            Edit
+                                        </a>
+                                        {{-- View 28Days PDF --}}
+                                        @if($assignedReport28days?->pivot?->pdf_path)
+                                            <a href="{{ route('viewPdf', basename($assignedReport28days->pivot->pdf_path)) }}" target="_blank" class="btn btn-sm btn-info">
+                                                View PDF
+                                            </a>
+                                        @endif
+                                    @else
+                                        {{-- Generate 28Days Report if not exists --}}
+                                        <a href="{{ route('generateReportPDF.generate', ['item' => $item->id, 'type' => '28day']) }}" target="_blank" class="btn btn-sm btn-success">
+                                            Generate 28Days Report
+                                        </a>
+                                    @endif
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    @endif
+
 
     {{-- Letters Modal --}}
     <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">

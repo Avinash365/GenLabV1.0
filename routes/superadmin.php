@@ -416,6 +416,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::get('/test/list', [ListController::class, 'view'])->name('test.list');  
 
+
+
         //report editor
         Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index')->middleware('permission:report-format.create');
         Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save')->middleware('permission:report-format.create');
@@ -424,14 +426,18 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // report genration 
         Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])
             ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf');
+
+        Route::post('generateReportPDF/editor/28days', [ReportEditorController::class, 'generatePdf28Days'])
+            ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf28Days');
         
         Route::post('generateReportPDF/word/', [ReportEditorController::class, 'generateReportWord'])
             ->middleware('permission:report-generate.create')->name('generateReportPDF.generateReportWord');
         
-        Route::get('generateReportPDF/generate/{item}', [ReportEditorController::class, 'generate'])
+        Route::get('generateReportPDF/generate/{item}/{type?}', [ReportEditorController::class, 'generate'])
             ->middleware('permission:report-generate.view')->name('generateReportPDF.generate');  
+
         
-        Route::get('generateReportPDF/edit/{pivotId}', [ReportEditorController::class, 'editReport'])
+        Route::get('generateReportPDF/edit/{pivotId}/{type?}', [ReportEditorController::class, 'editReport'])
             ->middleware('permission:report-generate.edit')->name('generateReportPDF.editReport');
 
         Route::get('/view-pdf/{filename}', [ReportEditorController::class, 'viewPdf'])->name('viewPdf');
@@ -442,10 +448,11 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         
         Route::post('/reports/live-preview', [ReportEditorController::class, 'livePreview'])
                 ->name('reports.livePreview');
+        Route::post('/download-qr', [ReportEditorController::class, 'downloadQR'])->name('download.qr');
 
 
 
         Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
-        Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save'); 
+        Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');  
 
         

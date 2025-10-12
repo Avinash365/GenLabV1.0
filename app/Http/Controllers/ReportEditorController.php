@@ -8,6 +8,8 @@ use App\Models\BookingItem;
 
 use App\Services\{ReportPdfGenerationService,ReportWordGenerationService}; 
 use App\Services\CountTextLineBreakService;
+use SimpleSoftwareIO\QrCode\Facades\QrCode; 
+
 
 use Mpdf\Mpdf; 
 
@@ -31,41 +33,49 @@ class ReportEditorController extends Controller
         return view('Reportfrmt.index', compact('reports'));
     }    
 
-    public function generate(BookingItem $item){  
+    public function generate(BookingItem $item, $type = null){  
 
        $assignedReport = $item->reports->first();
        $booking = $item->booking;
 
         $reports = ReportEditorFile::latest()->get(); 
 
-        return view('Reportfrmt.generate', compact('reports', 'assignedReport', 'item', 'booking'));
+        return view('Reportfrmt.generate', compact('reports', 'assignedReport', 'item', 'booking', 'type'));
     }
     
-    public function editReport($pivotId)
+    public function editReport($pivotId, $type = null)
     {
-      
-        $pivotRecord = \DB::table('booking_item_report')->where('id', $pivotId)->first();
+        // Determine table based on type
+        $tableName = ($type === '28day') ? 'booking_item_report_28day' : 'booking_item_report';
+
+        // Fetch the pivot record from the correct table
+        $pivotRecord = \DB::table($tableName)->where('id', $pivotId)->first();
 
         if (!$pivotRecord) {
             abort(404, 'Report not found');
         }
 
-        $item = BookingItem::with(['booking', 'analyst', 'receivedBy', 'reports'])->find($pivotRecord->booking_item_id);
+        // Determine which relationship to load based on type
+        $relationship = ($type === '28day') ? 'reports_28days' : 'reports';
+
+        // Fetch the booking item with the correct reports relationship
+        $item = BookingItem::with(['booking', 'analyst', 'receivedBy', $relationship])->find($pivotRecord->booking_item_id);
+
         if (!$item) {
             abort(404, 'Booking item not found');
         }
 
-        
+        // Fetch assigned report
         $assignedReport = ReportEditorFile::find($pivotRecord->report_editor_file_id);
 
-  
         $booking = $item->booking;
 
- 
-        $reports = ReportEditorFile::latest()->get();
+        // Pass reports via the same variable so Blade doesn't change
+        $reports = $item->$relationship;
 
-        return view('Reportfrmt.generate', compact('reports', 'assignedReport', 'item', 'booking', 'pivotRecord'));
+        return view('Reportfrmt.generate', compact('reports', 'assignedReport', 'item', 'booking', 'pivotRecord', 'type'));
     }
+
 
     public function viewPdf($filename)
     {
@@ -250,6 +260,112 @@ class ReportEditorController extends Controller
         return redirect()->route('generateReportPDF.editReport', ['pivotId' => $pivotRecord->id])
                           ->with('success', 'Report generated successfully!');
     } 
+    
+    public function generatePdf28Days(Request $request)
+    {     
+        $request->validate([
+            'report_no' => 'required|string|max:255',
+            'report_description' => 'nullable|string|max:2000',
+            'content' => 'required|string',
+            'ulr_no' => 'nullable|string|max:255',
+            'issued_to' => 'nullable|string|max:2000',
+            'date_of_receipt' => 'nullable|date',
+            'date_of_start_analysis' => 'nullable|date',
+            'letter_ref_no' => 'nullable|string|max:255',
+            'letter_ref_date' => 'nullable|date',
+            'completion_date' => 'nullable|date',
+            'sample_description' => 'nullable|string|max:2000',
+            'date_of_issue' => 'nullable|date',
+            'name_of_work' => 'nullable|string|max:2000',
+            'booking_item_id' => 'required|integer',
+            'booking_id' => 'required|integer',
+            'editing_report_id' => 'nullable|integer',
+            'include_header'   => 'nullable', 
+        ]);
+
+        $headerData = [
+            'booking_item_id' => $request->input('booking_item_id') ?? "",  
+            'report_no' => $request->input('report_no') ?? "",
+            'ulr_no' => $request->input('ulr_no') ?? "",
+            'issued_to' => $request->input('issued_to') ?? "", 
+            'date_of_receipt' => $request->input('date_of_receipt') ?? "",
+            'date_of_start_analysis' => $request->input('date_of_start_analysis') ?? "",
+            'letter_ref_date' => $request->input('letter_ref_date') ?? "", 
+            'letter_ref' => $request->input('letter_ref_no') ?? "", 
+            'date_of_completion' => $request->input('completion_date') ?? "",
+            'sample_description' => $request->input('sample_description') ?? "", 
+            'date_of_issue' => $request->input('date_of_issue') ?? "",
+            'name_of_work' => $request->input('name_of_work') ?? "", 
+            'include_header' => $request->input('include_header') ?? "0",
+        ]; 
+
+        // Count line breaks for margin adjustments
+        $lineBreaks = $this->countTextLineBreak->countLineBreaks([
+            $headerData['issued_to'],
+            $headerData['sample_description'],
+            $headerData['name_of_work'],
+        ]); 
+        $headerData['line_breaks'] = $lineBreaks; 
+
+        // Check for old record
+        $oldRecord = \DB::table('booking_item_report_28day')
+            ->where('booking_id', $request->input('booking_id'))
+            ->where('booking_item_id', $request->input('booking_item_id'))
+            ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
+            ->first(); 
+
+        // Delete old HTML if exists
+        if ($oldRecord && $oldRecord->generated_report_path) {
+            Storage::disk('public')->delete($oldRecord->generated_report_path);
+        }
+
+        // Save the new HTML content
+        $htmlFileName = 'reports/' . time() . '_report.html';
+        Storage::disk('public')->put($htmlFileName, $request->input('content'));
+
+        // Generate PDF
+        $pdfService = new ReportPdfGenerationService();
+        $pdfRelativePath = $pdfService->generateFromHtmlFiles(
+            [$htmlFileName],
+            $headerData
+        );
+    
+        // Delete old PDF if exists
+        if ($oldRecord && $oldRecord->pdf_path) { 
+            $filePath = 'public/' . ltrim($oldRecord->pdf_path, '/');
+            Storage::disk('public')->delete($filePath);
+        }
+ 
+        // Update DB with new HTML and PDF paths
+        \DB::table('booking_item_report_28day')->updateOrInsert(
+            [
+                'booking_id' => $request->input('booking_id'),
+                'booking_item_id' => $request->input('booking_item_id'),
+                'report_editor_file_id' => $request->input('editing_report_id') ?? null,
+            ],
+            [
+                'generated_report_path' => $htmlFileName,
+                'pdf_path' => $pdfRelativePath, 
+                'ult_r_no' => $headerData['ulr_no'], 
+                'date_of_start_of_analysis' => $headerData['date_of_start_analysis'], 
+                'date_of_completion_of_analysis' => $headerData['date_of_completion'], 
+                'date_of_receipt'   => $headerData['date_of_receipt'],  
+                'issue_to_date'   => $headerData['date_of_issue'],
+                'updated_at' => now(),
+            ]
+        );  
+
+        $pivotRecord = \DB::table('booking_item_report_28day')
+                ->where('booking_id', $request->input('booking_id'))
+                ->where('booking_item_id', $request->input('booking_item_id'))
+                ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
+                ->first();
+       
+        return redirect()->route('generateReportPDF.editReport', ['pivotId' => $pivotRecord->id, 'type' => '28day'])
+                          ->with('success', 'Report generated successfully!');
+    }
+
+
 
 
     public function downloadReportPdf($pdfRelativePath){ 
@@ -395,4 +511,27 @@ class ReportEditorController extends Controller
         return $wordService->generateFromHtmlFiles([$htmlFileName]);
     }
 
+    public function downloadQR(Request $request)
+    {
+        $request->validate([
+            'booking_item_id' => 'required|integer',
+        ]);
+
+        $bookingItemId = $request->input('booking_item_id');
+
+        // Generate URL for QR code (same as your PDF verification link)
+        $reportUrl = route('varification.view', ['no' => $bookingItemId]);
+
+        // Generate QR code as SVG
+        $qrImage = QrCode::format('svg')->size(300)->margin(2)->generate($reportUrl);
+
+        // Set filename
+        $fileName = 'booking_' . $bookingItemId . '_qr.svg';
+
+        // Return as download response
+        return response($qrImage, 200)
+            ->header('Content-Type', 'image/svg+xml')
+            ->header('Content-Disposition', "attachment; filename=\"$fileName\"");
+    } 
+    
 }

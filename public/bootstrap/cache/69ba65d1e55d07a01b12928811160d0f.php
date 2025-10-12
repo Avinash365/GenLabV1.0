@@ -228,7 +228,96 @@
                 </div>
             </div>
         </div>
-    </div> 
+    </div>  
+
+    
+    
+    
+    <?php
+        $cementItems = $items->filter(function($item) {
+            // Check if description includes "cement" and PDF is generated
+            $descMatch = stripos($item->sample_description, 'cement') !== false;
+            $hasGeneratedReport = $item->reports->first()?->pivot?->pdf_path;
+            return $descMatch && $hasGeneratedReport;
+        });
+    ?>
+
+    <?php if($cementItems->count() > 0): ?>
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Cement Reports 28 Days(Generated)</h5>
+        </div> 
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Job No.</th>
+                            <th>Client Name</th>
+                            <th>Sample Description</th>
+                            <th>Report No.</th>
+                            <th>Generated On</th>
+                            <th>View PDF</th>
+                            <th>Action </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $__currentLoopData = $cementItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php
+                                $assignedReport = $item->reports->first();
+                                $pivotId = $assignedReport->pivot->id ?? null;
+
+                                $assignedReport28days = $item->reports_28days->first();
+                                $pivotId28days = $assignedReport28days->pivot->id ?? null;
+
+                            ?>
+                            <tr>
+                                <td><?php echo e($item->job_order_no); ?></td>
+                                <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
+                                <td><?php echo e($item->sample_description); ?></td>
+                                <td><?php echo e($assignedReport->report_no ?? 'Report #'.$assignedReport->id); ?></td>
+                                <td>
+                                    <?php if($assignedReport->pivot->updated_at): ?>
+                                        <?php echo e(\Carbon\Carbon::parse($assignedReport->pivot->updated_at)->format('d M Y, h:i A')); ?>
+
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td> 
+                                <td>
+                                    <a href="<?php echo e(route('viewPdf', basename($assignedReport->pivot->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info">
+                                        View PDF
+                                    </a>
+                                </td> 
+                               <td>
+                                    
+                                    <?php if($pivotId28days): ?>
+                                        
+                                        <a href="<?php echo e(route('generateReportPDF.editReport', ['pivotId' => $pivotId28days, 'type' => '28day'])); ?>" target="_blank" class="btn btn-sm btn-success">
+                                            Edit
+                                        </a>
+                                        
+                                        <?php if($assignedReport28days?->pivot?->pdf_path): ?>
+                                            <a href="<?php echo e(route('viewPdf', basename($assignedReport28days->pivot->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info">
+                                                View PDF
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        
+                                        <a href="<?php echo e(route('generateReportPDF.generate', ['item' => $item->id, 'type' => '28day'])); ?>" target="_blank" class="btn btn-sm btn-success">
+                                            Generate 28Days Report
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    <?php endif; ?>
+
 
     
     <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">

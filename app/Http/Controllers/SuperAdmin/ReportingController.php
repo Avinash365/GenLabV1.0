@@ -381,7 +381,7 @@ class ReportingController extends Controller
      */
     public function dispatch(Request $request)
     {
-        $job = trim((string) $request->get('job'));
+    $job = trim((string) $request->get('job'));
     $month = $request->has('month') ? (int) $request->get('month') : null;
     $year = $request->has('year') ? (int) $request->get('year') : null;
     $status = $request->get('status'); // 'in-account' | 'dispatched'
