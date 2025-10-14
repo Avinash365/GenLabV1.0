@@ -135,11 +135,20 @@ class ChatApiController extends Controller
                 return response()->json(['success' => false, 'message' => 'Not a member'], 403);
             }
 
-            $messages = ChatMessage::where('group_id', $groupId)->with(['user'])->latest()->paginate(50);
+            $messages = ChatMessage::where('group_id', $groupId)
+                ->with(['user'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(50);
+
+            $items = collect($messages->items())
+                ->reverse()
+                ->values()
+                ->map(function($m){ return $this->transformMessage($m); })
+                ->all();
 
             return response()->json([
                 'success' => true,
-                'data' => collect($messages->items())->map(function($m){ return $this->transformMessage($m); })->all(),
+                'data' => $items,
                 'pagination' => [
                     'current_page' => $messages->currentPage(),
                     'total' => $messages->total(),
