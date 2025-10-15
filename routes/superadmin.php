@@ -209,8 +209,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
               ->name('quotations.generateQuotations'); 
 
         
-       
-
         Route::get('payment-settings/call-function/{id}', [PaymentSettingController::class, 'callFunction'])->name('payment-settings.callFunction');
 
         

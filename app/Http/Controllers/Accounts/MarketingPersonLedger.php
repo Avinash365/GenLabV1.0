@@ -146,8 +146,8 @@ class MarketingPersonLedger extends Controller
 
 
     // AJAX - Without Bill Bookings
-    public function fetchWithoutBillBookings(Request $request, $user_code)
-    {
+    public function fetchWithoutBillBookings(Request $request, $user_code) 
+    {   
         $cashPayments = CashLetterPayment::where('marketing_person_id', $user_code)
             ->when($request->filled('transaction_status'), function ($q) use ($request) {
                 $q->where('transaction_status', $request->transaction_status);
@@ -303,8 +303,11 @@ class MarketingPersonLedger extends Controller
 
 
     public function fetchClientAllBookings(Request $request, $userCode)
-    {
-        $marketingPerson = User::findOrFail($userCode);
+    {  
+        
+        $marketingPerson = User::where('user_code', $userCode)->firstOrFail();
+        
+      
 
         // Get all payments for this client
         $cashPayments = CashLetterPayment::where('marketing_person_id', $marketingPerson->user_code)
