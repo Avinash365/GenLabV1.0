@@ -443,58 +443,86 @@ class ReportEditorController extends Controller
     }
 
     public function livePreview(Request $request)
-    { 
-    
+    {
         $request->validate([
             'content' => 'required|string',
         ]);
 
         $html = $request->input('content');
 
-        // Store temporary HTML
-        $tempHtmlPath = 'tmp_previews/' . time() . '_preview.html';
+        // Define temporary HTML storage folder
+        $tempHtmlFolder = storage_path('app/public/tempHtml');
+        if (!file_exists($tempHtmlFolder)) {
+            mkdir($tempHtmlFolder, 0755, true);
+        }
+
+        // Clean old temp HTML files (older than 10 minutes)
+        $this->cleanOldTempFiles($tempHtmlFolder, 1);
+
+        // Store temporary HTML file
+        $tempHtmlPath = 'tempHtml/' . time() . '_preview.html';
         Storage::disk('public')->put($tempHtmlPath, $html);
 
-        // Use your existing service to generate the PDF
-        $pdfService = new ReportPdfGenerationService(); 
-
+        // Generate PDF using your existing service
+        $pdfService = new ReportPdfGenerationService();
 
         $headerData = [
-            'booking_item_id' => $request->input('booking_item_id') ?? 1,  
+            'booking_item_id' => $request->input('booking_item_id') ?? 1,
             'report_no' => $request->input('report_no') ?? "",
             'ulr_no' => $request->input('ulr_no') ?? "",
-            'issued_to' => $request->input('issued_to') ?? "", 
+            'issued_to' => $request->input('issued_to') ?? "",
             'date_of_receipt' => $request->input('date_of_receipt') ?? "",
             'date_of_start_analysis' => $request->input('date_of_start_analysis') ?? "",
-            'letter_ref_date' => $request->input('letter_ref_date') ?? "", 
-            'letter_ref' => $request->input('letter_ref_no') ?? "", 
+            'letter_ref_date' => $request->input('letter_ref_date') ?? "",
+            'letter_ref' => $request->input('letter_ref_no') ?? "",
             'date_of_completion' => $request->input('completion_date') ?? "",
-            'sample_description' => $request->input('sample_description') ?? "", 
+            'sample_description' => $request->input('sample_description') ?? "",
             'date_of_issue' => $request->input('date_of_issue') ?? "",
-            'name_of_work' => $request->input('name_of_work') ?? "", 
+            'name_of_work' => $request->input('name_of_work') ?? "",
             'include_header' => $request->input('include_header') ?? "1",
-        ];  
+        ];
 
-        // Count line breaks for margin adjustments
+        // Count line breaks for margin adjustment
         $lineBreaks = $this->countTextLineBreak->countLineBreaks([
             $headerData['issued_to'],
             $headerData['sample_description'],
             $headerData['name_of_work'],
-        ]); 
-        $headerData['line_breaks'] = $lineBreaks; 
+        ]);
+        $headerData['line_breaks'] = $lineBreaks;
 
-
-         $pdfPath = $pdfService->generateFromHtmlFiles(
-                        [$tempHtmlPath],
-                        $headerData,                       //  use dynamic header data here
-                        'live_preview_' . time() . '.pdf'
-                    );
+        // Generate temporary PDF
+        $pdfPath = $pdfService->generateFromHtmlFiles(
+            [$tempHtmlPath],
+            $headerData,
+            'live_preview_' . time() . '.pdf',
+            true // store as temp
+        );
 
         return response()->json([
-            'pdf_url' => asset('storage/' . $pdfPath)
-        ]);  
+            'pdf_url' => asset('storage/' . $pdfPath),
+            'html_url' => asset('storage/' . $tempHtmlPath),
+        ]);
+    }
 
-    } 
+    protected function cleanOldTempFiles($folder, $minutes = 1)
+    {
+        if (!file_exists($folder)) {
+            return;
+        }
+
+        $files = glob($folder . '/*');
+        $now = time();
+
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                $fileAge = ($now - filemtime($file)) / 60; // in minutes
+                if ($fileAge > $minutes) {
+                    @unlink($file);
+                }
+            }
+        }
+    }
+
 
     public function generateReportWord(Request $request)
     {
