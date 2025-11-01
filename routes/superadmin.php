@@ -63,6 +63,8 @@ use App\Http\Controllers\BankTransactionController;
 use App\Http\Controllers\ReportEditorController; 
 use App\Http\Controllers\OnlyOfficeController;
 
+use App\Http\Controllers\Email\EmailController;
+
 
 // =======================
 // Super Admin Login Routes
@@ -454,3 +456,17 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');  
 
         
+
+    // email route
+    Route::get('/email/{id?}', [EmailController::class, 'index'])->name('email.index'); 
+    Route::post('/email/store', [EmailController::class, 'store'])->name('email.store');
+    Route::get('/emails/fetch/{id}', [EmailController::class, 'fetchInbox'])->name('emails.fetch');
+    Route::get('/emails/{id}/reply/{uid}/{type?}', [EmailController::class, 'reply'])->name('emails.reply'); 
+    Route::get('/ajax-switch/{id}', [EmailController::class, 'ajaxSwitch'])->name('email.ajaxSwitch');
+    Route::post('/emails/reply', [EmailController::class, 'sendReply'])->name('emails.sendReply');
+    Route::post('/emails/send', [EmailController::class, 'send'])->name('emails.send'); 
+
+    // Route::get('/emails/sendEmail/{id}', [EmailController::class, 'getSentEmails'])->name('emails.allSendEmail');
+    // Route::get('/emails/sentEmail/{id}/{uid}/{type?}', [EmailController::class, 'getSentEmailByUid'])->name('emails.sent.show'); 
+    
+    Route::get('/email/sentEmail/{id?}', [EmailController::class, 'sentIndex'])->name('email.allSentEmail');

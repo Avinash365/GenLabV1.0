@@ -16,6 +16,7 @@ use App\Http\Controllers\ChatbotController;
 use App\Events\MessageSent;
 use Illuminate\Http\Request;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -133,5 +134,6 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('/chat/users/{user}/chat-admin', [ChatController::class, 'setChatAdmin'])
         ->name('chat.setChatAdmin');
 });
+ 
 
 
