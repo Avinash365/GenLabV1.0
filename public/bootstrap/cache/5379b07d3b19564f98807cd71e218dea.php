@@ -47,7 +47,9 @@
                                         </span> -->
                                     </a>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?> 
-                                <!-- ====================== Add new  Emails ====================== -->
+                                
+                            </div> 
+                            <!-- ====================== Add new  Emails ====================== -->
                                     <a href="javascript:void(0);" 
                                         class="d-flex align-items-center p-2 rounded mb-2 mt-2"
                                         data-bs-toggle="modal" 
@@ -55,7 +57,6 @@
                                             <i class="ti ti-user-plus me-2"></i>
                                             Add New Account
                                     </a>
-                            </div>
 
                             <!-- View More Button -->
                             <div class="view-all mt-2 text-center">
