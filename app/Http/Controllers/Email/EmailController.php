@@ -15,6 +15,7 @@ use Symfony\Component\Mailer\Transport\Smtp\EsmtpTransport;
 use Symfony\Component\Mime\Email as SymfonyEmail;
 use Illuminate\Mail\Mailer;
 use Symfony\Component\Mailer\Transport;
+use Illuminate\Support\Facades\Mail;
 
 class EmailController extends Controller
 {
@@ -70,7 +71,7 @@ class EmailController extends Controller
             $page,
             ['path' => $request->url(), 'query' => $request->query()]
         );
-        $type = 'send'; 
+        $type = 'send';
 
         return view('email.email', compact('emails', 'search', 'activeId', 'type'));
     }
@@ -80,7 +81,7 @@ class EmailController extends Controller
      */
     public function reply($id, $uid, $type = null)
     {
-        
+
         $email = $this->getEmailByUid($id, $uid, $type);
         return view('email.email-reply', compact('email'));
     }
@@ -92,8 +93,8 @@ class EmailController extends Controller
     {
         if (!auth('admin')->check() && !auth()->user()->hasPermission('email.create')) {
             return back()->with('error', 'Unauthorized action');
-        } 
-        
+        }
+
         try {
             $request->validate([
                 'email'      => 'required|email|max:255|unique:email_settings,email',
@@ -387,6 +388,7 @@ class EmailController extends Controller
                 ];
             }
 
+
             // BCC
             $bcc_list = [];
             foreach ($message->getBcc() as $bcc) {
@@ -529,4 +531,91 @@ class EmailController extends Controller
             return back()->with('error', 'Failed to send email: ' . $e->getMessage());
         }
     }
+
+    // email reply
+    public function replyOnEmail(Request $request, $id)
+{
+    $request->validate([
+        'to' => 'required|email',
+        'message' => 'required|string',
+        'attachments.*' => 'file|max:2048',
+    ]);
+
+    $emailSetting = EmailSetting::findOrFail($id);
+    $to = $request->input('to');
+    $messageBody = nl2br($request->input('message'));
+
+    $attachments = [];
+    if ($request->hasFile('attachments')) {
+        foreach ($request->file('attachments') as $file) {
+            $path = $file->store('email_attachments', 'public');
+            $attachments[] = storage_path('app/public/' . $path);
+        }
+    }
+
+    // Use Symfony Mailer (same as send() function)
+    $transport = new EsmtpTransport(
+        $emailSetting->smtp_host,
+        $emailSetting->smtp_port,
+        $emailSetting->encryption ?? null
+    );
+    $transport->setUsername($emailSetting->email);
+    $transport->setPassword($emailSetting->password);
+
+    $mailer = new Mailer('dynamic', app('view'), $transport, app('events'));
+    $rawMime = null;
+
+    // Send email + capture raw MIME message
+    $mailer->send([], [], function ($message) use ($emailSetting, $to, $attachments, $messageBody, &$rawMime) {
+        $message->from($emailSetting->email, 'GenLab')
+            ->to($to)
+            ->subject('Re: Your message')
+            ->html($messageBody);
+
+        foreach ($attachments as $filePath) {
+            $message->attach($filePath);
+        }
+
+        if (method_exists($message, 'getSymfonyMessage')) {
+            $rawMime = $message->getSymfonyMessage()->toString();
+        }
+    });
+
+    // Append reply to "Sent" folder (so it appears in your UI)
+    if ($rawMime) {
+        try {
+            $client = Client::make([
+                'host'          => $emailSetting->imap_host,
+                'port'          => $emailSetting->imap_port,
+                'encryption'    => $emailSetting->encryption,
+                'validate_cert' => false,
+                'username'      => $emailSetting->email,
+                'password'      => $emailSetting->password,
+                'protocol'      => 'imap',
+            ]);
+            $client->connect();
+
+            $sentFolder = null;
+            foreach (['Sent', 'Sent Mail', 'INBOX.Sent', 'Sent Items', '[Gmail]/Sent Mail'] as $name) {
+                try {
+                    $sentFolder = $client->getFolder($name);
+                    if ($sentFolder) break;
+                } catch (\Exception $e) {
+                    continue;
+                }
+            }
+
+            if ($sentFolder) {
+                $sentFolder->appendMessage($rawMime);
+            }
+
+            $client->disconnect();
+        } catch (\Exception $e) {
+            Log::warning('IMAP save failed (reply)', ['error' => $e->getMessage()]);
+        }
+    }
+
+    return redirect()->back()->with('success', 'Reply sent successfully!');
+}
+
 }

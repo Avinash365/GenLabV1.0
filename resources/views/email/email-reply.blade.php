@@ -14,6 +14,7 @@
                 <div class="active slimscroll h-100">
                     <div class="slimscroll-active-sidebar">
 
+
                         {{-- ================= Toolbar ================= --}}
                         <div class="d-flex align-items-center justify-content-between flex-wrap row-gap-2 border-bottom mb-3 pb-3">
                             <div class="dropdown">
@@ -117,13 +118,14 @@
                         {{-- ================= Reply Section ================= --}}
                         <div class="card shadow-none">
                             <div class="card-body">
-                                <form action="#" method="POST" enctype="multipart/form-data">
+                                <form action="{{ route('emails.replyOnEmail', $email['id']) }}" method="POST" enctype="multipart/form-data">
                                     @csrf
                                     <div class="border rounded">
                                         <div class="p-3 position-relative pb-2 border-bottom">
                                             <div class="tag-with-img d-flex align-items-center">
                                                 <label class="form-label me-2">To</label>
                                                 <input type="text" name="to" class="form-control border-0 h-100" value="{{ $email['from_email'] ?? '' }}">
+                                                 <!-- <input type="text" name="to" class="form-control border-0 h-100" value= "dksmaurya09@gmail.com"> -->
                                             </div>
                                             <div class="d-flex align-items-center email-cc mt-2">
                                                 <a href="#" class="d-inline-flex me-2">Cc</a>
@@ -144,6 +146,7 @@
                                                 <a href="#" class="btn btn-icon btn-sm rounded-circle"><i class="ti ti-photo"></i></a>
                                                 <a href="#" class="btn btn-icon btn-sm rounded-circle"><i class="ti ti-link"></i></a>
                                             </div>
+                                            <div id="attachment-list" class="mt-2"></div>
                                             <div class="d-flex align-items-center">
                                                 <a href="#" class="btn btn-icon btn-sm rounded-circle"><i class="ti ti-trash"></i></a>
                                                 <button type="submit" class="btn btn-primary d-inline-flex align-items-center ms-2">
@@ -153,6 +156,34 @@
                                         </div>
                                     </div>
                                 </form>
+                                <!-- SweetAlert2 popup -->
+                                @if(session('success'))
+                                    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                                    <script>
+                                        Swal.fire({
+                                            icon: 'success',
+                                            title: 'Success!',
+                                            text: '{{ session('success') }}',
+                                            timer: 3000,
+                                            timerProgressBar: true,
+                                            showConfirmButton: false
+                                        });
+                                    </script>
+                                @endif
+
+                                @if(session('error'))
+                                    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+                                    <script>
+                                        Swal.fire({
+                                            icon: 'error',
+                                            title: 'Error!',
+                                            text: '{{ session('error') }}',
+                                            timer: 3000,
+                                            timerProgressBar: true,
+                                            showConfirmButton: false
+                                        });
+                                    </script>
+                                @endif
                             </div>
                         </div>
 
@@ -168,3 +199,26 @@
     </div> {{-- content --}}
 </div> {{-- container-fluid --}}
 @endsection
+
+<script>
+    const fileInput = document.querySelector('input[name="attachments[]"]');
+    const attachmentList = document.getElementById('attachment-list');
+
+    fileInput.addEventListener('change', () => {
+        attachmentList.innerHTML = ''; // clear previous list
+        Array.from(fileInput.files).forEach(file => {
+            const fileName = document.createElement('div');
+            fileName.classList.add('badge', 'bg-secondary', 'me-1', 'mb-1', 'p-2');
+            fileName.textContent = file.name;
+            attachmentList.appendChild(fileName);
+        });
+    });
+</script>
+
+<style>
+    #attachment-list .badge {
+        display: inline-block;
+        font-size: 0.85rem;
+        cursor: default;
+    }
+</style>
