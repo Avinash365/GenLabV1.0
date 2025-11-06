@@ -473,3 +473,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::get('/email/sentEmail/{id?}', [EmailController::class, 'sentIndex'])->name('email.allSentEmail');
 
     Route::post('/emails/{id}/reply', [EmailController::class, 'replyOnEmail'])->name('emails.replyOnEmail');
+
+    // delete email from list route
+    Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');

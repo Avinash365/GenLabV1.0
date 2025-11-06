@@ -618,4 +618,12 @@ class EmailController extends Controller
     return redirect()->back()->with('success', 'Reply sent successfully!');
 }
 
+    public function destroy($id)
+    {
+        $email = EmailSetting::findOrFail($id);
+        $email->delete();
+
+        return response()->json(['success' => true]);
+    }
+
 }

@@ -37,18 +37,26 @@
                                         <span class="d-flex align-items-center fw-medium">
                                             <i class="ti ti-user text-gray me-2"></i>
                                             {{ $account->email }}
+                                            <!-- Small Delete Button -->
+                                            <button
+                                                type="button"
+                                                class="btn btn-sm btn-danger ms-2 delete-email-btn"
+                                                data-id="{{ $account->id }}">
+                                                &times;
+                                            </button>
                                         </span>
                                         <!-- <span class="fw-semibold fs-12 badge text-gray rounded-pill">
                                             {{ $account->unread_count ?? 0 }}
+                                            hello
                                         </span> -->
                                     </a>
-                                @endforeach 
-                                
-                            </div> 
+                                @endforeach
+
+                            </div>
                             <!-- ====================== Add new  Emails ====================== -->
-                                    <a href="javascript:void(0);" 
+                                    <a href="javascript:void(0);"
                                         class="d-flex align-items-center p-2 rounded mb-2 mt-2"
-                                        data-bs-toggle="modal" 
+                                        data-bs-toggle="modal"
                                         data-bs-target="#addAccountModal">
                                             <i class="ti ti-user-plus me-2"></i>
                                             Add New Account
@@ -63,7 +71,7 @@
                                     <i class="fa fa-chevron-down fs-10 ms-2"></i>
                                 </a>
                             </div>
-                        @endif 
+                        @endif
 
                     </div>
                 </div>
@@ -79,7 +87,7 @@
 
                             <!-- Inbox -->
                             <a href="{{ route('email.index', ['id' => $activeAccount->id ?? null]) }}"
-                            class="d-flex align-items-center justify-content-between p-2 rounded 
+                            class="d-flex align-items-center justify-content-between p-2 rounded
                                     {{ request()->routeIs('email.index') ? 'bg-light fw-bold border' : '' }}">
                                 <span class="d-flex align-items-center fw-medium">
                                     <i class="ti ti-inbox text-gray me-2"></i>Inbox
@@ -95,7 +103,7 @@
 
                             <!-- Sent -->
                             <a href="{{ route('email.allSentEmail', ['id' => $activeAccount->id ?? null]) }}"
-                            class="d-flex align-items-center justify-content-between p-2 rounded 
+                            class="d-flex align-items-center justify-content-between p-2 rounded
                                     {{ request()->routeIs('email.allSentEmail') ? 'bg-light fw-bold border' : '' }}">
                                 <span class="d-flex align-items-center fw-medium">
                                     <i class="ti ti-rocket text-gray me-2"></i>Send
@@ -149,7 +157,7 @@
                         </div>
                     </div>
 
-                
+
             </div>
         </div>
     </div>
@@ -230,7 +238,7 @@
                 </div>
             </form>
         </div>
-    </div> 
+    </div>
 </div>
 
 <!-- ====================== Compose Mail ====================== -->
@@ -414,7 +422,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <span class="ms-2" style="cursor:pointer;">&times;</span>
             `;
             span.querySelector('span').addEventListener('click', () => {
-                allFiles.splice(index, 1);
+                allFiles.splice(index, 1); // Remove file from array
                 renderAttachments();
             });
             attachmentNames.appendChild(span);
@@ -422,13 +430,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const dataTransfer = new DataTransfer();
         allFiles.forEach(file => dataTransfer.items.add(file));
-        attachmentInput.files = dataTransfer.files;
+        attachmentInput.files = dataTransfer.files; // Update input files
     }
+
 });
 </script>
-
-
-
 
 <!-- ====================== Script ====================== -->
 <script>
@@ -454,3 +460,42 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 </script>
+
+
+<!-- delete button from email list script -->
+ <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const deleteButtons = document.querySelectorAll('.delete-email-btn');
+
+    deleteButtons.forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const emailId = this.dataset.id;
+
+            if (confirm('Do you really want to delete this email?')) {
+                fetch(`/emails/${emailId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        // Remove the email from UI
+                        this.closest('a').remove();
+                    } else {
+                        alert('Failed to delete email.');
+                    }
+                })
+                .catch(error => {
+                    console.error(error);
+                    alert('Error occurred.');
+                });
+            }
+        });
+    });
+});
+</script>
+

@@ -125,7 +125,7 @@
                                             <div class="tag-with-img d-flex align-items-center">
                                                 <label class="form-label me-2">To</label>
                                                 <input type="text" name="to" class="form-control border-0 h-100" value="{{ $email['from_email'] ?? '' }}">
-                                                 <!-- <input type="text" name="to" class="form-control border-0 h-100" value= "dksmaurya09@gmail.com"> -->
+                                                <!-- <input type="text" name="to" class="form-control border-0 h-100" value= "dksmaurya09@gmail.com"> -->
                                             </div>
                                             <div class="d-flex align-items-center email-cc mt-2">
                                                 <a href="#" class="d-inline-flex me-2">Cc</a>
