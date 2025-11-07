@@ -25,7 +25,10 @@
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="search-set d-flex align-items-center gap-3 w-100" style="max-width:50%;">
                 <form method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group me-2 flex-shrink-0 search-compact" style="max-width:450px;">
-                    <?php $mode = $mode ?? request('mode','job'); ?>
+                    <?php 
+                        $mode = $mode ?? request('mode','job'); 
+                        $isOverdue = request()->boolean('overdue');
+                    ?>
                     <input type="hidden" name="mode" value="<?php echo e($mode); ?>">
                     <?php if(request('department')): ?>
                         <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
@@ -36,21 +39,22 @@
                     <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
-                <div class="mode-toggle-group d-flex align-items-center flex-shrink-0">
-                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>'reference','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue')]))); ?>" class="mode-toggle <?php echo e($mode==='reference' ? 'active' : ''); ?>">By Reference No</a>
-                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>'job','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue')]))); ?>" class="mode-toggle <?php echo e($mode==='job' ? 'active' : ''); ?>">By Job Order No</a>
+                    <div class="mode-toggle-group d-flex align-items-center flex-shrink-0">
+                        <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>'reference','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')]))); ?>" class="mode-toggle <?php echo e((!$isOverdue && $mode==='reference') ? 'active' : ''); ?>">By Reference No</a>
+                        <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>'job','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')]))); ?>" class="mode-toggle <?php echo e((!$isOverdue && $mode==='job') ? 'active' : ''); ?>">By Job Order No</a>
                     <?php
-                        $toggleParams = [
+                        $base = [
                             'mode' => request('mode','job'),
                             'department' => request('department'),
                             'search' => request('search'),
                             'month' => request('month'),
                             'year' => request('year'),
                             'marketing' => request('marketing'),
-                            'overdue' => request('overdue') ? null : 1,
                         ];
+                        $onParams = array_filter($base + ['overdue' => 1], function($v){ return !is_null($v) && $v !== ''; });
+                        $offParams = array_filter($base, function($v){ return !is_null($v) && $v !== ''; });
                     ?>
-                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter($toggleParams, fn($v) => !is_null($v) && $v !== ''))); ?>" class="mode-toggle <?php echo e(request('overdue') ? 'active' : ''); ?>">Out of Expected Date</a>
+                    <a href="<?php echo e(route('superadmin.reporting.pendings', $isOverdue ? $offParams : $onParams)); ?>" class="mode-toggle <?php echo e($isOverdue ? 'active' : ''); ?>">Out of Expected Date</a>
                 </div>
             </div>
             <div class="search-set">

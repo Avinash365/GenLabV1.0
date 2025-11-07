@@ -79,9 +79,16 @@
             <button class="btn btn-light d-flex align-items-center justify-content-center p-0" style="border-radius:6px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;"><img src="<?php echo e(url('assets/img/icons/flag.jpg')); ?>" alt="EN" style="height:18px;"></button>
             <button id="expandToggle" class="btn btn-light d-flex align-items-center justify-content-center p-0" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;" type="button"><i class="fa fa-expand"></i></button>
             <button id="chatToggle" class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
-                <i class="fa fa-envelope"></i>
+                <i class="fa fa-comments"></i>
                 <span id="chatNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:none; align-items:center; justify-content:center;">1</span>
             </button>
+
+            <li id="emailTogia" class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
+                <a href="<?php echo e(url('email')); ?>">
+                    <i class="ti ti-mail"></i>
+                        <span id="chatNotifBadge" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:none; align-items:center; justify-content:center;">1</span>
+                </a>
+            </li>
             <button class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class="fa fa-bell"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:flex; align-items:center; justify-content:center;"></span>

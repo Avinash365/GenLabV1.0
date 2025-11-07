@@ -207,7 +207,19 @@
                                 <i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span>
                             </a>
                         </li> -->
-                        <li><a href="#"><i class="ti ti-target fs-16 me-2"></i><span>Marketing</span></a></li>
+                        <li class="submenu {{ Request::routeIs('superadmin.marketing.*') ? 'submenu-open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="ti ti-target fs-16 me-2"></i>
+                                <span>Expenses</span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <ul>
+                                <li><a href="{{ route('superadmin.marketing.expenses.view') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.view') ? 'active' : '' }}">Marketing Expenses</a></li>
+                                <li><a href="{{ route('superadmin.office.expenses.view') }}" class="{{ Request::routeIs('superadmin.office.expenses.view') ? 'active' : '' }}">Office Expenses</a></li>
+                                <li><a href="{{ route('superadmin.marketing.expenses.approved') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.approved') ? 'active' : '' }}">Approve Expenses</a></li>
+                                <li><a href="{{ route('superadmin.marketing.expenses.rejected') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.rejected') ? 'active' : '' }}">Rejected Expenses</a></li>
+                            </ul>
+                        </li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-calendar-check fs-16 me-2"></i><span>Attendance</span></a></li>
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>

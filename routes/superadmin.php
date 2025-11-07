@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 
@@ -43,6 +43,7 @@ use App\Http\Controllers\Accounts\InvoiceController;
 use App\Http\Controllers\Accounts\QuotationController;
 use App\Http\Controllers\Accounts\BlankInvoiceController;
 use App\Http\Controllers\Accounts\PaymentSettingController;
+use App\Http\Controllers\Accounts\MarketingExpenseController;
 use App\Http\Controllers\Accounts\MarketingPersonLedger;
 use App\Http\Controllers\Accounts\CashLetterController;
 use App\Http\Controllers\Accounts\ChequeController;
@@ -81,6 +82,27 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 // Super Admin Protected Routes
 // ==============================
 Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+
+    // Marketing Expenses
+    Route::prefix('marketing')->name('marketing.')->group(function () {
+        Route::get('/expenses', [MarketingExpenseController::class, 'index'])->name('expenses.view');
+        Route::get('/expenses/approved', [MarketingExpenseController::class, 'approved'])->name('expenses.approved');
+        Route::get('/expenses/rejected', [MarketingExpenseController::class, 'rejected'])->name('expenses.rejected');
+        Route::get('/expenses/export/pdf', [MarketingExpenseController::class, 'exportPdf'])->name('expenses.export.pdf');
+        Route::get('/expenses/export/excel', [MarketingExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
+        Route::post('/expenses', [MarketingExpenseController::class, 'store'])->name('expenses.store');
+        Route::get('/persons', [MarketingExpenseController::class, 'persons'])->name('persons');
+        Route::patch('/expenses/{expense}/approve', [MarketingExpenseController::class, 'approve'])->name('expenses.approve');
+        Route::patch('/expenses/{expense}/reject', [MarketingExpenseController::class, 'reject'])->name('expenses.reject');
+    });
+
+    // Office Expenses (view only for now)
+    Route::prefix('office')->name('office.')->group(function () {
+        Route::get('/expenses', [MarketingExpenseController::class, 'office'])->name('expenses.view');
+        Route::get('/expenses/export/pdf', [MarketingExpenseController::class, 'exportPdf'])->name('expenses.export.pdf');
+        Route::get('/expenses/export/excel', [MarketingExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
+        Route::get('/persons', [MarketingExpenseController::class, 'officePersons'])->name('persons');
+    });
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');

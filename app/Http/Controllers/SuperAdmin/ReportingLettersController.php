@@ -34,10 +34,21 @@ class ReportingLettersController extends Controller
         $letters = [];
         foreach ($files as $path) {
             $basename = basename($path);
+            // Skip metadata file(s) or hidden/system files starting with underscore
+            if ($basename === '_meta.json' || str_starts_with($basename, '_')) {
+                continue;
+            }
+            // Optionally filter to allowed extensions for safety
+            $ext = strtolower(pathinfo($basename, PATHINFO_EXTENSION));
+            $allowed = ['pdf','jpg','jpeg','png','doc','docx'];
+            if ($ext && !in_array($ext, $allowed, true)) {
+                continue;
+            }
             $url = Storage::url($path);
-            $uploadedAt = Carbon::createFromTimestamp(Storage::lastModified($path))->toDateTimeString();
+            $uploadedAt = $meta[$basename]['uploaded_at'] ?? Carbon::createFromTimestamp(Storage::lastModified($path))->toDateTimeString();
+            $uploaderName = $meta[$basename]['uploader_name'] ?? null;
             $pageCount = null;
-            if (strtolower(pathinfo($basename, PATHINFO_EXTENSION)) === 'pdf') {
+            if ($ext === 'pdf') {
                 $pageCount = $this->tryCountPdfPages($path);
             }
             $original = $meta[$basename]['original'] ?? $basename;
@@ -50,6 +61,7 @@ class ReportingLettersController extends Controller
                 'download_url' => route('superadmin.reporting.letters.show', ['job' => $safeJob, 'filename' => $basename]),
                 'uploaded_at' => $uploadedAt,
                 'pages' => $pageCount,
+                'uploader_name' => $uploaderName,
             ];
         }
 
@@ -80,6 +92,11 @@ class ReportingLettersController extends Controller
             if (is_array($rawMeta)) $meta = $rawMeta;
         }
 
+        // Who is uploading?
+        $user = auth()->user() ?: auth('admin')->user();
+        $uploaderName = $user->name ?? ($user->username ?? ($user->email ?? null));
+        $uploaderId = $user->id ?? null;
+
         foreach ($request->file('letters', []) as $file) {
             if (!$file->isValid()) continue;
             $original = $file->getClientOriginalName();
@@ -95,7 +112,12 @@ class ReportingLettersController extends Controller
                     $pageCount = $this->tryCountPdfPages($path);
                 }
                 // Record mapping
-                $meta[$storedBasename] = [ 'original' => $original, 'uploaded_at' => now()->toDateTimeString() ];
+                $meta[$storedBasename] = [
+                    'original' => $original,
+                    'uploaded_at' => now()->toDateTimeString(),
+                    'uploader_id' => $uploaderId,
+                    'uploader_name' => $uploaderName,
+                ];
                 $uploaded[] = [
                     'name' => $original,
                     'original_name' => $original,
@@ -105,6 +127,7 @@ class ReportingLettersController extends Controller
                     'download_url' => route('superadmin.reporting.letters.show', ['job' => $job, 'filename' => $storedBasename]),
                     'uploaded_at' => now()->toDateTimeString(),
                     'pages' => $pageCount,
+                    'uploader_name' => $uploaderName,
                 ];
             }
         }
@@ -112,8 +135,14 @@ class ReportingLettersController extends Controller
         // Persist meta mapping
         try { Storage::put($metaPath, json_encode($meta, JSON_PRETTY_PRINT)); } catch (\Throwable $e) {}
 
-        // New total count after upload
-        $files = Storage::exists($dir) ? Storage::files($dir) : [];
+        // New total count after upload (ignore meta and hidden files)
+        $files = Storage::exists($dir) ? array_values(array_filter(Storage::files($dir), function ($p) {
+            $b = basename($p);
+            $ext = strtolower(pathinfo($b, PATHINFO_EXTENSION));
+            if ($b === '_meta.json' || str_starts_with($b, '_')) return false;
+            $allowed = ['pdf','jpg','jpeg','png','doc','docx'];
+            return $ext && in_array($ext, $allowed, true);
+        })) : [];
         return response()->json([
             'ok' => true,
             'uploaded' => $uploaded,
@@ -175,6 +204,10 @@ class ReportingLettersController extends Controller
     {
         $safeJob = $this->sanitizeJob($job);
         $filename = basename($filename); // prevent traversal
+        // Do not allow serving metadata/hidden files
+        if ($filename === '_meta.json' || str_starts_with($filename, '_')) {
+            abort(404);
+        }
         $path = "public/letters/{$safeJob}/{$filename}";
         if (!\Storage::exists($path)) {
             abort(404);
