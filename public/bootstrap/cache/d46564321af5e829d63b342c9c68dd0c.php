@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Office Expenses'); ?>
 
 <?php $__env->startSection('content'); ?>
