@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 
 use Illuminate\Support\Facades\Route;
 
@@ -342,12 +342,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
                 Route::get('/', [DeptController::class, 'index'])->name('Department');
             });
         
-<<<<<<< HEAD
             // Caqlibration List / Leaves
             Route::prefix('leaves')->name('leave.')->group(function () {
                 Route::get('/', [LeaveController::class, 'index'])->name('Leave');
             });
-=======
         // Leave Management
         Route::prefix('leaves')->name('leave.')->group(function () {
             Route::get('/', [LeaveController::class, 'index'])->name('Leave');
@@ -357,7 +355,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::delete('/{leave}', [LeaveController::class, 'destroy'])->name('destroy');
             Route::post('/calculate-days', [LeaveController::class, 'calculateDays'])->name('calculate-days');
         });
->>>>>>> chat_api
 
             // Lab Analysts - reports dropdown and viewer
             Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
