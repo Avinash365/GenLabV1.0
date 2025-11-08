@@ -743,6 +743,15 @@ class ChatController extends Controller
             'status' => $status,
         ];
 
+        // If it's an action message, expose a parsed payload for clients
+        if ($m->type === 'action') {
+            $decoded = null;
+            try { $decoded = $m->content ? json_decode($m->content, true) : null; } catch (\Throwable $e) { $decoded = null; }
+            if (is_array($decoded)) {
+                $data['action'] = $decoded;
+            }
+        }
+
         if ($viewer && (int)$viewer->id === (int)$m->user_id && $viewerGuard === $senderGuard) {
             $data['reactions'] = $m->relationLoaded('reactions') ? $m->reactions->map(function(ChatReaction $r){
                 return [ 'type' => $r->type, 'user_id' => $r->user_id, 'user' => $r->relationLoaded('user') && $r->user ? [ 'id'=>$r->user->id, 'name'=>$r->user->name ] : null ];

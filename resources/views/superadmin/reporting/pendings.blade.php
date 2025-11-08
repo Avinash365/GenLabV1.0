@@ -6,18 +6,18 @@
         <div class="add-item d-flex">
             <div class="page-title">
                 <h4>Pending Reports</h4>
-                <h6>Received but Issue Date Not Set</h6>
+                <h6>Not Received or Issue Date Missing</h6>
             </div>
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department'])) }}" data-bs-toggle="tooltip" title="PDF"><i class="ti ti-file-type-pdf"></i></a>
+                <a href="{{ route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue'])) }}" data-bs-toggle="tooltip" title="PDF"><i class="ti ti-file-type-pdf"></i></a>
             </li>
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department'])) }}" data-bs-toggle="tooltip" title="Excel"><i class="ti ti-file-spreadsheet"></i></a>
+                <a href="{{ route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue'])) }}" data-bs-toggle="tooltip" title="Excel"><i class="ti ti-file-spreadsheet"></i></a>
             </li>
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings', request()->only(['search','month','year','department'])) }}" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
+                <a href="{{ route('superadmin.reporting.pendings', request()->only(['search','month','year','department','overdue'])) }}" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
             </li>
         </ul>
     </div>
@@ -26,23 +26,40 @@
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="search-set d-flex align-items-center gap-3 w-100" style="max-width:50%;">
                 <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex input-group me-2 flex-shrink-0 search-compact" style="max-width:450px;">
-                    @php $mode = $mode ?? request('mode','job'); @endphp
+                    @php 
+                        $mode = $mode ?? request('mode','job'); 
+                        $isOverdue = request()->boolean('overdue');
+                    @endphp
                     <input type="hidden" name="mode" value="{{ $mode }}">
                     @if(request('department'))
                         <input type="hidden" name="department" value="{{ request('department') }}">
                     @endif
                     @if(request('month'))<input type="hidden" name="month" value="{{ request('month') }}">@endif
                     @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
+                    @if(request('overdue'))<input type="hidden" name="overdue" value="1">@endif
                     <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
-                <div class="mode-toggle-group d-flex align-items-center flex-shrink-0">
-                    <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>'reference','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')])) }}" class="mode-toggle {{ $mode==='reference' ? 'active' : '' }}">By Reference No</a>
-                    <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>'job','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')])) }}" class="mode-toggle {{ $mode==='job' ? 'active' : '' }}">By Job Order No</a>
+                    <div class="mode-toggle-group d-flex align-items-center flex-shrink-0">
+                        <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>'reference','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')])) }}" class="mode-toggle {{ (!$isOverdue && $mode==='reference') ? 'active' : '' }}">By Reference No</a>
+                        <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>'job','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')])) }}" class="mode-toggle {{ (!$isOverdue && $mode==='job') ? 'active' : '' }}">By Job Order No</a>
+                    @php
+                        $base = [
+                            'mode' => request('mode','job'),
+                            'department' => request('department'),
+                            'search' => request('search'),
+                            'month' => request('month'),
+                            'year' => request('year'),
+                            'marketing' => request('marketing'),
+                        ];
+                        $onParams = array_filter($base + ['overdue' => 1], function($v){ return !is_null($v) && $v !== ''; });
+                        $offParams = array_filter($base, function($v){ return !is_null($v) && $v !== ''; });
+                    @endphp
+                    <a href="{{ route('superadmin.reporting.pendings', $isOverdue ? $offParams : $onParams) }}" class="mode-toggle {{ $isOverdue ? 'active' : '' }}">Out of Expected Date</a>
                 </div>
             </div>
             <div class="search-set">
-                <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex input-group">
+                <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex input-group align-items-center gap-2 flex-wrap">
                     <input type="hidden" name="mode" value="{{ $mode }}">
                     @if(request('department'))
                         <input type="hidden" name="department" value="{{ request('department') }}">
@@ -50,6 +67,7 @@
                     @if(request('marketing'))
                         <input type="hidden" name="marketing" value="{{ request('marketing') }}">
                     @endif
+                    @if(request('overdue'))<input type="hidden" name="overdue" value="1">@endif
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
                         @foreach(range(1,12) as $m)
@@ -62,7 +80,7 @@
                             <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
                         @endforeach
                     </select>
-                    <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                        <button class="btn btn-outline-secondary" type="submit">Filter</button>
                 </form>
             </div>
         </div>
@@ -70,9 +88,9 @@
         <div class="px-3 pb-3">
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 @php $currentDept = request('department'); @endphp
-                <a href="{{ route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode')])) }}" class="btn btn-sm {{ !$currentDept ? 'btn-warning text-white' : 'btn-outline-warning' }}">All</a>
+                <a href="{{ route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')])) }}" class="btn btn-sm {{ !$currentDept ? 'btn-warning text-white' : 'btn-outline-warning' }}">All</a>
                 @foreach($departments as $dept)
-                    <a href="{{ route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode')])) }}" class="btn btn-sm {{ (int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning' }}">{{ $dept->name }}</a>
+                    <a href="{{ route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')])) }}" class="btn btn-sm {{ (int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning' }}">{{ $dept->name }}</a>
                 @endforeach
                 @if(isset($marketingPersons) && $marketingPersons->count())
                     <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="ms-auto d-flex align-items-center gap-2 marketing-filter-form">
@@ -80,6 +98,7 @@
                         @if(request('department'))<input type="hidden" name="department" value="{{ request('department') }}">@endif
                         @if(request('month'))<input type="hidden" name="month" value="{{ request('month') }}">@endif
                         @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
+                        @if(request('overdue'))<input type="hidden" name="overdue" value="1">@endif
                         @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
                             <option value="">Select Marketing Person</option>
@@ -88,7 +107,7 @@
                             @endforeach
                         </select>
                         @if(request('marketing'))
-                            <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')])) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
+                            <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue')])) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
                         @endif
                     </form>
                 @endif
@@ -248,6 +267,7 @@ document.addEventListener('DOMContentLoaded', function(){
     .mode-toggle-group .mode-toggle { padding:10px 18px; font-size:12px; font-weight:600; text-decoration:none; color:#f39c32; display:inline-flex; align-items:center; justify-content:center; transition: all .18s ease; }
     .mode-toggle-group .mode-toggle:not(.active):hover { background:#fff7ed; }
     .mode-toggle-group .mode-toggle.active { background:#f39c32; color:#fff; }
+    .mode-toggle-group .mode-toggle + .mode-toggle { border-left: 1px solid #f39c32; }
     .marketing-filter-form select { background:#fff; border-color:#f39c32; }
     .marketing-filter-form select:focus { box-shadow:0 0 0 0.1rem rgba(243,156,50,.25); border-color:#f39c32; }
     .action-cell { white-space:nowrap; }

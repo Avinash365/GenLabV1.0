@@ -16,6 +16,7 @@ use App\Http\Controllers\ChatbotController;
 use App\Events\MessageSent;
 use Illuminate\Http\Request;
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -51,7 +52,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit')->middleware('permission:web-settings.edit');
     Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web-settings.edit');
     Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web-settings.edit');
-    
+
 });
 
 
@@ -62,7 +63,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])
     Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');
     Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
         ->where('filename', '.*')
-        ->name('letters.show'); 
+        ->name('letters.show');
 
     Route::get('/hold-cancel', [HoldCancelController::class, 'index'])->name('holdcancel.index');
     Route::post('/hold/{id}', [HoldCancelController::class, 'hold'])->name('hold');

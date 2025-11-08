@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Mpdf\Mpdf;
 use Illuminate\Support\Facades\Storage;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class ReportPdfGenerationService
 {
@@ -11,7 +12,7 @@ class ReportPdfGenerationService
 
     public function __construct()
     {
-        // Default mpdf instance
+        // Default mPDF configuration
         $this->mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
@@ -22,41 +23,44 @@ class ReportPdfGenerationService
         ]);
     }
 
-    /**
-     * Generate PDF from HTML files, save to disk, and return path
-     */
-    public function generateFromHtmlFiles(array $htmlPaths, array $headerData = [], string $outputName = null)
+   
+    public function generateFromHtmlFiles(array $htmlPaths, array $headerData = [], string $outputName = null, bool $isTemp = false)
     {
-        // Calculate extra margin based on line breaks
+        // Calculate dynamic top margin
         $extraMargin = 0;
-        if (isset($headerData['line_breaks']['total_n'])) {  
-            $pix = 5; 
-            $extraMargin = $pix * (int) $headerData['line_breaks']['total_n'];
-        }  
+        if (
+            (!isset($headerData['include_header']) || $headerData['include_header'] == 1)
+            && isset($headerData['line_breaks']['total_n'])
+        ) {
+            $pix = 5;
+            $extraMargin = 50 + $pix * (int) $headerData['line_breaks']['total_n'];
+        }
 
-        // Initialize mPDF with dynamic margins
+        // Create new Mpdf instance
         $this->mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'margin_top' => 110 + $extraMargin,
+            'margin_top' => 70 + $extraMargin,
             'margin_bottom' => 20,
             'margin_left' => 15,
             'margin_right' => 15
         ]);
-        
-        // Prepare header HTML with page numbers
+
+        // Generate QR Code
+        $booking_item_id = $headerData['booking_item_id'] ?? 1;
+        $reportUrl = route('varification.view', ['no' => $booking_item_id]);
+
+        $qrCodeBase64 = base64_encode(
+            QrCode::format('svg')->size(60)->margin(0)->errorCorrection('H')->generate($reportUrl)
+        );
+
+        $headerData['qr_code_svg'] = 'data:image/svg+xml;base64,' . $qrCodeBase64;
+
+        // Render header view
         $headerHtml = view('Reportfrmt.tableHadder', $headerData)->render();
+        $this->mpdf->SetHTMLHeader($headerHtml);
 
-        $pageNumOffset = 65+$extraMargin; // in mm
-        $headerHtmlWithPageNum = $headerHtml . '
-            <div style="text-align: right; font-size: 10pt; margin-top:' .'-'. $pageNumOffset . 'mm;">
-                Page {PAGENO} of {nbpg}
-            </div>
-        '; 
-
-        $this->mpdf->SetHTMLHeader($headerHtmlWithPageNum);
-
-        // Loop through HTML files and write to PDF
+        // Merge all HTML content
         foreach ($htmlPaths as $index => $path) {
             if (!Storage::disk('public')->exists($path)) {
                 continue;
@@ -64,7 +68,7 @@ class ReportPdfGenerationService
 
             $html = Storage::disk('public')->get($path);
 
-            // Add border styles to tables
+            // Add table borders dynamically
             $html = preg_replace_callback('/<table(.*?)>/', function ($matches) {
                 $tableTag = $matches[0];
                 if (strpos($tableTag, 'style=') !== false) {
@@ -95,23 +99,52 @@ class ReportPdfGenerationService
             }
         }
 
-        // Ensure PDF folder exists
-        $pdfFolder = storage_path('app/public/generatedReports');
+        // Decide storage folder
+        $folderName = $isTemp ? 'tempReports' : 'generatedReports';
+        $pdfFolder = storage_path("app/public/{$folderName}");
+
         if (!file_exists($pdfFolder)) {
             mkdir($pdfFolder, 0755, true);
         }
 
-        // Generate unique PDF name if none provided
+        // Clean old temporary files (older than 10 minutes)
+        if ($isTemp) {
+            $this->cleanOldTempFiles($pdfFolder, 10);
+        }
+
+        // File name
         if (!$outputName) {
             $outputName = time() . '_report.pdf';
         }
 
         $pdfFilePath = $pdfFolder . '/' . basename($outputName);
 
-        // Save PDF to disk
+        // Save the file
         $this->mpdf->Output($pdfFilePath, 'F');
 
-        // Return relative path for storage
-        return 'generatedReports/' . basename($outputName);
+        // Return relative public path
+        return "{$folderName}/" . basename($outputName);
+    }
+
+    /**
+     * Clean up old temporary files (older than given minutes)
+     */
+    protected function cleanOldTempFiles($folder, $minutes = 1)
+    {
+        if (!file_exists($folder)) {
+            return;
+        }
+
+        $files = glob($folder . '/*.pdf');
+        $now = time();
+
+        foreach ($files as $file) {
+            if (is_file($file)) {
+                $fileAge = ($now - filemtime($file)) / 60; // minutes
+                if ($fileAge > $minutes) {
+                    @unlink($file);
+                }
+            }
+        }
     }
 }

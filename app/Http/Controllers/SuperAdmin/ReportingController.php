@@ -67,6 +67,8 @@ class ReportingController extends Controller
         $search = trim((string) $request->get('search'));
         $month = $request->has('month') ? (int) $request->get('month') : null;
         $year = $request->has('year') ? (int) $request->get('year') : null;
+        $overdue = $request->boolean('overdue');
+        $today = now()->toDateString();
         $departmentId = $request->get('department');
         $marketing = $request->get('marketing'); // user_code of marketing person
         $mode = $request->get('mode', 'job'); // job | reference
@@ -74,16 +76,25 @@ class ReportingController extends Controller
         if ($month !== null && ($month < 1 || $month > 12)) { $month = null; }
         if ($year !== null && ($year < 2000 || $year > 2100)) { $year = null; }
         $departments = \App\Models\Department::orderBy('name')->get(['id','name']);
-        // Marketing persons (users with at least one booking) - limit to needed fields
         $marketingPersons = \App\Models\User::whereHas('marketingBookings')
             ->orderBy('name')
             ->get(['id','name','user_code']);
 
         if ($mode === 'reference') {
-            // Aggregate by booking (reference_no) where at least one pending item
-            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) {
-                $q->whereNotNull('received_at')->whereNull('issue_date');
-            }])->with(['items' => function($q){ $q->whereNotNull('received_at')->whereNull('issue_date'); }]);
+            // Aggregate by booking (reference_no) where at least one pending/overdue item
+            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $today) {
+                if ($overdue) {
+                    $q->whereNull('issue_date')->whereNotNull('lab_expected_date')->whereDate('lab_expected_date', '<', $today);
+                } else {
+                    $q->where(function($qq){ $qq->whereNull('received_at')->orWhereNull('issue_date'); });
+                }
+            }])->with(['items' => function($q) use ($overdue, $today){
+                if ($overdue) {
+                    $q->whereNull('issue_date')->whereNotNull('lab_expected_date')->whereDate('lab_expected_date', '<', $today);
+                } else {
+                    $q->where(function($qq){ $qq->whereNull('received_at')->orWhereNull('issue_date'); });
+                }
+            }]);
             if ($departmentId) { $bookingQuery->where('department_id', $departmentId); }
             if ($marketing) { $bookingQuery->where('marketing_id', $marketing); }
             if ($search !== '') {
@@ -92,15 +103,24 @@ class ReportingController extends Controller
                         ->orWhere('reference_no','like',"%{$search}%");
                 });
             }
-            if ($month) { $bookingQuery->whereHas('items', function($qi) use ($month){ $qi->whereMonth('received_at',$month); }); }
-            if ($year) { $bookingQuery->whereHas('items', function($qi) use ($year){ $qi->whereYear('received_at',$year); }); }
+            if (!$overdue) {
+                if ($month) { $bookingQuery->whereHas('items', function($qi) use ($month){ $qi->whereMonth('received_at',$month); }); }
+                if ($year) { $bookingQuery->whereHas('items', function($qi) use ($year){ $qi->whereYear('received_at',$year); }); }
+            }
             $bookingQuery->having('pending_items_count','>',0)->latest('id');
             $bookings = $bookingQuery->paginate(20)->withQueryString();
             $items = collect();
             return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing'));
         } else {
             $q = BookingItem::query()->with(['booking']);
-            $q->whereNotNull('received_at')->whereNull('issue_date');
+            if ($overdue) {
+                $q->whereNull('issue_date')
+                  ->whereNotNull('lab_expected_date')
+                  ->whereDate('lab_expected_date','<', $today);
+            } else {
+                // Pending items: either not received yet OR issue date not set
+                $q->where(function($qq){ $qq->whereNull('received_at')->orWhereNull('issue_date'); });
+            }
             if ($departmentId) {
                 $q->whereHas('booking', function($b) use ($departmentId) { $b->where('department_id', $departmentId); });
             }
@@ -114,8 +134,10 @@ class ReportingController extends Controller
                        ->orWhere('particulars', 'like', "%{$search}%");
                 });
             }
-            if ($month) { $q->whereMonth('received_at', $month); }
-            if ($year) { $q->whereYear('received_at', $year); }
+            if (!$overdue) {
+                if ($month) { $q->whereMonth('received_at', $month); }
+                if ($year) { $q->whereYear('received_at', $year); }
+            }
             $q->latest('id');
             $items = $q->paginate(20)->withQueryString();
             $bookings = collect();
@@ -129,12 +151,19 @@ class ReportingController extends Controller
         $month = $request->has('month') ? (int) $request->get('month') : null;
         $year = $request->has('year') ? (int) $request->get('year') : null;
         $departmentId = $request->get('department');
-    $marketing = $request->get('marketing');
-        if ($month !== null && ($month < 1 || $month > 12)) { $month = null; }
-        if ($year !== null && ($year < 2000 || $year > 2100)) { $year = null; }
-        $q = BookingItem::query()->with(['booking'])
-            ->whereNotNull('received_at')
-            ->whereNull('issue_date');
+        $marketing = $request->get('marketing');
+        $overdue = $request->boolean('overdue');
+        $today = now()->toDateString();
+
+        $q = BookingItem::query()->with(['booking']);
+        if ($overdue) {
+            $q->whereNull('issue_date')
+              ->whereNotNull('lab_expected_date')
+              ->whereDate('lab_expected_date','<', $today);
+        } else {
+            // Pending when not received OR issue date not set
+            $q->where(function($qq){ $qq->whereNull('received_at')->orWhereNull('issue_date'); });
+        }
         if ($departmentId) {
             $q->whereHas('booking', function($b) use ($departmentId) { $b->where('department_id', $departmentId); });
         }
@@ -152,8 +181,10 @@ class ReportingController extends Controller
                    });
             });
         }
-        if ($month) { $q->whereMonth('received_at', $month); }
-        if ($year) { $q->whereYear('received_at', $year); }
+        if (!$overdue) {
+            if ($month) { $q->whereMonth('received_at', $month); }
+            if ($year) { $q->whereYear('received_at', $year); }
+        }
         return $q;
     }
 
@@ -200,11 +231,11 @@ class ReportingController extends Controller
             $item->issue_date = $data['issue_date'];
         }
         $item->save();
-    if ($request->wantsJson()) {
+        if ($request->wantsJson()) {
             return response()->json([
                 'ok' => true,
                 'received_by' => $item->received_by_name ?? optional($item->receivedBy)->name ?? $receiverName,
-        'received_at' => optional($item->received_at)->toIso8601String(),
+                'received_at' => optional($item->received_at)->toIso8601String(),
                 'id' => $item->id,
                 'receiver_name' => $receiverName,
                 'issue_date' => optional($item->issue_date)->format('Y-m-d'),
@@ -264,7 +295,7 @@ class ReportingController extends Controller
             return response()->json(['ok' => true, 'scope' => 'all', 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
         }
 
-    return back()->with('status', 'All matching reports marked as received');
+        return back()->with('status', 'All matching reports marked as received');
     }
 
 
@@ -350,7 +381,7 @@ class ReportingController extends Controller
      */
     public function dispatch(Request $request)
     {
-        $job = trim((string) $request->get('job'));
+    $job = trim((string) $request->get('job'));
     $month = $request->has('month') ? (int) $request->get('month') : null;
     $year = $request->has('year') ? (int) $request->get('year') : null;
     $status = $request->get('status'); // 'in-account' | 'dispatched'
