@@ -56,7 +56,7 @@ class AdminAuthController extends Controller
         return response()->json([
             'access_token' => $token,
             'token_type'   => 'bearer',
-            'expires_in'   => Auth::guard('api_admin')->factory()->getTTL() * 60
+            'expires_in'   => Auth::guard('api_admin')->factory()->getTTL() * 60 * 24 * 30
         ]);
     }
 }
