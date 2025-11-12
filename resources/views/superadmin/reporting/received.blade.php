@@ -30,48 +30,48 @@
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <label class="form-label">Job Card No.</label>
                     <input type="text" class="form-control" value="{{ $header['job_card_no'] }}" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-8">
                     <label class="form-label">Client Name</label>
                     <input type="text" class="form-control" value="{{ $header['client_name'] }}" readonly>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-4">
                     <label class="form-label">Job Order Date</label>
                     <input type="date" class="form-control" value="{{ $header['job_order_date'] }}" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <!-- <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
                     <input type="date" class="form-control" value="{{ $header['issue_date'] }}" >
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-4">
                     <label class="form-label">Reference No.</label>
                     <input type="text" class="form-control" value="{{ $header['reference_no'] }}" readonly>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <label class="form-label">Sample Description</label>
                     <input type="text" class="form-control" value="{{ $header['sample_description'] }}" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-6">
                     <label class="form-label">Name of Work</label>
                     <input type="text" class="form-control" value="{{ $header['name_of_work'] }}" readonly>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <label class="form-label">Issued To</label>
                     <input type="text" class="form-control" value="{{ $header['issued_to'] }}" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="{{ $header['ms'] }}" readonly>
+                    <input type="text" class="form-control" value="{{ $header['ms'] }}">
                 </div>
                 {{-- Upload Letter(s) box inserted after M/s --}}
                 @php
                     $uploadRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.upload') ? route('superadmin.reporting.letters.upload') : '#';
                     $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $job]) : '';
                 @endphp
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label class="form-label">Upload Report</label>
                     <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}">
                         @csrf
@@ -84,34 +84,23 @@
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
                         </div>
-                        <small class="text-muted d-block">You can upload multiple files.</small>
-
-                        <div>
-                        <label class="form-label">Upload Additional DOC Files</label>
-                        <input type="file"
-                                name="docs[]"
-                                id="upload-docs-input"
-                                class="form-control"
-                                multiple
-                                accept=".doc,.docx"
-                                {{ $uploadRoute === '#' ? 'disabled' : '' }}>
-                            <ul id="doc-preview-list" class="list-unstyled mt-2 mb-0 text-secondary small"></ul>
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
+                    </form>
+                </div> 
+                <div class="col-md-4">
+                    <label class="form-label">Upload docx</label>
+                    <form method="POST" action="#" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}">
+                        @csrf
+                        <input type="hidden" name="job" value="{{ $job }}">
+                        <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" {{ $uploadRoute === '#' ? 'disabled' : '' }}>
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="submit" class="btn btn-primary" {{ $uploadRoute === '#' ? 'disabled' : '' }}>Upload</button>
+                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" {{ empty($listRoute) ? 'disabled' : '' }}>
+                                View
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
+                            </button>
                         </div>
-
-                        <!-- Buttons -->
-                        <div class="d-flex gap-2 align-items-center flex-wrap">
-                        <button type="submit" class="btn btn-primary" {{ $uploadRoute === '#' ? 'disabled' : '' }}>Upload</button>
-                        <button type="button"
-                                class="btn btn-outline-secondary position-relative"
-                                id="view-letters-btn"
-                                {{ empty($listRoute) ? 'disabled' : '' }}>
-                            View
-                            <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary"
-                                id="letters-count-badge"
-                                style="display:none;">0</span>
-                        </button>
-                        </div>
-
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
                     </form>
                 </div>
                 @php
@@ -130,8 +119,8 @@
         <div class="card-body">
             <div class="table-responsive">
                 <div class="tab-container">
-                    <div class="tab-button active" data-tab="all">All</div>
-                    <div class="tab-button" data-tab="issue">Issue to</div>
+                    <div class="tab-button active w-50" data-tab="all">All</div>
+                    <div class="tab-button w-50 text-centre" data-tab="issue">Issue to</div>
                 </div>
                 <table class="table table-striped" id="report-table">
                     <thead>
@@ -292,10 +281,10 @@
                     <thead class="table-dark">
                         <tr>
                             <th>Job No.</th>
-                            <th>Client Name</th>
+                            <!-- <th>Client Name</th> -->
                             <th>Sample Description</th>
                             <th>Report No.</th>
-                            <th>Generated On</th>
+                            <th>7 days Report Issue on</th>
                             <th>View PDF</th>
                             <th>Action </th>
                         </tr>
@@ -312,7 +301,7 @@
                             @endphp
                             <tr>
                                 <td>{{ $item->job_order_no }}</td>
-                                <td>{{ $item->booking->client_name ?? '-' }}</td>
+                                <!-- <td>{{ $item->booking->client_name ?? '-' }}</td> -->
                                 <td>{{ $item->sample_description }}</td>
                                 <td>{{ $assignedReport->report_no ?? 'Report #'.$assignedReport->id }}</td>
                                 <td>

@@ -16,7 +16,7 @@ class ReportPdfGenerationService
         $this->mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'margin_top' => 70,
+            'margin_top' => 40,
             'margin_bottom' => 20,
             'margin_left' => 15,
             'margin_right' => 15
@@ -40,7 +40,7 @@ class ReportPdfGenerationService
         $this->mpdf = new Mpdf([
             'mode' => 'utf-8',
             'format' => 'A4',
-            'margin_top' => 65 + $extraMargin,
+            'margin_top' => 60 + $extraMargin,
             'margin_bottom' => 25,
             'margin_left' => 15,
             'margin_right' => 15
