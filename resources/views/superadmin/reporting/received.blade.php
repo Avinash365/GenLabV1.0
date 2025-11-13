@@ -30,48 +30,48 @@
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <label class="form-label">Job Card No.</label>
                     <input type="text" class="form-control" value="{{ $header['job_card_no'] }}" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-8">
                     <label class="form-label">Client Name</label>
                     <input type="text" class="form-control" value="{{ $header['client_name'] }}" readonly>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-4">
                     <label class="form-label">Job Order Date</label>
                     <input type="date" class="form-control" value="{{ $header['job_order_date'] }}" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <!-- <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
                     <input type="date" class="form-control" value="{{ $header['issue_date'] }}" >
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-4">
                     <label class="form-label">Reference No.</label>
                     <input type="text" class="form-control" value="{{ $header['reference_no'] }}" readonly>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <label class="form-label">Sample Description</label>
                     <input type="text" class="form-control" value="{{ $header['sample_description'] }}" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-6">
                     <label class="form-label">Name of Work</label>
                     <input type="text" class="form-control" value="{{ $header['name_of_work'] }}" readonly>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <label class="form-label">Issued To</label>
                     <input type="text" class="form-control" value="{{ $header['issued_to'] }}" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="{{ $header['ms'] }}" readonly>
+                    <input type="text" class="form-control" value="{{ $header['ms'] }}">
                 </div>
                 {{-- Upload Letter(s) box inserted after M/s --}}
                 @php
                     $uploadRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.upload') ? route('superadmin.reporting.letters.upload') : '#';
                     $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $job]) : '';
                 @endphp
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label class="form-label">Upload Report</label>
                     <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}">
                         @csrf
@@ -84,7 +84,23 @@
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
                         </div>
-                        <small class="text-muted d-block">You can upload multiple files.</small>
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
+                    </form>
+                </div> 
+                <div class="col-md-4">
+                    <label class="form-label">Upload docx</label>
+                    <form method="POST" action="#" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}">
+                        @csrf
+                        <input type="hidden" name="job" value="{{ $job }}">
+                        <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" {{ $uploadRoute === '#' ? 'disabled' : '' }}>
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="submit" class="btn btn-primary" {{ $uploadRoute === '#' ? 'disabled' : '' }}>Upload</button>
+                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" {{ empty($listRoute) ? 'disabled' : '' }}>
+                                View
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
                     </form>
                 </div>
                 @php
@@ -102,23 +118,27 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <div class="tab-container">
+                    <div class="tab-button active w-50" data-tab="all">All</div>
+                    <div class="tab-button w-50 text-centre" data-tab="issue">Issue to</div>
+                </div>
+                <table class="table table-striped" id="report-table">
                     <thead>
                         <tr>
                             <th>Job No.</th>
-                            <th>Client Name</th>
+                            <!-- <th>Client Name</th> -->
                             <th>Description</th>
-                            <th>Status</th> 
-                            <th>Select Report</th>  
-                            <th> view </th> 
-                            <th>Action</th> 
+                            <th>Status</th>
+                            <th id="column-header">Select Report</th>
+                            <th> view </th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="table-body">
                         @forelse($items as $item)
                             <tr>
                                 <td>{{ $item->job_order_no }}</td>
-                                <td>{{ $item->booking->client_name ?? '-' }}</td>
+                                <!-- <td>{{ $item->booking->client_name ?? '-' }}</td> -->
                                 <td>{{ $item->sample_description }}</td>
                                 <td class="status-cell" data-id="{{ $item->id }}">
                                     @if($item->received_at)
@@ -130,20 +150,29 @@
                                     @endif
                                 </td>
                                 <td>
-                                    <form method="POST" action="{{ route('superadmin.reporting.assignReport', $item) }}" id="assign-report-form-{{ $item->id }}">
-                                        @csrf 
+
+                                    <div class="report-select">
+                                        <form method="POST" action="{{ route('superadmin.reporting.assignReport', $item) }}" id="assign-report-form-{{ $item->id }}">
+                                        @csrf
                                         @if($item->received_at)
                                             <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-{{ $item->id }}').submit()">
-                                                <option value="">-- Select Report --</option>
-                                                @foreach($reports as $report)
-                                                    <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
-                                                        {{ $report->report_no ?? 'Report #'.$report->id }}
-                                                    </option>
-                                                @endforeach
-                                            </select> 
+                                            <option value="">-- Select Report --</option>
+                                            @foreach($reports as $report)
+                                                <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
+                                                {{ $report->report_no ?? 'Report #'.$report->id }}
+                                                </option>
+                                            @endforeach
+                                            </select>
                                         @endif
-                                    </form>
-                                </td> 
+                                        </form>
+                                    </div>
+
+                                    <!-- Hidden by default (for Issue To tab) -->
+                                    <div class="issue-date d-none">
+                                        <input type="date" class="form-control" value="{{ $item->issue_date ?? '2025-11-12' }}">
+                                    </div>
+
+                                </td>
                                     <td>
                                         @php
                                             $assignedReport = $item->reports->first(); // get assigned report
@@ -162,9 +191,9 @@
                                         @php
                                             $assignedReport = $item->reports->first(); // get assigned report
                                             $pivotId = $assignedReport->pivot->id ?? null;
-                                        @endphp 
+                                        @endphp
 
-                                        @if($assignedReport && $assignedReport->pivot->pdf_path)  
+                                        @if($assignedReport && $assignedReport->pivot->pdf_path)
                                             <a href="{{ route('generateReportPDF.editReport', $pivotId) }}" target="_blank" class="btn btn-sm btn-success">
                                                 Edit
                                             </a>
@@ -219,15 +248,15 @@
                         <input type="hidden" name="job" value="{{ $job }}">
                         <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; {{ $allReceived ? 'display:none;' : '' }}">Receive All</button>
                     </form>
-                       <a href="{{ route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0]) }}" 
-                            class="btn" 
+                       <a href="{{ route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0]) }}"
+                            class="btn"
                             style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
                             Get All
                         </a>
                 </div>
             </div>
         </div>
-    </div>  
+    </div>
 
     {{-- ========================= --}}
     {{-- Cement Reports Table --}}
@@ -245,17 +274,17 @@
     <div class="card mt-4">
         <div class="card-header bg-light">
             <h5 class="mb-0">Cement Reports 28 Days(Generated)</h5>
-        </div> 
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead class="table-dark">
                         <tr>
                             <th>Job No.</th>
-                            <th>Client Name</th>
+                            <!-- <th>Client Name</th> -->
                             <th>Sample Description</th>
                             <th>Report No.</th>
-                            <th>Generated On</th>
+                            <th>7 days Report Issue on</th>
                             <th>View PDF</th>
                             <th>Action </th>
                         </tr>
@@ -272,7 +301,7 @@
                             @endphp
                             <tr>
                                 <td>{{ $item->job_order_no }}</td>
-                                <td>{{ $item->booking->client_name ?? '-' }}</td>
+                                <!-- <td>{{ $item->booking->client_name ?? '-' }}</td> -->
                                 <td>{{ $item->sample_description }}</td>
                                 <td>{{ $assignedReport->report_no ?? 'Report #'.$assignedReport->id }}</td>
                                 <td>
@@ -281,12 +310,12 @@
                                     @else
                                         -
                                     @endif
-                                </td> 
+                                </td>
                                 <td>
                                     <a href="{{ route('viewPdf', basename($assignedReport->pivot->pdf_path)) }}" target="_blank" class="btn btn-sm btn-info">
                                         View PDF
                                     </a>
-                                </td> 
+                                </td>
                                <td>
                                     {{-- Generate 28Days Report if not generated yet --}}
                                     @if($pivotId28days)
@@ -332,9 +361,9 @@
                 </div>
             </div>
         </div>
-    </div>  
+    </div>
 
-</div> 
+</div>
 
 
 
@@ -766,8 +795,67 @@
         init();
     }
 })();
+
+// js for tab container
+document.addEventListener("DOMContentLoaded", () => {
+  const tabs = document.querySelectorAll(".tab-button");
+  const columnHeader = document.getElementById("column-header");
+  const tableRows = document.querySelectorAll("tbody tr");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      const mode = tab.dataset.tab;
+
+      if (mode === "issue") {
+        columnHeader.textContent = "Issue Date";
+        tableRows.forEach(row => {
+          row.querySelector(".report-select")?.classList.add("d-none");
+          row.querySelector(".issue-date")?.classList.remove("d-none");
+        });
+      } else {
+        columnHeader.textContent = "Select Report";
+        tableRows.forEach(row => {
+          row.querySelector(".report-select")?.classList.remove("d-none");
+          row.querySelector(".issue-date")?.classList.add("d-none");
+        });
+      }
+    });
+  });
+});
+
+
 </script>
 @endpush
+
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Generic file preview function
+  function handleFilePreview(inputId, listId) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+
+    input.addEventListener('change', () => {
+      list.innerHTML = '';
+      const files = Array.from(input.files);
+      if (files.length) {
+        files.forEach(file => {
+          const li = document.createElement('li');
+          li.textContent = `📄 ${file.name}`;
+          list.appendChild(li);
+        });
+      }
+    });
+  }
+
+  // Initialize for both inputs
+  handleFilePreview('upload-letters-input', 'file-preview-list');
+  handleFilePreview('upload-docs-input', 'doc-preview-list');
+});
+</script>
+
 
 @push('styles')
 <style>
@@ -811,5 +899,116 @@
     /* Date input sizing alignment */
     .issue-date-input { max-width: 180px; }
     .table td, .table th { vertical-align: middle; }
+
+    /* tab container */
+    /* Container styling */
+.tab-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 6px;
+  margin-bottom: 20px;
+  font-family: "Poppins", sans-serif;
+}
+
+/* Each tab button */
+.tab-button {
+  padding: 8px 16px;
+  border-radius: 10px 10px 10px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #555;
+  background: #f5f5f5;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* Hover effect */
+.tab-button:hover {
+  background: #e9ecef;
+  color: #111;
+}
+
+/* Active tab */
+.tab-button.active {
+  background: #28a745;
+  color: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Optional: for dark mode feel */
+@media (prefers-color-scheme: dark) {
+  .tab-container {
+    border-color: #444;
+  }
+  .tab-button {
+    background: #2c2c2c;
+    color: #ccc;
+  }
+  .tab-button:hover {
+    background: #3a3a3a;
+  }
+  .tab-button.active {
+    background: #28a745;
+    color: #fff;
+  }
+}
+
+/* ===== File Input Styling ===== */
+form input[type="file"] {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  color: #444;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+}
+
+/* Hover + focus */
+form input[type="file"]:hover,
+form input[type="file"]:focus {
+  background-color: #fff;
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.15);
+}
+
+/* Make file input labels bolder */
+form .form-label {
+  font-weight: 600;
+  color: #092C4C;
+  font-size: 14px;
+}
+
+/* File preview list */
+#file-preview-list li,
+#doc-preview-list li {
+  background: #f1f1f1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #333;
+}
+
+/* Small note text under inputs */
+form small.text-muted {
+  font-size: 12px;
+  color: #777 !important;
+}
+
+/* Adjust upload buttons alignment */
+form .btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
 </style>
 @endpush

@@ -159,6 +159,7 @@ class ReportEditorController extends Controller
 
     public function generateReportPDF(Request $request)
     {     
+       
         $request->validate([
             'report_no' => 'required|string|max:255',
             'report_description' => 'nullable|string|max:2000',
