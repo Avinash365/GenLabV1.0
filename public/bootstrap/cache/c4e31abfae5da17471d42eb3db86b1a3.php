@@ -74,6 +74,8 @@
 
     <!-- Scripts -->
     <script src="<?php echo e(url('assets/js/jquery-3.7.1.min.js')); ?>"></script>
+    <script src="<?php echo e(url('assets/js/jquery.dataTables.min.js')); ?>"></script>
+    <script src="<?php echo e(url('assets/js/dataTables.bootstrap5.min.js')); ?>"></script>
     <script src="<?php echo e(url('assets/js/feather.min.js')); ?>"></script>
     <script src="<?php echo e(url('assets/js/jquery.slimscroll.min.js')); ?>"></script>
     <script src="<?php echo e(url('assets/js/bootstrap.bundle.min.js')); ?>"></script>
@@ -82,6 +84,7 @@
     <script src="<?php echo e(url('assets/plugins/chartjs/chart.min.js')); ?>"></script>
     <script src="<?php echo e(url('assets/plugins/chartjs/chart-data.js')); ?>"></script>
     <script src="<?php echo e(url('assets/js/moment.min.js')); ?>"></script>
+    <script src="<?php echo e(url('assets/js/bootstrap-datetimepicker.min.js')); ?>"></script>
     <script src="<?php echo e(url('assets/plugins/daterangepicker/daterangepicker.js')); ?>"></script>
     <script src="<?php echo e(url('assets/plugins/select2/js/select2.min.js')); ?>"></script>
     <script src="<?php echo e(url('assets/plugins/%40simonwep/pickr/pickr.es5.min.js')); ?>"></script>

@@ -28,6 +28,9 @@ use App\Http\Controllers\ListController;
 use App\Http\Controllers\SuperAdmin\IsCodesController;
 
 use App\Http\Controllers\SuperAdmin\LeaveController;
+use App\Http\Controllers\SuperAdmin\EmployeeController;
+use App\Http\Controllers\SuperAdmin\HR\AttendanceController;
+use App\Http\Controllers\SuperAdmin\HR\PayrollController;
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductStockEntryController;
 use App\Http\Controllers\Department\DepartmentController as DeptController;
@@ -51,6 +54,7 @@ use App\Http\Controllers\Accounts\BankController;
 use App\Http\Controllers\Accounts\ChequeTemplateController;
 
 use App\Http\Controllers\Accounts\AccountsLetterController;
+use App\Http\Controllers\Accounts\PayrollReviewController;
 
 use App\Http\Controllers\Client\ClientController;
 use App\Http\Controllers\Client\ClientLedgerController;
@@ -201,6 +205,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('approvals', ApprovalController::class);
         Route::resource('importantLetter', ImportantLetterController::class);
         Route::resource('documents', DocumentController::class);
+    Route::resource('employees', EmployeeController::class);
         Route::resource('calibrations', CalibrationController::class);
         Route::resource('iscodes', ISCodeController::class);
 
@@ -292,6 +297,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
 
         Route::resource('accountBookingsLetters', AccountsLetterController::class);
+        Route::get('accounts/payroll', [PayrollReviewController::class, 'index'])->name('accounts.payroll.index');
+        Route::get('accounts/payroll/{cycle}/download-bank', [PayrollReviewController::class, 'downloadBankCsv'])->name('accounts.payroll.download-bank');
 
         // Cheques
         Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
@@ -372,11 +379,27 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // Leave Management
         Route::prefix('leaves')->name('leave.')->group(function () {
             Route::get('/', [LeaveController::class, 'index'])->name('Leave');
+            Route::get('/export/pdf', [LeaveController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/export/excel', [LeaveController::class, 'exportExcel'])->name('export.excel');
             Route::post('/', [LeaveController::class, 'store'])->name('store');
             Route::put('/{leave}', [LeaveController::class, 'update'])->name('update');
             Route::put('/{leave}/approve', [LeaveController::class, 'approve'])->name('approve');
             Route::delete('/{leave}', [LeaveController::class, 'destroy'])->name('destroy');
             Route::post('/calculate-days', [LeaveController::class, 'calculateDays'])->name('calculate-days');
+        });
+
+        Route::prefix('hr')->name('hr.')->group(function () {
+            Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+            Route::post('/payroll/cycle', [PayrollController::class, 'store'])->name('payroll.store');
+            Route::post('/payroll/cycle/{cycle}/refresh', [PayrollController::class, 'refresh'])->name('payroll.refresh');
+            Route::patch('/payroll/cycle/{cycle}', [PayrollController::class, 'updateStatus'])->name('payroll.update-status');
+            Route::patch('/payroll/entries/{entry}', [PayrollController::class, 'updateEntry'])->name('payroll.entries.update');
+            Route::post('/payroll/entries/bulk-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.entries.bulk-status');
+            Route::get('/payroll/{cycle}/download-bank', [PayrollController::class, 'downloadBankCsv'])->name('payroll.download-bank');
+            Route::get('/payroll/{cycle}/download', [PayrollController::class, 'download'])->name('payroll.download');
+            Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+            Route::post('/attendance/manual', [AttendanceController::class, 'storeManual'])->name('attendance.store-manual');
+            Route::post('/attendance/import-biometric', [AttendanceController::class, 'importBiometric'])->name('attendance.import-biometric');
         });
 
             // Lab Analysts - reports dropdown and viewer
