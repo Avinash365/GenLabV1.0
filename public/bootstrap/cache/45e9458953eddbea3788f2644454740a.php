@@ -192,8 +192,6 @@
                                     <li><a href="<?php echo e(route('superadmin.cashPayments.index')); ?>">Invoice Transaction</a></li>
                                     <li><a href="<?php echo e(route('superadmin.client-ledger.index')); ?>">Client Ledger</a></li>
                                     <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
-                                    <li><a href="">Office Expenses</a></li>
-                                    <li><a href="#">Marketing Expenses</a></li>
                                     <li><a href="#">Purchase Bill</a></li> 
                                     <li><a href="<?php echo e(route('superadmin.bank.upload')); ?>">Bank Transactions</a></li>
                                 </ul>
@@ -262,6 +260,9 @@
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.personal.expenses.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">Personal Expenses</a>
+                                </li>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.view')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.view') ? 'active' : ''); ?>">Marketing Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.office.expenses.view')); ?>" class="<?php echo e(Request::routeIs('superadmin.office.expenses.view') ? 'active' : ''); ?>">Office Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.approved') ? 'active' : ''); ?>">Approve Expenses</a></li>

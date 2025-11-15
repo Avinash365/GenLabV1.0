@@ -106,6 +106,11 @@
                                     <a href="<?php echo e($employee->resume_url); ?>" target="_blank" class="ms-auto btn btn-sm btn-outline-primary">View</a>
                                 <?php endif; ?>
                             </li>
+                            <li class="d-flex align-items-center">
+                                <i class="ti ti-folders me-2"></i>
+                                Other documents
+                                <span class="ms-auto text-muted"><?php echo e($employee->other_documents_count); ?> <?php echo e($employee->other_documents_count === 1 ? 'file' : 'files'); ?></span>
+                            </li>
                         </ul>
                     </div>
                 </div>
@@ -427,6 +432,10 @@ unset($__errorArgs, $__bag); ?>
                             <div class="col-12">
                                 <h6 class="fw-semibold border-bottom pb-2 mt-4">Documents</h6>
                             </div>
+                            <?php
+                                $otherDocuments = collect($employee->other_documents);
+                                $otherDocumentsCount = $otherDocuments->count();
+                            ?>
                             <div class="col-md-6">
                                 <label class="form-label">Profile Photo</label>
                                 <input type="file" name="profile_photo" class="form-control">
@@ -453,6 +462,35 @@ if (isset($__messageOriginal)) { $message = $__messageOriginal; }
 endif;
 unset($__errorArgs, $__bag); ?>
                             </div>
+                            <div class="col-12">
+                                <label class="form-label d-flex align-items-center justify-content-between">
+                                    <span>Others</span>
+                                    <span class="badge bg-light text-dark" id="other-documents-count"><?php echo e($otherDocumentsCount); ?> uploaded</span>
+                                </label>
+                                <input type="file" name="other_documents[]" class="form-control" multiple data-count-target="#other-documents-count" data-existing-count="<?php echo e($otherDocumentsCount); ?>">
+                                <small class="text-muted">Upload PDF, DOC, DOCX, JPG, or PNG files up to 5MB each.</small>
+                                <?php $otherDocErrors = collect($errors->get('other_documents.*'))->flatten(); ?>
+                                <?php if($otherDocErrors->isNotEmpty()): ?>
+                                    <small class="text-danger d-block"><?php echo e($otherDocErrors->first()); ?></small>
+                                <?php endif; ?>
+                                <?php if($otherDocumentsCount > 0): ?>
+                                    <ul class="list-unstyled small mt-2 mb-0">
+                                        <?php $__currentLoopData = $otherDocuments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $document): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <?php
+                                                $documentName = $document['name'] ?? ('Document '.($index + 1));
+                                                $documentUrl = isset($document['path']) ? \Illuminate\Support\Facades\Storage::disk('public')->url($document['path']) : null;
+                                            ?>
+                                            <li class="d-flex align-items-center mb-1">
+                                                <i class="ti ti-paperclip me-2"></i>
+                                                <span class="flex-grow-1 text-truncate"><?php echo e($documentName); ?></span>
+                                                <?php if($documentUrl): ?>
+                                                    <a href="<?php echo e($documentUrl); ?>" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+                                                <?php endif; ?>
+                                            </li>
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                    </ul>
+                                <?php endif; ?>
+                            </div>
                         </div>
                     </div>
                     <div class="card-footer d-flex justify-content-end gap-2">
@@ -465,6 +503,47 @@ unset($__errorArgs, $__bag); ?>
     </div>
 </div>
 <?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    var otherInput = document.querySelector('input[name="other_documents[]"]');
+
+    if (!otherInput) {
+        return;
+    }
+
+    var countTargetSelector = otherInput.getAttribute('data-count-target');
+    var countTarget = countTargetSelector ? document.querySelector(countTargetSelector) : null;
+    var baseCount = parseInt(otherInput.getAttribute('data-existing-count') || '0', 10);
+
+    var formatLabel = function (total, newlySelected) {
+        var label = total + (total === 1 ? ' file uploaded' : ' files uploaded');
+
+        if (newlySelected > 0) {
+            label += ' (' + newlySelected + ' new)';
+        }
+
+        return label;
+    };
+
+    var updateLabel = function () {
+        if (!countTarget) {
+            return;
+        }
+
+        var selectedCount = otherInput.files ? otherInput.files.length : 0;
+        var total = baseCount + selectedCount;
+
+        countTarget.textContent = formatLabel(total, selectedCount);
+    };
+
+    updateLabel();
+
+    otherInput.addEventListener('change', updateLabel);
+});
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->startPush('styles'); ?>
 <style>

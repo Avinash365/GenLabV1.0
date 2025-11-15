@@ -86,4 +86,16 @@ class Employee extends Model
     {
         return $this->resume_path ? Storage::disk('public')->url($this->resume_path) : null;
     }
+
+    public function getOtherDocumentsAttribute(): array
+    {
+        $details = $this->additional_details ?? [];
+
+        return array_values($details['other_documents'] ?? []);
+    }
+
+    public function getOtherDocumentsCountAttribute(): int
+    {
+        return count($this->other_documents);
+    }
 }

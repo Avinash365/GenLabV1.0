@@ -191,8 +191,6 @@
                                     <li><a href="{{route('superadmin.cashPayments.index')}}">Invoice Transaction</a></li>
                                     <li><a href="{{route('superadmin.client-ledger.index')}}">Client Ledger</a></li>
                                     <li><a href="{{ route('superadmin.marketing-person-ledger.index') }}">Marketing Person Ledger</a></li>
-                                    <li><a href="">Office Expenses</a></li>
-                                    <li><a href="#">Marketing Expenses</a></li>
                                     <li><a href="#">Purchase Bill</a></li> 
                                     <li><a href="{{ route('superadmin.bank.upload') }}">Bank Transactions</a></li>
                                 </ul>
@@ -261,6 +259,9 @@
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul>
+                                <li>
+                                    <a href="{{ route('superadmin.personal.expenses.index') }}" class="{{ Request::routeIs('superadmin.personal.expenses.*') ? 'active' : '' }}">Personal Expenses</a>
+                                </li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.view') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.view') ? 'active' : '' }}">Marketing Expenses</a></li>
                                 <li><a href="{{ route('superadmin.office.expenses.view') }}" class="{{ Request::routeIs('superadmin.office.expenses.view') ? 'active' : '' }}">Office Expenses</a></li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.approved') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.approved') ? 'active' : '' }}">Approve Expenses</a></li>
