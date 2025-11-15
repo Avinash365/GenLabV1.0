@@ -1,5 +1,10 @@
 <?php
     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user();
+    $sidebarDepartments = $departments ?? app(\App\Services\GetUserActiveDepartment::class)->getDepartment();
+    $routeDepartment = request()->route('department');
+    $currentDepartmentId = isset($department) && $department instanceof \App\Models\Department
+        ? $department->id
+        : ($routeDepartment instanceof \App\Models\Department ? $routeDepartment->id : null);
 ?>
 
 <div class="sidebar" id="sidebar">
@@ -45,11 +50,11 @@
                                 <li><a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.showbooking.bookingByLetter.index') ? 'active' : ''); ?>">Show Booking</a></li>
                                 <li><a href="<?php echo e(route('superadmin.showbooking.showBooking')); ?>" class="<?php echo e(Request::routeIs('superadmin.showbooking.showBooking') ? 'active' : ''); ?>">Booking By Letter</a></li>
                                
-                                <?php $__currentLoopData = $departments ?? []; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $department): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $__currentLoopData = $sidebarDepartments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <li>
-                                        <a href="<?php echo e(route('superadmin.showbooking.showBooking', $department->id)); ?>" 
-                                        class="<?php echo e(Request::is('superadmin/departments/'.$department->id) ? 'active' : ''); ?>">
-                                            <?php echo e($department->name); ?>
+                                        <a href="<?php echo e(route('superadmin.showbooking.showBooking', $dept->id)); ?>" 
+                                        class="<?php echo e($currentDepartmentId === $dept->id ? 'active' : ''); ?>">
+                                            <?php echo e($dept->name); ?>
 
                                         </a>
                                     </li>
@@ -116,15 +121,57 @@
                             </li> 
                         <?php endif; ?> 
 
-                        <li><a href="#"><i class="ti ti-users fs-16 me-2"></i><span>Employees</span></a></li>
-                        <li><a href="#"><i class="ti ti-briefcase fs-16 me-2"></i><span>HR</span></a></li>
+                        <?php
+                            $showLeaveMenu = $user && ($user instanceof Admin || $user->hasPermission('leave.view'));
+                            $hrMenuOpen = Request::routeIs('superadmin.employees.*')
+                                || Request::routeIs('superadmin.leave.*')
+                                || Request::routeIs('superadmin.hr.*');
+                        ?>
+                        <li class="submenu <?php echo e($hrMenuOpen ? 'submenu-open' : ''); ?>">
+                            <a href="javascript:void(0)">
+                                <i class="ti ti-briefcase fs-16 me-2"></i><span>HR</span><span class="menu-arrow"></span>
+                            </a>
+                            <ul>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.employees.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.employees.*') ? 'active' : ''); ?>">
+                                        Employees
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.hr.payroll.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.hr.payroll.*') ? 'active' : ''); ?>">
+                                        Payroll
+                                    </a>
+                                </li>
+                                <?php if($showLeaveMenu): ?>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.leave.Leave')); ?>" class="<?php echo e(Request::routeIs('superadmin.leave.*') ? 'active' : ''); ?>">
+                                            Leaves
+                                        </a>
+                                    </li>
+                                <?php endif; ?>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.hr.attendance.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.hr.attendance.*') ? 'active' : ''); ?>">
+                                        Attendance
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
                         <!-- Accounts --> 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('account.edit'))): ?>
                             <li class="submenu <?php echo e(Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : ''); ?>">
                                 <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                                 <ul>
-                                    <li><a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>">All Letters</a></li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.accounts.payroll.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : ''); ?>">
+                                            Employees Salary
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accountBookingsLetters.*') ? 'active' : ''); ?>">
+                                            All Letters
+                                        </a>
+                                    </li>
                                     <li>
                                         <a href="<?php echo e(route('superadmin.cheques.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.cheques.*') ? 'active' : ''); ?>">Cheques</a>
                                     </li>
@@ -222,7 +269,6 @@
                             </ul>
                         </li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
-                        <li><a href="#"><i class="ti ti-calendar-check fs-16 me-2"></i><span>Attendance</span></a></li>
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
@@ -233,10 +279,6 @@
                             </li>
                         <?php endif; ?>
 
-                        <?php if($user && ($user instanceof Admin || $user->hasPermission('leave.view'))): ?>
-                            <li><a href="<?php echo e(route('superadmin.leave.Leave')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>
-                        <?php endif; ?>
- 
                         <!--settings-->
                         <?php if($user && ($user instanceof Admin 
                                 || $user->hasPermission('web-settings.view') 

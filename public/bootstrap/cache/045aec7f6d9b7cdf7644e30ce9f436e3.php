@@ -42,7 +42,7 @@
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
-                    <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" >
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Reference No.</label>
@@ -130,16 +130,18 @@
                                 </td>
                                 <td>
                                     <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
-                                        <?php echo csrf_field(); ?>
-                                        <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
-                                            <option value="">-- Select Report --</option>
-                                            <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
-                                                    <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+                                        <?php echo csrf_field(); ?> 
+                                        <?php if($item->received_at): ?>
+                                            <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
+                                                <option value="">-- Select Report --</option>
+                                                <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                    <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                        <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
 
-                                                </option>
-                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                        </select>
+                                                    </option>
+                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                            </select> 
+                                        <?php endif; ?>
                                     </form>
                                 </td> 
                                     <td>
@@ -157,36 +159,36 @@
                                         <?php endif; ?>
                                     </td>
                                     <td>
-    <?php
-        $assignedReport = $item->reports->first(); // get assigned report
-        $pivotId = $assignedReport->pivot->id ?? null;
-    ?> 
+                                        <?php
+                                            $assignedReport = $item->reports->first(); // get assigned report
+                                            $pivotId = $assignedReport->pivot->id ?? null;
+                                        ?> 
 
-    <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>  
-        <a href="<?php echo e(route('generateReportPDF.editReport', $pivotId)); ?>" target="_blank" class="btn btn-sm btn-success">
-            Edit
-        </a>
+                                        <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>  
+                                            <a href="<?php echo e(route('generateReportPDF.editReport', $pivotId)); ?>" target="_blank" class="btn btn-sm btn-success">
+                                                Edit
+                                            </a>
 
-    <?php elseif($assignedReport): ?>
-        <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
-            Generated Report
-        </a>
+                                        <?php elseif($assignedReport): ?>
+                                            <a href="<?php echo e(route('generateReportPDF.generate', $item->id)); ?>" target="_blank" class="btn btn-sm btn-success">
+                                                Generated Report
+                                            </a>
 
-    <?php else: ?>
-        <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
-            <?php echo csrf_field(); ?>
-            <?php if($item->received_at): ?>
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
-                    Submit
-                </button>
-            <?php else: ?>
-                <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
-                    Receive
-                </button>
-            <?php endif; ?>
-        </form>
-    <?php endif; ?>
-</td>
+                                        <?php else: ?>
+                                            <form method="POST" action="<?php echo e(route('superadmin.reporting.receive', $item)); ?>" class="receive-form" id="receive-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>">
+                                                <?php echo csrf_field(); ?>
+                                                <?php if($item->received_at): ?>
+                                                    <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
+                                                        Submit
+                                                    </button>
+                                                <?php else: ?>
+                                                    <button type="button" class="btn btn-sm receive-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
+                                                        Receive
+                                                    </button>
+                                                <?php endif; ?>
+                                            </form>
+                                        <?php endif; ?>
+                                    </td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
@@ -196,7 +198,6 @@
                     </tbody>
                 </table>
             </div>
-
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div>
                     <?php echo e($items->links()); ?>
@@ -227,7 +228,96 @@
                 </div>
             </div>
         </div>
+    </div>  
+
+    
+    
+    
+    <?php
+        $cementItems = $items->filter(function($item) {
+            // Check if description includes "cement" and PDF is generated
+            $descMatch = stripos($item->sample_description, 'cement') !== false;
+            $hasGeneratedReport = $item->reports->first()?->pivot?->pdf_path;
+            return $descMatch && $hasGeneratedReport;
+        });
+    ?>
+
+    <?php if($cementItems->count() > 0): ?>
+    <div class="card mt-4">
+        <div class="card-header bg-light">
+            <h5 class="mb-0">Cement Reports 28 Days(Generated)</h5>
+        </div> 
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>Job No.</th>
+                            <th>Client Name</th>
+                            <th>Sample Description</th>
+                            <th>Report No.</th>
+                            <th>Generated On</th>
+                            <th>View PDF</th>
+                            <th>Action </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php $__currentLoopData = $cementItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php
+                                $assignedReport = $item->reports->first();
+                                $pivotId = $assignedReport->pivot->id ?? null;
+
+                                $assignedReport28days = $item->reports_28days->first();
+                                $pivotId28days = $assignedReport28days->pivot->id ?? null;
+
+                            ?>
+                            <tr>
+                                <td><?php echo e($item->job_order_no); ?></td>
+                                <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
+                                <td><?php echo e($item->sample_description); ?></td>
+                                <td><?php echo e($assignedReport->report_no ?? 'Report #'.$assignedReport->id); ?></td>
+                                <td>
+                                    <?php if($assignedReport->pivot->updated_at): ?>
+                                        <?php echo e(\Carbon\Carbon::parse($assignedReport->pivot->updated_at)->format('d M Y, h:i A')); ?>
+
+                                    <?php else: ?>
+                                        -
+                                    <?php endif; ?>
+                                </td> 
+                                <td>
+                                    <a href="<?php echo e(route('viewPdf', basename($assignedReport->pivot->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info">
+                                        View PDF
+                                    </a>
+                                </td> 
+                               <td>
+                                    
+                                    <?php if($pivotId28days): ?>
+                                        
+                                        <a href="<?php echo e(route('generateReportPDF.editReport', ['pivotId' => $pivotId28days, 'type' => '28day'])); ?>" target="_blank" class="btn btn-sm btn-success">
+                                            Edit
+                                        </a>
+                                        
+                                        <?php if($assignedReport28days?->pivot?->pdf_path): ?>
+                                            <a href="<?php echo e(route('viewPdf', basename($assignedReport28days->pivot->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info">
+                                                View PDF
+                                            </a>
+                                        <?php endif; ?>
+                                    <?php else: ?>
+                                        
+                                        <a href="<?php echo e(route('generateReportPDF.generate', ['item' => $item->id, 'type' => '28day'])); ?>" target="_blank" class="btn btn-sm btn-success">
+                                            Generate 28Days Report
+                                        </a>
+                                    <?php endif; ?>
+                                </td>
+                            </tr>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+    <?php endif; ?>
+
 
     
     <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">
@@ -244,8 +334,12 @@
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </div>  
+
+</div> 
+
+
+
 <?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>

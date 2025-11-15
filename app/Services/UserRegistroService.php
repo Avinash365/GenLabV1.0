@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Employee;
 use App\Models\User;
 use App\Models\Role;
 use App\Models\Permission;
@@ -65,6 +66,9 @@ class UserRegistroService
             // Attach permissions if any
             $user->permissions()->sync($validated['permissions'] ?? []);
 
+            $role = Role::find($validated['role']);
+            $this->syncEmployeeProfile($user, $role);
+
             Log::info("User created successfully", ['user_id' => $user->id, 'admin_id' => auth('admin')->id()]);
             
             $roles = Role::all(); 
@@ -107,6 +111,9 @@ class UserRegistroService
 
             $user->update($data);
 
+            $role = Role::find($validated['role_id']);
+            $this->syncEmployeeProfile($user->fresh(), $role);
+
             Log::info("User updated successfully", [
                 'user_id'  => $user->id,
                 'admin_id' => auth('admin')->id()
@@ -140,12 +147,18 @@ class UserRegistroService
     public function delete(User $user)
     {
         try {
+            $employee = $user->employee;
             $user->delete();
 
             Log::info("User soft-deleted", [
                 'user_id'  => $user->id,
                 'admin_id' => auth('admin')->id()
             ]);
+
+            if ($employee) {
+                $employee->employment_status = 'inactive';
+                $employee->save();
+            }
 
             return back()->with('success', 'User deleted successfully.');
 
@@ -162,6 +175,12 @@ class UserRegistroService
             // Ensure we can restore soft-deleted user
             $user->restore();
 
+            if ($user->employee) {
+                $employee = $user->employee;
+                $employee->employment_status = 'active';
+                $employee->save();
+            }
+
             Log::info("User restored", [
                 'user_id'  => $user->id,
                 'admin_id' => auth('admin')->id()
@@ -177,5 +196,43 @@ class UserRegistroService
 
             return false;
         }
+    }
+
+    protected function syncEmployeeProfile(User $user, ?Role $role = null): void
+    {
+        [$firstName, $lastName] = $this->splitName($user->name);
+
+        $employee = Employee::query()->firstOrNew(['user_id' => $user->id]);
+
+        $employee->employee_code = $user->user_code;
+        $employee->first_name = $firstName;
+        $employee->last_name = $lastName;
+
+        if ($role) {
+            $employee->department = $role->role_name;
+        }
+
+        if (empty($employee->employment_status)) {
+            $employee->employment_status = 'active';
+        }
+
+        if (empty($employee->date_of_joining)) {
+            $employee->date_of_joining = now();
+        }
+
+        $employee->save();
+    }
+
+    protected function splitName(string $name): array
+    {
+        $trimmed = trim($name);
+
+        if ($trimmed === '') {
+            return ['User', null];
+        }
+
+        $parts = preg_split('/\s+/', $trimmed, 2);
+
+        return [$parts[0] ?? $trimmed, $parts[1] ?? null];
     }
 }

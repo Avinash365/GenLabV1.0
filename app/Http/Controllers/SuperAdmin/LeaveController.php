@@ -2,21 +2,23 @@
 
 namespace App\Http\Controllers\Superadmin;
 
+use App\Exports\LeavesExport;
 use App\Http\Controllers\Controller;
 use App\Models\Leave;
 use App\Models\User;
-use Illuminate\Http\Request;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Maatwebsite\Excel\Facades\Excel;
 
 class LeaveController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-            $leaves = Leave::with(['user', 'approver'])
-                          ->orderBy('created_at', 'desc')
-                          ->get();
+            $leaves = $this->buildLeavesQuery($request)->get();
         } catch (\Exception $e) {
             // If table doesn't exist yet, provide empty collection
             $leaves = collect([]);
@@ -30,6 +32,42 @@ class LeaveController extends Controller
         }
         
         return view('superadmin.leaves.leave', compact('leaves', 'users'));  
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $leaves = $this->buildLeavesQuery($request)->get();
+
+        if ($leaves->isEmpty()) {
+            return redirect()->route('superadmin.leave.Leave')->with('error', 'No leave records available to export.');
+        }
+
+        $pdf = Pdf::loadView('superadmin.leaves.export_pdf', [
+            'leaves' => $leaves,
+            'generatedAt' => Carbon::now(),
+            'filters' => [
+                'status' => $request->input('status'),
+                'date' => $request->input('date'),
+                'search' => $request->input('search'),
+            ],
+        ])->setPaper('a4', 'landscape');
+
+        $filename = sprintf('leave-applications-%s.pdf', Carbon::now()->format('Ymd_His'));
+
+        return $pdf->download($filename);
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $leaves = $this->buildLeavesQuery($request)->get();
+
+        if ($leaves->isEmpty()) {
+            return redirect()->route('superadmin.leave.Leave')->with('error', 'No leave records available to export.');
+        }
+
+        $filename = sprintf('leave-applications-%s.xlsx', Carbon::now()->format('Ymd_His'));
+
+        return Excel::download(new LeavesExport($leaves), $filename);
     }
 
     public function store(Request $request)
@@ -98,12 +136,19 @@ class LeaveController extends Controller
             'admin_comments' => 'nullable|string'
         ]);
 
-        $leave->update([
+        $approverUserId = $this->resolveApproverUserId();
+
+        $payload = [
             'status' => $request->status,
-            'approved_by' => Auth::id(),
             'approved_at' => Carbon::now(),
-            'admin_comments' => $request->admin_comments
-        ]);
+            'admin_comments' => $request->admin_comments,
+        ];
+
+        if ($approverUserId !== null) {
+            $payload['approved_by'] = $approverUserId;
+        }
+
+        $leave->update($payload);
 
         $statusText = $request->status === 'Approved' ? 'approved' : 'rejected';
         return redirect()->back()->with('success', "Leave application {$statusText} successfully.");
@@ -123,5 +168,61 @@ class LeaveController extends Controller
         $days = $fromDate->diffInDays($toDate) + 1;
         
         return response()->json(['days' => $days]);
+    }
+
+    protected function resolveApproverUserId(): ?int
+    {
+        $webUser = Auth::guard('web')->user();
+
+        if ($webUser instanceof User) {
+            return $webUser->getKey();
+        }
+
+        $adminUser = Auth::guard('admin')->user();
+
+        if ($adminUser && !empty($adminUser->email)) {
+            return User::query()
+                ->where('email', $adminUser->email)
+                ->value('id');
+        }
+
+        return null;
+    }
+
+    protected function buildLeavesQuery(Request $request): Builder
+    {
+        $query = Leave::query()
+            ->with(['user', 'approver'])
+            ->orderByDesc('created_at');
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->input('status'));
+        }
+
+        if ($request->filled('date')) {
+            try {
+                $date = Carbon::parse($request->input('date'))->startOfDay();
+                $query->whereDate('from_date', '<=', $date)
+                    ->whereDate('to_date', '>=', $date);
+            } catch (\Exception $exception) {
+                // Ignore invalid date filters
+            }
+        }
+
+        if ($request->filled('search')) {
+            $search = $request->input('search');
+            $query->where(function (Builder $builder) use ($search) {
+                $like = '%' . $search . '%';
+                $builder->where('employee_name', 'like', $like)
+                    ->orWhere('leave_type', 'like', $like)
+                    ->orWhere('status', 'like', $like)
+                    ->orWhereHas('user', function (Builder $subQuery) use ($like) {
+                        $subQuery->where('name', 'like', $like)
+                            ->orWhere('email', 'like', $like);
+                    });
+            });
+        }
+
+        return $query;
     }
 }

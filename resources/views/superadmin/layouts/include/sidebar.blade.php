@@ -1,5 +1,10 @@
 @php
     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user();
+    $sidebarDepartments = $departments ?? app(\App\Services\GetUserActiveDepartment::class)->getDepartment();
+    $routeDepartment = request()->route('department');
+    $currentDepartmentId = isset($department) && $department instanceof \App\Models\Department
+        ? $department->id
+        : ($routeDepartment instanceof \App\Models\Department ? $routeDepartment->id : null);
 @endphp
 
 <div class="sidebar" id="sidebar">
@@ -45,11 +50,11 @@
                                 <li><a href="{{ route('superadmin.bookings.bookingByLetter.index') }}" class="{{ Request::routeIs('superadmin.showbooking.bookingByLetter.index') ? 'active' : '' }}">Show Booking</a></li>
                                 <li><a href="{{ route('superadmin.showbooking.showBooking') }}" class="{{ Request::routeIs('superadmin.showbooking.showBooking') ? 'active' : '' }}">Booking By Letter</a></li>
                                
-                                @foreach($departments ?? [] as $department)
+                                @foreach($sidebarDepartments as $dept)
                                     <li>
-                                        <a href="{{ route('superadmin.showbooking.showBooking', $department->id) }}" 
-                                        class="{{ Request::is('superadmin/departments/'.$department->id) ? 'active' : '' }}">
-                                            {{ $department->name }}
+                                        <a href="{{ route('superadmin.showbooking.showBooking', $dept->id) }}" 
+                                        class="{{ $currentDepartmentId === $dept->id ? 'active' : '' }}">
+                                            {{ $dept->name }}
                                         </a>
                                     </li>
                                 @endforeach
@@ -115,15 +120,57 @@
                             </li> 
                         @endif 
 
-                        <li><a href="#"><i class="ti ti-users fs-16 me-2"></i><span>Employees</span></a></li>
-                        <li><a href="#"><i class="ti ti-briefcase fs-16 me-2"></i><span>HR</span></a></li>
+                        @php
+                            $showLeaveMenu = $user && ($user instanceof Admin || $user->hasPermission('leave.view'));
+                            $hrMenuOpen = Request::routeIs('superadmin.employees.*')
+                                || Request::routeIs('superadmin.leave.*')
+                                || Request::routeIs('superadmin.hr.*');
+                        @endphp
+                        <li class="submenu {{ $hrMenuOpen ? 'submenu-open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="ti ti-briefcase fs-16 me-2"></i><span>HR</span><span class="menu-arrow"></span>
+                            </a>
+                            <ul>
+                                <li>
+                                    <a href="{{ route('superadmin.employees.index') }}" class="{{ Request::routeIs('superadmin.employees.*') ? 'active' : '' }}">
+                                        Employees
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="{{ route('superadmin.hr.payroll.index') }}" class="{{ Request::routeIs('superadmin.hr.payroll.*') ? 'active' : '' }}">
+                                        Payroll
+                                    </a>
+                                </li>
+                                @if($showLeaveMenu)
+                                    <li>
+                                        <a href="{{ route('superadmin.leave.Leave') }}" class="{{ Request::routeIs('superadmin.leave.*') ? 'active' : '' }}">
+                                            Leaves
+                                        </a>
+                                    </li>
+                                @endif
+                                <li>
+                                    <a href="{{ route('superadmin.hr.attendance.index') }}" class="{{ Request::routeIs('superadmin.hr.attendance.*') ? 'active' : '' }}">
+                                        Attendance
+                                    </a>
+                                </li>
+                            </ul>
+                        </li>
 
                         <!-- Accounts --> 
                         @if($user && ($user instanceof Admin || $user->hasPermission('account.edit')))
                             <li class="submenu {{ Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : '' }}">
                                 <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                                 <ul>
-                                    <li><a href="{{ route('superadmin.accountBookingsLetters.index') }}">All Letters</a></li>
+                                    <li>
+                                        <a href="{{ route('superadmin.accounts.payroll.index') }}" class="{{ Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : '' }}">
+                                            Employees Salary
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="{{ route('superadmin.accountBookingsLetters.index') }}" class="{{ Request::routeIs('superadmin.accountBookingsLetters.*') ? 'active' : '' }}">
+                                            All Letters
+                                        </a>
+                                    </li>
                                     <li>
                                         <a href="{{ route('superadmin.cheques.index') }}" class="{{ Request::routeIs('superadmin.cheques.*') ? 'active' : '' }}">Cheques</a>
                                     </li>
@@ -221,7 +268,6 @@
                             </ul>
                         </li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
-                        <li><a href="#"><i class="ti ti-calendar-check fs-16 me-2"></i><span>Attendance</span></a></li>
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
@@ -232,10 +278,6 @@
                             </li>
                         @endif
 
-                        @if($user && ($user instanceof Admin || $user->hasPermission('leave.view')))
-                            <li><a href="{{ route('superadmin.leave.Leave') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Leave</span></a></li>
-                        @endif
- 
                         <!--settings-->
                         @if($user && ($user instanceof Admin 
                                 || $user->hasPermission('web-settings.view') 
