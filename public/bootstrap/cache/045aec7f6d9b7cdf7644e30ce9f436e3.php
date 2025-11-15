@@ -240,17 +240,17 @@
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
                     ?>
                     <?php if($letter): ?>
-                        <a href="<?php echo e(asset('storage/'.$letter)); ?>" target="_blank" class="btn btn-outline-secondary">Show Letter</a>
+                        <a href="<?php echo e(asset('storage/'.$letter)); ?>" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
                     <?php else: ?>
-                        <button class="btn btn-outline-secondary" type="button" disabled>Show Letter</button>
+                        <button class="btn btn-outline-secondary bulk-action-btn" type="button" disabled>Show Letter</button>
                     <?php endif; ?>
                     <form method="POST" action="<?php echo e(route('superadmin.reporting.receiveAll')); ?>" id="receive-all-form" class="d-inline">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="job" value="<?php echo e($job); ?>">
-                        <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
+                        <button class="btn bulk-action-btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
                     </form>
                        <a href="<?php echo e(route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0])); ?>"
-                            class="btn"
+                            class="btn bulk-action-btn"
                             style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
                             Get All
                         </a>
@@ -861,6 +861,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 <?php $__env->startPush('styles'); ?>
 <style>
+    /* Bulk action buttons share consistent sizing */
+    .bulk-action-btn {
+        min-width: 150px;
+        width: 150px;
+        flex: 0 0 150px;
+        height: 44px;
+        padding: 0 20px !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.2 !important;
+    }
     /* Sharper button appearance */
     .receive-toggle-btn {
         border-width: 1px !important;

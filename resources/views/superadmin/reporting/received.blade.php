@@ -168,8 +168,20 @@
                                     </div>
 
                                     <!-- Hidden by default (for Issue To tab) -->
-                                    <div class="issue-date d-none">
-                                        <input type="date" class="form-control" value="{{ $item->issue_date ?? '2025-11-12' }}">
+                                    @php
+                                        $issueValue = '';
+                                        if ($item->issue_date instanceof \Carbon\Carbon) {
+                                            $issueValue = $item->issue_date->format('Y-m-d');
+                                        } elseif (!empty($item->issue_date)) {
+                                            try {
+                                                $issueValue = \Carbon\Carbon::parse($item->issue_date)->format('Y-m-d');
+                                            } catch (\Throwable $e) {
+                                                $issueValue = '';
+                                            }
+                                        }
+                                    @endphp
+                                    <div class="issue-date issue-date-cell d-none" data-id="{{ $item->id }}">
+                                        <input type="date" class="form-control issue-date-input" value="{{ $issueValue }}">
                                     </div>
 
                                 </td>
@@ -239,17 +251,17 @@
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
                     @endphp
                     @if($letter)
-                        <a href="{{ asset('storage/'.$letter) }}" target="_blank" class="btn btn-outline-secondary">Show Letter</a>
+                        <a href="{{ asset('storage/'.$letter) }}" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
                     @else
-                        <button class="btn btn-outline-secondary" type="button" disabled>Show Letter</button>
+                        <button class="btn btn-outline-secondary bulk-action-btn" type="button" disabled>Show Letter</button>
                     @endif
                     <form method="POST" action="{{ route('superadmin.reporting.receiveAll') }}" id="receive-all-form" class="d-inline">
                         @csrf
                         <input type="hidden" name="job" value="{{ $job }}">
-                        <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; {{ $allReceived ? 'display:none;' : '' }}">Receive All</button>
+                        <button class="btn bulk-action-btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; {{ $allReceived ? 'display:none;' : '' }}">Receive All</button>
                     </form>
                        <a href="{{ route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0]) }}"
-                            class="btn"
+                            class="btn bulk-action-btn"
                             style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
                             Get All
                         </a>
@@ -566,7 +578,8 @@
                 const id = btn.getAttribute('data-id');
                 const mode = btn.getAttribute('data-mode') || 'receive';
                 const form = document.getElementById('receive-form-' + id);
-                const issueInput = document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
+                const row = btn.closest('tr');
+                const issueInput = row ? row.querySelector('.issue-date-input') : document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
 
                 if (mode === 'receive') {
                     // Persist as received immediately so it stays visible on refresh
@@ -859,6 +872,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 @push('styles')
 <style>
+    /* Bulk action buttons share consistent sizing */
+    .bulk-action-btn {
+        min-width: 150px;
+        width: 150px;
+        flex: 0 0 150px;
+        height: 44px;
+        padding: 0 20px !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.2 !important;
+    }
     /* Sharper button appearance */
     .receive-toggle-btn {
         border-width: 1px !important;
