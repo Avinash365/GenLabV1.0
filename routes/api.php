@@ -4,7 +4,11 @@ use App\Http\Controllers\MobileControllers\Auth\UserAuthController;
 use App\Http\Controllers\MobileControllers\Auth\AdminAuthController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Api\ChatApiController;
+use App\Http\Controllers\MobileControllers\Accounts\MarketingPersonInfo; 
+
 use Illuminate\Support\Facades\Route;
+
+
 // Static test file endpoint for client testing
 Route::get('static/test-file', function() {
     $path = public_path('favicon.ico'); // guaranteed to exist in this project
@@ -108,4 +112,35 @@ Route::middleware(['multi_jwt:api_admin'])->prefix('admin/chat')->name('api.admi
     Route::post('/mark-seen', [ChatController::class, 'markSeen']);
     Route::post('/messages/{messageId}/prompt-delete', [ChatController::class, 'promptDelete']);
     Route::post('/users/{user}/set-admin', [ChatController::class, 'setChatAdmin']);
+}); 
+
+
+
+Route::prefix('marketing-person')->group(function () {
+
+    // Fetch Bookings
+    Route::get('{user_code}/bookings', 
+        [MarketingPersonInfo::class, 'fetchBookings']
+    );
+
+    // Fetch Without Bill Bookings
+    Route::get('{user_code}/bookings/without-bill', 
+        [MarketingPersonInfo::class, 'WithoutBillBookings']
+    );
+
+    // Fetch Invoices
+    Route::get('{user_code}/invoices', 
+        [MarketingPersonInfo::class, 'fetchInvoices']
+    );
+
+    // Fetch Invoice Transactions
+    Route::get('{user_code}/invoice-transactions', 
+        [MarketingPersonInfo::class, 'fetchInvoicesTransactions']
+    );
+
+    // Fetch Cash Transactions
+    Route::get('{user_code}/cash-transactions', 
+        [MarketingPersonInfo::class, 'fetchCashTransaction']
+    );
+
 });

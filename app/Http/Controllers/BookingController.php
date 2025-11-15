@@ -69,7 +69,10 @@ class BookingController extends Controller
    
 
     public function store(StoreBookingRequest $request)
-    {   
+    {    
+        // dd($request->all());     
+        // exit; 
+
         
         try {
             // Determine creator dynamically
@@ -99,7 +102,8 @@ class BookingController extends Controller
                     'contact_email',
                     'name_of_work', 
                     'hold_status',
-                    'payment_option', 
+                    'payment_option',  
+                    'm_s', 
                 ]);
 
                 $bookingData['created_by_id']   = $creatorId;

@@ -139,6 +139,8 @@ class MarketingPersonLedger extends Controller
         }
 
         $bookings = $query->latest()->paginate(10);
+        dd($bookings); 
+        exit; 
 
         $isClient = false;
         return view('superadmin.accounts.marketingPerson.partials_bookings', compact('bookings', 'isClient'))->render();

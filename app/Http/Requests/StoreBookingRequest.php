@@ -31,6 +31,7 @@ class StoreBookingRequest extends FormRequest
             'report_issue_to'    => 'required|string|max:255',
             'department_id'      => 'required|exists:departments,id',
             'payment_option'     => 'required|in:bill,without_bill',
+            'm_s'               =>  'nullable|string|max:255',
             'reference_no'       => [
                 'required',
                 'string',

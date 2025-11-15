@@ -30,6 +30,7 @@ class NewBooking extends Model
         'hold_status',
         'payment_option', 
         'upload_letter_path', 
+        'm_s', 
         'created_by_id',
         'created_by_type', 
     ];

@@ -158,7 +158,9 @@ class ReportEditorController extends Controller
 
 
     public function generateReportPDF(Request $request)
-    {     
+    {      
+        // dd($request->all()); 
+        // exit; 
        
         $request->validate([
             'report_no' => 'required|string|max:255',
@@ -178,6 +180,7 @@ class ReportEditorController extends Controller
             'booking_id' => 'required|integer',
             'editing_report_id' => 'nullable|integer',
             'include_header'   => 'nullable', 
+            'm_s' => 'nullable|string|max:255',
         ]);
 
         $headerData = [
@@ -194,6 +197,7 @@ class ReportEditorController extends Controller
             'date_of_issue' => $request->input('date_of_issue') ?? "",
             'name_of_work' => $request->input('name_of_work') ?? "", 
             'include_header' => $request->input('include_header') ?? "0",
+            'm_s' => $request->input('m_s') ?? "",
         ]; 
 
         // Count line breaks for margin adjustments
@@ -480,7 +484,8 @@ class ReportEditorController extends Controller
             'sample_description' => $request->input('sample_description') ?? "",
             'date_of_issue' => $request->input('date_of_issue') ?? "",
             'name_of_work' => $request->input('name_of_work') ?? "",
-            'include_header' => $request->input('include_header') ?? "1",
+            'include_header' => $request->input('include_header') ?? "1", 
+            'm_s' => $request->input('m_s') ?? "",
         ];
 
         // Count line breaks for margin adjustment
