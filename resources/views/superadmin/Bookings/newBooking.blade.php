@@ -130,10 +130,16 @@
                                         <option value="without_bill" {{ old('payment_option') == 'without_bill' ? 'selected' : '' }}>Without Bill</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-sm-12 col-12 mt-3">
-                                <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="name_of_work" placeholder="Enter work name" value="{{ old('name_of_work') }}">
+                            </div> 
+                            <div class="row">   
+                                <div class="col-sm-8 col-12 mt-3">
+                                    <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="name_of_work" placeholder="Enter work name" value="{{ old('name_of_work') }}">
+                                </div>    
+                                <div class="col-sm-4 col-12 mt-3">
+                                    <label class="form-label">M.S <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="{{ old('m_s') }}">
+                                </div> 
                             </div>
                         </div>
                     </div>

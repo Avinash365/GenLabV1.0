@@ -62,6 +62,9 @@
                         <td width="283" valign="top" style="width: 282px; padding: 0px 7px; height: 12px;  border: 1px solid black;">
                             <?php echo nl2br(e($letter_ref . ' & ' . $letter_ref_date)); ?>
 
+                             <br>
+                                <?php echo e("Agence: " . $m_s); ?>
+
                         </td>                
                         <td width="151" style="width: 150px; padding: 0px 7px; height: 12px; border: 1px solid black;">Date of completion of analysis</td>
                         <td width="19" style="width: 19px; padding: 0px 7px; height: 12px; border: 1px solid black;">:</td>

@@ -119,8 +119,8 @@
         <div class="card-body">
             <div class="table-responsive">
                 <div class="tab-container">
-                    <div class="tab-button active w-50" data-tab="all">All</div>
-                    <div class="tab-button w-50 text-centre" data-tab="issue">Issue to</div>
+                    <div class="tab-button btn-outline-secondary active w-50 text-center" data-tab="all">All</div>
+                    <div class="tab-button btn-outline-primary w-50 text-center" data-tab="issue">Issue to</div>
                 </div>
                 <table class="table table-striped" id="report-table">
                     <thead>
@@ -912,49 +912,30 @@ document.addEventListener('DOMContentLoaded', () => {
   margin-bottom: 20px;
   font-family: "Poppins", sans-serif;
 }
-
-/* Each tab button */
+/* 
+Each tab button */
 .tab-button {
   padding: 8px 16px;
   border-radius: 10px 10px 10px 10px;
   font-size: 13px;
   font-weight: 500;
-  color: #555;
-  background: #f5f5f5;
   cursor: pointer;
   transition: all 0.25s ease;
 }
 
-/* Hover effect */
+/* Hover effect
 .tab-button:hover {
   background: #e9ecef;
   color: #111;
-}
-
-/* Active tab */
+} */
+/* 
+Active tab
 .tab-button.active {
   background: #28a745;
   color: white;
   box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-}
+} */
 
-/* Optional: for dark mode feel */
-@media (prefers-color-scheme: dark) {
-  .tab-container {
-    border-color: #444;
-  }
-  .tab-button {
-    background: #2c2c2c;
-    color: #ccc;
-  }
-  .tab-button:hover {
-    background: #3a3a3a;
-  }
-  .tab-button.active {
-    background: #28a745;
-    color: #fff;
-  }
-}
 
 /* ===== File Input Styling ===== */
 form input[type="file"] {

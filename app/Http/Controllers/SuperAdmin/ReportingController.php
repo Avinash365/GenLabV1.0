@@ -42,7 +42,7 @@ class ReportingController extends Controller
                     'sample_description'=> $firstItem->sample_description,
                     'name_of_work'     => $b->client_address,
                     'issued_to'        => $b->report_issue_to,
-                    'ms'               => $b->contractor_name,
+                    'ms'               => $b->m_s,
                 ];
 
                 // Show all items for the same booking/reference
@@ -306,8 +306,7 @@ class ReportingController extends Controller
     {
         $payload = $request->validate([
             'items' => ['required', 'array'],
-            'items.*.id' => ['required', 'integer', 'exists:booking_items,id'],
-            'items.*.issue_date' => ['nullable', 'date'],
+            'items.*.id' => ['required', 'integer', 'exists:booking_items,id']
         ]);
 
         DB::transaction(function () use ($payload) {
@@ -362,7 +361,7 @@ class ReportingController extends Controller
                     'sample_description'=> $firstItem->sample_description,
                     'name_of_work'      => $b->client_address,
                     'issued_to'         => $b->report_issue_to,
-                    'ms'                => $b->contractor_name,
+                    'ms'                => $b->m_s,
                 ];
                 $items = $b->items()->with('booking')->latest('id')->paginate(20)->withQueryString();
             }
