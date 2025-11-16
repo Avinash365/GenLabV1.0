@@ -222,7 +222,7 @@ class MarketingExpenseController extends Controller
                 'personal' => 'Personal Expenses',
                 default    => 'Marketing Expenses',
             },
-        ])->setPaper('a4', 'landscape');
+        ])->setPaper('a4', 'portrait');
 
         $filename = sprintf('%s-expenses-%s.pdf', $section, now()->format('Ymd_His'));
         return $pdf->download($filename);
@@ -246,7 +246,7 @@ class MarketingExpenseController extends Controller
             'from_date'   => 'required|date',
             'to_date'     => 'required|date|after_or_equal:from_date',
             'description' => 'nullable|string|max:2000',
-            'pdf'         => 'nullable|file|mimes:pdf|max:20480',
+            'pdf'         => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:20480',
         ]);
 
         $previousAmount   = (float) $expense->amount;
@@ -375,7 +375,7 @@ class MarketingExpenseController extends Controller
             'amount'                => 'required|numeric|min:0',
             'from_date'             => 'required|date',
             'to_date'               => 'required|date|after_or_equal:from_date',
-            'pdf'                   => 'nullable|file|mimes:pdf|max:20480',
+            'pdf'                   => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:20480',
             'description'           => 'nullable|string|max:2000',
         ]);
 
@@ -622,7 +622,7 @@ class MarketingExpenseController extends Controller
             mkdir($tempDir, 0775, true);
         }
 
-        $mpdf = new Mpdf(['format' => 'A4-L', 'tempDir' => $tempDir]);
+        $mpdf = new Mpdf(['format' => 'A4', 'tempDir' => $tempDir]);
         $mpdf->WriteHTML($summaryHtml);
 
         $receiptPaths = $expenses->pluck('file_path')->filter()->unique()->values();
@@ -633,11 +633,22 @@ class MarketingExpenseController extends Controller
 
             try {
                 $absolutePath = Storage::disk('public')->path($receiptPath);
-                $pageCount = $mpdf->SetSourceFile($absolutePath);
-                for($page = 1; $page <= $pageCount; $page++){
-                    $template = $mpdf->ImportPage($page);
+                $extension = strtolower(pathinfo($absolutePath, PATHINFO_EXTENSION));
+
+                if($extension === 'pdf'){
+                    $pageCount = $mpdf->SetSourceFile($absolutePath);
+                    for($page = 1; $page <= $pageCount; $page++){
+                        $template = $mpdf->ImportPage($page);
+                        $mpdf->AddPage();
+                        $mpdf->UseTemplate($template);
+                    }
+                    continue;
+                }
+
+                if(in_array($extension, ['jpg','jpeg','png','gif','bmp','webp'], true)){
                     $mpdf->AddPage();
-                    $mpdf->UseTemplate($template);
+                    $type = $extension === 'jpg' ? 'jpeg' : $extension;
+                    $mpdf->Image($absolutePath, 10, 10, 190, 0, strtoupper($type));
                 }
             } catch (\Throwable $th) {
                 // Skip problematic attachments but continue generating the consolidated summary

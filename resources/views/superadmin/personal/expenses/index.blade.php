@@ -292,7 +292,7 @@
                     <label class="form-label mt-2">Amount</label>
                     <input id="expAmount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00">
                     <label class="form-label mt-2">Upload Receipt</label>
-                    <input id="pdfFile" type="file" accept="application/pdf" class="form-control">
+                    <input id="pdfFile" type="file" accept="application/pdf,image/*" class="form-control">
                     <label class="form-label mt-2">Description</label>
                     <textarea id="desc" rows="2" class="form-control" placeholder="Optional"></textarea>
                 </div>`,
@@ -433,7 +433,7 @@
                         <label class="form-label mt-2">Expense Date</label>
                         <input id="editDate" type="date" class="form-control">
                         <label class="form-label mt-2">Replace Receipt</label>
-                        <input id="editReceipt" type="file" accept="application/pdf" class="form-control">
+                        <input id="editReceipt" type="file" accept="application/pdf,image/*" class="form-control">
                         <label class="form-label mt-2">Description</label>
                         <textarea id="editDescription" rows="2" class="form-control" placeholder="Optional"></textarea>
                     </div>`,

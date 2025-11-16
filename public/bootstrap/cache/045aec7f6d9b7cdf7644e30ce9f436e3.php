@@ -140,7 +140,7 @@
                                 <td><?php echo e($item->sample_description); ?></td>
                                 <td class="status-cell" data-id="<?php echo e($item->id); ?>">
                                     <?php if($item->received_at): ?>
-                                        Received by <?php echo e($item->received_by_name ?? ($item->receivedBy->name ?? '-')); ?> on <?php echo e($item->received_at->format('d M Y, h:i A')); ?>
+                                        Received by <?php echo e($item->received_by_name ?? ($item->receivedBy->name ?? '-')); ?>
 
                                     <?php elseif($item->analyst): ?>
                                         With Analyst: <?php echo e($item->analyst->name); ?> (<?php echo e($item->analyst->user_code); ?>)
@@ -152,24 +152,41 @@
 
                                     <div class="report-select">
                                         <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
-                                        <?php echo csrf_field(); ?>
-                                        <?php if($item->received_at): ?>
-                                            <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
-                                            <option value="">-- Select Report --</option>
-                                            <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
-                                                <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+                                            <?php echo csrf_field(); ?>
+                                            <?php if($item->received_at): ?>
+                                                <div class="report-picker-card position-relative report-select-wrapper">
+                                                    <select name="report_id"
+                                                        class="form-control form-select reports-picker report-select-enhanced"
+                                                        data-item-id="<?php echo e($item->id); ?>"
+                                                        data-placeholder="-- Select Report --">
+                                                        <option value="">-- Select Report --</option>
+                                                        <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                            <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                                <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
 
-                                                </option>
-                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select>
-                                        <?php endif; ?>
+                                                            </option>
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                    </select>
+                                                </div>
+                                            <?php endif; ?>
                                         </form>
                                     </div>
 
                                     <!-- Hidden by default (for Issue To tab) -->
-                                    <div class="issue-date d-none">
-                                        <input type="date" class="form-control" value="<?php echo e($item->issue_date ?? '2025-11-12'); ?>">
+                                    <?php
+                                        $issueValue = '';
+                                        if ($item->issue_date instanceof \Carbon\Carbon) {
+                                            $issueValue = $item->issue_date->format('Y-m-d');
+                                        } elseif (!empty($item->issue_date)) {
+                                            try {
+                                                $issueValue = \Carbon\Carbon::parse($item->issue_date)->format('Y-m-d');
+                                            } catch (\Throwable $e) {
+                                                $issueValue = '';
+                                            }
+                                        }
+                                    ?>
+                                    <div class="issue-date issue-date-cell d-none" data-id="<?php echo e($item->id); ?>">
+                                        <input type="date" class="form-control issue-date-input" value="<?php echo e($issueValue); ?>">
                                     </div>
 
                                 </td>
@@ -389,6 +406,73 @@
             document.head.appendChild(s);
         }
 
+        // Dynamically load Tom Select once for searchable dropdowns
+        const ensureTomSelect = (() => {
+            let loadPromise = null;
+            return () => {
+                if (window.TomSelect) return Promise.resolve();
+                if (loadPromise) return loadPromise;
+                loadPromise = new Promise((resolve, reject) => {
+                    const cssId = 'tom-select-css';
+                    if (!document.getElementById(cssId)) {
+                        const link = document.createElement('link');
+                        link.id = cssId;
+                        link.rel = 'stylesheet';
+                        link.href = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css';
+                        document.head.appendChild(link);
+                    }
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js';
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Failed to load Tom Select'));
+                    document.head.appendChild(script);
+                });
+                return loadPromise;
+            };
+        })();
+
+        const initReportPickers = () => {
+            const selects = Array.from(document.querySelectorAll('.reports-picker'));
+            if (!selects.length) return;
+            ensureTomSelect().then(() => {
+                selects.forEach((select) => {
+                    if (select.dataset.tsInit === '1') return;
+                    select.dataset.tsInit = '1';
+                    const parent = select.closest('.report-select-wrapper');
+                    const placeholder = select.dataset.placeholder || '-- Select Report --';
+                    const options = {
+                        placeholder,
+                        allowEmptyOption: true,
+                        dropdownParent: parent || document.body,
+                        plugins: ['dropdown_input'],
+                        render: {
+                            option(item, escape) {
+                                return `<div class="option" data-value="${escape(item.value)}">${escape(item.text)}</div>`;
+                            },
+                            item(item, escape) {
+                                return `<div class="item">${escape(item.text || placeholder)}</div>`;
+                            }
+                        },
+                        onChange(value) {
+                            if (typeof value !== 'undefined') {
+                                const form = select.closest('form');
+                                if (form) form.submit();
+                            }
+                        }
+                    };
+                    try {
+                        const instance = new TomSelect(select, options);
+                        const controlEl = instance.control || instance.control_input?.parentElement;
+                        if (controlEl) {
+                            controlEl.classList.add('ts-control-compact');
+                        }
+                    } catch (e) {
+                        console.warn('Tom Select init failed', e);
+                    }
+                });
+            }).catch((err) => console.warn(err));
+        };
+
         // Upload/View Letters handlers
         const uploadForm = document.getElementById('upload-letters-form');
         const viewLettersBtn = document.getElementById('view-letters-btn');
@@ -568,7 +652,8 @@
                 const id = btn.getAttribute('data-id');
                 const mode = btn.getAttribute('data-mode') || 'receive';
                 const form = document.getElementById('receive-form-' + id);
-                const issueInput = document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
+                const row = btn.closest('tr');
+                const issueInput = row ? row.querySelector('.issue-date-input') : document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
 
                 if (mode === 'receive') {
                     // Persist as received immediately so it stays visible on refresh
@@ -583,10 +668,8 @@
                         if (data && data.ok) {
                             const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
                             if (cell) {
-                                const dt = data.received_at ? new Date(data.received_at) : null;
-                                const formatted = (dt && !isNaN(dt)) ? dt.toLocaleString() : '';
                                 const name = data.received_by || data.receiver_name || 'User';
-                                cell.innerHTML = 'Received by ' + name + (formatted ? ' on ' + formatted : '');
+                                cell.textContent = 'Received by ' + name;
                             }
                             if (issueInput) {
                                 issueInput.classList.remove('d-none');
@@ -631,10 +714,8 @@
                     if (data && data.ok) {
                         const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
                         if (cell) {
-                            const dt = data.received_at ? new Date(data.received_at) : null;
-                            const formatted = (dt && !isNaN(dt)) ? dt.toLocaleString() : '';
                             const name = data.received_by || data.receiver_name || 'User';
-                            cell.innerHTML = 'Received by ' + name + (formatted ? ' on ' + formatted : '');
+                            cell.textContent = 'Received by ' + name;
                         }
             // Keep the Issue Date input enabled and visible so user can fill or edit
             if (issueInput) issueInput.classList.remove('d-none');
@@ -686,10 +767,8 @@
                     // Update status for all rows using backend data
                     if (data) {
                         const rn = data.receiver_name || data.received_by || 'User';
-                        const dt = data.received_at ? new Date(data.received_at) : null;
-                        const formatted = (dt && !isNaN(dt)) ? dt.toLocaleString() : '';
                         document.querySelectorAll('.status-cell').forEach(function(cell) {
-                            cell.innerHTML = 'Received by ' + rn + (formatted ? ' on ' + formatted : '');
+                            cell.textContent = 'Received by ' + rn;
                         });
                     }
                     // Flip Receive All -> Submit All and enforce color
@@ -778,6 +857,7 @@
 
         // Initial state check
         updateBulkButtons();
+        initReportPickers();
         // Flash SweetAlert if there is a server flash status message
         try {
             const flashMsg = <?php echo json_encode(session('status'), 15, 512) ?>;
@@ -854,7 +934,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize for both inputs
   handleFilePreview('upload-letters-input', 'file-preview-list');
-  handleFilePreview('upload-docs-input', 'doc-preview-list');
+    handleFilePreview('upload-docs-input', 'doc-preview-list');
 });
 </script>
 
@@ -883,6 +963,83 @@ document.addEventListener('DOMContentLoaded', () => {
         box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
         padding: 6px 12px !important;
         font-weight: 600 !important;
+    }
+    .report-picker-card {
+        display: block;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #d0d5dd;
+        border-radius: 8px;
+        padding: 0;
+        box-shadow: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .report-picker-card:hover,
+    .report-picker-card:focus-within {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        background: #ffffff;
+    }
+    .report-select-wrapper { position: relative; width: 100%; }
+    .ts-wrapper.report-select-enhanced {
+        width: 100%;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control,
+    .ts-control-compact {
+        border: 0 !important;
+        box-shadow: none !important;
+        min-height: 32px;
+        padding: 6px 12px !important;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 500;
+        color: #111827;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control > div {
+        margin: 0;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control input {
+        color: #111827;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control::placeholder,
+    .ts-wrapper.report-select-enhanced .ts-control .item {
+        color: #1f2937;
+        font-weight: 600;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown {
+        background: #ffffff;
+        border: 1px solid #dce2f1;
+        border-radius: 8px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
+        padding: 10px 0 8px;
+        overflow: hidden;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .dropdown-input {
+        border-radius: 6px;
+        border: 1px solid #c7d0ea;
+        padding: 6px 10px;
+        margin: 0 10px 8px;
+        font-size: 12px;
+        background-color: #f4f6fb;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .option {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #111827;
+        border-radius: 0;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .option.active {
+        background: #2563eb;
+        color: #ffffff;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .option:not(.active):hover {
+        background-color: rgba(37, 99, 235, 0.1);
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .no-results {
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #6b7280;
     }
     /* Blue (Receive) */
     .receive-toggle-btn[data-mode="receive"] {

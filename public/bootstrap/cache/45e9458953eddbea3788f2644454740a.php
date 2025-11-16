@@ -11,13 +11,13 @@
     <!-- Logo -->
     <div class="sidebar-logo active">
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-normal">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img" style="height:24px;">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img" style="height:48px;">
         </a>
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-white">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg')); ?>" alt="Img" style="height:24px;">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg')); ?>" alt="Img" style="height:36px;">
         </a>
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo-small">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-small.png')); ?>" alt="Img" style="height:24px;">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-small.png')); ?>" alt="Img" style="height:32px;">
         </a>
         <a id="toggle_btn" href="">
             <i data-feather="chevrons-left" class="feather-16"></i>
@@ -163,11 +163,6 @@
                                 <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                                 <ul>
                                     <li>
-                                        <a href="<?php echo e(route('superadmin.accounts.payroll.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : ''); ?>">
-                                            Employees Salary
-                                        </a>
-                                    </li>
-                                    <li>
                                         <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accountBookingsLetters.*') ? 'active' : ''); ?>">
                                             All Letters
                                         </a>
@@ -194,6 +189,11 @@
                                     <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
                                     <li><a href="#">Purchase Bill</a></li> 
                                     <li><a href="<?php echo e(route('superadmin.bank.upload')); ?>">Bank Transactions</a></li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.accounts.payroll.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : ''); ?>">
+                                            Employees Salary
+                                        </a>
+                                    </li>
                                 </ul>
                             </li> 
                         <?php endif; ?>   

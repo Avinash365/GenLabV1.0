@@ -34,6 +34,7 @@
         <input type="hidden" name="editing_report_id" id="editing_report_id" value="<?php echo e(old('editing_report_id', $assignedReport->id ?? '')); ?>">
         <input type="hidden" name="booking_item_id" value="<?php echo e($item->id); ?>">
         <input type="hidden" name="booking_id" value="<?php echo e($booking->id ?? ''); ?>">
+        <input type="hidden" name="m_s" value="<?php echo e($booking->m_s ?? ''); ?>">
 
         
         <div class="row mb-3">
@@ -261,7 +262,8 @@ document.addEventListener('DOMContentLoaded', () => {
             completion_date: document.getElementById('completion_date').value,
             sample_description: document.getElementById('sample_description').value,
             date_of_issue: document.getElementById('date_of_issue').value,
-            name_of_work: document.getElementById('name_of_work').value, 
+            name_of_work: document.getElementById('name_of_work').value,
+            m_s: '<?php echo e($booking->m_s ?? ""); ?>',
             include_header: document.getElementById('include_header').checked ? 1 : 0, 
         };
 
