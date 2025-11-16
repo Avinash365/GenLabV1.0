@@ -74,13 +74,13 @@
         type="date" 
         class="form-control" 
         name="job_order_date" 
-        value="<?php echo e(old('job_order_date')); ?>" 
+        value="<?php echo e(old('job_order_date', date('Y-m-d'))); ?>"
         <?php echo e($firstBackedBooking == 0 ? 'min=' . date('Y-m-d') : ''); ?>
 
         required
     >
     <?php if($firstBackedBooking == 0): ?>
-        <small class="text-danger">You cannot select a past date.</small>
+        <small class="text-danger"></small>
     <?php endif; ?>
 </div>
 

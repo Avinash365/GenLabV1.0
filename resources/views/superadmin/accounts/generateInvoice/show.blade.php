@@ -234,7 +234,7 @@
                     </tr>
                     <tr>
                         <th>Branch Name</th>
-                        <td class="noteditable" id="td_branch_name">{{ $bankInfo->branch_name ?? 'Harauli' }}</td>
+                        <td class="noteditable" id="td_branch_name">{{ $bankInfo->branch ?? 'Harauli' }}</td>
                     </tr>
                     <tr>
                         <th>Account No</th>

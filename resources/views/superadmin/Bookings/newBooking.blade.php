@@ -75,12 +75,12 @@
         type="date" 
         class="form-control" 
         name="job_order_date" 
-        value="{{ old('job_order_date') }}" 
+        value="{{ old('job_order_date', date('Y-m-d')) }}"
         {{ $firstBackedBooking == 0 ? 'min=' . date('Y-m-d') : '' }}
         required
     >
     @if($firstBackedBooking == 0)
-        <small class="text-danger">You cannot select a past date.</small>
+        <small class="text-danger"></small>
     @endif
 </div>
 

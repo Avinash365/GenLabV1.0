@@ -11,8 +11,7 @@
             <div class="col">
                 <h3 class="page-title">Web Settings</h3>
                 <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="<?php echo e(route('superadmin.dashboard.index')); ?>">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Web Settings</li>
+                     
                 </ul>
             </div>
         </div>

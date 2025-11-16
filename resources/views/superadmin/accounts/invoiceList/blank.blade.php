@@ -80,11 +80,11 @@
                 <h4 class="fw-bold text-uppercase">Blank Invoice</h4>
                 <h6>PDF</h6>
             </div>
-            <div class="page-btn">
+            <!-- <div class="page-btn">
                 <button type="submit" class="btn btn-danger" formaction="">
                     <i class="fa fa-file-pdf me-2"></i>Download PDF
                 </button>
-            </div>
+            </div> -->
         </div>
 
         <div class="card">
@@ -143,7 +143,7 @@
                             <tr>
                                 <td>{{ $j }}</td>
                                 <td contenteditable="true" class="editable"></td>
-                                <td></td>
+                                <td contenteditable="true" class="editable qty"></td>
                                 <td contenteditable="true" class="editable qty"></td>
                                 <td contenteditable="true" class="editable rate"></td>
                                 <td class="amount">0.00</td>
@@ -189,7 +189,11 @@
                             <th id="payableAmount">0.00</th>
                         </tr>
                     </tfoot>
-                </table>
+                </table> 
+                 <div class="d-flex justify-content-end gap-2 mb-3">
+                    <button type="button" id="addRowBtn" class="btn btn-primary"><i class="fa fa-plus me-1"></i> Add Row</button>
+                    <button type="button" id="deleteRowBtn" class="btn btn-danger"><i class="fa fa-trash me-1"></i> Delete Row</button>
+                </div>
 
                 <!-- Banking Information -->
                 <h5 class="fw-bold mb-2">Banking Information</h5>
@@ -204,7 +208,7 @@
                     </tr>
                     <tr>
                         <th>Branch Name</th>
-                        <td class="noteditable" id="td_branch_name">{{ $bankInfo->branch_name ?? 'Harauli' }}</td>
+                        <td class="noteditable" id="td_branch_name">{{ $bankInfo->branch ?? 'Harauli' }}</td>
                     </tr>
                     <tr>
                         <th>Account No</th>
@@ -240,10 +244,10 @@
                     </div>
                 </div>
 
-                <div class="d-flex justify-content-end gap-2 mb-3">
+                <!-- <div class="d-flex justify-content-end gap-2 mb-3">
                     <button type="button" id="addRowBtn" class="btn btn-primary"><i class="fa fa-plus me-1"></i> Add Row</button>
                     <button type="button" id="deleteRowBtn" class="btn btn-danger"><i class="fa fa-trash me-1"></i> Delete Row</button>
-                </div>
+                </div> -->
 
                 <div class="d-flex justify-content-end">
                     <button type="submit" class="btn btn-success" formaction="{{ route('superadmin.blank-invoices.store') }}">
