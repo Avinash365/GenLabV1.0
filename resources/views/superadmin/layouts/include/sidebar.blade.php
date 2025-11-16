@@ -11,13 +11,13 @@
     <!-- Logo -->
     <div class="sidebar-logo active">
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-normal">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img" style="height:24px;">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img" style="height:48px;">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-white">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img" style="height:24px;">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img" style="height:36px;">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo-small">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img" style="height:24px;">
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img" style="height:32px;">
         </a>
         <a id="toggle_btn" href="">
             <i data-feather="chevrons-left" class="feather-16"></i>
@@ -162,11 +162,6 @@
                                 <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
                                 <ul>
                                     <li>
-                                        <a href="{{ route('superadmin.accounts.payroll.index') }}" class="{{ Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : '' }}">
-                                            Employees Salary
-                                        </a>
-                                    </li>
-                                    <li>
                                         <a href="{{ route('superadmin.accountBookingsLetters.index') }}" class="{{ Request::routeIs('superadmin.accountBookingsLetters.*') ? 'active' : '' }}">
                                             All Letters
                                         </a>
@@ -191,10 +186,13 @@
                                     <li><a href="{{route('superadmin.cashPayments.index')}}">Invoice Transaction</a></li>
                                     <li><a href="{{route('superadmin.client-ledger.index')}}">Client Ledger</a></li>
                                     <li><a href="{{ route('superadmin.marketing-person-ledger.index') }}">Marketing Person Ledger</a></li>
-                                    <li><a href="">Office Expenses</a></li>
-                                    <li><a href="#">Marketing Expenses</a></li>
                                     <li><a href="#">Purchase Bill</a></li> 
                                     <li><a href="{{ route('superadmin.bank.upload') }}">Bank Transactions</a></li>
+                                    <li>
+                                        <a href="{{ route('superadmin.accounts.payroll.index') }}" class="{{ Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : '' }}">
+                                            Employees Salary
+                                        </a>
+                                    </li>
                                 </ul>
                             </li> 
                         @endif   
@@ -261,6 +259,9 @@
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul>
+                                <li>
+                                    <a href="{{ route('superadmin.personal.expenses.index') }}" class="{{ Request::routeIs('superadmin.personal.expenses.*') ? 'active' : '' }}">Personal Expenses</a>
+                                </li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.view') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.view') ? 'active' : '' }}">Marketing Expenses</a></li>
                                 <li><a href="{{ route('superadmin.office.expenses.view') }}" class="{{ Request::routeIs('superadmin.office.expenses.view') ? 'active' : '' }}">Office Expenses</a></li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.approved') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.approved') ? 'active' : '' }}">Approve Expenses</a></li>

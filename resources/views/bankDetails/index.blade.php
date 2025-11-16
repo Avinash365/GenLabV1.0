@@ -7,10 +7,7 @@
         <div class="row align-items-center">
             <div class="col">
                 <h3 class="page-title">Bank Details</h3>
-                <ul class="breadcrumb">
-                    <li class="breadcrumb-item"><a href="{{ route('superadmin.dashboard.index') }}">Dashboard</a></li>
-                    <li class="breadcrumb-item active">Bank Details</li>
-                </ul>
+                 
             </div>
         </div>
     </div>

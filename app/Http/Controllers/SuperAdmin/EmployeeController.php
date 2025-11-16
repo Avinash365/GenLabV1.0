@@ -350,9 +350,14 @@ class EmployeeController extends Controller
             'blood_group' => ['nullable', 'string', 'max:10'],
             'profile_photo' => ['nullable', 'image', 'max:2048'],
             'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'other_documents' => ['nullable', 'array'],
+            'other_documents.*' => ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
         ]);
 
-        $payload = Arr::except($data, ['profile_photo', 'resume']);
+        $payload = Arr::except($data, ['profile_photo', 'resume', 'other_documents']);
+
+        $existingDetails = $employee?->additional_details ?? [];
+        $additionalDetails = $existingDetails;
 
         if ($request->hasFile('profile_photo') && $request->file('profile_photo') instanceof UploadedFile) {
             $payload['profile_photo_path'] = $this->storeFile($request->file('profile_photo'), 'employee-photos', $employee?->profile_photo_path);
@@ -360,6 +365,32 @@ class EmployeeController extends Controller
 
         if ($request->hasFile('resume') && $request->file('resume') instanceof UploadedFile) {
             $payload['resume_path'] = $this->storeFile($request->file('resume'), 'employee-resumes', $employee?->resume_path);
+        }
+
+        if ($request->hasFile('other_documents')) {
+            $uploads = [];
+
+            foreach ($request->file('other_documents') as $document) {
+                if (!$document instanceof UploadedFile) {
+                    continue;
+                }
+
+                $uploads[] = [
+                    'path' => $this->storeFile($document, 'employee-documents'),
+                    'name' => $document->getClientOriginalName(),
+                    'size' => $document->getSize(),
+                    'uploaded_at' => now()->toDateTimeString(),
+                ];
+            }
+
+            if (!empty($uploads)) {
+                $existingDocuments = $additionalDetails['other_documents'] ?? [];
+                $additionalDetails['other_documents'] = array_merge($existingDocuments, $uploads);
+            }
+        }
+
+        if (!empty($additionalDetails)) {
+            $payload['additional_details'] = $additionalDetails;
         }
 
         return $payload;

@@ -28,48 +28,48 @@
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3">
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <label class="form-label">Job Card No.</label>
                     <input type="text" class="form-control" value="<?php echo e($header['job_card_no']); ?>" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-8">
                     <label class="form-label">Client Name</label>
                     <input type="text" class="form-control" value="<?php echo e($header['client_name']); ?>" readonly>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-4">
                     <label class="form-label">Job Order Date</label>
                     <input type="date" class="form-control" value="<?php echo e($header['job_order_date']); ?>" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <!-- <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
                     <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" >
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-4">
                     <label class="form-label">Reference No.</label>
                     <input type="text" class="form-control" value="<?php echo e($header['reference_no']); ?>" readonly>
                 </div>
-                <div class="col-md-3">
+                <!-- <div class="col-md-3">
                     <label class="form-label">Sample Description</label>
                     <input type="text" class="form-control" value="<?php echo e($header['sample_description']); ?>" readonly>
-                </div>
-                <div class="col-md-3">
+                </div> -->
+                <div class="col-md-6">
                     <label class="form-label">Name of Work</label>
                     <input type="text" class="form-control" value="<?php echo e($header['name_of_work']); ?>" readonly>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-6">
                     <label class="form-label">Issued To</label>
                     <input type="text" class="form-control" value="<?php echo e($header['issued_to']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="<?php echo e($header['ms']); ?>" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['ms']); ?>">
                 </div>
                 
                 <?php
                     $uploadRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.upload') ? route('superadmin.reporting.letters.upload') : '#';
                     $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $job]) : '';
                 ?>
-                <div class="col-md-6">
+                <div class="col-md-5">
                     <label class="form-label">Upload Report</label>
                     <form method="POST" action="<?php echo e($uploadRoute); ?>" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="<?php echo e($listRoute); ?>">
                         <?php echo csrf_field(); ?>
@@ -82,7 +82,23 @@
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
                         </div>
-                        <small class="text-muted d-block">You can upload multiple files.</small>
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
+                    </form>
+                </div> 
+                <div class="col-md-4">
+                    <label class="form-label">Upload docx</label>
+                    <form method="POST" action="#" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="<?php echo e($listRoute); ?>">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="job" value="<?php echo e($job); ?>">
+                        <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>
+                        <div class="d-flex gap-2 align-items-center">
+                            <button type="submit" class="btn btn-primary" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>Upload</button>
+                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" <?php echo e(empty($listRoute) ? 'disabled' : ''); ?>>
+                                View
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
+                            </button>
+                        </div>
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
                     </form>
                 </div>
                 <?php
@@ -100,27 +116,31 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <div class="tab-container">
+                    <div class="tab-button btn-outline-secondary active w-50 text-center" data-tab="all">All</div>
+                    <div class="tab-button btn-outline-primary w-50 text-center" data-tab="issue">Issue to</div>
+                </div>
+                <table class="table table-striped" id="report-table">
                     <thead>
                         <tr>
                             <th>Job No.</th>
-                            <th>Client Name</th>
+                            <!-- <th>Client Name</th> -->
                             <th>Description</th>
-                            <th>Status</th> 
-                            <th>Select Report</th>  
-                            <th> view </th> 
-                            <th>Action</th> 
+                            <th>Status</th>
+                            <th id="column-header">Select Report</th>
+                            <th> view </th>
+                            <th>Action</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="table-body">
                         <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
                                 <td><?php echo e($item->job_order_no); ?></td>
-                                <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
+                                <!-- <td><?php echo e($item->booking->client_name ?? '-'); ?></td> -->
                                 <td><?php echo e($item->sample_description); ?></td>
                                 <td class="status-cell" data-id="<?php echo e($item->id); ?>">
                                     <?php if($item->received_at): ?>
-                                        Received by <?php echo e($item->received_by_name ?? ($item->receivedBy->name ?? '-')); ?> on <?php echo e($item->received_at->format('d M Y, h:i A')); ?>
+                                        Received by <?php echo e($item->received_by_name ?? ($item->receivedBy->name ?? '-')); ?>
 
                                     <?php elseif($item->analyst): ?>
                                         With Analyst: <?php echo e($item->analyst->name); ?> (<?php echo e($item->analyst->user_code); ?>)
@@ -129,21 +149,47 @@
                                     <?php endif; ?>
                                 </td>
                                 <td>
-                                    <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
-                                        <?php echo csrf_field(); ?> 
-                                        <?php if($item->received_at): ?>
-                                            <select name="report_id" class="form-control form-select" onchange="document.getElementById('assign-report-form-<?php echo e($item->id); ?>').submit()">
-                                                <option value="">-- Select Report --</option>
-                                                <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
-                                                        <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
 
-                                                    </option>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select> 
-                                        <?php endif; ?>
-                                    </form>
-                                </td> 
+                                    <div class="report-select">
+                                        <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
+                                            <?php echo csrf_field(); ?>
+                                            <?php if($item->received_at): ?>
+                                                <div class="report-picker-card position-relative report-select-wrapper">
+                                                    <select name="report_id"
+                                                        class="form-control form-select reports-picker report-select-enhanced"
+                                                        data-item-id="<?php echo e($item->id); ?>"
+                                                        data-placeholder="-- Select Report --">
+                                                        <option value="">-- Select Report --</option>
+                                                        <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                            <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                                <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+
+                                                            </option>
+                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                    </select>
+                                                </div>
+                                            <?php endif; ?>
+                                        </form>
+                                    </div>
+
+                                    <!-- Hidden by default (for Issue To tab) -->
+                                    <?php
+                                        $issueValue = '';
+                                        if ($item->issue_date instanceof \Carbon\Carbon) {
+                                            $issueValue = $item->issue_date->format('Y-m-d');
+                                        } elseif (!empty($item->issue_date)) {
+                                            try {
+                                                $issueValue = \Carbon\Carbon::parse($item->issue_date)->format('Y-m-d');
+                                            } catch (\Throwable $e) {
+                                                $issueValue = '';
+                                            }
+                                        }
+                                    ?>
+                                    <div class="issue-date issue-date-cell d-none" data-id="<?php echo e($item->id); ?>">
+                                        <input type="date" class="form-control issue-date-input" value="<?php echo e($issueValue); ?>">
+                                    </div>
+
+                                </td>
                                     <td>
                                         <?php
                                             $assignedReport = $item->reports->first(); // get assigned report
@@ -162,9 +208,9 @@
                                         <?php
                                             $assignedReport = $item->reports->first(); // get assigned report
                                             $pivotId = $assignedReport->pivot->id ?? null;
-                                        ?> 
+                                        ?>
 
-                                        <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>  
+                                        <?php if($assignedReport && $assignedReport->pivot->pdf_path): ?>
                                             <a href="<?php echo e(route('generateReportPDF.editReport', $pivotId)); ?>" target="_blank" class="btn btn-sm btn-success">
                                                 Edit
                                             </a>
@@ -211,24 +257,24 @@
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
                     ?>
                     <?php if($letter): ?>
-                        <a href="<?php echo e(asset('storage/'.$letter)); ?>" target="_blank" class="btn btn-outline-secondary">Show Letter</a>
+                        <a href="<?php echo e(asset('storage/'.$letter)); ?>" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
                     <?php else: ?>
-                        <button class="btn btn-outline-secondary" type="button" disabled>Show Letter</button>
+                        <button class="btn btn-outline-secondary bulk-action-btn" type="button" disabled>Show Letter</button>
                     <?php endif; ?>
                     <form method="POST" action="<?php echo e(route('superadmin.reporting.receiveAll')); ?>" id="receive-all-form" class="d-inline">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="job" value="<?php echo e($job); ?>">
-                        <button class="btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
+                        <button class="btn bulk-action-btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
                     </form>
-                       <a href="<?php echo e(route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0])); ?>" 
-                            class="btn" 
+                       <a href="<?php echo e(route('booking.downloadMergedPDF', ['bookingId' => $header['id'] ?? 0])); ?>"
+                            class="btn bulk-action-btn"
                             style="background-color:#FE9F43; border-color:#FE9F43; color:#fff;">
                             Get All
                         </a>
                 </div>
             </div>
         </div>
-    </div>  
+    </div>
 
     
     
@@ -246,17 +292,17 @@
     <div class="card mt-4">
         <div class="card-header bg-light">
             <h5 class="mb-0">Cement Reports 28 Days(Generated)</h5>
-        </div> 
+        </div>
         <div class="card-body">
             <div class="table-responsive">
                 <table class="table table-bordered table-striped">
                     <thead class="table-dark">
                         <tr>
                             <th>Job No.</th>
-                            <th>Client Name</th>
+                            <!-- <th>Client Name</th> -->
                             <th>Sample Description</th>
                             <th>Report No.</th>
-                            <th>Generated On</th>
+                            <th>7 days Report Issue on</th>
                             <th>View PDF</th>
                             <th>Action </th>
                         </tr>
@@ -273,7 +319,7 @@
                             ?>
                             <tr>
                                 <td><?php echo e($item->job_order_no); ?></td>
-                                <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
+                                <!-- <td><?php echo e($item->booking->client_name ?? '-'); ?></td> -->
                                 <td><?php echo e($item->sample_description); ?></td>
                                 <td><?php echo e($assignedReport->report_no ?? 'Report #'.$assignedReport->id); ?></td>
                                 <td>
@@ -283,12 +329,12 @@
                                     <?php else: ?>
                                         -
                                     <?php endif; ?>
-                                </td> 
+                                </td>
                                 <td>
                                     <a href="<?php echo e(route('viewPdf', basename($assignedReport->pivot->pdf_path))); ?>" target="_blank" class="btn btn-sm btn-info">
                                         View PDF
                                     </a>
-                                </td> 
+                                </td>
                                <td>
                                     
                                     <?php if($pivotId28days): ?>
@@ -334,9 +380,9 @@
                 </div>
             </div>
         </div>
-    </div>  
+    </div>
 
-</div> 
+</div>
 
 
 
@@ -359,6 +405,73 @@
             s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
             document.head.appendChild(s);
         }
+
+        // Dynamically load Tom Select once for searchable dropdowns
+        const ensureTomSelect = (() => {
+            let loadPromise = null;
+            return () => {
+                if (window.TomSelect) return Promise.resolve();
+                if (loadPromise) return loadPromise;
+                loadPromise = new Promise((resolve, reject) => {
+                    const cssId = 'tom-select-css';
+                    if (!document.getElementById(cssId)) {
+                        const link = document.createElement('link');
+                        link.id = cssId;
+                        link.rel = 'stylesheet';
+                        link.href = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css';
+                        document.head.appendChild(link);
+                    }
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js';
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Failed to load Tom Select'));
+                    document.head.appendChild(script);
+                });
+                return loadPromise;
+            };
+        })();
+
+        const initReportPickers = () => {
+            const selects = Array.from(document.querySelectorAll('.reports-picker'));
+            if (!selects.length) return;
+            ensureTomSelect().then(() => {
+                selects.forEach((select) => {
+                    if (select.dataset.tsInit === '1') return;
+                    select.dataset.tsInit = '1';
+                    const parent = select.closest('.report-select-wrapper');
+                    const placeholder = select.dataset.placeholder || '-- Select Report --';
+                    const options = {
+                        placeholder,
+                        allowEmptyOption: true,
+                        dropdownParent: parent || document.body,
+                        plugins: ['dropdown_input'],
+                        render: {
+                            option(item, escape) {
+                                return `<div class="option" data-value="${escape(item.value)}">${escape(item.text)}</div>`;
+                            },
+                            item(item, escape) {
+                                return `<div class="item">${escape(item.text || placeholder)}</div>`;
+                            }
+                        },
+                        onChange(value) {
+                            if (typeof value !== 'undefined') {
+                                const form = select.closest('form');
+                                if (form) form.submit();
+                            }
+                        }
+                    };
+                    try {
+                        const instance = new TomSelect(select, options);
+                        const controlEl = instance.control || instance.control_input?.parentElement;
+                        if (controlEl) {
+                            controlEl.classList.add('ts-control-compact');
+                        }
+                    } catch (e) {
+                        console.warn('Tom Select init failed', e);
+                    }
+                });
+            }).catch((err) => console.warn(err));
+        };
 
         // Upload/View Letters handlers
         const uploadForm = document.getElementById('upload-letters-form');
@@ -539,7 +652,8 @@
                 const id = btn.getAttribute('data-id');
                 const mode = btn.getAttribute('data-mode') || 'receive';
                 const form = document.getElementById('receive-form-' + id);
-                const issueInput = document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
+                const row = btn.closest('tr');
+                const issueInput = row ? row.querySelector('.issue-date-input') : document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
 
                 if (mode === 'receive') {
                     // Persist as received immediately so it stays visible on refresh
@@ -554,10 +668,8 @@
                         if (data && data.ok) {
                             const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
                             if (cell) {
-                                const dt = data.received_at ? new Date(data.received_at) : null;
-                                const formatted = (dt && !isNaN(dt)) ? dt.toLocaleString() : '';
                                 const name = data.received_by || data.receiver_name || 'User';
-                                cell.innerHTML = 'Received by ' + name + (formatted ? ' on ' + formatted : '');
+                                cell.textContent = 'Received by ' + name;
                             }
                             if (issueInput) {
                                 issueInput.classList.remove('d-none');
@@ -602,10 +714,8 @@
                     if (data && data.ok) {
                         const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
                         if (cell) {
-                            const dt = data.received_at ? new Date(data.received_at) : null;
-                            const formatted = (dt && !isNaN(dt)) ? dt.toLocaleString() : '';
                             const name = data.received_by || data.receiver_name || 'User';
-                            cell.innerHTML = 'Received by ' + name + (formatted ? ' on ' + formatted : '');
+                            cell.textContent = 'Received by ' + name;
                         }
             // Keep the Issue Date input enabled and visible so user can fill or edit
             if (issueInput) issueInput.classList.remove('d-none');
@@ -657,10 +767,8 @@
                     // Update status for all rows using backend data
                     if (data) {
                         const rn = data.receiver_name || data.received_by || 'User';
-                        const dt = data.received_at ? new Date(data.received_at) : null;
-                        const formatted = (dt && !isNaN(dt)) ? dt.toLocaleString() : '';
                         document.querySelectorAll('.status-cell').forEach(function(cell) {
-                            cell.innerHTML = 'Received by ' + rn + (formatted ? ' on ' + formatted : '');
+                            cell.textContent = 'Received by ' + rn;
                         });
                     }
                     // Flip Receive All -> Submit All and enforce color
@@ -749,6 +857,7 @@
 
         // Initial state check
         updateBulkButtons();
+        initReportPickers();
         // Flash SweetAlert if there is a server flash status message
         try {
             const flashMsg = <?php echo json_encode(session('status'), 15, 512) ?>;
@@ -768,11 +877,84 @@
         init();
     }
 })();
+
+// js for tab container
+document.addEventListener("DOMContentLoaded", () => {
+  const tabs = document.querySelectorAll(".tab-button");
+  const columnHeader = document.getElementById("column-header");
+  const tableRows = document.querySelectorAll("tbody tr");
+
+  tabs.forEach(tab => {
+    tab.addEventListener("click", () => {
+      tabs.forEach(t => t.classList.remove("active"));
+      tab.classList.add("active");
+
+      const mode = tab.dataset.tab;
+
+      if (mode === "issue") {
+        columnHeader.textContent = "Issue Date";
+        tableRows.forEach(row => {
+          row.querySelector(".report-select")?.classList.add("d-none");
+          row.querySelector(".issue-date")?.classList.remove("d-none");
+        });
+      } else {
+        columnHeader.textContent = "Select Report";
+        tableRows.forEach(row => {
+          row.querySelector(".report-select")?.classList.remove("d-none");
+          row.querySelector(".issue-date")?.classList.add("d-none");
+        });
+      }
+    });
+  });
+});
+
+
 </script>
 <?php $__env->stopPush(); ?>
 
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  // Generic file preview function
+  function handleFilePreview(inputId, listId) {
+    const input = document.getElementById(inputId);
+    const list = document.getElementById(listId);
+
+    input.addEventListener('change', () => {
+      list.innerHTML = '';
+      const files = Array.from(input.files);
+      if (files.length) {
+        files.forEach(file => {
+          const li = document.createElement('li');
+          li.textContent = `📄 ${file.name}`;
+          list.appendChild(li);
+        });
+      }
+    });
+  }
+
+  // Initialize for both inputs
+  handleFilePreview('upload-letters-input', 'file-preview-list');
+    handleFilePreview('upload-docs-input', 'doc-preview-list');
+});
+</script>
+
+
 <?php $__env->startPush('styles'); ?>
 <style>
+    /* Bulk action buttons share consistent sizing */
+    .bulk-action-btn {
+        min-width: 150px;
+        width: 150px;
+        flex: 0 0 150px;
+        height: 44px;
+        padding: 0 20px !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        line-height: 1.2 !important;
+    }
     /* Sharper button appearance */
     .receive-toggle-btn {
         border-width: 1px !important;
@@ -781,6 +963,83 @@
         box-shadow: 0 1px 2px rgba(0,0,0,0.06) !important;
         padding: 6px 12px !important;
         font-weight: 600 !important;
+    }
+    .report-picker-card {
+        display: block;
+        width: 100%;
+        background: #ffffff;
+        border: 1px solid #d0d5dd;
+        border-radius: 8px;
+        padding: 0;
+        box-shadow: none;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease;
+    }
+    .report-picker-card:hover,
+    .report-picker-card:focus-within {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+        background: #ffffff;
+    }
+    .report-select-wrapper { position: relative; width: 100%; }
+    .ts-wrapper.report-select-enhanced {
+        width: 100%;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control,
+    .ts-control-compact {
+        border: 0 !important;
+        box-shadow: none !important;
+        min-height: 32px;
+        padding: 6px 12px !important;
+        background: transparent;
+        font-size: 13px;
+        font-weight: 500;
+        color: #111827;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control > div {
+        margin: 0;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control input {
+        color: #111827;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control::placeholder,
+    .ts-wrapper.report-select-enhanced .ts-control .item {
+        color: #1f2937;
+        font-weight: 600;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown {
+        background: #ffffff;
+        border: 1px solid #dce2f1;
+        border-radius: 8px;
+        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
+        padding: 10px 0 8px;
+        overflow: hidden;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .dropdown-input {
+        border-radius: 6px;
+        border: 1px solid #c7d0ea;
+        padding: 6px 10px;
+        margin: 0 10px 8px;
+        font-size: 12px;
+        background-color: #f4f6fb;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .option {
+        padding: 8px 12px;
+        font-size: 12px;
+        font-weight: 500;
+        color: #111827;
+        border-radius: 0;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .option.active {
+        background: #2563eb;
+        color: #ffffff;
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .option:not(.active):hover {
+        background-color: rgba(37, 99, 235, 0.1);
+    }
+    .ts-wrapper.report-select-enhanced .ts-dropdown .no-results {
+        padding: 6px 12px;
+        font-size: 12px;
+        color: #6b7280;
     }
     /* Blue (Receive) */
     .receive-toggle-btn[data-mode="receive"] {
@@ -813,6 +1072,98 @@
     /* Date input sizing alignment */
     .issue-date-input { max-width: 180px; }
     .table td, .table th { vertical-align: middle; }
+
+    /* tab container */
+    /* Container styling */
+.tab-container {
+  display: flex;
+  justify-content: flex-start;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 2px solid #e0e0e0;
+  padding-bottom: 6px;
+  margin-bottom: 20px;
+  font-family: "Poppins", sans-serif;
+}
+/* 
+Each tab button */
+.tab-button {
+  padding: 8px 16px;
+  border-radius: 10px 10px 10px 10px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+
+/* Hover effect
+.tab-button:hover {
+  background: #e9ecef;
+  color: #111;
+} */
+/* 
+Active tab
+.tab-button.active {
+  background: #28a745;
+  color: white;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+} */
+
+
+/* ===== File Input Styling ===== */
+form input[type="file"] {
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  font-size: 14px;
+  font-family: "Poppins", sans-serif;
+  color: #444;
+  background-color: #f9f9f9;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.25s ease-in-out;
+}
+
+/* Hover + focus */
+form input[type="file"]:hover,
+form input[type="file"]:focus {
+  background-color: #fff;
+  border-color: #28a745;
+  box-shadow: 0 0 0 2px rgba(40, 167, 69, 0.15);
+}
+
+/* Make file input labels bolder */
+form .form-label {
+  font-weight: 600;
+  color: #092C4C;
+  font-size: 14px;
+}
+
+/* File preview list */
+#file-preview-list li,
+#doc-preview-list li {
+  background: #f1f1f1;
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 4px;
+  font-size: 13px;
+  color: #333;
+}
+
+/* Small note text under inputs */
+form small.text-muted {
+  font-size: 12px;
+  color: #777 !important;
+}
+
+/* Adjust upload buttons alignment */
+form .btn {
+  font-size: 13px;
+  padding: 6px 14px;
+  border-radius: 6px;
+}
+
 </style>
 <?php $__env->stopPush(); ?>
 

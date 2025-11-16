@@ -7,7 +7,13 @@
     <div class="page-header">
         <div class="add-item d-flex ms-4 mt-4">
             <div class="page-title">
-                <h4>Marketing Expense</h4>
+                @php
+                    $sectionLabel = match($section ?? 'marketing') {
+                        'office' => 'Office',
+                        default => 'Marketing',
+                    };
+                @endphp
+                <h4>{{ $sectionLabel }} Expense</h4>
                 <h6>Approve Expenses</h6>
             </div>
         </div>
@@ -34,6 +40,7 @@
                 $qs = request()->query();
                 $qsMarketing = array_merge($qs, ['section' => 'marketing']);
                 $qsOffice = array_merge($qs, ['section' => 'office']);
+                $qsPersonal = array_merge($qs, ['section' => 'personal']);
             @endphp
             <a href="{{ route('superadmin.marketing.expenses.approved', $qsMarketing) }}" class="btn btn-sm {{ ($section ?? 'marketing') === 'marketing' ? 'btn-primary' : 'btn-outline-primary' }}">Marketing</a>
             <a href="{{ route('superadmin.marketing.expenses.approved', $qsOffice) }}" class="btn btn-sm {{ ($section ?? 'marketing') === 'office' ? 'btn-primary' : 'btn-outline-primary' }}">Office</a>
@@ -80,9 +87,9 @@
                 <thead class="table-light">
                     <tr>
                         <th>#</th>
-                        <th>Marketing Person</th>
+                        <th>{{ ($section ?? 'marketing') === 'personal' ? 'Summary' : 'Person' }}</th>
                         <th>Total Expenses</th>
-                        <th>Expense Upload Date</th>
+                        <th>Upload Date</th>
                         <th>From To</th>
                         <th>Uploads</th>
                         <th>Action</th>
@@ -127,6 +134,8 @@
             const tr = btn.closest('tr');
             const id = tr?.dataset?.id;
             if(!id) return;
+            const groupAttr = tr?.dataset?.group || '';
+            const groupIds = groupAttr ? groupAttr.split(',').filter(Boolean) : [];
 
             if(btn.classList.contains('js-approve-expense')){
                 const totalAmount = parseFloat(tr?.dataset?.amount || '0');
@@ -173,10 +182,13 @@
                 if(!ok) return;
                 const amt = document.getElementById('apprAmount').value;
                 const note = document.getElementById('apprNote').value;
+                const params = new URLSearchParams({ approved_amount: amt, approval_note: note });
+                groupIds.forEach(gid => params.append('group_ids[]', gid));
+
                 const resp = await fetch(`{{ url('superadmin/marketing/expenses') }}/${id}/approve`,{
                     method:'PATCH',
                     headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-                    body: new URLSearchParams({ approved_amount: amt, approval_note: note })
+                    body: params
                 });
                 const data = await resp.json();
                 if(data.success){
@@ -191,7 +203,7 @@
                     tr.replaceWith(newTr);
                     Swal.fire({icon:'success',title:'Approved'});
                 }else{
-                    Swal.fire({icon:'error',title:'Approval failed'});
+                    Swal.fire({icon:'error',title:'Approval failed',text:data.message || ''});
                 }
             } else if(btn.classList.contains('js-reject-expense')){
                 const { value: ok } = await Swal.fire({
@@ -201,10 +213,13 @@
                     showCancelButton: true
                 });
                 if(!ok && ok !== '') return;
+                const params = new URLSearchParams({ approval_note: ok || '' });
+                groupIds.forEach(gid => params.append('group_ids[]', gid));
+
                 const resp = await fetch(`{{ url('superadmin/marketing/expenses') }}/${id}/reject`,{
                     method:'PATCH',
                     headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'},
-                    body: new URLSearchParams({ approval_note: ok || '' })
+                    body: params
                 });
                 const data = await resp.json();
                 if(data.success){
@@ -218,7 +233,7 @@
                     tr.replaceWith(newTr);
                     Swal.fire({icon:'success',title:'Rejected'});
                 }else{
-                    Swal.fire({icon:'error',title:'Rejection failed'});
+                    Swal.fire({icon:'error',title:'Rejection failed',text:data.message || ''});
                 }
             }
         });

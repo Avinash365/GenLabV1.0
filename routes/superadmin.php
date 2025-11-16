@@ -108,6 +108,17 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/persons', [MarketingExpenseController::class, 'officePersons'])->name('persons');
     });
 
+    // Personal Expenses (mirrors Office UX/logic)
+    Route::prefix('personal')->name('personal.')->group(function () {
+        Route::get('/expenses', [MarketingExpenseController::class, 'personal'])->name('expenses.index');
+        Route::get('/expenses/export/pdf', [MarketingExpenseController::class, 'exportPdf'])->name('expenses.export.pdf');
+        Route::get('/expenses/export/excel', [MarketingExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
+        Route::get('/persons', [MarketingExpenseController::class, 'officePersons'])->name('persons');
+        Route::post('/expenses/send-for-approval', [MarketingExpenseController::class, 'sendPersonalForApproval'])->name('expenses.send');
+        Route::put('/expenses/{expense}', [MarketingExpenseController::class, 'updatePersonal'])->name('expenses.update');
+        Route::delete('/expenses/{expense}', [MarketingExpenseController::class, 'destroyPersonal'])->name('expenses.destroy');
+    });
+
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
 
