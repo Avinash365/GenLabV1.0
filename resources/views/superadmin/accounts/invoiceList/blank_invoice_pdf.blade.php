@@ -63,29 +63,30 @@
     <thead>
         <tr>
             <th class="colw text-uppercase">GSTIN: {{ $bankDetails['gstin'] ?? '' }}</th>
-            <th class="text-uppercase">{{ $invoice->invoice_type ?? '' }}</th>
+            <th class="text-uppercase" colspan="2">{{ $invoice->invoice_type ?? '' }}</th>
+            
             <th>Scan to Pay</Th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <th class="colw text-start">Bill Issue To:</th>
-            <td class="col4 text-start text-uppercase">
+            <td class="col4 text-start text-uppercase"  colspan="2">
                 {{ $invoice->bill_issue_to ?? '' }}<br>
                 {!! nl2br($invoice->address ?? '') !!}
                 <br>
                 <span class="text-uppercase">GSTIN: {{ $invoice->client_gstin ?? '' }}</span>
             </td> 
-            <td><img src="data:image/svg+xml;base64,{{ $qrcode }}" alt="UPI QR Code" width="100"></td>
+            <td class="text-centre"><img src="data:image/svg+xml;base64,{{ $qrcode }}" alt="UPI QR Code" width="100"></td>
         </tr>
-        <tr><th class="colw text-start">Invoice No:</th><td colspan="2" class="col4 text-uppercase">{{ $invoice->invoice_no ?? '' }}</td></tr>
-        <tr><th class="colw text-start">Invoice Date:</th><td  colspan="2"class="col4">{{ $invoice->invoice_date ?? now()->format('d-m-Y') }}</td></tr>
+        <tr><th class="colw text-start">Invoice No:</th><td colspan="3" class="col4 text-uppercase">{{ $invoice->invoice_no ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Invoice Date:</th><td  colspan="3"class="col4">{{ $invoice->invoice_date ?? now()->format('d-m-Y') }}</td></tr>
         <tr><th class="colw text-start">Ref. No & Date:</th>
-            <td colspan="2" class="col4 text-uppercase">
+            <td colspan="3" class="col4 text-uppercase">
                 {{ $invoice->reference_no ?? '' }} & {{ $invoice->letter_date ?? '' }}
             </td>
         </tr>
-        <tr><th class="colw text-start">Name of Work:</th><td colspan="2" class="col4">{{ $invoice->name_of_work ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Name of Work:</th><td colspan="3" class="col4">{{ $invoice->name_of_work ?? '' }}</td></tr>
     </tbody>
 </table>
 

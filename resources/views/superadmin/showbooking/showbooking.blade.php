@@ -187,7 +187,15 @@
                                     </div>
                                 @endif
                             </td>
-                            <td class="d-flex">
+                            <td class="d-flex"> 
+
+                            <!-- View Booking Card -->
+                                <a href="{{ route('superadmin.bookings.cards.all', [$booking->id]) }}"
+                                    target="_blank"
+                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                        <i data-feather="eye" class="feather-eye"></i>
+                                </a> 
+
                                 <a href="{{ route('superadmin.bookings.edit', $booking->id) }}" 
                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
                                     <i data-feather="edit" class="feather-edit"></i>

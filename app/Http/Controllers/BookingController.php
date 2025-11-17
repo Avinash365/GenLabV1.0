@@ -291,15 +291,43 @@ class BookingController extends Controller
     } 
 
     public function getReferenceNo(Request $request)
-{
-    $term = $request->term ?? '';
-    
-    $results = NewBooking::where('reference_no', 'like', "%{$term}%")
-        ->pluck('reference_no')
-        ->map(fn($ref) => ['reference_no' => $ref])
-        ->toArray();
+    {
+        $term = $request->term ?? '';
+        
+        $results = NewBooking::where('reference_no', 'like', "%{$term}%")
+            ->pluck('reference_no')
+            ->map(fn($ref) => ['reference_no' => $ref])
+            ->toArray();
 
-    return response()->json($results);
-}
+        return response()->json($results);
+    } 
+
+    public function showBookingCards($bookingId, $itemId = null)
+    {
+        try {
+            // Fetch booking with items
+            $booking = NewBooking::with('items')->findOrFail($bookingId);
+
+            // Pass item if provided
+            $item = null;
+            if ($itemId) {
+                $item = $booking->items()->findOrFail($itemId);
+            }
+
+            // Return cards with or without item
+            return $this->bookingCardService->renderCardsForBooking($booking, $item);
+
+        } catch (\Exception $e) {
+            Log::error('Failed to load booking cards', [
+                'booking_id' => $bookingId,
+                'item_id' => $itemId,
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+            ]);
+
+            return back()->withErrors('Unable to load booking details.');
+        }
+    } 
+
 
 }

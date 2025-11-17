@@ -270,8 +270,7 @@ class MarketingPersonLedger extends Controller
             }
         }   
 
-        // dd($request->transaction_status); 
-        // exit; 
+       
 
         //  Apply Month/Year filter
         if ($request->filled('year')) {

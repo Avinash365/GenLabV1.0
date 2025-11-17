@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Invoice;
 use App\Models\InvoiceBookingItem;
-use App\Models\{NewBooking,Department, Client};
+use App\Models\{NewBooking,Department, Client, PaymentSetting};
 use Carbon\Carbon;
 use App\Services\{GetUserActiveDepartment,BillingService};
 use App\Services\InvoicePdfService;
@@ -140,6 +140,9 @@ class InvoiceController extends Controller
             if(!empty($invoice->invoice_booking_ids)) {
                 return back()->withSuccess('Currently service is not available');
             } 
+
+            
+            
 
             if (!empty($invoice->invoice_booking_ids)) {
             

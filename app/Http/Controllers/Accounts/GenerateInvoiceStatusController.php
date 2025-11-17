@@ -160,8 +160,10 @@ class GenerateInvoiceStatusController extends Controller
 
         $gstinApiUrl = config('services.gstin.url');
         $gstinApiKey = config('services.gstin.key');
-
-        return view('superadmin.accounts.generateInvoice.show', compact('booking', 'gstinApiUrl', 'gstinApiKey'));
+        
+        $bankInfo = PaymentSetting::first();
+       
+        return view('superadmin.accounts.generateInvoice.show', compact('booking', 'gstinApiUrl', 'gstinApiKey', 'bankInfo'));
     }
 
     private function storeInvoiceData(array $invoiceData, string $invoiceType)

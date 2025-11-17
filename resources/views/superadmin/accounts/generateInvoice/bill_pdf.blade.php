@@ -68,29 +68,30 @@
     <thead>
         <tr>
             <th class="colw text-uppercase">GSTIN: {{ $invoiceData['bankDetails']['gstin'] ?? '' }}</th>
-            <th class="text-uppercase">{{$invoiceData['invoice']['invoiceType']}}</th>
+            <th class="text-uppercase" colspan="2">{{$invoiceData['invoice']['invoiceType']}}</th>
+            <!-- <th></th>  -->
             <th>Scan to Pay</Th>
         </tr>
     </thead>
     <tbody>
         <tr>
             <th class="colw text-start" >Bill Issue To:</th>
-            <td class="col4 text-start text-uppercase">
+            <td class="col4 text-start text-uppercase" colspan="2" >
                 {{ $invoiceData['invoice']['bill_issue_to'] ?? '' }}<br>
                 {!! nl2br($invoiceData['invoice']['address'] ?? '') !!}
                 <br>
                <span class="text-uppercase">GSTIN: {{ $invoiceData['invoice']['client_gstin'] ?? '' }}</span>  
             </td> 
-            <td><img src="data:image/svg+xml;base64,{{ $qrcode }}" alt="UPI QR Code" width="100"></td>
+            <td class="text-centre"><img src="data:image/svg+xml;base64,{{ $qrcode }}" alt="UPI QR Code" width="100"></td>
         </tr>
-        <tr><th class="colw text-start">Invoice No:</th><td colspan="2" class="col4 text-uppercase">{{ $invoiceData['invoice']['invoice_no'] ?? '' }}</td></tr>
-        <tr><th class="colw text-start">Invoice Date:</th><td colspan="2" class="col4">{{ $invoiceData['invoice']['invoice_date'] ?? now()->format('d-m-Y') }}</td></tr>
+        <tr><th class="colw text-start">Invoice No:</th><td colspan="3" class="col4 text-uppercase">{{ $invoiceData['invoice']['invoice_no'] ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Invoice Date:</th><td colspan="3" class="col4">{{ $invoiceData['invoice']['invoice_date'] ?? now()->format('d-m-Y') }}</td></tr>
         <tr><th class="colw text-start">Ref. No & Date:</th>
-            <td colspan="2" class="col4 text-uppercase">
+            <td colspan="3" class="col4 text-uppercase">
                 {{ $invoiceData['invoice']['ref_no'] ?? '' }} & {{ $invoiceData['invoice']['ref_date'] ?? '' }}
             </td>
         </tr>
-        <tr><th class="colw text-start">Name of Work:</th><td  colspan="2" class="col4">{{ $invoiceData['invoice']['name_of_work'] ?? '' }}</td></tr>
+        <tr><th class="colw text-start">Name of Work:</th><td  colspan="3" class="col4">{{ $invoiceData['invoice']['name_of_work'] ?? '' }}</td></tr>
     
     </tbody>
 </table>

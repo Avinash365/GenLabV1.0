@@ -48,7 +48,8 @@ class BlankInvoiceController extends Controller
 
     public function create()
     {
-        return view('superadmin.accounts.invoiceList.blank');
+        $bankInfo = PaymentSetting::first();
+        return view('superadmin.accounts.invoiceList.blank', compact('bankInfo'));
     }
 
     public function store(BlankInvoiceRequest $request)

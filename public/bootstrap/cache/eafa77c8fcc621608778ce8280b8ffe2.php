@@ -111,7 +111,15 @@
                             <td><?php echo e($item->particulars); ?></td>
                            
                            
-                            <td class="d-flex">
+                            <td class="d-flex"> 
+                                <!-- View Button --> 
+                                 <!-- View Booking Card -->
+                                    <a href="<?php echo e(route('superadmin.bookings.cards.single', [$item->booking->id, $item->id])); ?>"
+                                    target="_blank"
+                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                        <i data-feather="eye" class="feather-eye"></i>
+                                    </a>
+
                                 <a href="<?php echo e(route('superadmin.bookings.edit', $item->booking->id ?? 0)); ?>"
                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
                                     <i data-feather="edit" class="feather-edit"></i>

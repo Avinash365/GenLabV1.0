@@ -182,7 +182,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::post('/superadmin/bookings/item/save', [BookingController::class, 'saveItem'])->name('item.save');
 
-            Route::get('/get-ref-no', [BookingController::class, 'getReferenceNo'])->name('get.ref_no');
+            Route::get('/get-ref-no', [BookingController::class, 'getReferenceNo'])->name('get.ref_no'); 
+
+            Route::get('/booking/{bookingId}/cards', [BookingController::class, 'showBookingCards'])->name('cards.all');
+            Route::get('/booking/{bookingId}/cards/{itemId}', [BookingController::class, 'showBookingCards'])->name('cards.single');
     });
 
 

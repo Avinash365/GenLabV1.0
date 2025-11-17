@@ -60,11 +60,9 @@
                         <td width="160" style="width: 160px; padding: 0px 7px; height: 12px; border: 1px solid black;">Letter REF. NO. & Date</td>
                         <td width="19" valign="top" style="width: 19px; padding: 0px 7px; height: 12px; border: 1px solid black;">:</td>
                         <td width="283" valign="top" style="width: 282px; padding: 0px 7px; height: 12px;  border: 1px solid black;">
-                            <?php echo nl2br(e($letter_ref . ' & ' . $letter_ref_date)); ?>
+                            <?php echo nl2br(e($letter_ref . ' & ' . \Carbon\Carbon::parse($letter_ref_date)->format('d-m-y'))); ?>
 
-                             <br>
-                                <?php echo e("Agence: " . $m_s); ?>
-
+                            
                         </td>                
                         <td width="151" style="width: 150px; padding: 0px 7px; height: 12px; border: 1px solid black;">Date of completion of analysis</td>
                         <td width="19" style="width: 19px; padding: 0px 7px; height: 12px; border: 1px solid black;">:</td>
@@ -81,7 +79,8 @@
                     <tr style="height: 5px;">
                         <td width="160" style="width: 160px; padding: 0px 7px; height: 5px; border: 1px solid black;">Name of work</td>
                         <td width="19" valign="top" style="width: 19px; padding: 0px 7px; height: 5px; border: 1px solid black;">:</td>
-                        <td width="539" colspan="4" style="width: 536px; padding: 0px 7px; height: 5px;  border: 1px solid black;"><?php echo nl2br(e($name_of_work)); ?></td>
+                        <td width="539" colspan="4" style="width: 536px; padding: 0px 7px; height: 5px;  border: 1px solid black;"><?php echo nl2br(e($name_of_work)); ?>  <br>
+                                <?php echo e("Agency: " . $m_s); ?></td>
                     </tr>
                 </tbody>
             </table>  
