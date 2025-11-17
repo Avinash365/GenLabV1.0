@@ -415,30 +415,31 @@
             document.head.appendChild(s);
         }
 
-        // Dynamically load Tom Select once for searchable dropdowns
-        const ensureTomSelect = (() => {
-            let loadPromise = null;
-            return () => {
-                if (window.TomSelect) return Promise.resolve();
-                if (loadPromise) return loadPromise;
-                loadPromise = new Promise((resolve, reject) => {
-                    const cssId = 'tom-select-css';
-                    if (!document.getElementById(cssId)) {
-                        const link = document.createElement('link');
-                        link.id = cssId;
-                        link.rel = 'stylesheet';
-                        link.href = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css';
-                        document.head.appendChild(link);
-                    }
-                    const script = document.createElement('script');
-                    script.src = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js';
-                    script.onload = () => resolve();
-                    script.onerror = () => reject(new Error('Failed to load Tom Select'));
-                    document.head.appendChild(script);
-                });
-                return loadPromise;
-            };
-        })();
+        const updateReportPickerTrigger = (wrapper) => {
+            if (!wrapper) return;
+            const select = wrapper.querySelector('.reports-picker');
+            const trigger = wrapper.querySelector('.report-picker-trigger');
+            if (!select || !trigger) return;
+            const placeholder = select.dataset.placeholder || trigger.dataset.placeholder || '-- Select Report --';
+            const option = select.options[select.selectedIndex];
+            const label = option && option.value ? option.textContent.trim() : placeholder;
+            trigger.textContent = label || placeholder;
+            if (option && option.value) {
+                trigger.classList.add('report-picker-selected');
+            } else {
+                trigger.classList.remove('report-picker-selected');
+            }
+        };
+
+        const enableReportPicker = (wrapper) => {
+            if (!wrapper) return;
+            wrapper.classList.remove('report-select-wrapper--disabled');
+            const select = wrapper.querySelector('.reports-picker');
+            const trigger = wrapper.querySelector('.report-picker-trigger');
+            if (select) select.disabled = false;
+            if (trigger) trigger.disabled = false;
+            updateReportPickerTrigger(wrapper);
+        };
 
         // Auto-save header fields so edits propagate across the system without reloading
         const initHeaderEditor = () => {
@@ -539,51 +540,106 @@
             });
         };
 
-        const initReportPickers = () => {
-            const selects = Array.from(document.querySelectorAll('.reports-picker'));
-            if (!selects.length) return;
-            ensureTomSelect().then(() => {
-                selects.forEach((select) => {
-                    if (select.dataset.tsInit === '1') return;
-                    select.dataset.tsInit = '1';
-                    const parent = select.closest('.report-select-wrapper');
-                    const placeholder = select.dataset.placeholder || '-- Select Report --';
-                    const options = {
-                        placeholder,
-                        allowEmptyOption: true,
-                        dropdownParent: parent || document.body,
-                        plugins: ['dropdown_input'],
-                        render: {
-                            option(item, escape) {
-                                return `<div class="option" data-value="${escape(item.value)}">${escape(item.text)}</div>`;
-                            },
-                            item(item, escape) {
-                                return `<div class="item">${escape(item.text || placeholder)}</div>`;
-                            }
-                        },
-                        onChange(value) {
-                            if (typeof value !== 'undefined') {
-                                const form = select.closest('form');
-                                if (form) form.submit();
-                            }
+        const initReportPickerPopups = () => {
+            const wrappers = Array.from(document.querySelectorAll('.report-select-wrapper'));
+            if (!wrappers.length) return;
+            wrappers.forEach((wrapper) => {
+                const select = wrapper.querySelector('.reports-picker');
+                const trigger = wrapper.querySelector('.report-picker-trigger');
+                if (!select || !trigger) return;
+                if (trigger.dataset.bound === '1') return;
+                trigger.dataset.bound = '1';
+
+                if (select.disabled) {
+                    trigger.disabled = true;
+                    wrapper.classList.add('report-select-wrapper--disabled');
+                }
+
+                updateReportPickerTrigger(wrapper);
+
+                trigger.addEventListener('click', () => {
+                    if (trigger.disabled) return;
+                    const placeholder = select.dataset.placeholder || trigger.dataset.placeholder || '-- Select Report --';
+                    const options = Array.from(select.options)
+                        .filter((opt) => opt.value)
+                        .map((opt) => ({ value: opt.value, label: (opt.textContent || '').trim() || placeholder }));
+
+                    if (!options.length) {
+                        if (window.Swal) {
+                            Swal.fire({ icon: 'info', title: 'No Reports', text: 'No report formats are available yet.' });
+                        } else {
+                            alert('No report formats are available yet.');
                         }
-                    };
-                    try {
-                        const instance = new TomSelect(select, options);
-                        select.tomSelectInstance = instance;
-                        const controlEl = instance.control || instance.control_input?.parentElement;
-                        if (controlEl) {
-                            controlEl.classList.add('ts-control-compact');
-                        }
-                        if (select.dataset.enabled !== '1') {
-                            instance.disable();
-                            if (parent) parent.classList.add('report-select-wrapper--disabled');
-                        }
-                    } catch (e) {
-                        console.warn('Tom Select init failed', e);
+                        return;
                     }
+
+                    const currentValue = select.value;
+
+                    if (!window.Swal) {
+                        const fallback = window.prompt('Enter report number:', currentValue ? currentValue : '');
+                        if (!fallback) return;
+                        const match = options.find((opt) => opt.value === fallback || opt.label === fallback);
+                        if (!match) return;
+                        select.value = match.value;
+                        updateReportPickerTrigger(wrapper);
+                        const form = select.closest('form');
+                        if (form) form.submit();
+                        return;
+                    }
+
+                    Swal.fire({
+                        title: 'Select Report',
+                        width: 520,
+                        showConfirmButton: false,
+                        showCancelButton: true,
+                        cancelButtonText: 'Close',
+                        customClass: { popup: 'report-picker-swal' },
+                        html: `
+                            <div class="report-picker-modal">
+                                <input type="search" class="form-control report-picker-search" placeholder="Search report..." autofocus>
+                                <div class="report-picker-options" role="listbox"></div>
+                            </div>
+                        `,
+                        didOpen: (modal) => {
+                            const searchInput = modal.querySelector('.report-picker-search');
+                            const optionList = modal.querySelector('.report-picker-options');
+                            const renderOptions = (query = '') => {
+                                const q = query.trim().toLowerCase();
+                                optionList.innerHTML = '';
+                                const matches = q
+                                    ? options.filter((opt) => opt.label.toLowerCase().includes(q) || opt.value.toLowerCase().includes(q))
+                                    : options;
+                                if (!matches.length) {
+                                    optionList.innerHTML = '<div class="report-picker-empty">No matching reports</div>';
+                                    return;
+                                }
+                                matches.forEach((opt) => {
+                                    const btn = document.createElement('button');
+                                    btn.type = 'button';
+                                    btn.className = 'report-picker-option btn btn-light w-100 text-start';
+                                    btn.dataset.value = opt.value;
+                                    btn.textContent = opt.label;
+                                    if (opt.value === currentValue) btn.classList.add('active');
+                                    btn.addEventListener('click', () => {
+                                        select.value = opt.value;
+                                        updateReportPickerTrigger(wrapper);
+                                        const form = select.closest('form');
+                                        if (form) form.submit();
+                                        Swal.close();
+                                    });
+                                    optionList.appendChild(btn);
+                                });
+                            };
+                            renderOptions();
+                            if (searchInput) {
+                                searchInput.addEventListener('input', (ev) => renderOptions(ev.target.value));
+                            }
+                        }
+                    });
                 });
-            }).catch((err) => console.warn(err));
+
+                select.addEventListener('change', () => updateReportPickerTrigger(wrapper));
+            });
         };
 
         // Upload/View Letters handlers
@@ -785,16 +841,9 @@
                                 cell.textContent = 'Received by ' + name;
                             }
                             const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
-                            const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
                             if (wrapper) {
                                 wrapper.classList.remove('d-none');
-                                wrapper.classList.remove('report-select-wrapper--disabled');
-                            }
-                            if (selectEl) {
-                                selectEl.dataset.enabled = '1';
-                                selectEl.removeAttribute('disabled');
-                                const ts = selectEl.tomSelectInstance;
-                                if (ts) ts.enable();
+                                enableReportPicker(wrapper);
                             }
                             if (issueInput) {
                                 issueInput.classList.remove('d-none');
@@ -843,15 +892,8 @@
                             cell.textContent = 'Received by ' + name;
                         }
                         const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
-                        const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
                         if (wrapper) {
-                            wrapper.classList.remove('report-select-wrapper--disabled');
-                        }
-                        if (selectEl) {
-                            selectEl.dataset.enabled = '1';
-                            selectEl.removeAttribute('disabled');
-                            const ts = selectEl.tomSelectInstance;
-                            if (ts) ts.enable();
+                            enableReportPicker(wrapper);
                         }
             // Keep the Issue Date input enabled and visible so user can fill or edit
             if (issueInput) issueInput.classList.remove('d-none');
@@ -909,14 +951,7 @@
                     }
                     document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
                         wrapper.classList.remove('d-none');
-                        wrapper.classList.remove('report-select-wrapper--disabled');
-                        const selectEl = wrapper.querySelector('.reports-picker');
-                        if (selectEl) {
-                            selectEl.dataset.enabled = '1';
-                            selectEl.removeAttribute('disabled');
-                            const ts = selectEl.tomSelectInstance;
-                            if (ts) ts.enable();
-                        }
+                        enableReportPicker(wrapper);
                     });
                     // Flip Receive All -> Submit All and enforce color
                     if (receiveAllBtn) receiveAllBtn.classList.add('d-none');
@@ -943,14 +978,7 @@
                     });
                     document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
                         wrapper.classList.remove('d-none');
-                        wrapper.classList.remove('report-select-wrapper--disabled');
-                        const selectEl = wrapper.querySelector('.reports-picker');
-                        if (selectEl) {
-                            selectEl.dataset.enabled = '1';
-                            selectEl.removeAttribute('disabled');
-                            const ts = selectEl.tomSelectInstance;
-                            if (ts) ts.enable();
-                        }
+                        enableReportPicker(wrapper);
                     });
                     // Also reflect status change in UI as a fallback without details
                     document.querySelectorAll('.status-cell').forEach(function(cell) {
@@ -1016,7 +1044,7 @@
         // Initial state check
         updateBulkButtons();
         initHeaderEditor();
-        initReportPickers();
+        initReportPickerPopups();
         // Flash SweetAlert if there is a server flash status message
         try {
             const flashMsg = <?php echo json_encode(session('status'), 15, 512) ?>;
@@ -1123,86 +1151,100 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 6px 12px !important;
         font-weight: 600 !important;
     }
-    .report-picker-card {
-        display: block;
-        width: 100%;
-        background: #ffffff;
-        border: 1px solid #d0d5dd;
-        border-radius: 8px;
-        padding: 0;
-        box-shadow: none;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
-    }
-    .report-picker-card:hover,
-    .report-picker-card:focus-within {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        background: #ffffff;
-    }
-    .report-select-wrapper { position: relative; width: 100%; }
-    .ts-wrapper.report-select-enhanced {
+    .report-select-wrapper {
+        position: relative;
         width: 100%;
     }
-    .report-select-wrapper--disabled .ts-wrapper.report-select-enhanced {
+    .report-select-wrapper--disabled .report-picker-trigger {
         opacity: 0.45;
         pointer-events: none;
+        cursor: not-allowed;
     }
-    .ts-wrapper.report-select-enhanced .ts-control,
-    .ts-control-compact {
-        border: 0 !important;
-        box-shadow: none !important;
-        min-height: 32px;
-        padding: 6px 12px !important;
-        background: transparent;
-        font-size: 13px;
-        font-weight: 500;
-        color: #111827;
-    }
-    .ts-wrapper.report-select-enhanced .ts-control > div {
-        margin: 0;
-    }
-    .ts-wrapper.report-select-enhanced .ts-control input {
-        color: #111827;
-    }
-    .ts-wrapper.report-select-enhanced .ts-control::placeholder,
-    .ts-wrapper.report-select-enhanced .ts-control .item {
-        color: #1f2937;
-        font-weight: 600;
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown {
-        background: #ffffff;
-        border: 1px solid #dce2f1;
+    .report-picker-trigger {
+        width: 100%;
         border-radius: 8px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
-        padding: 10px 0 8px;
-        overflow: hidden;
+        border: 1px solid #d0d5dd;
+        background: #ffffff;
+        padding: 10px 14px;
+        font-weight: 600;
+        font-size: 13px;
+        color: #092C4C;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+        position: relative;
+        cursor: pointer;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .dropdown-input {
-        border-radius: 6px;
-        border: 1px solid #c7d0ea;
-        padding: 6px 10px;
-        margin: 0 10px 8px;
-        font-size: 12px;
-        background-color: #f4f6fb;
+    .report-picker-trigger::after {
+        content: '\25BC';
+        font-size: 10px;
+        color: #6b7280;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option {
-        padding: 8px 12px;
-        font-size: 12px;
-        font-weight: 500;
-        color: #111827;
-        border-radius: 0;
+    .report-picker-trigger:hover:not(:disabled) {
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+        background: #f9fbff;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option.active {
+    .report-picker-trigger:focus {
+        outline: none;
+        border-color: #2563eb;
+        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    }
+    .report-picker-trigger.report-picker-selected {
+        background: #f2f6ff;
+        border-color: #2563eb;
+        color: #0b2342;
+    }
+    .report-picker-modal {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        text-align: left;
+    }
+    .report-picker-search {
+        font-size: 14px;
+        border-radius: 8px;
+        border: 1px solid #d0d5dd;
+        padding: 10px 12px;
+    }
+    .report-picker-options {
+        max-height: 320px;
+        overflow-y: auto;
+        display: grid;
+        gap: 8px;
+    }
+    .report-picker-option {
+        border-radius: 8px;
+        border: 1px solid #dce2f1;
+        background: #ffffff;
+        font-weight: 600;
+        font-size: 13px;
+        padding: 10px 12px;
+        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+        cursor: pointer;
+    }
+    .report-picker-option:hover {
+        background: rgba(37, 99, 235, 0.08);
+        border-color: #2563eb;
+        color: #092C4C;
+    }
+    .report-picker-option.active {
         background: #2563eb;
+        border-color: #2563eb;
         color: #ffffff;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option:not(.active):hover {
-        background-color: rgba(37, 99, 235, 0.1);
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .no-results {
-        padding: 6px 12px;
-        font-size: 12px;
+    .report-picker-empty {
+        padding: 12px;
+        text-align: center;
         color: #6b7280;
+        font-size: 13px;
+        border-radius: 8px;
+        border: 1px dashed #d0d5dd;
+    }
+    .report-picker-swal {
+        padding: 1.5rem 1.75rem !important;
     }
     /* Blue (Receive) */
     .receive-toggle-btn[data-mode="receive"] {
