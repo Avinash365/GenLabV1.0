@@ -5,6 +5,7 @@ namespace App\Http\Controllers\SuperAdmin;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BookingItem;
+use App\Models\NewBooking;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
 use App\Models\ReportEditorFile;  
@@ -40,7 +41,7 @@ class ReportingController extends Controller
                     'issue_date'       => optional($firstItem->issue_date)->format('Y-m-d'),
                     'reference_no'     => $b->reference_no,
                     'sample_description'=> $firstItem->sample_description,
-                    'name_of_work'     => $b->client_address,
+                    'name_of_work'     => $b->name_of_work ?: $b->client_address,
                     'issued_to'        => $b->report_issue_to,
                     'ms'               => $b->m_s,
                 ];
@@ -336,6 +337,49 @@ class ReportingController extends Controller
         return back()->with('status', 'Issue Dates submitted');
     }
 
+    public function updateHeader(Request $request, NewBooking $booking)
+    {
+        $data = $request->validate([
+            'name_of_work' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'issued_to' => ['sometimes', 'nullable', 'string', 'max:255'],
+            'ms' => ['sometimes', 'nullable', 'string', 'max:255'],
+        ], [], [
+            'issued_to' => 'Issued To',
+            'ms' => 'M/s',
+        ]);
+
+        foreach (['name_of_work', 'issued_to', 'ms'] as $key) {
+            if (array_key_exists($key, $data) && is_string($data[$key])) {
+                $data[$key] = trim($data[$key]);
+            }
+        }
+
+        $updates = [];
+        if (array_key_exists('name_of_work', $data)) {
+            $updates['name_of_work'] = $data['name_of_work'];
+        }
+        if (array_key_exists('issued_to', $data)) {
+            $updates['report_issue_to'] = $data['issued_to'];
+        }
+        if (array_key_exists('ms', $data)) {
+            $updates['m_s'] = $data['ms'];
+        }
+
+        if (!empty($updates)) {
+            $booking->fill($updates);
+            $booking->save();
+        }
+
+        return response()->json([
+            'ok' => true,
+            'data' => [
+                'name_of_work' => $booking->name_of_work ?: $booking->client_address,
+                'issued_to' => $booking->report_issue_to,
+                'ms' => $booking->m_s,
+            ],
+        ]);
+    }
+
     /**
      * Generate Report page: similar to received but with format selection.
      */
@@ -359,7 +403,7 @@ class ReportingController extends Controller
                     'issue_date'        => optional($firstItem->issue_date)->format('Y-m-d'),
                     'reference_no'      => $b->reference_no,
                     'sample_description'=> $firstItem->sample_description,
-                    'name_of_work'      => $b->client_address,
+                    'name_of_work'      => $b->name_of_work ?: $b->client_address,
                     'issued_to'         => $b->report_issue_to,
                     'ms'                => $b->m_s,
                 ];

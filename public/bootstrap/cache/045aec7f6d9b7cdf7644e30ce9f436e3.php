@@ -25,7 +25,12 @@
     </div>
 
     <?php if(!empty($header)): ?>
-    <div class="card mb-3">
+    <?php
+        $headerUpdateRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.header.update')
+            ? route('superadmin.reporting.header.update', $header['id'])
+            : null;
+    ?>
+    <div class="card mb-3" data-booking-header data-booking-id="<?php echo e($header['id']); ?>" <?php if($headerUpdateRoute): ?> data-update-url="<?php echo e($headerUpdateRoute); ?>" <?php endif; ?>>
         <div class="card-body">
             <div class="row g-3">
                 <!-- <div class="col-md-3">
@@ -53,16 +58,16 @@
                     <input type="text" class="form-control" value="<?php echo e($header['sample_description']); ?>" readonly>
                 </div> -->
                 <div class="col-md-6">
-                    <label class="form-label">Name of Work</label>
-                    <input type="text" class="form-control" value="<?php echo e($header['name_of_work']); ?>" readonly>
+                    <label class="form-label">Name of Work <small class="text-muted ms-1">(auto-save)</small></label>
+                    <input type="text" class="form-control header-edit-input" value="<?php echo e($header['name_of_work']); ?>" data-header-field="name_of_work" autocomplete="off">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Issued To</label>
-                    <input type="text" class="form-control" value="<?php echo e($header['issued_to']); ?>" readonly>
+                    <input type="text" class="form-control header-edit-input" value="<?php echo e($header['issued_to']); ?>" data-header-field="issued_to" autocomplete="off">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="<?php echo e($header['ms']); ?>">
+                    <input type="text" class="form-control header-edit-input" value="<?php echo e($header['ms']); ?>" data-header-field="ms" autocomplete="off">
                 </div>
                 
                 <?php
@@ -150,25 +155,29 @@
                                 </td>
                                 <td>
 
+                                    <?php
+                                        $isReceived = (bool) $item->received_at;
+                                    ?>
                                     <div class="report-select">
                                         <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
                                             <?php echo csrf_field(); ?>
-                                            <?php if($item->received_at): ?>
-                                                <div class="report-picker-card position-relative report-select-wrapper">
-                                                    <select name="report_id"
-                                                        class="form-control form-select reports-picker report-select-enhanced"
-                                                        data-item-id="<?php echo e($item->id); ?>"
-                                                        data-placeholder="-- Select Report --">
-                                                        <option value="">-- Select Report --</option>
-                                                        <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                            <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
-                                                                <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+                                            <div class="report-select-wrapper <?php echo e($isReceived ? '' : 'd-none report-select-wrapper--disabled'); ?>"
+                                                 data-report-wrapper="<?php echo e($item->id); ?>">
+                                                <select name="report_id"
+                                                    class="form-control form-select reports-picker report-select-enhanced"
+                                                    data-item-id="<?php echo e($item->id); ?>"
+                                                    data-placeholder="-- Select Report --"
+                                                    data-enabled="<?php echo e($isReceived ? '1' : '0'); ?>"
+                                                    <?php echo e($isReceived ? '' : 'disabled'); ?>>
+                                                    <option value="">-- Select Report --</option>
+                                                    <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                        <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                            <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
 
-                                                            </option>
-                                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                                    </select>
-                                                </div>
-                                            <?php endif; ?>
+                                                        </option>
+                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                </select>
+                                            </div>
                                         </form>
                                     </div>
 
@@ -431,6 +440,105 @@
             };
         })();
 
+        // Auto-save header fields so edits propagate across the system without reloading
+        const initHeaderEditor = () => {
+            const container = document.querySelector('[data-booking-header][data-update-url]');
+            if (!container) return;
+            const updateUrl = container.getAttribute('data-update-url');
+            if (!updateUrl) return;
+
+            let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            if (!csrfToken) {
+                const tokenInput = document.querySelector('input[name="_token"]');
+                if (tokenInput) csrfToken = tokenInput.value;
+            }
+            if (!csrfToken) return;
+
+            const inputs = Array.from(container.querySelectorAll('[data-header-field]'));
+            if (!inputs.length) return;
+
+            const persistField = (input, value) => {
+                if (!input.dataset.headerField) return;
+                if (input.dataset.saving === '1') return;
+                input.dataset.saving = '1';
+                input.classList.remove('is-invalid');
+                input.classList.remove('is-valid');
+                input.classList.add('header-saving');
+
+                const payload = {};
+                payload[input.dataset.headerField] = value;
+
+                fetch(updateUrl, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(payload)
+                }).then(async (resp) => {
+                    const payload = await safeJson(resp) || {};
+                    if (!resp.ok || !payload.ok) {
+                        const errors = (payload.errors && typeof payload.errors === 'object') ? Object.values(payload.errors).flat() : [];
+                        const message = errors.length ? String(errors[0]) : (payload.message || 'Unable to save changes.');
+                        throw new Error(message);
+                    }
+                    const normalized = (payload.data && Object.prototype.hasOwnProperty.call(payload.data, input.dataset.headerField))
+                        ? (payload.data[input.dataset.headerField] || '')
+                        : value;
+                    input.value = normalized;
+                    input.dataset.originalValue = (normalized || '').trim();
+                    input.classList.add('is-valid');
+                    setTimeout(() => input.classList.remove('is-valid'), 1500);
+                }).catch((err) => {
+                    console.warn(err);
+                    input.classList.add('is-invalid');
+                    if (window.Swal) {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            timer: 3000,
+                            showConfirmButton: false,
+                            icon: 'error',
+                            title: err && err.message ? err.message : 'Unable to save changes.'
+                        });
+                    }
+                    input.value = input.dataset.originalValue || '';
+                }).finally(() => {
+                    input.dataset.saving = '0';
+                    input.classList.remove('header-saving');
+                });
+            };
+
+            inputs.forEach((input) => {
+                input.dataset.originalValue = (input.value || '').trim();
+                let debounceId = null;
+                const queuePersist = () => {
+                    const current = (input.value || '').trim();
+                    if (current === (input.dataset.originalValue || '')) return;
+                    if (debounceId) clearTimeout(debounceId);
+                    debounceId = setTimeout(() => persistField(input, current), 500);
+                };
+                input.addEventListener('input', queuePersist);
+                input.addEventListener('blur', () => {
+                    if (debounceId) {
+                        clearTimeout(debounceId);
+                        debounceId = null;
+                    }
+                    const current = (input.value || '').trim();
+                    if (current === (input.dataset.originalValue || '')) return;
+                    persistField(input, current);
+                });
+                input.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        input.blur();
+                    }
+                });
+            });
+        };
+
         const initReportPickers = () => {
             const selects = Array.from(document.querySelectorAll('.reports-picker'));
             if (!selects.length) return;
@@ -462,9 +570,14 @@
                     };
                     try {
                         const instance = new TomSelect(select, options);
+                        select.tomSelectInstance = instance;
                         const controlEl = instance.control || instance.control_input?.parentElement;
                         if (controlEl) {
                             controlEl.classList.add('ts-control-compact');
+                        }
+                        if (select.dataset.enabled !== '1') {
+                            instance.disable();
+                            if (parent) parent.classList.add('report-select-wrapper--disabled');
                         }
                     } catch (e) {
                         console.warn('Tom Select init failed', e);
@@ -671,6 +784,18 @@
                                 const name = data.received_by || data.receiver_name || 'User';
                                 cell.textContent = 'Received by ' + name;
                             }
+                            const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                            const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
+                            if (wrapper) {
+                                wrapper.classList.remove('d-none');
+                                wrapper.classList.remove('report-select-wrapper--disabled');
+                            }
+                            if (selectEl) {
+                                selectEl.dataset.enabled = '1';
+                                selectEl.removeAttribute('disabled');
+                                const ts = selectEl.tomSelectInstance;
+                                if (ts) ts.enable();
+                            }
                             if (issueInput) {
                                 issueInput.classList.remove('d-none');
                                 issueInput.disabled = false;
@@ -716,6 +841,17 @@
                         if (cell) {
                             const name = data.received_by || data.receiver_name || 'User';
                             cell.textContent = 'Received by ' + name;
+                        }
+                        const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                        const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
+                        if (wrapper) {
+                            wrapper.classList.remove('report-select-wrapper--disabled');
+                        }
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
                         }
             // Keep the Issue Date input enabled and visible so user can fill or edit
             if (issueInput) issueInput.classList.remove('d-none');
@@ -771,6 +907,17 @@
                             cell.textContent = 'Received by ' + rn;
                         });
                     }
+                    document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
+                        wrapper.classList.remove('d-none');
+                        wrapper.classList.remove('report-select-wrapper--disabled');
+                        const selectEl = wrapper.querySelector('.reports-picker');
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
+                        }
+                    });
                     // Flip Receive All -> Submit All and enforce color
                     if (receiveAllBtn) receiveAllBtn.classList.add('d-none');
                     if (submitAllBtn) {
@@ -793,6 +940,17 @@
                         btn.setAttribute('data-mode', 'submit');
                         btn.style.backgroundColor = '#FE9F43';
                         btn.style.borderColor = '#FE9F43';
+                    });
+                    document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
+                        wrapper.classList.remove('d-none');
+                        wrapper.classList.remove('report-select-wrapper--disabled');
+                        const selectEl = wrapper.querySelector('.reports-picker');
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
+                        }
                     });
                     // Also reflect status change in UI as a fallback without details
                     document.querySelectorAll('.status-cell').forEach(function(cell) {
@@ -857,6 +1015,7 @@
 
         // Initial state check
         updateBulkButtons();
+        initHeaderEditor();
         initReportPickers();
         // Flash SweetAlert if there is a server flash status message
         try {
@@ -983,6 +1142,10 @@ document.addEventListener('DOMContentLoaded', () => {
     .report-select-wrapper { position: relative; width: 100%; }
     .ts-wrapper.report-select-enhanced {
         width: 100%;
+    }
+    .report-select-wrapper--disabled .ts-wrapper.report-select-enhanced {
+        opacity: 0.45;
+        pointer-events: none;
     }
     .ts-wrapper.report-select-enhanced .ts-control,
     .ts-control-compact {
@@ -1149,6 +1312,21 @@ form .form-label {
   margin-bottom: 4px;
   font-size: 13px;
   color: #333;
+}
+
+.header-saving {
+    background-image: linear-gradient(90deg, rgba(9, 44, 76, 0.05) 25%, rgba(9, 44, 76, 0.12) 50%, rgba(9, 44, 76, 0.05) 75%);
+    background-size: 300% 100%;
+    animation: headerSavingPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes headerSavingPulse {
+    0% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0 50%;
+    }
 }
 
 /* Small note text under inputs */

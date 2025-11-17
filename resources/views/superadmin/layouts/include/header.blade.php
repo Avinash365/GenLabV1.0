@@ -2,13 +2,13 @@
     <!-- Mobile Header & Logo -->
     <div class="header-left active">
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-normal">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img" >
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo.svg') }}" alt="Img" style="height:60px; width:auto;">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo logo-white">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img" >
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg') }}" alt="Img" style="height:52px; width:auto;">
         </a>
         <a href="{{ route('superadmin.dashboard.index') }}" class="logo-small">
-            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img" >
+            <img src="{{ $appSettings['site_logo_url'] ?? url('assets/img/logo-small.png') }}" alt="Img" style="height:40px; width:auto;">
         </a>
     </div>  
 

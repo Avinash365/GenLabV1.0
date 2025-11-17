@@ -11,7 +11,7 @@
     <!-- Logo -->
     <div class="sidebar-logo active">
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-normal">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img" style="height:48px;">
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img" style="height:70px; width:200px; margin-top: 10px; margin-left: -5px;">
         </a>
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-white">
             <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg')); ?>" alt="Img" style="height:36px;">

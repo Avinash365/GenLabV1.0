@@ -1,7 +1,7 @@
-<div style="position: relative; padding-top:150px; padding-left:15px;">
+<div style="position: relative; padding-top:110px; padding-left:15px; font-family: 'Times New Roman', Times, serif;">
 
     
-    <table style="width:718px; border-collapse: collapse;">
+    <table style="width:718px; border-collapse: collapse; font-family: 'Times New Roman', Times, serif;">
         <tr>
             
             <td style="width:80px; padding-bottom:10px;">
@@ -41,44 +41,47 @@
                         </td>
                     </tr> 
                     <tr style="height: 7px;">
-                        <td width="160" rowspan="2" style="width: 160px; padding: 0px 7px; height: 7px; border: 1px solid black;">ISSUED TO</td>
+                        <td width="160" rowspan="2" style="width: 160px; padding: 0px 7px; height: 7px; border: 1px solid black;">Issued To</td>
                         <td width="19" rowspan="2" valign="top" style="width: 19px; padding: 0px 7px; height: 7px; border: 1px solid black;">:</td>
-                        <td width="283" rowspan="2" valign="top" style="width: 282px; padding: 0px 7px; height: 7px; text-transform: uppercase; border: 1px solid black;">
+                        <td width="283" rowspan="2" valign="top" style="width: 282px; padding: 0px 7px; height: 7px;  border: 1px solid black;">
                             <?php echo nl2br(e($issued_to)); ?>
 
                         </td>
-                        <td width="151" style="width: 150px; padding: 0px 7px; height: 7px; border: 1px solid black;">DATE OF RECEIPT</td>
+                        <td width="151" style="width: 150px; padding: 0px 7px; height: 7px; border: 1px solid black;">Date of Receipt</td>
                         <td width="19" style="width: 19px; padding: 0px 7px; height: 7px; border: 1px solid black;">:</td>
-                        <td width="85" style="width: 85px; padding: 0px 7px; height: 7px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e($date_of_receipt); ?></td>
+                        <td width="85" style="width: 85px; padding: 0px 7px; height: 7px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e(\Carbon\Carbon::parse($date_of_receipt)->format('d-m-Y')); ?>   </td>
                     </tr> 
                     <tr style="height: 5px;">
-                        <td width="151" style="width: 150px; padding: 0px 7px; height: 5px; border: 1px solid black;">DATE OF START OF ANALYSIS</td>
+                        <td width="151" style="width: 150px; padding: 0px 7px; height: 5px; border: 1px solid black;">Date of start of analysis</td>
                         <td width="19" style="width: 19px; padding: 0px 7px; height: 5px; border: 1px solid black;">:</td>
-                        <td width="85" style="width: 85px; padding: 0px 7px; height: 5px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e($date_of_start_analysis); ?></td>
+                        <td width="85" style="width: 85px; padding: 0px 7px; height: 5px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e(\Carbon\Carbon::parse($date_of_start_analysis)->format('d-m-Y')); ?></td>
                     </tr> 
                     <tr style="height: 12px;">
-                        <td width="160" style="width: 160px; padding: 0px 7px; height: 12px; border: 1px solid black;">LETTER REF. NO. & DATE</td>
+                        <td width="160" style="width: 160px; padding: 0px 7px; height: 12px; border: 1px solid black;">Letter REF. NO. & Date</td>
                         <td width="19" valign="top" style="width: 19px; padding: 0px 7px; height: 12px; border: 1px solid black;">:</td>
-                        <td width="283" valign="top" style="width: 282px; padding: 0px 7px; height: 12px; text-transform: uppercase; border: 1px solid black;">
-                            <?php echo nl2br(e($letter_ref . '&' . $letter_ref_date)); ?>
+                        <td width="283" valign="top" style="width: 282px; padding: 0px 7px; height: 12px;  border: 1px solid black;">
+                            <?php echo nl2br(e($letter_ref . ' & ' . $letter_ref_date)); ?>
+
+                             <br>
+                                <?php echo e("Agence: " . $m_s); ?>
 
                         </td>                
-                        <td width="151" style="width: 150px; padding: 0px 7px; height: 12px; border: 1px solid black;">DATE OF COMPLETION OF ANALYSIS</td>
+                        <td width="151" style="width: 150px; padding: 0px 7px; height: 12px; border: 1px solid black;">Date of completion of analysis</td>
                         <td width="19" style="width: 19px; padding: 0px 7px; height: 12px; border: 1px solid black;">:</td>
-                        <td width="85" style="width: 85px; padding: 0px 7px; height: 12px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e($date_of_completion); ?></td>
+                        <td width="85" style="width: 85px; padding: 0px 7px; height: 12px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e(\Carbon\Carbon::parse($date_of_completion)->format('d-m-Y')); ?></td>
                     </tr> 
                     <tr style="height: 5px;">
-                        <td width="160" style="width: 160px; padding: 0px 7px; height: 5px; border: 1px solid black;">SAMPLE DESCRIPTION</td>
+                        <td width="160" style="width: 160px; padding: 0px 7px; height: 5px; border: 1px solid black;">Sample Description</td>
                         <td width="19" valign="top" style="width: 19px; padding: 0px 7px; height: 5px; border: 1px solid black;">:</td>
-                        <td width="283" style="width: 282px; padding: 0px 7px; height: 5px; text-transform: uppercase; border: 1px solid black;"><?php echo nl2br(e($sample_description)); ?></td>
-                        <td width="151" style="width: 150px; padding: 0px 7px; height: 5px; border: 1px solid black;">DATE OF ISSUE</td>
+                        <td width="283" style="width: 282px; padding: 0px 7px; height: 5px;  border: 1px solid black;"><?php echo nl2br(e($sample_description)); ?></td>
+                        <td width="151" style="width: 150px; padding: 0px 7px; height: 5px; border: 1px solid black;">Date of issue</td>
                         <td width="19" style="width: 19px; padding: 0px 7px; height: 5px; border: 1px solid black;">:</td>
-                        <td width="85" style="width: 85px; padding: 0px 7px; height: 5px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e($date_of_issue); ?></td>
+                        <td width="85" style="width: 85px; padding: 0px 7px; height: 5px; text-align: center; text-transform: uppercase; border: 1px solid black;"><?php echo e(\Carbon\Carbon::parse($date_of_issue)->format('d-m-Y')); ?></td>
                     </tr> 
                     <tr style="height: 5px;">
-                        <td width="160" style="width: 160px; padding: 0px 7px; height: 5px; border: 1px solid black;">NAME OF WORK</td>
+                        <td width="160" style="width: 160px; padding: 0px 7px; height: 5px; border: 1px solid black;">Name of work</td>
                         <td width="19" valign="top" style="width: 19px; padding: 0px 7px; height: 5px; border: 1px solid black;">:</td>
-                        <td width="539" colspan="4" style="width: 536px; padding: 0px 7px; height: 5px; text-transform: uppercase; border: 1px solid black;"><?php echo nl2br(e($name_of_work)); ?></td>
+                        <td width="539" colspan="4" style="width: 536px; padding: 0px 7px; height: 5px;  border: 1px solid black;"><?php echo nl2br(e($name_of_work)); ?></td>
                     </tr>
                 </tbody>
             </table>  
