@@ -1,0 +1,294 @@
+{
+  "info": {
+    "_postman_id": "1b63c5cb-1d0d-45d4-92f6-95ac3b493e36",
+    "name": "Expenses API",
+    "description": "Beginner-friendly collection for the Expenses API. Set the collection variables before sending any request.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "User Endpoints",
+      "description": "Calls used by the mobile app after logging in as a regular user.",
+      "item": [
+        {
+          "name": "List Personal Expenses",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/expenses?section=personal&month=11&year=2025",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expenses"
+              ],
+              "query": [
+                {
+                  "key": "section",
+                  "value": "personal"
+                },
+                {
+                  "key": "month",
+                  "value": "11"
+                },
+                {
+                  "key": "year",
+                  "value": "2025"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Personal Expense",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "section",
+                  "value": "personal",
+                  "type": "text"
+                },
+                {
+                  "key": "marketing_person_name",
+                  "value": "John Doe",
+                  "type": "text"
+                },
+                {
+                  "key": "amount",
+                  "value": "1500.50",
+                  "type": "text"
+                },
+                {
+                  "key": "from_date",
+                  "value": "2025-11-01",
+                  "type": "text"
+                },
+                {
+                  "key": "to_date",
+                  "value": "2025-11-30",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Taxi and meals",
+                  "type": "text"
+                },
+                {
+                  "key": "pdf",
+                  "type": "file",
+                  "src": "C:\\path\\to\\receipt.pdf",
+                  "description": "Attach a receipt file if you have one. Leave as-is to pick the file manually each time."
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/expenses",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expenses"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Send Personal Expenses For Approval",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{authToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"month\": 11,\n  \"year\": 2025\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/expenses/personal/send-for-approval",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "expenses",
+                "personal",
+                "send-for-approval"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Admin Endpoints",
+      "description": "Calls for reviewers using the admin JWT guard.",
+      "item": [
+        {
+          "name": "List Pending Personal Summaries",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAuthToken}}",
+                "type": "text"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/admin/expenses?section=personal&status=pending",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "expenses"
+              ],
+              "query": [
+                {
+                  "key": "section",
+                  "value": "personal"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Personal Expenses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAuthToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approved_amount\": 500,\n  \"approval_note\": \"Approved via Postman\",\n  \"group_ids\": [101, 102, 103]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/expenses/{{sampleExpenseId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "expenses",
+                "{{sampleExpenseId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Reject Personal Expenses",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{adminAuthToken}}",
+                "type": "text"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json",
+                "type": "text"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"approval_note\": \"Receipts missing\",\n  \"group_ids\": [101, 102]\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/expenses/{{sampleExpenseId}}/reject",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "admin",
+                "expenses",
+                "{{sampleExpenseId}}",
+                "reject"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "https://your-server.example.com/api"
+    },
+    {
+      "key": "authToken",
+      "value": "<paste-user-jwt-token>"
+    },
+    {
+      "key": "adminAuthToken",
+      "value": "<paste-admin-jwt-token>"
+    },
+    {
+      "key": "sampleExpenseId",
+      "value": "123"
+    }
+  ]
+}

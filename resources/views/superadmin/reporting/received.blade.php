@@ -27,7 +27,12 @@
     </div>
 
     @if(!empty($header))
-    <div class="card mb-3">
+    @php
+        $headerUpdateRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.header.update')
+            ? route('superadmin.reporting.header.update', $header['id'])
+            : null;
+    @endphp
+    <div class="card mb-3" data-booking-header data-booking-id="{{ $header['id'] }}" @if($headerUpdateRoute) data-update-url="{{ $headerUpdateRoute }}" @endif>
         <div class="card-body">
             <div class="row g-3">
                 <!-- <div class="col-md-3">
@@ -55,16 +60,16 @@
                     <input type="text" class="form-control" value="{{ $header['sample_description'] }}" readonly>
                 </div> -->
                 <div class="col-md-6">
-                    <label class="form-label">Name of Work</label>
-                    <input type="text" class="form-control" value="{{ $header['name_of_work'] }}" readonly>
+                    <label class="form-label">Name of Work <small class="text-muted ms-1">(auto-save)</small></label>
+                    <input type="text" class="form-control header-edit-input" value="{{ $header['name_of_work'] }}" data-header-field="name_of_work" autocomplete="off">
                 </div>
                 <div class="col-md-6">
                     <label class="form-label">Issued To</label>
-                    <input type="text" class="form-control" value="{{ $header['issued_to'] }}" readonly>
+                    <input type="text" class="form-control header-edit-input" value="{{ $header['issued_to'] }}" data-header-field="issued_to" autocomplete="off">
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="{{ $header['ms'] }}">
+                    <input type="text" class="form-control header-edit-input" value="{{ $header['ms'] }}" data-header-field="ms" autocomplete="off">
                 </div>
                 {{-- Upload Letter(s) box inserted after M/s --}}
                 @php
@@ -151,24 +156,45 @@
                                 </td>
                                 <td>
 
+                                    @php
+                                        $isReceived = (bool) $item->received_at;
+                                        $assignedReport = $item->reports->first();
+                                        $isAssigned = (bool) $assignedReport;
+                                    @endphp
                                     <div class="report-select">
                                         <form method="POST" action="{{ route('superadmin.reporting.assignReport', $item) }}" id="assign-report-form-{{ $item->id }}">
                                             @csrf
-                                            @if($item->received_at)
-                                                <div class="report-picker-card position-relative report-select-wrapper">
-                                                    <select name="report_id"
-                                                        class="form-control form-select reports-picker report-select-enhanced"
-                                                        data-item-id="{{ $item->id }}"
-                                                        data-placeholder="-- Select Report --">
-                                                        <option value="">-- Select Report --</option>
-                                                        @foreach($reports as $report)
-                                                            <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
-                                                                {{ $report->report_no ?? 'Report #'.$report->id }}
-                                                            </option>
-                                                        @endforeach
-                                                    </select>
+                                            <div class="report-picker-simple {{ $isReceived ? '' : 'report-picker-simple--locked' }} {{ $isAssigned ? 'report-picker-simple--filled' : '' }}"
+                                                 data-report-card="{{ $item->id }}">
+                                                <div class="report-picker-simple__control">
+                                                    <div class="report-select-wrapper {{ $isReceived ? '' : 'report-select-wrapper--disabled' }}"
+                                                         data-report-wrapper="{{ $item->id }}">
+                                                        <select name="report_id"
+                                                            class="form-control form-select reports-picker report-select-enhanced"
+                                                            data-item-id="{{ $item->id }}"
+                                                            data-placeholder="-- Select Report --"
+                                                            data-enabled="{{ $isReceived ? '1' : '0' }}"
+                                                            {{ $isReceived ? '' : 'disabled' }}>
+                                                            <option value="">-- Select Report --</option>
+                                                            @foreach($reports as $report)
+                                                                <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
+                                                                    {{ $report->report_no ?? 'Report #'.$report->id }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                        <span class="badge rounded-pill report-picker-simple__status {{ $isAssigned ? 'report-picker-simple__status--assigned' : 'report-picker-simple__status--pending' }}"
+                                                            data-report-status
+                                                            title="{{ $isAssigned ? 'Assigned' : 'Pending' }}"
+                                                            role="img"
+                                                            aria-label="{{ $isAssigned ? 'Assigned' : 'Pending' }}">
+                                                        </span>
                                                 </div>
-                                            @endif
+                                                <small class="text-muted report-picker-simple__hint {{ $isReceived ? 'd-none' : '' }}"
+                                                       data-report-lock-note="{{ $item->id }}">
+                                                    Receive to unlock this dropdown.
+                                                </small>
+                                            </div>
                                         </form>
                                     </div>
 
@@ -192,7 +218,7 @@
                                 </td>
                                     <td>
                                         @php
-                                            $assignedReport = $item->reports->first(); // get assigned report
+                                            $assignedReport = $assignedReport ?? $item->reports->first(); // get assigned report
                                         @endphp
 
                                         {{-- VIEW PDF --}}
@@ -429,6 +455,119 @@
             };
         })();
 
+        const setReportCardState = (cardId, locked) => {
+            if (!cardId) return;
+            const card = document.querySelector('[data-report-card="' + cardId + '"]');
+            if (!card) return;
+            const note = card.querySelector('[data-report-lock-note]');
+            if (locked) {
+                card.classList.add('report-picker-simple--locked');
+                if (note) note.classList.remove('d-none');
+            } else {
+                card.classList.remove('report-picker-simple--locked');
+                if (note) note.classList.add('d-none');
+            }
+        };
+
+        // Auto-save header fields so edits propagate across the system without reloading
+        const initHeaderEditor = () => {
+            const container = document.querySelector('[data-booking-header][data-update-url]');
+            if (!container) return;
+            const updateUrl = container.getAttribute('data-update-url');
+            if (!updateUrl) return;
+
+            let csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            if (!csrfToken) {
+                const tokenInput = document.querySelector('input[name="_token"]');
+                if (tokenInput) csrfToken = tokenInput.value;
+            }
+            if (!csrfToken) return;
+
+            const inputs = Array.from(container.querySelectorAll('[data-header-field]'));
+            if (!inputs.length) return;
+
+            const persistField = (input, value) => {
+                if (!input.dataset.headerField) return;
+                if (input.dataset.saving === '1') return;
+                input.dataset.saving = '1';
+                input.classList.remove('is-invalid');
+                input.classList.remove('is-valid');
+                input.classList.add('header-saving');
+
+                const payload = {};
+                payload[input.dataset.headerField] = value;
+
+                fetch(updateUrl, {
+                    method: 'PATCH',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': csrfToken,
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify(payload)
+                }).then(async (resp) => {
+                    const payload = await safeJson(resp) || {};
+                    if (!resp.ok || !payload.ok) {
+                        const errors = (payload.errors && typeof payload.errors === 'object') ? Object.values(payload.errors).flat() : [];
+                        const message = errors.length ? String(errors[0]) : (payload.message || 'Unable to save changes.');
+                        throw new Error(message);
+                    }
+                    const normalized = (payload.data && Object.prototype.hasOwnProperty.call(payload.data, input.dataset.headerField))
+                        ? (payload.data[input.dataset.headerField] || '')
+                        : value;
+                    input.value = normalized;
+                    input.dataset.originalValue = (normalized || '').trim();
+                    input.classList.add('is-valid');
+                    setTimeout(() => input.classList.remove('is-valid'), 1500);
+                }).catch((err) => {
+                    console.warn(err);
+                    input.classList.add('is-invalid');
+                    if (window.Swal) {
+                        Swal.fire({
+                            toast: true,
+                            position: 'top-end',
+                            timer: 3000,
+                            showConfirmButton: false,
+                            icon: 'error',
+                            title: err && err.message ? err.message : 'Unable to save changes.'
+                        });
+                    }
+                    input.value = input.dataset.originalValue || '';
+                }).finally(() => {
+                    input.dataset.saving = '0';
+                    input.classList.remove('header-saving');
+                });
+            };
+
+            inputs.forEach((input) => {
+                input.dataset.originalValue = (input.value || '').trim();
+                let debounceId = null;
+                const queuePersist = () => {
+                    const current = (input.value || '').trim();
+                    if (current === (input.dataset.originalValue || '')) return;
+                    if (debounceId) clearTimeout(debounceId);
+                    debounceId = setTimeout(() => persistField(input, current), 500);
+                };
+                input.addEventListener('input', queuePersist);
+                input.addEventListener('blur', () => {
+                    if (debounceId) {
+                        clearTimeout(debounceId);
+                        debounceId = null;
+                    }
+                    const current = (input.value || '').trim();
+                    if (current === (input.dataset.originalValue || '')) return;
+                    persistField(input, current);
+                });
+                input.addEventListener('keydown', (ev) => {
+                    if (ev.key === 'Enter') {
+                        ev.preventDefault();
+                        input.blur();
+                    }
+                });
+            });
+        };
+
         const initReportPickers = () => {
             const selects = Array.from(document.querySelectorAll('.reports-picker'));
             if (!selects.length) return;
@@ -436,12 +575,12 @@
                 selects.forEach((select) => {
                     if (select.dataset.tsInit === '1') return;
                     select.dataset.tsInit = '1';
-                    const parent = select.closest('.report-select-wrapper');
                     const placeholder = select.dataset.placeholder || '-- Select Report --';
+                    const parentWrapper = select.closest('.report-select-wrapper');
                     const options = {
                         placeholder,
                         allowEmptyOption: true,
-                        dropdownParent: parent || document.body,
+                        dropdownParent: document.body,
                         plugins: ['dropdown_input'],
                         render: {
                             option(item, escape) {
@@ -452,6 +591,24 @@
                             }
                         },
                         onChange(value) {
+                                const card = select.closest('.report-picker-simple');
+                                if (card) {
+                                    const status = card.querySelector('[data-report-status]');
+                                    const isAssigned = !!value;
+                                    if (isAssigned) {
+                                        card.classList.add('report-picker-simple--filled');
+                                        card.classList.remove('report-picker-simple--locked');
+                                    } else {
+                                        card.classList.remove('report-picker-simple--filled');
+                                    }
+                                    if (status) {
+                                        const label = isAssigned ? 'Assigned' : 'Pending';
+                                        status.classList.toggle('report-picker-simple__status--assigned', isAssigned);
+                                        status.classList.toggle('report-picker-simple__status--pending', !isAssigned);
+                                        status.setAttribute('title', label);
+                                        status.setAttribute('aria-label', label);
+                                    }
+                                }
                             if (typeof value !== 'undefined') {
                                 const form = select.closest('form');
                                 if (form) form.submit();
@@ -460,9 +617,43 @@
                     };
                     try {
                         const instance = new TomSelect(select, options);
+                        select.tomSelectInstance = instance;
                         const controlEl = instance.control || instance.control_input?.parentElement;
                         if (controlEl) {
                             controlEl.classList.add('ts-control-compact');
+                        }
+                        const dropdownEl = instance.dropdown;
+                        if (dropdownEl) {
+                            dropdownEl.classList.add('report-picker-dropdown');
+                        }
+                        const positionDropdown = () => {
+                            if (!dropdownEl || dropdownEl.classList.contains('ts-hidden')) return;
+                            const anchor = parentWrapper || controlEl;
+                            if (!anchor) return;
+                            const rect = anchor.getBoundingClientRect();
+                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                            dropdownEl.style.position = 'absolute';
+                            dropdownEl.style.left = (rect.left + scrollLeft) + 'px';
+                            dropdownEl.style.top = (rect.bottom + scrollTop + 6) + 'px';
+                            dropdownEl.style.minWidth = rect.width + 'px';
+                            dropdownEl.style.maxWidth = rect.width + 'px';
+                            dropdownEl.style.width = rect.width + 'px';
+                        };
+                        const onScroll = () => positionDropdown();
+                        const onResize = () => positionDropdown();
+                        instance.on('dropdown_open', () => {
+                            positionDropdown();
+                            window.addEventListener('scroll', onScroll, true);
+                            window.addEventListener('resize', onResize);
+                        });
+                        instance.on('dropdown_close', () => {
+                            window.removeEventListener('scroll', onScroll, true);
+                            window.removeEventListener('resize', onResize);
+                        });
+                        if (select.dataset.enabled !== '1') {
+                            instance.disable();
+                            if (parentWrapper) parentWrapper.classList.add('report-select-wrapper--disabled');
                         }
                     } catch (e) {
                         console.warn('Tom Select init failed', e);
@@ -669,6 +860,18 @@
                                 const name = data.received_by || data.receiver_name || 'User';
                                 cell.textContent = 'Received by ' + name;
                             }
+                            const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                            const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
+                            if (wrapper) {
+                                wrapper.classList.remove('report-select-wrapper--disabled');
+                            }
+                            setReportCardState(id, false);
+                            if (selectEl) {
+                                selectEl.dataset.enabled = '1';
+                                selectEl.removeAttribute('disabled');
+                                const ts = selectEl.tomSelectInstance;
+                                if (ts) ts.enable();
+                            }
                             if (issueInput) {
                                 issueInput.classList.remove('d-none');
                                 issueInput.disabled = false;
@@ -714,6 +917,18 @@
                         if (cell) {
                             const name = data.received_by || data.receiver_name || 'User';
                             cell.textContent = 'Received by ' + name;
+                        }
+                        const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                        const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
+                        if (wrapper) {
+                            wrapper.classList.remove('report-select-wrapper--disabled');
+                        }
+                        setReportCardState(id, false);
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
                         }
             // Keep the Issue Date input enabled and visible so user can fill or edit
             if (issueInput) issueInput.classList.remove('d-none');
@@ -769,6 +984,17 @@
                             cell.textContent = 'Received by ' + rn;
                         });
                     }
+                    document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
+                        wrapper.classList.remove('report-select-wrapper--disabled');
+                        const selectEl = wrapper.querySelector('.reports-picker');
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
+                        }
+                        setReportCardState(wrapper.getAttribute('data-report-wrapper'), false);
+                    });
                     // Flip Receive All -> Submit All and enforce color
                     if (receiveAllBtn) receiveAllBtn.classList.add('d-none');
                     if (submitAllBtn) {
@@ -791,6 +1017,17 @@
                         btn.setAttribute('data-mode', 'submit');
                         btn.style.backgroundColor = '#FE9F43';
                         btn.style.borderColor = '#FE9F43';
+                    });
+                    document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
+                        wrapper.classList.remove('report-select-wrapper--disabled');
+                        const selectEl = wrapper.querySelector('.reports-picker');
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
+                        }
+                        setReportCardState(wrapper.getAttribute('data-report-wrapper'), false);
                     });
                     // Also reflect status change in UI as a fallback without details
                     document.querySelectorAll('.status-cell').forEach(function(cell) {
@@ -855,6 +1092,7 @@
 
         // Initial state check
         updateBulkButtons();
+        initHeaderEditor();
         initReportPickers();
         // Flash SweetAlert if there is a server flash status message
         try {
@@ -962,80 +1200,133 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 6px 12px !important;
         font-weight: 600 !important;
     }
-    .report-picker-card {
-        display: block;
-        width: 100%;
-        background: #ffffff;
-        border: 1px solid #d0d5dd;
-        border-radius: 8px;
+    .report-picker-simple {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .report-picker-simple__control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .report-picker-simple__control .report-select-wrapper { flex: 1; }
+    .report-picker-simple__status {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
         padding: 0;
+        text-indent: -9999px;
+        overflow: hidden;
+        cursor: help;
         box-shadow: none;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .report-picker-card:hover,
-    .report-picker-card:focus-within {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        background: #ffffff;
+    .report-picker-simple__status--assigned {
+        background: #16a34a;
     }
-    .report-select-wrapper { position: relative; width: 100%; }
+    .report-picker-simple__status--pending {
+        background: #facc15;
+    }
+    .report-picker-simple__hint {
+        font-size: 11px;
+        margin: 0;
+    }
+    .report-picker-simple--locked .report-select-wrapper {
+        opacity: 0.55;
+    }
+    .report-select-wrapper {
+        position: relative;
+        width: 100%;
+    }
     .ts-wrapper.report-select-enhanced {
         width: 100%;
     }
+    .report-select-wrapper--disabled .ts-wrapper.report-select-enhanced {
+        opacity: 0.45;
+        pointer-events: none;
+    }
     .ts-wrapper.report-select-enhanced .ts-control,
     .ts-control-compact {
-        border: 0 !important;
+        border: 1px solid #cfd5e1 !important;
+        border-radius: 6px !important;
+        min-height: 34px;
+        padding: 4px 8px !important;
+        background: #ffffff;
         box-shadow: none !important;
-        min-height: 32px;
-        padding: 6px 12px !important;
-        background: transparent;
         font-size: 13px;
         font-weight: 500;
-        color: #111827;
+        color: #1f2937;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control::before {
+        display: none;
     }
     .ts-wrapper.report-select-enhanced .ts-control > div {
         margin: 0;
     }
     .ts-wrapper.report-select-enhanced .ts-control input {
-        color: #111827;
+        color: #1f2937;
     }
     .ts-wrapper.report-select-enhanced .ts-control::placeholder,
     .ts-wrapper.report-select-enhanced .ts-control .item {
         color: #1f2937;
-        font-weight: 600;
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown {
-        background: #ffffff;
-        border: 1px solid #dce2f1;
-        border-radius: 8px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
-        padding: 10px 0 8px;
-        overflow: hidden;
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .dropdown-input {
-        border-radius: 6px;
-        border: 1px solid #c7d0ea;
-        padding: 6px 10px;
-        margin: 0 10px 8px;
-        font-size: 12px;
-        background-color: #f4f6fb;
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option {
-        padding: 8px 12px;
-        font-size: 12px;
         font-weight: 500;
-        color: #111827;
-        border-radius: 0;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option.active {
-        background: #2563eb;
+    .ts-dropdown.report-picker-dropdown {
+        background: #ffffff;
+        border: 1px solid #d7dde5;
+        border-radius: 14px;
+        box-shadow: 0 20px 45px rgba(9, 44, 76, 0.18);
+        padding: 14px;
+        z-index: 2000;
+        max-height: 280px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-top: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .ts-dropdown.report-picker-dropdown .dropdown-input {
+        border-radius: 8px;
+        border: 1px solid #cfd5e1;
+        padding: 8px 12px;
+        margin: 0;
+        font-size: 13px;
+        background: #f7f9fc;
+        width: 100%;
+        box-sizing: border-box;
+        box-shadow: inset 0 1px 2px rgba(15,23,42,0.08);
+    }
+    .ts-dropdown.report-picker-dropdown .ts-dropdown-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2px;
+        border-radius: 10px;
+        background: #fff;
+    }
+    .ts-dropdown.report-picker-dropdown .option {
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #0f172a;
+        border-radius: 6px;
+        margin: 2px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ts-dropdown.report-picker-dropdown .option.active {
+        background: #092C4C;
         color: #ffffff;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option:not(.active):hover {
-        background-color: rgba(37, 99, 235, 0.1);
+    .ts-dropdown.report-picker-dropdown .option:not(.active):hover {
+        background-color: rgba(9, 44, 76, 0.08);
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .no-results {
-        padding: 6px 12px;
+    .ts-dropdown.report-picker-dropdown .no-results {
+        padding: 6px 14px;
         font-size: 12px;
         color: #6b7280;
     }
@@ -1147,6 +1438,21 @@ form .form-label {
   margin-bottom: 4px;
   font-size: 13px;
   color: #333;
+}
+
+.header-saving {
+    background-image: linear-gradient(90deg, rgba(9, 44, 76, 0.05) 25%, rgba(9, 44, 76, 0.12) 50%, rgba(9, 44, 76, 0.05) 75%);
+    background-size: 300% 100%;
+    animation: headerSavingPulse 1.2s ease-in-out infinite;
+}
+
+@keyframes headerSavingPulse {
+    0% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0 50%;
+    }
 }
 
 /* Small note text under inputs */

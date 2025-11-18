@@ -28,6 +28,7 @@
         </div>
 
         @include('superadmin.departments.partials.metrics', ['metrics' => $payload['metrics'] ?? []])
+        @include('superadmin.departments.partials.charts', ['charts' => $payload['charts'] ?? []])
 
         <div class="row g-3">
             <div class="col-xl-6">

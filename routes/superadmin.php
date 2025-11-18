@@ -455,6 +455,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
                 Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
                 Route::get('/generate', [ReportingController::class, 'generate'])->name('generate');
 
+                Route::patch('/header/{booking}', [ReportingController::class, 'updateHeader'])->name('header.update');
+
                 Route::post('/reporting/assign/{item}', [ReportingController::class, 'assignReport'])->name('assignReport');
 
             });

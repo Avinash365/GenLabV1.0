@@ -11,8 +11,10 @@ class SiteSetting extends Model
 
     protected $fillable = [
         'site_logo',
+        'site_favicon',
         'theme_color',
         'company_name',
         'company_address',
+        'project_title',
     ];
 }

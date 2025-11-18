@@ -17,6 +17,7 @@
         </div>
 
         <?php echo $__env->make('superadmin.departments.partials.metrics', ['metrics' => $payload['metrics'] ?? []], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
+        <?php echo $__env->make('superadmin.departments.partials.charts', ['charts' => $payload['charts'] ?? []], \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?>
 
         <div class="row g-3">
             <div class="col-xl-6">

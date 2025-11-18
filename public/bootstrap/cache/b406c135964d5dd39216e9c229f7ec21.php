@@ -2,13 +2,13 @@
     <!-- Mobile Header & Logo -->
     <div class="header-left active">
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-normal">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img" >
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo.svg')); ?>" alt="Img" style="height:60px; width:auto;">
         </a>
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo logo-white">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg')); ?>" alt="Img" >
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-white.svg')); ?>" alt="Img" style="height:52px; width:auto;">
         </a>
         <a href="<?php echo e(route('superadmin.dashboard.index')); ?>" class="logo-small">
-            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-small.png')); ?>" alt="Img" >
+            <img src="<?php echo e($appSettings['site_logo_url'] ?? url('assets/img/logo-small.png')); ?>" alt="Img" style="height:40px; width:auto;">
         </a>
     </div>  
 
@@ -28,7 +28,7 @@
         </a>
         <div class="dropdown-menu dropdown-menu-end">
             <a class="dropdown-item" href="#">My Profile</a>
-            <a class="dropdown-item" href="#">Settings</a>
+            <a class="dropdown-item <?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>" href="<?php echo e(route('superadmin.websettings.edit')); ?>">Settings</a>
             <a class="dropdown-item" href="<?php echo e(route('superadmin.logout')); ?>"
                onclick="event.preventDefault(); document.getElementById('logout-form-mobile').submit();">
                Logout
@@ -66,7 +66,7 @@
 
         <!-- Center: Action buttons -->
         <div class="d-flex align-items-center flex-shrink-0" style="gap:14px; margin-left:18px;">
-            <a href="#" class="btn fw-bold d-flex align-items-center justify-content-center" style="background:#FE9F43; border-radius:5px; color:#fff; height:30px; min-width:95px; font-size:12px; padding:7px 12px;">
+            <a href="<?php echo e(route('superadmin.bookings.newbooking')); ?>" class="btn fw-bold d-flex align-items-center justify-content-center<?php echo e(Request::routeIs('superadmin.bookings.newbooking') ? ' active' : ''); ?>" style="background:#FE9F43; border-radius:5px; color:#fff; height:30px; min-width:95px; font-size:12px; padding:7px 12px;">
                 <i class="fa fa-plus me-2"></i>Add New
             </a>
             <a href="#" class="btn fw-bold d-flex align-items-center justify-content-center" style="background:#092c4c; border-radius:5px; color:#fff; height:30px; min-width:80px; font-size:12px; padding:0 10px;">
@@ -93,7 +93,7 @@
                 <i class="fa fa-bell"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="font-size:11px; min-width:16px; height:16px; display:flex; align-items:center; justify-content:center;"></span>
             </button>
-            <a href="<?php echo e(route('superadmin.websettings.edit')); ?>" class="btn btn-light p-0 <?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb;">
+            <a href="<?php echo e(route('superadmin.websettings.edit')); ?>" class="btn btn-light d-flex align-items-center justify-content-center p-0 <?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class="fa fa-cog"></i>
             </a>
 
@@ -122,7 +122,7 @@
                     </li>
                     <li><hr class="dropdown-divider"></li>
                     <li><a class="dropdown-item" href="<?php echo e(route('superadmin.profile')); ?>"><i class="fa fa-user me-2"></i>Profile</a></li>
-                    <li><a class="dropdown-item" href="#"><i class="fa fa-cog me-2"></i>Settings</a></li>
+            <li><a class="dropdown-item <?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>" href="<?php echo e(route('superadmin.websettings.edit')); ?>"><i class="fa fa-cog me-2"></i>Settings</a></li>
                     <li><hr class="dropdown-divider"></li>
                     <li>
                         <a class="dropdown-item text-danger" href="<?php echo e(route('superadmin.logout')); ?>" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">

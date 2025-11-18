@@ -5,6 +5,7 @@ use App\Http\Controllers\MobileControllers\Auth\AdminAuthController;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Api\ChatApiController;
 use App\Http\Controllers\MobileControllers\Accounts\MarketingPersonInfo; 
+use App\Http\Controllers\Api\ExpenseApiController;
 
 use Illuminate\Support\Facades\Route;
 
@@ -114,6 +115,23 @@ Route::middleware(['multi_jwt:api_admin'])->prefix('admin/chat')->name('api.admi
     Route::post('/users/{user}/set-admin', [ChatController::class, 'setChatAdmin']);
 }); 
 
+
+
+Route::middleware(['multi_jwt:api'])->prefix('expenses')->group(function () {
+    Route::get('/', [ExpenseApiController::class, 'index']);
+    Route::post('/', [ExpenseApiController::class, 'store']);
+    Route::post('/personal/send-for-approval', [ExpenseApiController::class, 'sendPersonalForApproval']);
+    Route::get('/{expense}', [ExpenseApiController::class, 'show']);
+    Route::match(['put', 'patch'], '/{expense}', [ExpenseApiController::class, 'update']);
+    Route::delete('/{expense}', [ExpenseApiController::class, 'destroy']);
+});
+
+Route::middleware(['multi_jwt:api_admin'])->prefix('admin/expenses')->group(function () {
+    Route::get('/', [ExpenseApiController::class, 'index']);
+    Route::get('/{expense}', [ExpenseApiController::class, 'show']);
+    Route::post('/{expense}/approve', [ExpenseApiController::class, 'approve']);
+    Route::post('/{expense}/reject', [ExpenseApiController::class, 'reject']);
+});
 
 
 Route::prefix('marketing-person')->group(function () {

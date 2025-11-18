@@ -74,13 +74,13 @@
         type="date" 
         class="form-control" 
         name="job_order_date" 
-        value="<?php echo e(old('job_order_date')); ?>" 
+        value="<?php echo e(old('job_order_date', date('Y-m-d'))); ?>"
         <?php echo e($firstBackedBooking == 0 ? 'min=' . date('Y-m-d') : ''); ?>
 
         required
     >
     <?php if($firstBackedBooking == 0): ?>
-        <small class="text-danger">You cannot select a past date.</small>
+        <small class="text-danger"></small>
     <?php endif; ?>
 </div>
 
@@ -130,10 +130,16 @@
                                         <option value="without_bill" <?php echo e(old('payment_option') == 'without_bill' ? 'selected' : ''); ?>>Without Bill</option>
                                     </select>
                                 </div>
-                            </div>
-                            <div class="col-sm-12 col-12 mt-3">
-                                <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="name_of_work" placeholder="Enter work name" value="<?php echo e(old('name_of_work')); ?>">
+                            </div> 
+                            <div class="row">   
+                                <div class="col-sm-8 col-12 mt-3">
+                                    <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="name_of_work" placeholder="Enter work name" value="<?php echo e(old('name_of_work')); ?>">
+                                </div>    
+                                <div class="col-sm-4 col-12 mt-3">
+                                    <label class="form-label">M.S <span class="text-danger">*</span></label>
+                                    <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s')); ?>">
+                                </div> 
                             </div>
                         </div>
                     </div>
