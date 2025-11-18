@@ -32,5 +32,6 @@ class AppServiceProvider extends ServiceProvider
         }
 
         view()->share('appSettings', $appSettings);
+        view()->share('setting', $settings);
     }
 }

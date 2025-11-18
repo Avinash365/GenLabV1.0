@@ -157,26 +157,43 @@
 
                                     <?php
                                         $isReceived = (bool) $item->received_at;
+                                        $assignedReport = $item->reports->first();
+                                        $isAssigned = (bool) $assignedReport;
                                     ?>
                                     <div class="report-select">
                                         <form method="POST" action="<?php echo e(route('superadmin.reporting.assignReport', $item)); ?>" id="assign-report-form-<?php echo e($item->id); ?>">
                                             <?php echo csrf_field(); ?>
-                                            <div class="report-select-wrapper <?php echo e($isReceived ? '' : 'd-none report-select-wrapper--disabled'); ?>"
-                                                 data-report-wrapper="<?php echo e($item->id); ?>">
-                                                <select name="report_id"
-                                                    class="form-control form-select reports-picker report-select-enhanced"
-                                                    data-item-id="<?php echo e($item->id); ?>"
-                                                    data-placeholder="-- Select Report --"
-                                                    data-enabled="<?php echo e($isReceived ? '1' : '0'); ?>"
-                                                    <?php echo e($isReceived ? '' : 'disabled'); ?>>
-                                                    <option value="">-- Select Report --</option>
-                                                    <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                        <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
-                                                            <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
+                                            <div class="report-picker-simple <?php echo e($isReceived ? '' : 'report-picker-simple--locked'); ?> <?php echo e($isAssigned ? 'report-picker-simple--filled' : ''); ?>"
+                                                 data-report-card="<?php echo e($item->id); ?>">
+                                                <div class="report-picker-simple__control">
+                                                    <div class="report-select-wrapper <?php echo e($isReceived ? '' : 'report-select-wrapper--disabled'); ?>"
+                                                         data-report-wrapper="<?php echo e($item->id); ?>">
+                                                        <select name="report_id"
+                                                            class="form-control form-select reports-picker report-select-enhanced"
+                                                            data-item-id="<?php echo e($item->id); ?>"
+                                                            data-placeholder="-- Select Report --"
+                                                            data-enabled="<?php echo e($isReceived ? '1' : '0'); ?>"
+                                                            <?php echo e($isReceived ? '' : 'disabled'); ?>>
+                                                            <option value="">-- Select Report --</option>
+                                                            <?php $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                                <option value="<?php echo e($report->id); ?>" <?php echo e($item->reports->contains($report->id) ? 'selected' : ''); ?>>
+                                                                    <?php echo e($report->report_no ?? 'Report #'.$report->id); ?>
 
-                                                        </option>
-                                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                                </select>
+                                                                </option>
+                                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                        </select>
+                                                    </div>
+                                                        <span class="badge rounded-pill report-picker-simple__status <?php echo e($isAssigned ? 'report-picker-simple__status--assigned' : 'report-picker-simple__status--pending'); ?>"
+                                                            data-report-status
+                                                            title="<?php echo e($isAssigned ? 'Assigned' : 'Pending'); ?>"
+                                                            role="img"
+                                                            aria-label="<?php echo e($isAssigned ? 'Assigned' : 'Pending'); ?>">
+                                                        </span>
+                                                </div>
+                                                <small class="text-muted report-picker-simple__hint <?php echo e($isReceived ? 'd-none' : ''); ?>"
+                                                       data-report-lock-note="<?php echo e($item->id); ?>">
+                                                    Receive to unlock this dropdown.
+                                                </small>
                                             </div>
                                         </form>
                                     </div>
@@ -201,7 +218,7 @@
                                 </td>
                                     <td>
                                         <?php
-                                            $assignedReport = $item->reports->first(); // get assigned report
+                                            $assignedReport = $assignedReport ?? $item->reports->first(); // get assigned report
                                         ?>
 
                                         
@@ -415,30 +432,43 @@
             document.head.appendChild(s);
         }
 
-        const updateReportPickerTrigger = (wrapper) => {
-            if (!wrapper) return;
-            const select = wrapper.querySelector('.reports-picker');
-            const trigger = wrapper.querySelector('.report-picker-trigger');
-            if (!select || !trigger) return;
-            const placeholder = select.dataset.placeholder || trigger.dataset.placeholder || '-- Select Report --';
-            const option = select.options[select.selectedIndex];
-            const label = option && option.value ? option.textContent.trim() : placeholder;
-            trigger.textContent = label || placeholder;
-            if (option && option.value) {
-                trigger.classList.add('report-picker-selected');
-            } else {
-                trigger.classList.remove('report-picker-selected');
-            }
-        };
+        // Dynamically load Tom Select once for searchable dropdowns
+        const ensureTomSelect = (() => {
+            let loadPromise = null;
+            return () => {
+                if (window.TomSelect) return Promise.resolve();
+                if (loadPromise) return loadPromise;
+                loadPromise = new Promise((resolve, reject) => {
+                    const cssId = 'tom-select-css';
+                    if (!document.getElementById(cssId)) {
+                        const link = document.createElement('link');
+                        link.id = cssId;
+                        link.rel = 'stylesheet';
+                        link.href = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/css/tom-select.css';
+                        document.head.appendChild(link);
+                    }
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/tom-select@2.3.1/dist/js/tom-select.complete.min.js';
+                    script.onload = () => resolve();
+                    script.onerror = () => reject(new Error('Failed to load Tom Select'));
+                    document.head.appendChild(script);
+                });
+                return loadPromise;
+            };
+        })();
 
-        const enableReportPicker = (wrapper) => {
-            if (!wrapper) return;
-            wrapper.classList.remove('report-select-wrapper--disabled');
-            const select = wrapper.querySelector('.reports-picker');
-            const trigger = wrapper.querySelector('.report-picker-trigger');
-            if (select) select.disabled = false;
-            if (trigger) trigger.disabled = false;
-            updateReportPickerTrigger(wrapper);
+        const setReportCardState = (cardId, locked) => {
+            if (!cardId) return;
+            const card = document.querySelector('[data-report-card="' + cardId + '"]');
+            if (!card) return;
+            const note = card.querySelector('[data-report-lock-note]');
+            if (locked) {
+                card.classList.add('report-picker-simple--locked');
+                if (note) note.classList.remove('d-none');
+            } else {
+                card.classList.remove('report-picker-simple--locked');
+                if (note) note.classList.add('d-none');
+            }
         };
 
         // Auto-save header fields so edits propagate across the system without reloading
@@ -540,106 +570,98 @@
             });
         };
 
-        const initReportPickerPopups = () => {
-            const wrappers = Array.from(document.querySelectorAll('.report-select-wrapper'));
-            if (!wrappers.length) return;
-            wrappers.forEach((wrapper) => {
-                const select = wrapper.querySelector('.reports-picker');
-                const trigger = wrapper.querySelector('.report-picker-trigger');
-                if (!select || !trigger) return;
-                if (trigger.dataset.bound === '1') return;
-                trigger.dataset.bound = '1';
-
-                if (select.disabled) {
-                    trigger.disabled = true;
-                    wrapper.classList.add('report-select-wrapper--disabled');
-                }
-
-                updateReportPickerTrigger(wrapper);
-
-                trigger.addEventListener('click', () => {
-                    if (trigger.disabled) return;
-                    const placeholder = select.dataset.placeholder || trigger.dataset.placeholder || '-- Select Report --';
-                    const options = Array.from(select.options)
-                        .filter((opt) => opt.value)
-                        .map((opt) => ({ value: opt.value, label: (opt.textContent || '').trim() || placeholder }));
-
-                    if (!options.length) {
-                        if (window.Swal) {
-                            Swal.fire({ icon: 'info', title: 'No Reports', text: 'No report formats are available yet.' });
-                        } else {
-                            alert('No report formats are available yet.');
-                        }
-                        return;
-                    }
-
-                    const currentValue = select.value;
-
-                    if (!window.Swal) {
-                        const fallback = window.prompt('Enter report number:', currentValue ? currentValue : '');
-                        if (!fallback) return;
-                        const match = options.find((opt) => opt.value === fallback || opt.label === fallback);
-                        if (!match) return;
-                        select.value = match.value;
-                        updateReportPickerTrigger(wrapper);
-                        const form = select.closest('form');
-                        if (form) form.submit();
-                        return;
-                    }
-
-                    Swal.fire({
-                        title: 'Select Report',
-                        width: 520,
-                        showConfirmButton: false,
-                        showCancelButton: true,
-                        cancelButtonText: 'Close',
-                        customClass: { popup: 'report-picker-swal' },
-                        html: `
-                            <div class="report-picker-modal">
-                                <input type="search" class="form-control report-picker-search" placeholder="Search report..." autofocus>
-                                <div class="report-picker-options" role="listbox"></div>
-                            </div>
-                        `,
-                        didOpen: (modal) => {
-                            const searchInput = modal.querySelector('.report-picker-search');
-                            const optionList = modal.querySelector('.report-picker-options');
-                            const renderOptions = (query = '') => {
-                                const q = query.trim().toLowerCase();
-                                optionList.innerHTML = '';
-                                const matches = q
-                                    ? options.filter((opt) => opt.label.toLowerCase().includes(q) || opt.value.toLowerCase().includes(q))
-                                    : options;
-                                if (!matches.length) {
-                                    optionList.innerHTML = '<div class="report-picker-empty">No matching reports</div>';
-                                    return;
+        const initReportPickers = () => {
+            const selects = Array.from(document.querySelectorAll('.reports-picker'));
+            if (!selects.length) return;
+            ensureTomSelect().then(() => {
+                selects.forEach((select) => {
+                    if (select.dataset.tsInit === '1') return;
+                    select.dataset.tsInit = '1';
+                    const placeholder = select.dataset.placeholder || '-- Select Report --';
+                    const parentWrapper = select.closest('.report-select-wrapper');
+                    const options = {
+                        placeholder,
+                        allowEmptyOption: true,
+                        dropdownParent: document.body,
+                        plugins: ['dropdown_input'],
+                        render: {
+                            option(item, escape) {
+                                return `<div class="option" data-value="${escape(item.value)}">${escape(item.text)}</div>`;
+                            },
+                            item(item, escape) {
+                                return `<div class="item">${escape(item.text || placeholder)}</div>`;
+                            }
+                        },
+                        onChange(value) {
+                                const card = select.closest('.report-picker-simple');
+                                if (card) {
+                                    const status = card.querySelector('[data-report-status]');
+                                    const isAssigned = !!value;
+                                    if (isAssigned) {
+                                        card.classList.add('report-picker-simple--filled');
+                                        card.classList.remove('report-picker-simple--locked');
+                                    } else {
+                                        card.classList.remove('report-picker-simple--filled');
+                                    }
+                                    if (status) {
+                                        const label = isAssigned ? 'Assigned' : 'Pending';
+                                        status.classList.toggle('report-picker-simple__status--assigned', isAssigned);
+                                        status.classList.toggle('report-picker-simple__status--pending', !isAssigned);
+                                        status.setAttribute('title', label);
+                                        status.setAttribute('aria-label', label);
+                                    }
                                 }
-                                matches.forEach((opt) => {
-                                    const btn = document.createElement('button');
-                                    btn.type = 'button';
-                                    btn.className = 'report-picker-option btn btn-light w-100 text-start';
-                                    btn.dataset.value = opt.value;
-                                    btn.textContent = opt.label;
-                                    if (opt.value === currentValue) btn.classList.add('active');
-                                    btn.addEventListener('click', () => {
-                                        select.value = opt.value;
-                                        updateReportPickerTrigger(wrapper);
-                                        const form = select.closest('form');
-                                        if (form) form.submit();
-                                        Swal.close();
-                                    });
-                                    optionList.appendChild(btn);
-                                });
-                            };
-                            renderOptions();
-                            if (searchInput) {
-                                searchInput.addEventListener('input', (ev) => renderOptions(ev.target.value));
+                            if (typeof value !== 'undefined') {
+                                const form = select.closest('form');
+                                if (form) form.submit();
                             }
                         }
-                    });
+                    };
+                    try {
+                        const instance = new TomSelect(select, options);
+                        select.tomSelectInstance = instance;
+                        const controlEl = instance.control || instance.control_input?.parentElement;
+                        if (controlEl) {
+                            controlEl.classList.add('ts-control-compact');
+                        }
+                        const dropdownEl = instance.dropdown;
+                        if (dropdownEl) {
+                            dropdownEl.classList.add('report-picker-dropdown');
+                        }
+                        const positionDropdown = () => {
+                            if (!dropdownEl || dropdownEl.classList.contains('ts-hidden')) return;
+                            const anchor = parentWrapper || controlEl;
+                            if (!anchor) return;
+                            const rect = anchor.getBoundingClientRect();
+                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                            dropdownEl.style.position = 'absolute';
+                            dropdownEl.style.left = (rect.left + scrollLeft) + 'px';
+                            dropdownEl.style.top = (rect.bottom + scrollTop + 6) + 'px';
+                            dropdownEl.style.minWidth = rect.width + 'px';
+                            dropdownEl.style.maxWidth = rect.width + 'px';
+                            dropdownEl.style.width = rect.width + 'px';
+                        };
+                        const onScroll = () => positionDropdown();
+                        const onResize = () => positionDropdown();
+                        instance.on('dropdown_open', () => {
+                            positionDropdown();
+                            window.addEventListener('scroll', onScroll, true);
+                            window.addEventListener('resize', onResize);
+                        });
+                        instance.on('dropdown_close', () => {
+                            window.removeEventListener('scroll', onScroll, true);
+                            window.removeEventListener('resize', onResize);
+                        });
+                        if (select.dataset.enabled !== '1') {
+                            instance.disable();
+                            if (parentWrapper) parentWrapper.classList.add('report-select-wrapper--disabled');
+                        }
+                    } catch (e) {
+                        console.warn('Tom Select init failed', e);
+                    }
                 });
-
-                select.addEventListener('change', () => updateReportPickerTrigger(wrapper));
-            });
+            }).catch((err) => console.warn(err));
         };
 
         // Upload/View Letters handlers
@@ -841,9 +863,16 @@
                                 cell.textContent = 'Received by ' + name;
                             }
                             const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                            const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
                             if (wrapper) {
-                                wrapper.classList.remove('d-none');
-                                enableReportPicker(wrapper);
+                                wrapper.classList.remove('report-select-wrapper--disabled');
+                            }
+                            setReportCardState(id, false);
+                            if (selectEl) {
+                                selectEl.dataset.enabled = '1';
+                                selectEl.removeAttribute('disabled');
+                                const ts = selectEl.tomSelectInstance;
+                                if (ts) ts.enable();
                             }
                             if (issueInput) {
                                 issueInput.classList.remove('d-none');
@@ -892,8 +921,16 @@
                             cell.textContent = 'Received by ' + name;
                         }
                         const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                        const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
                         if (wrapper) {
-                            enableReportPicker(wrapper);
+                            wrapper.classList.remove('report-select-wrapper--disabled');
+                        }
+                        setReportCardState(id, false);
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
                         }
             // Keep the Issue Date input enabled and visible so user can fill or edit
             if (issueInput) issueInput.classList.remove('d-none');
@@ -950,8 +987,15 @@
                         });
                     }
                     document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
-                        wrapper.classList.remove('d-none');
-                        enableReportPicker(wrapper);
+                        wrapper.classList.remove('report-select-wrapper--disabled');
+                        const selectEl = wrapper.querySelector('.reports-picker');
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
+                        }
+                        setReportCardState(wrapper.getAttribute('data-report-wrapper'), false);
                     });
                     // Flip Receive All -> Submit All and enforce color
                     if (receiveAllBtn) receiveAllBtn.classList.add('d-none');
@@ -977,8 +1021,15 @@
                         btn.style.borderColor = '#FE9F43';
                     });
                     document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
-                        wrapper.classList.remove('d-none');
-                        enableReportPicker(wrapper);
+                        wrapper.classList.remove('report-select-wrapper--disabled');
+                        const selectEl = wrapper.querySelector('.reports-picker');
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts) ts.enable();
+                        }
+                        setReportCardState(wrapper.getAttribute('data-report-wrapper'), false);
                     });
                     // Also reflect status change in UI as a fallback without details
                     document.querySelectorAll('.status-cell').forEach(function(cell) {
@@ -1044,7 +1095,7 @@
         // Initial state check
         updateBulkButtons();
         initHeaderEditor();
-        initReportPickerPopups();
+        initReportPickers();
         // Flash SweetAlert if there is a server flash status message
         try {
             const flashMsg = <?php echo json_encode(session('status'), 15, 512) ?>;
@@ -1151,100 +1202,135 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 6px 12px !important;
         font-weight: 600 !important;
     }
+    .report-picker-simple {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .report-picker-simple__control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .report-picker-simple__control .report-select-wrapper { flex: 1; }
+    .report-picker-simple__status {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
+        padding: 0;
+        text-indent: -9999px;
+        overflow: hidden;
+        cursor: help;
+        box-shadow: none;
+    }
+    .report-picker-simple__status--assigned {
+        background: #16a34a;
+    }
+    .report-picker-simple__status--pending {
+        background: #facc15;
+    }
+    .report-picker-simple__hint {
+        font-size: 11px;
+        margin: 0;
+    }
+    .report-picker-simple--locked .report-select-wrapper {
+        opacity: 0.55;
+    }
     .report-select-wrapper {
         position: relative;
         width: 100%;
     }
-    .report-select-wrapper--disabled .report-picker-trigger {
+    .ts-wrapper.report-select-enhanced {
+        width: 100%;
+    }
+    .report-select-wrapper--disabled .ts-wrapper.report-select-enhanced {
         opacity: 0.45;
         pointer-events: none;
-        cursor: not-allowed;
     }
-    .report-picker-trigger {
-        width: 100%;
-        border-radius: 8px;
-        border: 1px solid #d0d5dd;
+    .ts-wrapper.report-select-enhanced .ts-control,
+    .ts-control-compact {
+        border: 1px solid #cfd5e1 !important;
+        border-radius: 6px !important;
+        min-height: 34px;
+        padding: 4px 8px !important;
         background: #ffffff;
-        padding: 10px 14px;
-        font-weight: 600;
+        box-shadow: none !important;
         font-size: 13px;
-        color: #092C4C;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        gap: 12px;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
-        position: relative;
-        cursor: pointer;
+        font-weight: 500;
+        color: #1f2937;
     }
-    .report-picker-trigger::after {
-        content: '\25BC';
-        font-size: 10px;
-        color: #6b7280;
+    .ts-wrapper.report-select-enhanced .ts-control::before {
+        display: none;
     }
-    .report-picker-trigger:hover:not(:disabled) {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
-        background: #f9fbff;
+    .ts-wrapper.report-select-enhanced .ts-control > div {
+        margin: 0;
     }
-    .report-picker-trigger:focus {
-        outline: none;
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+    .ts-wrapper.report-select-enhanced .ts-control input {
+        color: #1f2937;
     }
-    .report-picker-trigger.report-picker-selected {
-        background: #f2f6ff;
-        border-color: #2563eb;
-        color: #0b2342;
+    .ts-wrapper.report-select-enhanced .ts-control::placeholder,
+    .ts-wrapper.report-select-enhanced .ts-control .item {
+        color: #1f2937;
+        font-weight: 500;
     }
-    .report-picker-modal {
+    .ts-dropdown.report-picker-dropdown {
+        background: #ffffff;
+        border: 1px solid #d7dde5;
+        border-radius: 14px;
+        box-shadow: 0 20px 45px rgba(9, 44, 76, 0.18);
+        padding: 14px;
+        z-index: 2000;
+        max-height: 280px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-top: 0;
         display: flex;
         flex-direction: column;
-        gap: 12px;
-        text-align: left;
+        gap: 10px;
     }
-    .report-picker-search {
-        font-size: 14px;
+    .ts-dropdown.report-picker-dropdown .dropdown-input {
         border-radius: 8px;
-        border: 1px solid #d0d5dd;
-        padding: 10px 12px;
-    }
-    .report-picker-options {
-        max-height: 320px;
-        overflow-y: auto;
-        display: grid;
-        gap: 8px;
-    }
-    .report-picker-option {
-        border-radius: 8px;
-        border: 1px solid #dce2f1;
-        background: #ffffff;
-        font-weight: 600;
+        border: 1px solid #cfd5e1;
+        padding: 8px 12px;
+        margin: 0;
         font-size: 13px;
-        padding: 10px 12px;
-        transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
-        cursor: pointer;
+        background: #f7f9fc;
+        width: 100%;
+        box-sizing: border-box;
+        box-shadow: inset 0 1px 2px rgba(15,23,42,0.08);
     }
-    .report-picker-option:hover {
-        background: rgba(37, 99, 235, 0.08);
-        border-color: #2563eb;
-        color: #092C4C;
+    .ts-dropdown.report-picker-dropdown .ts-dropdown-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2px;
+        border-radius: 10px;
+        background: #fff;
     }
-    .report-picker-option.active {
-        background: #2563eb;
-        border-color: #2563eb;
+    .ts-dropdown.report-picker-dropdown .option {
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #0f172a;
+        border-radius: 6px;
+        margin: 2px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ts-dropdown.report-picker-dropdown .option.active {
+        background: #092C4C;
         color: #ffffff;
     }
-    .report-picker-empty {
-        padding: 12px;
-        text-align: center;
-        color: #6b7280;
-        font-size: 13px;
-        border-radius: 8px;
-        border: 1px dashed #d0d5dd;
+    .ts-dropdown.report-picker-dropdown .option:not(.active):hover {
+        background-color: rgba(9, 44, 76, 0.08);
     }
-    .report-picker-swal {
-        padding: 1.5rem 1.75rem !important;
+    .ts-dropdown.report-picker-dropdown .no-results {
+        padding: 6px 14px;
+        font-size: 12px;
+        color: #6b7280;
     }
     /* Blue (Receive) */
     .receive-toggle-btn[data-mode="receive"] {

@@ -158,25 +158,42 @@
 
                                     @php
                                         $isReceived = (bool) $item->received_at;
+                                        $assignedReport = $item->reports->first();
+                                        $isAssigned = (bool) $assignedReport;
                                     @endphp
                                     <div class="report-select">
                                         <form method="POST" action="{{ route('superadmin.reporting.assignReport', $item) }}" id="assign-report-form-{{ $item->id }}">
                                             @csrf
-                                            <div class="report-select-wrapper {{ $isReceived ? '' : 'd-none report-select-wrapper--disabled' }}"
-                                                 data-report-wrapper="{{ $item->id }}">
-                                                <select name="report_id"
-                                                    class="form-control form-select reports-picker report-select-enhanced"
-                                                    data-item-id="{{ $item->id }}"
-                                                    data-placeholder="-- Select Report --"
-                                                    data-enabled="{{ $isReceived ? '1' : '0' }}"
-                                                    {{ $isReceived ? '' : 'disabled' }}>
-                                                    <option value="">-- Select Report --</option>
-                                                    @foreach($reports as $report)
-                                                        <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
-                                                            {{ $report->report_no ?? 'Report #'.$report->id }}
-                                                        </option>
-                                                    @endforeach
-                                                </select>
+                                            <div class="report-picker-simple {{ $isReceived ? '' : 'report-picker-simple--locked' }} {{ $isAssigned ? 'report-picker-simple--filled' : '' }}"
+                                                 data-report-card="{{ $item->id }}">
+                                                <div class="report-picker-simple__control">
+                                                    <div class="report-select-wrapper {{ $isReceived ? '' : 'report-select-wrapper--disabled' }}"
+                                                         data-report-wrapper="{{ $item->id }}">
+                                                        <select name="report_id"
+                                                            class="form-control form-select reports-picker report-select-enhanced"
+                                                            data-item-id="{{ $item->id }}"
+                                                            data-placeholder="-- Select Report --"
+                                                            data-enabled="{{ $isReceived ? '1' : '0' }}"
+                                                            {{ $isReceived ? '' : 'disabled' }}>
+                                                            <option value="">-- Select Report --</option>
+                                                            @foreach($reports as $report)
+                                                                <option value="{{ $report->id }}" {{ $item->reports->contains($report->id) ? 'selected' : '' }}>
+                                                                    {{ $report->report_no ?? 'Report #'.$report->id }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                        <span class="badge rounded-pill report-picker-simple__status {{ $isAssigned ? 'report-picker-simple__status--assigned' : 'report-picker-simple__status--pending' }}"
+                                                            data-report-status
+                                                            title="{{ $isAssigned ? 'Assigned' : 'Pending' }}"
+                                                            role="img"
+                                                            aria-label="{{ $isAssigned ? 'Assigned' : 'Pending' }}">
+                                                        </span>
+                                                </div>
+                                                <small class="text-muted report-picker-simple__hint {{ $isReceived ? 'd-none' : '' }}"
+                                                       data-report-lock-note="{{ $item->id }}">
+                                                    Receive to unlock this dropdown.
+                                                </small>
                                             </div>
                                         </form>
                                     </div>
@@ -201,7 +218,7 @@
                                 </td>
                                     <td>
                                         @php
-                                            $assignedReport = $item->reports->first(); // get assigned report
+                                            $assignedReport = $assignedReport ?? $item->reports->first(); // get assigned report
                                         @endphp
 
                                         {{-- VIEW PDF --}}
@@ -438,6 +455,20 @@
             };
         })();
 
+        const setReportCardState = (cardId, locked) => {
+            if (!cardId) return;
+            const card = document.querySelector('[data-report-card="' + cardId + '"]');
+            if (!card) return;
+            const note = card.querySelector('[data-report-lock-note]');
+            if (locked) {
+                card.classList.add('report-picker-simple--locked');
+                if (note) note.classList.remove('d-none');
+            } else {
+                card.classList.remove('report-picker-simple--locked');
+                if (note) note.classList.add('d-none');
+            }
+        };
+
         // Auto-save header fields so edits propagate across the system without reloading
         const initHeaderEditor = () => {
             const container = document.querySelector('[data-booking-header][data-update-url]');
@@ -544,12 +575,12 @@
                 selects.forEach((select) => {
                     if (select.dataset.tsInit === '1') return;
                     select.dataset.tsInit = '1';
-                    const parent = select.closest('.report-select-wrapper');
                     const placeholder = select.dataset.placeholder || '-- Select Report --';
+                    const parentWrapper = select.closest('.report-select-wrapper');
                     const options = {
                         placeholder,
                         allowEmptyOption: true,
-                        dropdownParent: parent || document.body,
+                        dropdownParent: document.body,
                         plugins: ['dropdown_input'],
                         render: {
                             option(item, escape) {
@@ -560,6 +591,24 @@
                             }
                         },
                         onChange(value) {
+                                const card = select.closest('.report-picker-simple');
+                                if (card) {
+                                    const status = card.querySelector('[data-report-status]');
+                                    const isAssigned = !!value;
+                                    if (isAssigned) {
+                                        card.classList.add('report-picker-simple--filled');
+                                        card.classList.remove('report-picker-simple--locked');
+                                    } else {
+                                        card.classList.remove('report-picker-simple--filled');
+                                    }
+                                    if (status) {
+                                        const label = isAssigned ? 'Assigned' : 'Pending';
+                                        status.classList.toggle('report-picker-simple__status--assigned', isAssigned);
+                                        status.classList.toggle('report-picker-simple__status--pending', !isAssigned);
+                                        status.setAttribute('title', label);
+                                        status.setAttribute('aria-label', label);
+                                    }
+                                }
                             if (typeof value !== 'undefined') {
                                 const form = select.closest('form');
                                 if (form) form.submit();
@@ -573,9 +622,38 @@
                         if (controlEl) {
                             controlEl.classList.add('ts-control-compact');
                         }
+                        const dropdownEl = instance.dropdown;
+                        if (dropdownEl) {
+                            dropdownEl.classList.add('report-picker-dropdown');
+                        }
+                        const positionDropdown = () => {
+                            if (!dropdownEl || dropdownEl.classList.contains('ts-hidden')) return;
+                            const anchor = parentWrapper || controlEl;
+                            if (!anchor) return;
+                            const rect = anchor.getBoundingClientRect();
+                            const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                            const scrollLeft = window.pageXOffset || document.documentElement.scrollLeft;
+                            dropdownEl.style.position = 'absolute';
+                            dropdownEl.style.left = (rect.left + scrollLeft) + 'px';
+                            dropdownEl.style.top = (rect.bottom + scrollTop + 6) + 'px';
+                            dropdownEl.style.minWidth = rect.width + 'px';
+                            dropdownEl.style.maxWidth = rect.width + 'px';
+                            dropdownEl.style.width = rect.width + 'px';
+                        };
+                        const onScroll = () => positionDropdown();
+                        const onResize = () => positionDropdown();
+                        instance.on('dropdown_open', () => {
+                            positionDropdown();
+                            window.addEventListener('scroll', onScroll, true);
+                            window.addEventListener('resize', onResize);
+                        });
+                        instance.on('dropdown_close', () => {
+                            window.removeEventListener('scroll', onScroll, true);
+                            window.removeEventListener('resize', onResize);
+                        });
                         if (select.dataset.enabled !== '1') {
                             instance.disable();
-                            if (parent) parent.classList.add('report-select-wrapper--disabled');
+                            if (parentWrapper) parentWrapper.classList.add('report-select-wrapper--disabled');
                         }
                     } catch (e) {
                         console.warn('Tom Select init failed', e);
@@ -785,9 +863,9 @@
                             const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
                             const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
                             if (wrapper) {
-                                wrapper.classList.remove('d-none');
                                 wrapper.classList.remove('report-select-wrapper--disabled');
                             }
+                            setReportCardState(id, false);
                             if (selectEl) {
                                 selectEl.dataset.enabled = '1';
                                 selectEl.removeAttribute('disabled');
@@ -845,6 +923,7 @@
                         if (wrapper) {
                             wrapper.classList.remove('report-select-wrapper--disabled');
                         }
+                        setReportCardState(id, false);
                         if (selectEl) {
                             selectEl.dataset.enabled = '1';
                             selectEl.removeAttribute('disabled');
@@ -906,7 +985,6 @@
                         });
                     }
                     document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
-                        wrapper.classList.remove('d-none');
                         wrapper.classList.remove('report-select-wrapper--disabled');
                         const selectEl = wrapper.querySelector('.reports-picker');
                         if (selectEl) {
@@ -915,6 +993,7 @@
                             const ts = selectEl.tomSelectInstance;
                             if (ts) ts.enable();
                         }
+                        setReportCardState(wrapper.getAttribute('data-report-wrapper'), false);
                     });
                     // Flip Receive All -> Submit All and enforce color
                     if (receiveAllBtn) receiveAllBtn.classList.add('d-none');
@@ -940,7 +1019,6 @@
                         btn.style.borderColor = '#FE9F43';
                     });
                     document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
-                        wrapper.classList.remove('d-none');
                         wrapper.classList.remove('report-select-wrapper--disabled');
                         const selectEl = wrapper.querySelector('.reports-picker');
                         if (selectEl) {
@@ -949,6 +1027,7 @@
                             const ts = selectEl.tomSelectInstance;
                             if (ts) ts.enable();
                         }
+                        setReportCardState(wrapper.getAttribute('data-report-wrapper'), false);
                     });
                     // Also reflect status change in UI as a fallback without details
                     document.querySelectorAll('.status-cell').forEach(function(cell) {
@@ -1121,23 +1200,48 @@ document.addEventListener('DOMContentLoaded', () => {
         padding: 6px 12px !important;
         font-weight: 600 !important;
     }
-    .report-picker-card {
-        display: block;
-        width: 100%;
-        background: #ffffff;
-        border: 1px solid #d0d5dd;
-        border-radius: 8px;
+    .report-picker-simple {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+    }
+    .report-picker-simple__control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    .report-picker-simple__control .report-select-wrapper { flex: 1; }
+    .report-picker-simple__status {
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border: none;
         padding: 0;
+        text-indent: -9999px;
+        overflow: hidden;
+        cursor: help;
         box-shadow: none;
-        transition: border-color 0.2s ease, box-shadow 0.2s ease;
     }
-    .report-picker-card:hover,
-    .report-picker-card:focus-within {
-        border-color: #2563eb;
-        box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
-        background: #ffffff;
+    .report-picker-simple__status--assigned {
+        background: #16a34a;
     }
-    .report-select-wrapper { position: relative; width: 100%; }
+    .report-picker-simple__status--pending {
+        background: #facc15;
+    }
+    .report-picker-simple__hint {
+        font-size: 11px;
+        margin: 0;
+    }
+    .report-picker-simple--locked .report-select-wrapper {
+        opacity: 0.55;
+    }
+    .report-select-wrapper {
+        position: relative;
+        width: 100%;
+    }
     .ts-wrapper.report-select-enhanced {
         width: 100%;
     }
@@ -1147,58 +1251,82 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     .ts-wrapper.report-select-enhanced .ts-control,
     .ts-control-compact {
-        border: 0 !important;
+        border: 1px solid #cfd5e1 !important;
+        border-radius: 6px !important;
+        min-height: 34px;
+        padding: 4px 8px !important;
+        background: #ffffff;
         box-shadow: none !important;
-        min-height: 32px;
-        padding: 6px 12px !important;
-        background: transparent;
         font-size: 13px;
         font-weight: 500;
-        color: #111827;
+        color: #1f2937;
+    }
+    .ts-wrapper.report-select-enhanced .ts-control::before {
+        display: none;
     }
     .ts-wrapper.report-select-enhanced .ts-control > div {
         margin: 0;
     }
     .ts-wrapper.report-select-enhanced .ts-control input {
-        color: #111827;
+        color: #1f2937;
     }
     .ts-wrapper.report-select-enhanced .ts-control::placeholder,
     .ts-wrapper.report-select-enhanced .ts-control .item {
         color: #1f2937;
-        font-weight: 600;
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown {
-        background: #ffffff;
-        border: 1px solid #dce2f1;
-        border-radius: 8px;
-        box-shadow: 0 12px 24px rgba(15, 23, 42, 0.16);
-        padding: 10px 0 8px;
-        overflow: hidden;
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .dropdown-input {
-        border-radius: 6px;
-        border: 1px solid #c7d0ea;
-        padding: 6px 10px;
-        margin: 0 10px 8px;
-        font-size: 12px;
-        background-color: #f4f6fb;
-    }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option {
-        padding: 8px 12px;
-        font-size: 12px;
         font-weight: 500;
-        color: #111827;
-        border-radius: 0;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option.active {
-        background: #2563eb;
+    .ts-dropdown.report-picker-dropdown {
+        background: #ffffff;
+        border: 1px solid #d7dde5;
+        border-radius: 14px;
+        box-shadow: 0 20px 45px rgba(9, 44, 76, 0.18);
+        padding: 14px;
+        z-index: 2000;
+        max-height: 280px;
+        overflow-y: auto;
+        overflow-x: hidden;
+        margin-top: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+    }
+    .ts-dropdown.report-picker-dropdown .dropdown-input {
+        border-radius: 8px;
+        border: 1px solid #cfd5e1;
+        padding: 8px 12px;
+        margin: 0;
+        font-size: 13px;
+        background: #f7f9fc;
+        width: 100%;
+        box-sizing: border-box;
+        box-shadow: inset 0 1px 2px rgba(15,23,42,0.08);
+    }
+    .ts-dropdown.report-picker-dropdown .ts-dropdown-content {
+        flex: 1;
+        overflow-y: auto;
+        padding: 2px;
+        border-radius: 10px;
+        background: #fff;
+    }
+    .ts-dropdown.report-picker-dropdown .option {
+        padding: 8px 12px;
+        font-size: 13px;
+        color: #0f172a;
+        border-radius: 6px;
+        margin: 2px 0;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+    .ts-dropdown.report-picker-dropdown .option.active {
+        background: #092C4C;
         color: #ffffff;
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .option:not(.active):hover {
-        background-color: rgba(37, 99, 235, 0.1);
+    .ts-dropdown.report-picker-dropdown .option:not(.active):hover {
+        background-color: rgba(9, 44, 76, 0.08);
     }
-    .ts-wrapper.report-select-enhanced .ts-dropdown .no-results {
-        padding: 6px 12px;
+    .ts-dropdown.report-picker-dropdown .no-results {
+        padding: 6px 14px;
         font-size: 12px;
         color: #6b7280;
     }

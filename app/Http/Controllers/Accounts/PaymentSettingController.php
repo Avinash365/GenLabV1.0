@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Accounts;
 use App\Http\Controllers\Controller;
 
 use App\Models\PaymentSetting;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -57,14 +58,15 @@ class PaymentSettingController extends Controller
                 'upi'                 => 'nullable|string|max:255',
             ]);
 
-            $validated['created_by'] = Auth::id();
-            $validated['updated_by'] = Auth::id();
+            $userId = $this->resolveUserId();
+            $validated['created_by'] = $userId;
+            $validated['updated_by'] = $userId;
 
             PaymentSetting::create($validated);
-            
-            $bank =PaymentSetting::first(); 
 
-            return view('bankDetails.index', compact('bank')); 
+            return redirect()
+                ->route('superadmin.payment-settings.index')
+                ->with('success', 'Bank details saved successfully.');
             
 
         } catch (\Exception $e) {
@@ -92,7 +94,7 @@ class PaymentSettingController extends Controller
                 'upi'                 => 'nullable|string|max:255',
             ]);
            
-            $validated['updated_by'] = Auth::id();
+            $validated['updated_by'] = $this->resolveUserId();
 
             $paymentSetting->update($validated);
 
@@ -120,5 +122,16 @@ class PaymentSettingController extends Controller
         } catch (\Exception $e) {
             return back()->withErrors('Failed to delete payment setting: ' . $e->getMessage());
         }
+    }
+
+    private function resolveUserId(): ?int
+    {
+        if (Auth::guard('web')->check()) {
+            return Auth::guard('web')->id();
+        }
+
+        $user = Auth::user();
+
+        return $user instanceof User ? $user->id : null;
     }
 }

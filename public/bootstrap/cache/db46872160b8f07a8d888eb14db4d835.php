@@ -10,8 +10,14 @@
         </div>
     </div>
 
-    <?php if(session('success')): ?>
-        <div class="alert alert-success"><?php echo e(session('success')); ?></div>
+    <?php if($errors->any()): ?>
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </ul>
+        </div>
     <?php endif; ?>
 
     
@@ -122,5 +128,39 @@
     </div>
 </div>
 <?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        <?php if(session('success')): ?>
+            var successMessage = <?php echo json_encode(session('success'), 15, 512) ?>;
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Saved',
+                    text: successMessage,
+                    timer: 2200,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(successMessage);
+            }
+        <?php endif; ?>
+
+        <?php if($errors->any()): ?>
+            var errorMessage = <?php echo json_encode($errors->first(), 15, 512) ?>;
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Unable to save',
+                    text: errorMessage
+                });
+            } else {
+                alert(errorMessage);
+            }
+        <?php endif; ?>
+    });
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('superadmin.layouts.app', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV1.0\resources\views/bankDetails/index.blade.php ENDPATH**/ ?>

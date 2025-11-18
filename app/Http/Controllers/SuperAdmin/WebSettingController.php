@@ -22,8 +22,10 @@ class WebSettingController extends Controller
     {
         $data = $request->validate([
             'site_logo' => 'nullable|image|max:2048',
+            'site_favicon' => 'nullable|mimes:ico,png,jpg,jpeg,svg|max:256',
             'company_name' => 'nullable|string|max:255',
             'company_address' => 'nullable|string',
+            'project_title' => 'nullable|string|max:255',
         ]);
 
         $setting = SiteSetting::first();
@@ -39,8 +41,17 @@ class WebSettingController extends Controller
             $setting->site_logo = $path;
         }
 
+        if ($request->hasFile('site_favicon')) {
+            if ($setting->site_favicon) {
+                Storage::disk('public')->delete($setting->site_favicon);
+            }
+            $faviconPath = $request->file('site_favicon')->store('site', 'public');
+            $setting->site_favicon = $faviconPath;
+        }
+
         $setting->company_name = $data['company_name'] ?? $setting->company_name;
         $setting->company_address = $data['company_address'] ?? $setting->company_address;
+        $setting->project_title = $data['project_title'] ?? $setting->project_title;
 
         $setting->save();
 

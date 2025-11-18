@@ -1,8 +1,11 @@
+@php
+    $chatbotUserName = optional(auth()->user())->name ?? optional(auth('admin')->user())->name ?? '';
+@endphp
 <!-- Chatbot Floating Icon and Popup -->
 <div id="chatbot-icon" title="Chat with Assistant">
     <i class="fas fa-comment-dots" style="font-size: 26px;"></i>
 </div>
-<div id="chatbot-popup" role="dialog" aria-modal="true" aria-labelledby="chatbot-title">
+<div id="chatbot-popup" role="dialog" aria-modal="true" aria-labelledby="chatbot-title" data-user-name="{{ e($chatbotUserName) }}">
     <div id="chatbot-header">
         <div class="cb-header-left">
             <div class="chatbot-avatar" aria-hidden="true">VA</div>

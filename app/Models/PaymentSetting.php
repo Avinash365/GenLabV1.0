@@ -21,32 +21,38 @@ class PaymentSetting extends Model
         'pan_no',
         'gstin',
         'upi',
+        'created_by',
         'updated_by',
     ];
 
     // Mutators to store certain fields in uppercase
+    protected function uppercaseOrNull(?string $value): ?string
+    {
+        return is_null($value) ? null : strtoupper(trim($value));
+    }
+
     public function setAccountNoAttribute($value)
     {
-        $this->attributes['account_no'] = strtoupper($value);
+        $this->attributes['account_no'] = $this->uppercaseOrNull($value);
     }
 
     public function setIfscCodeAttribute($value)
     {
-        $this->attributes['ifsc_code'] = strtoupper($value);
+        $this->attributes['ifsc_code'] = $this->uppercaseOrNull($value);
     }
 
     public function setPanCodeAttribute($value)
     {
-        $this->attributes['pan_code'] = strtoupper($value);
+        $this->attributes['pan_code'] = $this->uppercaseOrNull($value);
     }
 
     public function setPanNoAttribute($value)
     {
-        $this->attributes['pan_no'] = strtoupper($value);
+        $this->attributes['pan_no'] = $this->uppercaseOrNull($value);
     }
 
     public function setGstinAttribute($value)
     {
-        $this->attributes['gstin'] = strtoupper($value);
+        $this->attributes['gstin'] = $this->uppercaseOrNull($value);
     }
 }

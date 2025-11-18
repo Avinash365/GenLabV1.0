@@ -12,8 +12,14 @@
         </div>
     </div>
 
-    @if(session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
+    @if($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
     @endif
 
     {{-- Show current bank details --}}
@@ -124,3 +130,37 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        @if(session('success'))
+            var successMessage = @json(session('success'));
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'success',
+                    title: 'Saved',
+                    text: successMessage,
+                    timer: 2200,
+                    showConfirmButton: false
+                });
+            } else {
+                alert(successMessage);
+            }
+        @endif
+
+        @if($errors->any())
+            var errorMessage = @json($errors->first());
+            if (window.Swal) {
+                Swal.fire({
+                    icon: 'error',
+                    title: 'Unable to save',
+                    text: errorMessage
+                });
+            } else {
+                alert(errorMessage);
+            }
+        @endif
+    });
+</script>
+@endpush

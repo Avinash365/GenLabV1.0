@@ -2,6 +2,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -18,6 +19,21 @@ function extract_keywords($text) {
 
 class ChatbotController extends Controller
 {
+    protected function resolveCurrentUserName(Request $request): ?string
+    {
+        $guards = ['web', 'admin'];
+        if ($request->user()) {
+            return $request->user()->name ?? null;
+        }
+        foreach ($guards as $guard) {
+            $user = Auth::guard($guard)->user();
+            if ($user && !empty($user->name)) {
+                return $user->name;
+            }
+        }
+        return null;
+    }
+
     // Helper: parse timeframe words -> date range
     protected function parseTimeframe(string $text): array
     {
@@ -56,6 +72,12 @@ class ChatbotController extends Controller
         Log::info('Chatbot received question: ' . $question);
         $keywords = extract_keywords($question);
         $lowerQ = strtolower($question);
+        $userName = $this->resolveCurrentUserName($request);
+
+        if (preg_match('/^\s*(hi|hello)(\b|!|\?)/i', $question)) {
+            $personalized = $userName ? 'Welcome ' . e($userName) . '! How can I help you today?' : 'Welcome! How can I help you today?';
+            return response()->json(['answer' => $personalized]);
+        }
 
         // 1. Invoices today (count & sum)
         if (preg_match('/invoice.*today|today.*invoice/', $lowerQ)) {

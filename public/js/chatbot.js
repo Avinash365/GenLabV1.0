@@ -8,7 +8,8 @@ const chatbotInput = document.getElementById('chatbot-input');
 const chatbotTyping = document.getElementById('chatbot-typing');
 var autoBox = document.getElementById('chatbot-autocomplete');
 let conversation = [];
-let welcomeNote = 'Hello! How can I assist you today?';
+const chatbotUserName = (chatbotPopup && chatbotPopup.dataset.userName ? chatbotPopup.dataset.userName.trim() : '') || '';
+let welcomeNote = chatbotUserName ? `Hi ${chatbotUserName}! How can I assist you today?` : 'Hello! How can I assist you today?';
 
 // Remove duplicate declarations if any before declaring
 // Autocomplete elements & logic
