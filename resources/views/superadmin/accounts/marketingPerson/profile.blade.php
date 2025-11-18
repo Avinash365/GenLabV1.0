@@ -242,6 +242,15 @@
                     'type'=>'without_bill',
                     'route'=>route('superadmin.marketing.withoutBill',$marketingPerson->user_code).'?transaction_status=3&with_payment=1'
                 ],
+                [
+                    'id'=>'allClients',
+                    'title'=>'Clients',
+                    'count'=>$stats['allClients'] ?? 0,
+                    'amount'=>'Total Amount :'.'₹'.number_format($stats['totalBookingAmount'] ?? 0,2),
+                    'class'=>'success',
+                    'type'=>'all',
+                    'route'=>route('superadmin.marketing.allClients',$marketingPerson->user_code)
+                ],
             ];
         @endphp
 

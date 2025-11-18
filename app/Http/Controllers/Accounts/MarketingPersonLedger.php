@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\NewBooking;
 use App\Models\{Invoice,InvoiceTransaction,CashLetterPayment};
+use App\Models\Client;
+
+use Illuminate\Support\Facades\DB;
 
 use App\Services\GetUserActiveDepartment; 
 
@@ -139,9 +142,7 @@ class MarketingPersonLedger extends Controller
         }
 
         $bookings = $query->latest()->paginate(10);
-        dd($bookings); 
-        exit; 
-
+       
         $isClient = false;
         return view('superadmin.accounts.marketingPerson.partials_bookings', compact('bookings', 'isClient'))->render();
     }
@@ -361,6 +362,56 @@ class MarketingPersonLedger extends Controller
         ])->render();
     }
 
+
+    public function fetchGroupedBookings(Request $request, $user_code)
+    {
+        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+
+        $query = NewBooking::with(['client'])
+            ->where('marketing_id', $marketingPerson->user_code);
+
+        // Filters
+        if ($request->filled('payment_option')) {
+            $query->where('payment_option', $request->payment_option);
+        }
+
+        if ($request->filled('invoice_status') && $request->invoice_status === 'not_generated') {
+            $query->whereDoesntHave('generatedInvoice');
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+
+        // Convert Builder → SUBQUERY (required for joins after filters)
+        $subQuery = DB::table(DB::raw("({$query->toSql()}) as nb"))
+            ->mergeBindings($query->getQuery());
+
+        // FINAL QUERY with JOIN on booking_items
+        $bookings = $subQuery
+            ->leftJoin('booking_items as bi', 'nb.id', '=', 'bi.new_booking_id')
+            ->select(
+                'nb.client_id',
+                DB::raw('COUNT(DISTINCT nb.id) as total_bookings'),
+                DB::raw('SUM(bi.amount) as total_amount')
+            )
+            ->groupBy('nb.client_id')
+            ->paginate(10);
+
+        // Attach client details manually
+        $bookings->getCollection()->transform(function ($row) {
+            $row->client = Client::find($row->client_id);
+            return $row;
+        });
+
+        return view('superadmin.accounts.marketingPerson.partials_grouped_bookings', [
+            'bookings' => $bookings,
+        ])->render();
+    }
 
 
 }

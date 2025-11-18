@@ -49,7 +49,8 @@ class MarketingPersonStatsService
                 SUM(CASE WHEN nb.payment_option = 'bill' THEN bi.total_item_amount ELSE 0 END) as totalBillBookingAmount,
                 SUM(CASE WHEN nb.payment_option = 'without_bill' THEN bi.total_item_amount ELSE 0 END) as totalWithoutBillBookings,
                 SUM(CASE WHEN nb.payment_option = 'bill' THEN 1 ELSE 0 END) as billBookings,
-                SUM(CASE WHEN nb.payment_option = 'without_bill' THEN 1 ELSE 0 END) as withoutBillBookings
+                SUM(CASE WHEN nb.payment_option = 'without_bill' THEN 1 ELSE 0 END) as withoutBillBookings, 
+                COUNT(DISTINCT nb.client_id) as uniqueClientIds
             ")
             ->first();
 
@@ -192,7 +193,8 @@ class MarketingPersonStatsService
             'withoutBillBookings' => (int) ($bookingStats->withoutBillBookings ?? 0),
             'totalBookingAmount' => (float) ($bookingStats->totalBookingAmount ?? 0),
             'totalBillBookingAmount' => (float) ($bookingStats->totalBillBookingAmount ?? 0),
-            'totalWithoutBillBookings' => (float) ($bookingStats->totalWithoutBillBookings ?? 0),
+            'totalWithoutBillBookings' => (float) ($bookingStats->totalWithoutBillBookings ?? 0), 
+            'allClients' =>  (int) ($bookingStats->uniqueClientIds ?? 0),
 
             // Invoices
             'GeneratedInvoices' => (int) ($invoiceStats['tax_invoice']->invoice_count ?? 0),

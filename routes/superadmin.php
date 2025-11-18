@@ -266,7 +266,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/{user_code}/transactions', [MarketingPersonLedger::class, 'fetchInvoicesTransactions'])->name('marketing.transactions');
         Route::get('/{user_code}/cash-transactions', [MarketingPersonLedger::class, 'fetchCashTransaction'])->name('marketing.cashTransactions');
         Route::get('/{user_code}/cash-all-transactions', [MarketingPersonLedger::class, 'fetchClientAllBookings'])->name('marketing.cashAllTransactions');
-
+        Route::get('/{user_code}/all-clients', [MarketingPersonLedger::class, 'fetchGroupedBookings'])->name('marketing.allClients');
 
         Route::resource('clients', ClientController::class)->only(['index','store','destroy']);
         Route::post('clients/{client}/assign-booking', [ClientController::class, 'assignBooking'])->name('clients.assignBooking');

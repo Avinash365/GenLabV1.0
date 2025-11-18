@@ -15,11 +15,11 @@
             <tr>
                 <td><?php echo e($i+1); ?></td>
                 <td> 
-                    <?php if($isClient): ?>
+                 <?php if($isClient): ?>
                         <?php echo e($booking->marketingPerson->name ?? 'N/A'); ?>
 
                     <?php else: ?>
-                        <?php echo e($booking->client->name ?? 'N/A'); ?>
+                         <?php echo e($booking->client->name ?? 'N/A'); ?>
 
                     <?php endif; ?>
                 </td>
@@ -40,7 +40,7 @@
                             <div class="modal-dialog modal-dialog-centered modal-lg">
                                 <div class="modal-content">
                                     <div class="modal-header">
-                                        <h5 class="modal-title">Booking Items for <?php echo e($isClient ? $booking->marketingPerson?->name : $booking->client?->name); ?></h5>
+                                        <h5 class="modal-title">Booking Items for <?php echo e($isClient ? $booking->marketingPerson->name : $booking->client->name); ?></h5>
                                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                     </div>
                                     <div class="modal-body">
@@ -80,10 +80,10 @@
                 </td>
                 <td>
                     <?php
-                        $status = $booking->payment_status;
+                        $status = $bookingStatusMap[$booking->id] ?? null;
                     ?>
 
-                    <?php if($status !== 'noPayments'): ?>
+                    <?php if(!is_null($status)): ?>
                         <?php switch($status):
                             case (0): ?>
                                 <span class="badge bg-warning">Pending</span>
@@ -111,4 +111,4 @@
 
 <?php echo $bookings->links('pagination::bootstrap-5'); ?>
 
-<?php /**PATH A:\GenTech\htdocs\GenlabV1.0\GenLabV1.0\resources\views/superadmin/accounts/marketingPerson/partials_client_all_bookings.blade.php ENDPATH**/ ?>
+<?php /**PATH A:\GenTech\htdocs\GenlabV1.0\GenLabV1.0\resources\views/superadmin/accounts/marketingPerson/partials_without_bill.blade.php ENDPATH**/ ?>
