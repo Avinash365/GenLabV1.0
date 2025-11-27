@@ -46,8 +46,8 @@ class StoreBookingRequest extends FormRequest
                 Rule::exists('users', 'user_code')->whereNull('deleted_at'),
             ],
 
-            'contact_no'         => 'required|digits_between:8,20|numeric',
-            'contact_email'      => 'required|email|max:255',
+            'contact_no'         => 'nullable|digits_between:8,20|numeric',
+            'contact_email'      => 'nullable|email|max:255',
             'name_of_work'       => 'nullable|string|max:500',
             'hold_status'        => 'nullable|boolean',
             'upload_letter_path' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:51200',

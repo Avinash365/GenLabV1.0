@@ -134,13 +134,69 @@
                                         <option value="without_bill" <?php echo e(old('payment_option', $booking->payment_option) == 'without_bill' ? 'selected' : ''); ?>>Without Bill</option>
                                     </select>
                                 </div>
-
-                                <div class="col-sm-12 col-12 mt-3">
-                                    <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="name_of_work" 
-                                        value="<?php echo e(old('name_of_work', $booking->name_of_work)); ?>">
+                                <div class="row">   
+                                    <div class="col-sm-8 col-12 mt-3">
+                                        <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="name_of_work" 
+                                            value="<?php echo e(old('name_of_work', $booking->name_of_work)); ?>">
+                                    </div>    
+                                    <div class="col-sm-4 col-12 mt-3">
+                                        <label class="form-label">M.S <span class="text-danger">*</span></label>
+                                        <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s', $booking->m_s)); ?>">
+                                    </div> 
                                 </div>
                             </div>
+                        </div>
+                    </div>
+                </div>
+                 
+               
+                <div class="accordion-item border mb-4">
+                    <h2 class="accordion-header" id="headingUploadLetter">
+                        <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#uploadLetter" aria-expanded="true">
+                            <h5 class="d-flex align-items-center">
+                                <i data-feather="image" class="text-primary me-2"></i>
+                                Upload Letter
+                            </h5>
+                        </div>
+                    </h2>
+
+                    <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
+                        <div class="accordion-body border-top">
+
+                            
+                            <?php if(!empty($booking->upload_letter_path)): ?>
+                                
+                                <label class="form-label">Current Uploaded Letter:</label>
+
+                                
+                                <?php if(Str::endsWith($booking->upload_letter_path, ['jpg','jpeg','png','gif','webp'])): ?>
+                                    <img src="<?php echo e($booking->upload_letter_path); ?>" 
+                                        alt="Uploaded Letter" 
+                                        class="img-fluid mb-2 border p-1" 
+                                        style="max-height: 200px;">
+                                <?php endif; ?>
+
+                                
+                                <?php if(Str::endsWith($booking->upload_letter_path, ['pdf'])): ?>
+                                    <embed src="<?php echo e($booking->upload_letter_path); ?>" 
+                                        type="application/pdf" 
+                                        class="w-100 mb-2" 
+                                        style="height: 250px;">
+                                <?php endif; ?>
+
+                                <div class="mb-3">
+                                    <a href="<?php echo e($booking->upload_letter_path); ?>" target="_blank" class="btn btn-sm btn-primary">
+                                        View / Download
+                                    </a>
+                                </div>
+
+                            <?php endif; ?>
+
+                            
+                            <label class="form-label">Upload New Letter (optional):</label>
+                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf">
+                            <small class="text-muted">Leave empty if you don't want to replace the current file.</small>
                         </div>
                     </div>
                 </div>

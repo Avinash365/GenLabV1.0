@@ -2,7 +2,7 @@
 <html>
 <head>
     <style>
-        @page { size: A4; margin: 10mm; }
+        @page { size: A4; }
         body {
             font-family: Arial, sans-serif;
             font-size: 12px;
@@ -13,7 +13,8 @@
         .card {
             border: 1px solid #000;
             padding: 12px;
-            width: 100%;
+            width: 97%;
+            height: 120mm;   /* A5 height */
             background: #fff;
             page-break-inside: avoid;
         }
@@ -27,7 +28,8 @@
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-bottom: 15px;
+            margin-bottom: 15px; 
+            margin-top: 20px;   
         }
         .lab-logo {
             margin-top: -20px;
@@ -61,7 +63,7 @@
 
         .footer {
             text-align: right;
-            margin-top: 80px;
+            margin-top: 150px;
             font-weight: bold;
         }
     </style>

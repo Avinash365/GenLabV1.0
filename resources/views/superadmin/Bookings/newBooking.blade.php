@@ -110,8 +110,8 @@
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
-                                    <label class="form-label">Contact Email <span class="text-danger">*</span></label>
-                                    <input type="email" class="form-control" name="contact_email" value="{{ old('contact_email') }}" required>
+                                    <label class="form-label">Contact Email <span class="text-danger"></span></label>
+                                    <input type="email" class="form-control" name="contact_email" value="{{ old('contact_email') }}">
                                 </div>
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Department<span class="text-danger">*</span></label>

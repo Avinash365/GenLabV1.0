@@ -176,6 +176,7 @@ class BookingController extends Controller
                     'name_of_work', 
                     'hold_status',
                     'payment_option', 
+                    'm_s', 
                 ]);
 
                 $bookingData['created_by_id']   = $creatorId;
