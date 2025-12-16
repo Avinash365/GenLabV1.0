@@ -77,11 +77,6 @@
             border-right: 1px solid #000 !important;
         }
 
-        /* Last column right border */
-        tr.item-row td:last-child {
-            border-right: 1px solid #000 !important;
-        }
-
 
         .invoice-preview th {
             background: #e9ecef;
@@ -189,266 +184,24 @@
                 height: 297mm;
                 page-break-after: always;
             }
+
+            .page-subtotal-row {
+                font-weight: bold;
+                background: #f1f1f1;
+            }
+
         }
     </style>
 
 
     <div class="row">
         
-
-        <div class="a4-page">
+         <div class="a4-page">
             <div class="print-page-header">
                 <span class="page-number"></span>
             </div>
-            <form id="previewInvoiceForm" method="POST" action="<?php echo e($ACTION_URL); ?>">
+            <?php echo $html; ?>
 
-                <?php echo csrf_field(); ?>
-
-                <input type="hidden" id="td_booking_id" name="booking_id" value="<?php echo e($booking->id); ?>">
-
-                <input type="hidden" name="invoice_data" id="preview_invoice_data">
-                <input type="hidden" name="invoice_type" id="invoice_type" value="tax_invoice">
-                <input type="hidden" name="invoice_html" id="invoice_html">
-                <!-- <input type="hidden" name="_method" value="__METHOD__">  -->
-
-                <div class="invoice-preview">
-
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <th class="col-left text-uppercase" contenteditable="true">
-                                    GSTIN: <?php echo e($booking->gstin ?? '9113464642541'); ?>
-
-                                </th>
-
-                                <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
-                                                                                    <?php echo e($invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice'); ?>
-
-                                                                                </th>   -->
-                                <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader"
-                                    contenteditable="true">
-                                    <?php echo e($invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice'); ?>
-
-                                </th>
-
-                                <th class="text-centre">Scan to Pay</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            
-                            <tr>
-                                <th class="col-left text-start">Bill Issue To:</th>
-
-                                <td class="col-wide text-start text-uppercase" colspan="2" contenteditable="true"
-                                    id="td_bill_block">
-
-                                    <?php echo e($booking->name_of_work ?? ''); ?><br><br>
-
-                                    <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
-                                    <?php echo e($booking->gstin ?? ''); ?>
-
-                                </td>
-
-                                <td class="text-centre">
-                                    <?php if(!empty($qrcode)): ?>
-                                        <img src="data:image/svg+xml;base64,<?php echo e($qrcode); ?>" width="100">
-                                    <?php endif; ?>
-                                </td>
-                            </tr>
-
-                            
-                            <tr>
-                                <th class="text-start">Invoice No:</th>
-                                <td colspan="3" class="text-uppercase" contenteditable="true" id="td_invoice_no">
-                                    <?php echo e($booking->invoice_no ?? '00'); ?>
-
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th class="text-start">Invoice Date:</th>
-                                <td colspan="3" contenteditable="true" id="td_invoice_date">
-                                    <?php echo e(date('d-m-Y') ?? ''); ?>
-
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th class="text-start">Ref. No & Date:</th>
-                                <td colspan="3" contenteditable="false" id="td_reference_block">
-                                    <?php echo e($booking->reference_no ?? ''); ?>
-
-                                    &nbsp;&&nbsp;
-                                    <?php echo e($booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('d-m-Y') : ''); ?>
-
-                                </td>
-                            </tr>
-
-                            <tr>
-                                <th class="text-start">Name of Work:</th>
-                                <td colspan="3" contenteditable="true" id="td_name_of_work">
-                                    <?php echo e($booking->name_of_work ?? ''); ?>
-
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <!-- <th style="width:9%;">#</th> -->
-                                <th style="width:35%;">Description</th>
-                                <th style="width:20%;">Job Order No</th>
-                                <th style="width:10%;">SAC Code</th>
-                                <th style="width:10%;">Qty</th>
-                                <th style="width:20%;">Rate</th>
-                                <th style="width:25%;">Amount</th>
-                            </tr>
-                        </thead>
-
-                        <tbody>
-                            <?php if($booking->items->isNotEmpty()): ?>
-                                <?php $__currentLoopData = $booking->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <tr class="item-row">
-                                        <!-- <td contenteditable="true"><?php echo e($loop->iteration); ?></td> -->
-                                        <td contenteditable="true" class="editable description ">
-                                            <?php echo e($item->sample_description); ?>
-
-                                        </td>
-                                        <td><?php echo e($item->job_order_no); ?></td>
-                                        <td><?php echo e($booking->sac_code ?? ''); ?></td>
-                                        <td contenteditable="true" class="editable qty ">
-                                            <?php echo e($item->qty ?? 1); ?>
-
-                                        </td>
-                                        <td contenteditable="true" class="editable rate ">
-                                            <?php echo e(number_format($item->amount, 2)); ?>
-
-                                        </td>
-                                        <td class="amount">0.00</td>
-                                    </tr>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            <?php else: ?>
-                                <?php for($i = 1; $i <= 9; $i++): ?>
-                                    <tr class="item-row">
-                                        <td><?php echo e($i); ?></td>
-                                        <td contenteditable="true" class="editable description"></td>
-                                        <td></td>
-                                        <td></td>
-                                        <td contenteditable="true" class="editable qty">1</td>
-                                        <td contenteditable="true" class="editable rate">0.00</td>
-                                        <td class="amount" contenteditable="true">0.00</td>
-                                    </tr>
-                                <?php endfor; ?>
-                            <?php endif; ?>
-
-                            
-                            <tr class="total-row">
-                                <td colspan="5" class="text-right">Total Amount</td>
-                                <td id="totalAmount">0.00</td>
-                            </tr>
-
-                            <tr class="total-row" id="discountRow">
-                                <td colspan="5" class="text-right">
-                                    Discount (
-                                    <span contenteditable="true" id="discountPercent" class="editable-percent">0</span> %)
-                                </td>
-                                <td id="discountAmount">0.00</td>
-                            </tr>
-
-                            <tr class="total-row" id="afterDiscountRow">
-                                <td colspan="5" class="text-right">After Discount</td>
-                                <td id="afterDiscount">0.00</td>
-                            </tr>
-
-                            <tr class="total-row">
-                                <td colspan="5" class="text-right">
-                                    CGST (
-                                    <span contenteditable="true" id="cgstPercent" class="editable-percent">0</span> %)
-                                </td>
-                                <td id="cgstAmount">0.00</td>
-                            </tr>
-
-                            <tr class="total-row">
-                                <td colspan="5" class="text-right">
-                                    SGST (
-                                    <span contenteditable="true" id="sgstPercent" class="editable-percent">0</span> %)
-                                </td>
-                                <td id="sgstAmount">0.00</td>
-                            </tr>
-
-                            <tr class="total-row">
-                                <td colspan="5" class="text-right">
-                                    IGST (
-                                    <span contenteditable="true" id="igstPercent" class="editable-percent">0</span> %)
-                                </td>
-                                <td id="igstAmount">0.00</td>
-                            </tr>
-
-                            <tr class="total-row" id="roundOffRow">
-                                <td colspan="5" class="text-right">Round Off</td>
-                                <td id="roundOff">0.00</td>
-                            </tr>
-
-                            <tr class="total-row">
-                                <td colspan="5" class="text-right">Payable Amount</td>
-                                <td id="payableAmount">0.00</td>
-                            </tr>
-
-                            <tr>
-                                <th colspan="6" id="amountInWords" class="text-centre">
-                                    Amount in Words:
-                                </th>
-                            </tr>
-
-                        </tbody>
-                    </table>
-                    
-                    <!-- Bank Details -->
-                    <table class="bank-table">
-                        <tbody>
-                            <tr>
-                                <th class="text-start">INSTRUCTIONS:</th>
-                                <td colspan="2" id="td_bank_instructions">
-                                    <?php echo e($bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD'); ?>
-
-                                </td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">BANK NAME:</th>
-                                <td id="td_bank_name"><?php echo e($bankInfo->name ?? 'SBI'); ?></td>
-                                <td class="text-centre text-uppercase">For <?php echo e($companyName ?? ''); ?></td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">ACCOUNT NO:</th>
-                                <td id="td_account_no"><?php echo e($bankInfo->account_no ?? ''); ?></td>
-                                <td rowspan="5" class="text-bottom">Authorised Signatory</td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">BRANCH:</th>
-                                <td class="text-uppercase" id="td_branch_name"><?php echo e($bankInfo->branch_name ?? ''); ?></td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">IFSC CODE:</th>
-                                <td class="text-uppercase" id="td_ifsc_code"><?php echo e($bankInfo->ifsc_code ?? ''); ?></td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">PAN NO:</th>
-                                <td class="text-uppercase" id="td_pan_no"><?php echo e($bankInfo->pan_no ?? ''); ?></td>
-                            </tr>
-                            <tr>
-                                <th class="text-start">GSTIN:</th>
-                                <td class="text-uppercase" id="td_gstin"><?php echo e($bankInfo->gstin ?? ''); ?></td>
-                            </tr>
-                        </tbody>
-                    </table>
-
-                </div>
-            </form>
         </div>
 
         
@@ -477,11 +230,11 @@
                     
                     <div class="mb-3">
                         <label class="fw-semibold mb-1 d-block">
-                            🧍 Marketing Person
+                            Marketing Person
                         </label>
 
-                        <div class="btn btn-sm btn-outline-primary w-100 text-start" id="td_marketing_person">
-                            <?php echo e($booking->marketingPerson->name ?? '-'); ?>
+                        <div class="btn btn-sm btn-outline-primary w-100 text-start">
+                            👤 <?php echo e($invoice->relatedBooking->marketingPerson->name ?? '-'); ?>
 
                         </div>
                     </div>
@@ -526,7 +279,7 @@
                     
                     <div class="d-flex">
                         <button type="submit" class="btn btn-success w-100" form="previewInvoiceForm">
-                            <i class="fa fa-file-pdf me-2"></i> Generate Invoice
+                            <i class="fa fa-file-pdf me-2"></i> Save Invoice
                         </button>
                     </div>
 
@@ -549,7 +302,7 @@
 
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="invoice_id"
-                                        value="<?php echo e($booking->generatedInvoice?->id ?? '0'); ?>">
+                                        value="<?php echo e($invoice->relatedBooking->generatedInvoice?->id ?? '0'); ?>">
 
                                     <!-- Hidden File Input -->
                                     <input type="file" id="gstinFile" name="gstin_file" class="d-none"
@@ -574,10 +327,10 @@
                                         <div class="d-flex gap-2">
 
                                             <!-- View Button -->
-                                            <a href="<?php echo e($booking->generatedInvoice?->invoice_letter_path
-        ? url($booking->generatedInvoice->invoice_letter_path)
+                                            <a href="<?php echo e($invoice->invoice_letter_path
+        ? url($invoice->invoice_letter_path)
         : '#'); ?>" target="_blank" class="btn btn-outline-secondary btn-sm
-                                                                                                <?php echo e(empty($booking->generatedInvoice?->invoice_letter_path) ? 'disabled' : ''); ?>">
+                                                    <?php echo e(empty($invoice->invoice_letter_path) ? 'disabled' : ''); ?>">
                                                 <i class="bi bi-eye">View</i>
                                             </a>
 
@@ -585,6 +338,7 @@
                                             <button type="submit" class="btn btn-success btn-sm px-3">
                                                 <i class="bi bi-check-circle me-1"></i> Save
                                             </button>
+
                                         </div>
                                     </div>
                                 </form>
@@ -596,7 +350,6 @@
         </div>
 
     </div>
-
 
     
     <script>
@@ -644,7 +397,6 @@
         }
     </script>
 
-
     
     <script>
         document.getElementById('previewInvoiceForm')
@@ -662,9 +414,9 @@
                 let invoiceData = {
 
                     booking_info: {
-                        booking_id: "<?php echo e($booking->id); ?>",
-                        client_name: "<?php echo e($booking->client->name ?? ''); ?>",
-                        marketing_person: "<?php echo e($booking->marketingPerson->name ?? ''); ?>",
+                        booking_id: "<?php echo e($invoice->relatedBooking->id); ?>",
+                        client_name: "<?php echo e($invoice->relatedBooking->client->name ?? ''); ?>",
+                        marketing_person: "<?php echo e($invoice->relatedBooking->marketingPerson->name ?? ''); ?>",
                         invoice_no: document.getElementById('td_invoice_no').innerText,
 
                         reference_no: reference.reference_no,
@@ -674,7 +426,7 @@
                         name_of_work: document.getElementById('td_name_of_work').innerText,
 
                         bill_issue_to: billing.bill_issue_to,
-                        client_gstin: billing.client_gstin || "<?php echo e($booking->gstin ?? ''); ?>",
+                        client_gstin: billing.client_gstin || "<?php echo e($invoice->relatedBooking->gstin ?? ''); ?>",
                         address: billing.address
                     },
 
@@ -735,6 +487,7 @@
     </script>
 
 
+
     
     <script>
         function recalculateAll() {
@@ -762,7 +515,7 @@
             // ================= TOTAL =================
             document.getElementById('totalAmount').innerText = totalAmount.toFixed(2);
 
-
+            // ================= DISCOUNT =================
             // ================= DISCOUNT =================
             const enableDiscount =
                 document.getElementById('enableDiscount')?.checked ?? true;
@@ -982,13 +735,13 @@
             newRow.className = 'item-row';
 
             newRow.innerHTML = `
-                                                                    <td contenteditable="true" class="editable description"></td>
-                                                                    <td contenteditable="true">10101</td>
-                                                                    <td contenteditable="true"></td>
-                                                                    <td contenteditable="true" class="editable qty">1</td>
-                                                                    <td contenteditable="true" class="editable rate">0.00</td>
-                                                                    <td contenteditable="true" class="amount">0.00</td>
-                                                                `;
+                        <td contenteditable="true" class="editable description"></td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true"></td>
+                        <td contenteditable="true" class="editable qty">1</td>
+                        <td contenteditable="true" class="editable rate">0.00</td>
+                        <td contenteditable="true" class="amount">0.00</td>
+                    `;
 
             selected.after(newRow);
 
@@ -1072,10 +825,10 @@
 
             // Build combined text from current columns
             const combinedText = `
-                                                            ${cells[0].innerText}
-                                                            Job: ${cells[1].innerText}
-                                                            SAC: ${cells[2].innerText}
-                                                            `.trim();
+                ${cells[0].innerText}
+                Job: ${cells[1].innerText}
+                SAC: ${cells[2].innerText}
+                `.trim();
 
             // Save original row (for future undo)
             row.dataset.original = row.innerHTML;
@@ -1085,15 +838,15 @@
             // - 1 combined column (Desc + Job + SAC + Qty + Rate)
             // - Amount column preserved
             row.innerHTML = `
-                                                                    <td contenteditable="true"
-                                                                        colspan="3"
-                                                                        class="editable description">
-                                                                        ${combinedText}
-                                                                    </td>
-                                                                    <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
-                                                                    <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
-                                                                    <td contenteditable="true" class="amount">${cells[5].innerText}</td>
-                                                                `;
+                        <td contenteditable="true"
+                            colspan="3"
+                            class="editable description">
+                            ${combinedText}
+                        </td>
+                        <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
+                        <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
+                        <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                    `;
 
             recalculateAll();
         }
@@ -1116,7 +869,64 @@
     </script>
 
     
+    <script>
+        function addPageSubtotalsForPrint() {
 
+            // Remove old subtotal rows if re-print
+            document.querySelectorAll('.page-subtotal-row')
+                .forEach(r => r.remove());
+
+            const rows = Array.from(document.querySelectorAll('.item-row'));
+            if (!rows.length) return;
+
+            let pageHeight = 297 * 3.78; // A4 height in px
+            let pageTop = rows[0].getBoundingClientRect().top + window.scrollY;
+
+            let runningTotal = 0;
+
+            rows.forEach((row, index) => {
+
+                const rect = row.getBoundingClientRect();
+                const rowBottom = rect.bottom + window.scrollY;
+
+                const amountCell = row.querySelector('.amount');
+                const amount = parseFloat(amountCell?.innerText || 0);
+                runningTotal += amount;
+
+                const nextRow = rows[index + 1];
+
+                // Check page overflow
+                if (
+                    nextRow &&
+                    nextRow.getBoundingClientRect().top + window.scrollY - pageTop > pageHeight - 120
+                ) {
+                    insertSubtotalRow(row, runningTotal);
+                    runningTotal = 0;
+                    pageTop = nextRow.getBoundingClientRect().top + window.scrollY;
+                }
+
+                // Last row
+                if (!nextRow) {
+                    insertSubtotalRow(row, runningTotal);
+                }
+            });
+        }
+
+        function insertSubtotalRow(afterRow, total) {
+            const tr = document.createElement('tr');
+            tr.className = 'page-subtotal-row';
+            tr.innerHTML = `
+                        <td colspan="5" class="text-right">
+                            Sub Total (This Page)
+                        </td>
+                        <td>${total.toFixed(2)}</td>
+                    `;
+            afterRow.after(tr);
+        }
+
+        // Hook into print
+        window.addEventListener('beforeprint', addPageSubtotalsForPrint);
+    </script>
 
 <?php $__env->stopSection(); ?>
-<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/generateInvoice/show.blade.php ENDPATH**/ ?>
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/generateInvoice/edit-invoice.blade.php ENDPATH**/ ?>

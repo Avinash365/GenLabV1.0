@@ -278,7 +278,8 @@
                                 
                                   <?php if($invoice->status == 0): ?>
                                     <!-- Edit Button -->
-                                    <a href="<?php echo e(route('superadmin.invoices.edit', $invoice->id)); ?>" 
+                                    <!-- <a href="<?php echo e(route('superadmin.invoices.edit', $invoice->id)); ?>"  -->
+                                    <a href="<?php echo e(route('bookingInvoiceStatuses.editGenerateInvoice', $invoice->id)); ?>"
                                     class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
                                     title="Edit">
                                         <i data-feather="edit" class="feather-edit"></i>
