@@ -13,6 +13,7 @@ use App\Services\{GetUserActiveDepartment,BillingService};
 use App\Services\InvoicePdfService;
 use App\Http\Requests\GenerateInvoiceRequest;
 use App\Jobs\SendMarketingNotificationJob;
+use Illuminate\Support\Facades\Storage;
 
 use App\Http\Controllers\Transactions\CashPaymentController;
 
@@ -167,9 +168,6 @@ class InvoiceController extends Controller
                 return back()->withSuccess('Currently service is not available');
             } 
 
-            
-            
-
             if (!empty($invoice->invoice_booking_ids)) {
             
                 $bookingIds = explode(',', $invoice->invoice_booking_ids);
@@ -196,6 +194,12 @@ class InvoiceController extends Controller
     {
         try { 
 
+            $html = $request->invoice_html; 
+            Storage::put(
+                "invoices/invoice_{$invoice->id}.html",
+                $html
+            );
+             
             $invoice_no = $request->input('invoice_no') ?? $invoice->invoice_no;
             $bookingId = $request->input('booking_id') ?? $invoice->new_booking_id;
             $invoiceType = $request->input('typeOption') ?? $invoice->type;
@@ -275,7 +279,7 @@ class InvoiceController extends Controller
                         $item->save();
                     }
                 }
-            } 
+            }  
 
             return redirect()->back()->with('success', 'Invoice updated successfully.');
 

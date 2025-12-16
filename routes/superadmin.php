@@ -85,7 +85,8 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
 // ==============================
 // Super Admin Protected Routes
-// ==============================
+// ============================== 
+
 Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
 
     // Marketing Expenses
@@ -101,7 +102,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::patch('/expenses/{expense}/approve', [MarketingExpenseController::class, 'approve'])->name('expenses.approve');
         Route::patch('/expenses/{expense}/reject', [MarketingExpenseController::class, 'reject'])->name('expenses.reject');
     });
-
+    
     // Office Expenses (view only for now)
     Route::prefix('office')->name('office.')->group(function () {
         Route::get('/expenses', [MarketingExpenseController::class, 'office'])->name('expenses.view');
@@ -136,7 +137,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::delete('{role}', [RoleAndPermissionController::class, 'destroy'])->name('destroy');
             Route::get('{role}', [RoleAndPermissionController::class, 'show'])->name('show');
     });
-
 
     // User Management
     Route::prefix('users')
@@ -192,8 +192,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/booking/{bookingId}/cards/{itemId}', [BookingController::class, 'showBookingCards'])->name('cards.single');
     });
 
-
-
     //Product
      Route::prefix('products')
         ->name('products.')
@@ -207,7 +205,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             // Delete product
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
-
     });
 
     //Product
@@ -223,7 +220,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('approvals', ApprovalController::class);
         Route::resource('importantLetter', ImportantLetterController::class);
         Route::resource('documents', DocumentController::class);
-    Route::resource('employees', EmployeeController::class);
+        Route::resource('employees', EmployeeController::class);
         Route::resource('calibrations', CalibrationController::class);
         Route::resource('iscodes', ISCodeController::class);
 
@@ -243,8 +240,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::post('/booking-invoice-statuses/store-bulk', [GenerateInvoiceStatusController::class, 'storeBulk'])
              ->name('bookingInvoiceStatuses.storeBulk');
+        
+        // ===================== EDIT GENERATE INVOICE =====================
+        // Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
 
         Route::resource('invoices', InvoiceController::class);
+        
+
         Route::PUT('invoices/generate-invoice/{invoices}', [InvoiceController::class, 'generateInvoice'])
               ->name('invoices.generateInvoice');
 
@@ -887,3 +889,5 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
     // delete email from list route
     Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
+
+    Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
