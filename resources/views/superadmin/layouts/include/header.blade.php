@@ -8,6 +8,54 @@
             $roleName = $authUser->role;
         }
     }
+    // Compute avatar URL similar to superadmin.profile.index fallback logic
+    $avatarUrl = url('assets/img/profiles/avator1.jpg');
+    if ($authUser) {
+        $tryExt = ['jpg','jpeg','png','webp'];
+        $found = null;
+        $candidates = [];
+        if (!empty($authUser->id)) $candidates[] = $authUser->id;
+        if (!empty($authUser->code)) $candidates[] = $authUser->code;
+        if (!empty($authUser->user_code)) $candidates[] = $authUser->user_code;
+
+        foreach ($candidates as $cid) {
+            foreach ($tryExt as $ext) {
+                if (\Illuminate\Support\Facades\Storage::disk('public')->exists("avatars/{$cid}.{$ext}")) {
+                    $found = \Illuminate\Support\Facades\Storage::url("avatars/{$cid}.{$ext}");
+                    break 2;
+                }
+            }
+        }
+
+        if (!$found) {
+            $avatarField = $authUser->profile_photo_url ?? $authUser->avatar ?? $authUser->photo ?? null;
+            if (is_string($avatarField) && $avatarField) {
+                if (str_starts_with($avatarField, 'data:') || str_starts_with($avatarField, 'http')) {
+                    $found = $avatarField;
+                } else {
+                    try {
+                        if (\Illuminate\Support\Facades\Storage::disk('public')->exists($avatarField)) {
+                            $found = \Illuminate\Support\Facades\Storage::url($avatarField);
+                        } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists('avatars/'.$avatarField)) {
+                            $found = \Illuminate\Support\Facades\Storage::url('avatars/'.$avatarField);
+                        } else {
+                            if (file_exists(public_path($avatarField))) {
+                                $found = asset($avatarField);
+                            } elseif (file_exists(public_path('storage/'.ltrim($avatarField, '/')))) {
+                                $found = asset('storage/'.ltrim($avatarField, '/'));
+                            } else {
+                                $found = asset('storage/'.ltrim($avatarField, '/'));
+                            }
+                        }
+                    } catch (\Throwable $e) {
+                        $found = asset('storage/'.ltrim($avatarField, '/'));
+                    }
+                }
+            }
+        }
+
+        if ($found) { $avatarUrl = $found; }
+    }
     $isMarketing = $roleName && stripos($roleName, 'market') !== false;
     $addNewHref = $isMarketing ? route('superadmin.personal.expenses.index') : route('superadmin.bookings.newbooking');
     $addNewActive = $isMarketing ? Request::routeIs('superadmin.personal.expenses.*') : Request::routeIs('superadmin.bookings.newbooking');
@@ -119,7 +167,7 @@
             <!-- User dropdown -->
             <div class="dropdown ms-2">
                 <a href="#" class="d-flex align-items-center" id="userDropdown" data-bs-toggle="dropdown" aria-expanded="false">
-                    <img src="{{ url('assets/img/profiles/avator1.jpg') }}" alt="User" class="img-fluid" style="height:30px; width:30px; object-fit:cover; border-radius:6px;">
+                    <img src="{{ $avatarUrl }}" alt="User" class="img-fluid" style="height:30px; width:30px; object-fit:cover; border-radius:6px;">
                 </a>
                 <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
                     @php
@@ -132,7 +180,7 @@
                     @endphp
                     <li class="px-3 py-2">
                         <div class="d-flex align-items-center">
-                            <img src="{{ url('assets/img/profiles/avator1.jpg') }}" alt="User" class="rounded-circle me-2" style="height:32px; width:32px;">
+                            <img src="{{ $avatarUrl }}" alt="User" class="rounded-circle me-2" style="height:32px; width:32px;">
                             <div>
                                 <div class="fw-medium">{{ $authUser->name ?? 'Guest' }}</div>
                                 <div class="text-muted" style="font-size:13px;">{{ $roleLabel }}</div>

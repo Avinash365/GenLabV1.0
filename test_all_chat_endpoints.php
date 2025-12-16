@@ -6,13 +6,13 @@ $baseUrl = 'http://127.0.0.1:8000/api';
 
 // Test credentials
 $userCredentials = [
-    'user_code' => 'test123',
-    'password' => 'password123'
+    'user_code' => 'MKT001',
+    'password' => '12345678'
 ];
 
 $adminCredentials = [
-    'email' => 'admin@example.com',
-    'password' => 'admin123'
+    'email' => 'superadmin1@example.com',
+    'password' => 'password123'
 ];
 
 echo "=== COMPREHENSIVE CHAT API TESTING ===\n\n";
@@ -47,6 +47,76 @@ function makeApiCall($url, $method = 'GET', $data = null, $headers = []) {
     ];
 }
 
+// Make multipart/form-data API call (for file uploads)
+function makeMultipartApiCall($url, $postFields = [], $headers = []) {
+    $curl = curl_init();
+    $defaultHeaders = [
+        'Accept: application/json'
+    ];
+    curl_setopt($curl, CURLOPT_URL, $url);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($curl, CURLOPT_POST, true);
+    curl_setopt($curl, CURLOPT_HTTPHEADER, array_merge($defaultHeaders, $headers));
+    curl_setopt($curl, CURLOPT_POSTFIELDS, $postFields);
+    $response = curl_exec($curl);
+    $httpCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+    return [
+        'status_code' => $httpCode,
+        'response' => $response,
+        'data' => json_decode($response, true)
+    ];
+}
+
+// Test file upload and fetching (tries common field names)
+function testFileUploadAndFetch($token, $prefix, $type) {
+    global $baseUrl;
+    echo "=== TESTING $type FILE UPLOAD/DOWNLOAD ===\n";
+
+    $headers = ["Authorization: Bearer $token"];
+
+    $filesToTry = [
+        ['field'=>'file','path'=>__DIR__ . '/tools/test_upload.txt'],
+        ['field'=>'file','path'=>__DIR__ . '/tools/test_image.jpg'],
+        ['field'=>'attachments[]','path'=>__DIR__ . '/tools/test_image.jpg']
+    ];
+
+    foreach ($filesToTry as $f) {
+        if (!file_exists($f['path'])) continue;
+        echo "Uploading ({$f['field']}) -> {$f['path']}... ";
+        $post = [
+            'group_id' => 1,
+            'type' => 'file',
+            'content' => 'file upload test',
+        ];
+        $post[$f['field']] = new CURLFile($f['path']);
+        $res = makeMultipartApiCall("$baseUrl$prefix/messages", $post, $headers);
+        if ($res['status_code'] >= 200 && $res['status_code'] < 300) {
+            echo "✅ SUCCESS ({$res['status_code']})\n";
+            // try to find a downloadable URL in response
+            $body = $res['response'];
+            if (preg_match('/https?:\\/\\/[^\s\"\']+/', $body, $m)) {
+                $url = $m[0];
+                echo "Found URL: $url - attempting download... ";
+                $dl = makeApiCall($url, 'GET');
+                if ($dl['status_code'] === 200 && strlen($dl['response'])>0) {
+                    $out = __DIR__ . '/tools/downloaded_' . basename($f['path']);
+                    file_put_contents($out, $dl['response']);
+                    echo "✅ Downloaded to $out (" . filesize($out) . " bytes)\n";
+                } else {
+                    echo "❌ Failed to download ({$dl['status_code']})\n";
+                }
+            } else {
+                echo "No URL found in response to download. Response excerpt: " . substr($body,0,200) . "...\n";
+            }
+        } else {
+            echo "❌ FAILED ({$res['status_code']})\n";
+            echo "  Response: " . substr($res['response'],0,300) . "...\n";
+        }
+    }
+    echo "\n";
+}
+
 // Test authentication for both user and admin
 function testAuthentication($credentials, $endpoint, $type) {
     global $baseUrl;
@@ -56,11 +126,31 @@ function testAuthentication($credentials, $endpoint, $type) {
     $result = makeApiCall("$baseUrl$endpoint", 'POST', $credentials);
     
     echo "Login Status: " . $result['status_code'] . "\n";
-    
-    if ($result['status_code'] === 200 && isset($result['data']['access_token'])) {
+    $token = null;
+    if (isset($result['data']['access_token'])) {
+        $token = $result['data']['access_token'];
+    } elseif (isset($result['data']['data']['access_token'])) {
+        $token = $result['data']['data']['access_token'];
+    } else {
+        $decoded = json_decode($result['response'], true);
+        if (is_array($decoded)) {
+            if (isset($decoded['access_token'])) {
+                $token = $decoded['access_token'];
+            } elseif (isset($decoded['data']['access_token'])) {
+                $token = $decoded['data']['access_token'];
+            }
+        }
+    }
+
+    // Final fallback: extract access_token via regex from raw response
+    if (!$token && preg_match('/"access_token"\s*:\s*"([^"]+)"/i', $result['response'], $matches)) {
+        $token = $matches[1];
+    }
+
+    if ($result['status_code'] === 200 && $token) {
         echo "✅ $type login successful!\n";
-        echo "Token: " . substr($result['data']['access_token'], 0, 50) . "...\n\n";
-        return $result['data']['access_token'];
+        echo "Token: " . substr($token, 0, 50) . "...\n\n";
+        return $token;
     } else {
         echo "❌ $type login failed!\n";
         echo "Response: " . $result['response'] . "\n\n";
@@ -219,6 +309,8 @@ $testResults = [];
 // Test user endpoints
 if ($userToken) {
     $testResults['user'] = testChatEndpoints($userToken, '/chat', 'USER');
+    // run file upload/download tests for user
+    testFileUploadAndFetch($userToken, '/chat', 'USER');
 } else {
     echo "⚠️ Skipping user endpoint tests due to authentication failure\n\n";
 }

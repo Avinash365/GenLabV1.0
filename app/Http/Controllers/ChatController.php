@@ -12,6 +12,7 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class ChatController extends Controller
@@ -26,7 +27,6 @@ class ChatController extends Controller
         
         return $super ?: ($admin ?: ($apiAdmin ?: $web));
     }
-
     protected function guardName()
     {
         if (config('auth.guards.superadmin') && auth('superadmin')->check()) return 'superadmin';
@@ -143,11 +143,29 @@ class ChatController extends Controller
                 }
             }
         }
+        // Determine avatar: for DM groups prefer the peer user's avatar
+        $avatar = null;
+        if ($viewerId && str_starts_with((string)$group->slug, 'dm-')) {
+            $parts = explode('-', $group->slug);
+            if (count($parts) === 3) {
+                $a = (int)$parts[1]; $b = (int)$parts[2];
+                $peerId = $viewerId === $a ? $b : $a;
+                if ($peerId > 0) {
+                    // Use a plain find() to avoid selecting columns that may not exist
+                    // (some deployments don't have `profile_picture`/`avatar` columns).
+                    $peer = User::find($peerId);
+                    if ($peer) {
+                        $avatar = $this->userAvatarUrl($peer);
+                    }
+                }
+            }
+        }
+
         return [
             'id' => $group->id,
             'slug' => $group->slug,
             'name' => $displayName,
-            'avatar' => null,
+            'avatar' => $avatar,
             'last_msg_id' => $last?->id,
             'last_msg_at' => $last?->created_at?->toISOString(),
             'latest' => $last ? [
@@ -157,7 +175,7 @@ class ChatController extends Controller
                 'original_name' => $last->original_name,
                 'sender_guard' => $last->sender_guard,
                 'sender_name' => $last->sender_name,
-                'user' => $last->user ? ['id'=>$last->user->id, 'name'=>$last->user->name] : null,
+                'user' => $last->user ? ['id'=>$last->user->id, 'name'=>$last->user->name, 'avatar' => $this->userAvatarUrl($last->user)] : null,
                 'created_at' => $last->created_at?->toISOString(),
             ] : null,
             'unread' => 0,
@@ -226,18 +244,24 @@ class ChatController extends Controller
 
     public function groups()
     {
-        // Ensure default groups exist
-        $defaults = ['Bookings','Reports','Invoices','Management','Amendment Reports'];
-        foreach ($defaults as $name) {
-            ChatGroup::firstOrCreate(['slug' => Str::slug($name)], ['name' => $name]);
+        try {
+            // Ensure default groups exist
+            $defaults = ['Bookings','Reports','Invoices','Management','Amendment Reports'];
+            foreach ($defaults as $name) {
+                ChatGroup::firstOrCreate(['slug' => Str::slug($name)], ['name' => $name]);
+            }
+            $user = $this->user();
+            $groups = ChatGroup::orderBy('id')->get();
+            // Show only groups the viewer belongs to (DMs and member-guarded groups)
+            $filtered = $groups->filter(function($g) use ($user){
+                return $user && $this->userInGroup($g, $user);
+            });
+            $payload = $filtered->map(fn($g)=> $this->buildGroupPayload($g, $user?->id))->values();
+            return response()->json($payload);
+        } catch (\Throwable $e) {
+            Log::error('ChatController::groups failed: '.$e->getMessage(), ['exception' => $e]);
+            return response()->json(['error' => 'Failed to load chat groups', 'detail' => $e->getMessage()], 500);
         }
-        $user = $this->user();
-        $groups = ChatGroup::orderBy('id')->get();
-        // Show only groups the viewer belongs to (DMs and member-guarded groups)
-        $filtered = $groups->filter(function($g) use ($user){
-            return $user && $this->userInGroup($g, $user);
-        });
-        return $filtered->map(fn($g)=> $this->buildGroupPayload($g, $user?->id))->values();
     }
 
     public function clearGroup(ChatGroup $group)
@@ -552,6 +576,7 @@ class ChatController extends Controller
                 'id' => $m->user->id,
                 'name' => $m->user->name,
                 'is_chat_admin' => (bool) ($m->user->is_chat_admin ?? false),
+                'avatar' => null,
             ] : null,
             'sender_guard' => $m->sender_guard,
             'sender_name' => $senderName,
@@ -581,6 +606,40 @@ class ChatController extends Controller
                 $data['sender_name'] = ucfirst(str_replace('_',' ', $m->sender_guard));
             }
         }
+        // If user is present, attempt to include avatar URL from common fields
+        if (!empty($data['user']) && $m->relationLoaded('user') && $m->user) {
+            $data['user']['avatar'] = $this->userAvatarUrl($m->user);
+        }
+
         return $data;
     }
+
+    protected function userAvatarUrl($user): ?string
+    {
+        if (!$user) return null;
+        // Prefer direct profile_photo_url if present (Jetstream/etc.)
+        if (!empty($user->profile_photo_url)) {
+            return (string) $user->profile_photo_url;
+        }
+        // Common DB-backed candidate fields
+        $cand = $user->profile_picture ?? $user->avatar ?? $user->photo ?? null;
+        if ($cand) {
+            return $this->fileUrl((string)$cand);
+        }
+        // Fallback: check public avatars by user id (avatars/{id}.{ext})
+        $exts = ['png','jpg','jpeg','webp','gif'];
+        foreach ($exts as $ext) {
+            $rel = "avatars/{$user->id}.{$ext}";
+            try {
+                if (Storage::disk('public')->exists($rel)) {
+                    return Storage::disk('public')->url($rel);
+                }
+            } catch (\Throwable $e) {
+                // ignore storage issues
+            }
+        }
+        return null;
+    }
+
 }
+

@@ -34,13 +34,58 @@
         }
     }
     
-    // 3. Avatar Logic
-    $avatar = $marketingPerson->profile_picture ?? null;
+    // 3. Avatar Logic — align with `superadmin.profile.index` fallback behavior
     $avatarUrl = asset('assets/img/profiles/avator1.jpg');
-    // ... (Your existing avatar logic can remain here or be simplified) ...
-    if(is_string($avatar) && $avatar) {
-        $avatarUrl = str_starts_with($avatar, 'http') ? $avatar : asset('storage/'.ltrim($avatar, '/'));
+    // Prefer a public-stored avatar in `storage/app/public/avatars/{id|user_code}.{ext}`
+    $tryExt = ['jpg','jpeg','png','webp'];
+    $found = null;
+    $candidates = [];
+    if(!empty($marketingPerson->id)) $candidates[] = $marketingPerson->id;
+    if(!empty($marketingPerson->user_code)) $candidates[] = $marketingPerson->user_code;
+    if(!empty($marketingPerson->code)) $candidates[] = $marketingPerson->code;
+
+    foreach($candidates as $cid) {
+        foreach($tryExt as $ext) {
+            if(\Illuminate\Support\Facades\Storage::disk('public')->exists("avatars/{$cid}.{$ext}")){
+                $found = \Illuminate\Support\Facades\Storage::url("avatars/{$cid}.{$ext}");
+                break 2;
+            }
+        }
     }
+
+    // Fallback to any stored profile field or a direct URL
+    if(!$found){
+        $avatar = $marketingPerson->profile_picture ?? $marketingPerson->profile_photo_url ?? $marketingPerson->avatar ?? $marketingPerson->photo ?? null;
+        if(is_string($avatar) && $avatar){
+            // Data URL or absolute HTTP URL
+            if (str_starts_with($avatar, 'data:') || str_starts_with($avatar, 'http')) {
+                $found = $avatar;
+            } else {
+                // Prefer Storage disk url if path exists as stored on disk
+                try {
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($avatar)) {
+                        $found = \Illuminate\Support\Facades\Storage::url($avatar);
+                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists('avatars/'.$avatar)) {
+                        $found = \Illuminate\Support\Facades\Storage::url('avatars/'.$avatar);
+                    } else {
+                        // Check public path directly (maybe already under public/)
+                        if (file_exists(public_path($avatar))) {
+                            $found = asset($avatar);
+                        } elseif (file_exists(public_path('storage/'.ltrim($avatar, '/')))) {
+                            $found = asset('storage/'.ltrim($avatar, '/'));
+                        } else {
+                            // Last resort: assume it's a storage-relative path
+                            $found = asset('storage/'.ltrim($avatar, '/'));
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $found = asset('storage/'.ltrim($avatar, '/'));
+                }
+            }
+        }
+    }
+
+    if($found) { $avatarUrl = $found; }
 ?>
 
 <div class="container-fluid p-4 dashboard-container">
@@ -451,12 +496,12 @@
     .personal-expense-center .fs-6 {
         font-size: .8rem !important; /* larger label */
         color: #374151 !important;
-        font-weight: 500;
+        font-weight: 600;
         letter-spacing: 0.2px;
         margin-bottom: 2px;
     }
     .personal-expense-center .fs-5 { font-size: 1rem; }
-    #personalCenterAmount { font-size: 1.9rem !important; line-height: 1; font-weight: 600; }
+    #personalCenterAmount { font-size: 1.9rem !important; line-height: 1; font-weight: 700; }
     #personalExpenseLegend .legend-item { display:flex; gap:8px; align-items:center; }
     #personalExpenseLegend .swatch { width:12px; height:12px; border-radius:3px; display:inline-block; }
     @media (max-width: 992px){ .personal-expense-center { width:180px; } }
