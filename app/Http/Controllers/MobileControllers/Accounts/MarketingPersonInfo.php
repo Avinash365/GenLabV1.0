@@ -660,6 +660,7 @@ class MarketingPersonInfo extends Controller
             return [
                 'id' => $item->id,
                 'job_order_no' => $item->job_order_no,
+                'job_order_date' => $item->job_order_date ? $item->job_order_date->toDateString() : ($booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->toDateString() : null),
                 'reference_no' => $booking->reference_no ?? null,
                 'client_name' => $booking->client_name ?? null,
                 'sample_quality' => $item->sample_quality,
@@ -1021,9 +1022,10 @@ class MarketingPersonInfo extends Controller
     public function invoiceListApi(Request $request, $user_code)
     {
         $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+        $bookingIds = $marketingPerson->marketingBookings->pluck('id')->toArray();
 
         $query = \App\Models\Invoice::with(['relatedBooking.client', 'bookingItems'])
-            ->whereIn('new_booking_id', $marketingPerson->marketingBookings->pluck('id')->toArray());
+            ->whereIn('new_booking_id', $bookingIds);
 
         // Filter by locked marketing_person (frontend may pass id)
         if ($request->filled('marketing_person')) {
@@ -1035,10 +1037,16 @@ class MarketingPersonInfo extends Controller
             $query->whereHas('relatedBooking', function($q) use ($request) { $q->where('client_id', $request->client_id); });
         }
 
+        // Department filter (supports both department_id and department)
+        if ($request->filled('department_id') || $request->filled('department')) {
+            $dept = $request->filled('department_id') ? $request->department_id : $request->department;
+            $query->whereHas('relatedBooking', function($q) use ($dept) { $q->where('department_id', $dept); });
+        }
+
         // Payment status filter (0,1,2,3,4 mapping as used in UI)
         if ($request->filled('payment_status')) {
             $ps = $request->payment_status;
-            $query->when($ps !== '', function($q) use ($ps){ $q->where('payment_status', $ps); });
+            $query->where('payment_status', $ps);
         }
 
         // Search invoice_no or booking reference
@@ -1047,17 +1055,24 @@ class MarketingPersonInfo extends Controller
             $query->where(function($q) use ($s){
                 $q->where('invoice_no', 'like', "%{$s}%")
                   ->orWhereHas('relatedBooking', function($qb) use ($s){
-                      $qb->where('reference_no', 'like', "%{$s}%");
+                      $qb->where('reference_no', 'like', "%{$s}%")
+                         ->orWhere('client_name', 'like', "%{$s}%");
                   });
             });
         }
 
-        // Month/Year filter on letter_date if provided, otherwise created_at
+        // Month/Year filter prefer letter_date but fallback to created_at
         if ($request->filled('year')) {
-            $query->whereYear('created_at', $request->year);
+            $y = $request->year;
+            $query->where(function($q) use ($y){
+                $q->whereYear('letter_date', $y)->orWhereYear('created_at', $y);
+            });
         }
         if ($request->filled('month')) {
-            $query->whereMonth('created_at', $request->month);
+            $m = $request->month;
+            $query->where(function($q) use ($m){
+                $q->whereMonth('letter_date', $m)->orWhereMonth('created_at', $m);
+            });
         }
 
         $perPage = (int) $request->get('perPage', 25);
@@ -1065,10 +1080,22 @@ class MarketingPersonInfo extends Controller
 
         $data = $invoices->through(function($inv){
             $booking = $inv->relatedBooking;
-            $clientName = $booking?->client->name ?? null;
+            // `client_name` should reflect the booking's client_name text (assigned in booking)
+            // while `assigned_client` is the linked Client model's name (if any).
+            $clientName = $booking?->client_name ?? $inv->client_name ?? null;
+
             $invoiceUrl = null;
             if (!empty($inv->invoice_letter_path)) {
-                $invoiceUrl = url($inv->invoice_letter_path);
+                $path = $inv->invoice_letter_path;
+                if (preg_match('#^https?://#i', $path)) {
+                    $invoiceUrl = $path;
+                } else {
+                    try {
+                        $invoiceUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : url($path);
+                    } catch (\Exception $_) {
+                        $invoiceUrl = url($path);
+                    }
+                }
             }
 
             return [
@@ -1076,6 +1103,7 @@ class MarketingPersonInfo extends Controller
                 'invoice_no' => $inv->invoice_no,
                 'reference_no' => $booking->reference_no ?? null,
                 'client_name' => $clientName,
+                'assigned_client' => $booking?->client->name ?? null,
                 'gst_amount' => $inv->gst_amount,
                 'total_amount' => $inv->total_amount,
                 'letter_date' => $inv->letter_date ? \Carbon\Carbon::parse($inv->letter_date)->toDateString() : null,

@@ -23,15 +23,17 @@ class ChatController extends Controller
         $super = config('auth.guards.superadmin') ? auth('superadmin')->user() : null;
         $admin = auth('admin')->user();
         $apiAdmin = config('auth.guards.api_admin') ? auth('api_admin')->user() : null;
+        $api = config('auth.guards.api') ? auth('api')->user() : null;
         $web = auth('web')->user();
-        
-        return $super ?: ($admin ?: ($apiAdmin ?: $web));
+
+        return $super ?: ($admin ?: ($apiAdmin ?: ($api ?: $web)));
     }
     protected function guardName()
     {
         if (config('auth.guards.superadmin') && auth('superadmin')->check()) return 'superadmin';
         if (auth('admin')->check()) return 'admin';
         if (config('auth.guards.api_admin') && auth('api_admin')->check()) return 'api_admin';
+        if (config('auth.guards.api') && auth('api')->check()) return 'api';
         if (auth('web')->check()) return 'web';
         return null;
     }

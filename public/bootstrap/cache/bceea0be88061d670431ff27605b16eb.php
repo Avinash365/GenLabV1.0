@@ -1,6 +1,6 @@
-@extends('superadmin.layouts.app')
-@section('title', 'Invoice List')
-@section('content')
+
+<?php $__env->startSection('title', 'Invoice List'); ?>
+<?php $__env->startSection('content'); ?>
 
 <style>
     /* Force table cells to wrap and prevent horizontal scrolling */
@@ -23,19 +23,21 @@
     .wrap-table i.ti, .wrap-table i.feather-eye{ font-size:0.95rem; line-height:1; }
 </style>
 
-@if(session('error'))
+<?php if(session('error')): ?>
     <div class="alert alert-danger alert-dismissible fade show mx-3 mt-3" role="alert">
-        {{ session('error') }}
-        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-    </div>
-@endif
+        <?php echo e(session('error')); ?>
 
-@if(session('success'))
-    <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
-        {{ session('success') }}
         <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
     </div>
-@endif
+<?php endif; ?>
+
+<?php if(session('success')): ?>
+    <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
+        <?php echo e(session('success')); ?>
+
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+<?php endif; ?>
 
     <div class="page-header ps-3 px-3">
         <div class="d-flex justify-content-end mt-3 me-3 mb-4">
@@ -63,33 +65,35 @@
 
         <!-- Search Form -->
         <div class="search-set">
-            <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex input-group">
-                <input type="hidden" name="type" value="{{ request('type', $type ) }}">
-                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
+            <form method="GET" action="<?php echo e(route('superadmin.invoices.index')); ?>" class="d-flex input-group">
+                <input type="hidden" name="type" value="<?php echo e(request('type', $type )); ?>">
+                <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search...">
                 <button class="btn btn-outline-secondary" type="submit">🔍</button>
             </form>
         </div>
 
         <!-- Month & Year Filter Form -->
         <div class="search-set">
-            <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex input-group">
-                <input type="hidden" name="type" value="{{ request('type', $type ?? '') }}">
+            <form method="GET" action="<?php echo e(route('superadmin.invoices.index')); ?>" class="d-flex input-group">
+                <input type="hidden" name="type" value="<?php echo e(request('type', $type ?? '')); ?>">
                 <select name="month" class="form-control">
                     <option value="">Select Month</option>
-                    @foreach(range(1,12) as $m)
-                        <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
-                            {{ \Carbon\Carbon::create()->month($m)->format('F') }}
+                    <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($m); ?>" <?php echo e(request('month') == $m ? 'selected' : ''); ?>>
+                            <?php echo e(\Carbon\Carbon::create()->month($m)->format('F')); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
 
                 <select name="year" class="form-control">
                     <option value="">Select Year</option>
-                    @foreach(range(date('Y'), date('Y') - 10) as $y)
-                        <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
-                            {{ $y }}
+                    <?php $__currentLoopData = range(date('Y'), date('Y') - 10); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $y): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($y); ?>" <?php echo e(request('year') == $y ? 'selected' : ''); ?>>
+                            <?php echo e($y); ?>
+
                         </option>
-                    @endforeach
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
 
                 <button class="btn btn-outline-secondary" type="submit">Filter</button>
@@ -103,60 +107,61 @@
 <!-- Table List -->
 <div class="card mt-4">
     <div class="card-header d-flex justify-content-between align-items-center">
-        @php
+        <?php
             $authUser = auth()->user();
             $marketingCode = $authUser->user_code ?? null;
-        @endphp
-        <h5 class="card-title">Generated {{ $type ?? 'Invoices' }}</h5>
-        <a href="{{ route('superadmin.bookingInvoiceStatuses.index', array_filter(['context' => 'marketing', 'marketing_person' => $marketingCode], fn($v) => filled($v))) }}" class="btn btn-primary">Yet to be Generate</a>
+        ?>
+        <h5 class="card-title">Generated <?php echo e($type ?? 'Invoices'); ?></h5>
+        <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', array_filter(['context' => 'marketing', 'marketing_person' => $marketingCode], fn($v) => filled($v)))); ?>" class="btn btn-primary">Yet to be Generate</a>
 
         <!-- Filters + Search bar -->
-        <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex gap-2" role="search">
-            <input type="hidden" name="type" value="{{ request('type', $type ?? '') }}">
+        <form method="GET" action="<?php echo e(route('superadmin.invoices.index')); ?>" class="d-flex gap-2" role="search">
+            <input type="hidden" name="type" value="<?php echo e(request('type', $type ?? '')); ?>">
             <!-- Marketing Person Filter (locked to logged-in marketing user) -->
-            @php
+            <?php
                 $authUser = auth()->user();
                 $lockedMarketingId = $authUser?->id;
-            @endphp
-            <select name="marketing_person" class="form-select" onchange="this.form.submit()" {{ $lockedMarketingId ? 'disabled' : '' }}>
-                @if(!$lockedMarketingId)
+            ?>
+            <select name="marketing_person" class="form-select" onchange="this.form.submit()" <?php echo e($lockedMarketingId ? 'disabled' : ''); ?>>
+                <?php if(!$lockedMarketingId): ?>
                     <option value="">All Marketing Persons</option>
-                @endif
-                @foreach($marketingPersons as $person)
-                    @php $isLockedOption = $lockedMarketingId === $person->id; @endphp
-                    <option value="{{ $person->id }}" {{ ($lockedMarketingId ? $isLockedOption : request('marketing_person') == $person->id) ? 'selected' : '' }}>
-                        {{ $person->name }} ({{ $person->user_code }})
+                <?php endif; ?>
+                <?php $__currentLoopData = $marketingPersons; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $person): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php $isLockedOption = $lockedMarketingId === $person->id; ?>
+                    <option value="<?php echo e($person->id); ?>" <?php echo e(($lockedMarketingId ? $isLockedOption : request('marketing_person') == $person->id) ? 'selected' : ''); ?>>
+                        <?php echo e($person->name); ?> (<?php echo e($person->user_code); ?>)
                     </option>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
-            @if($lockedMarketingId)
-                <input type="hidden" name="marketing_person" value="{{ $lockedMarketingId }}">
-            @endif 
+            <?php if($lockedMarketingId): ?>
+                <input type="hidden" name="marketing_person" value="<?php echo e($lockedMarketingId); ?>">
+            <?php endif; ?> 
           
             <!-- Client Filter -->
             <select name="client_id" class="form-select" onchange="this.form.submit()">
                 
                 <option value="">All Clients</option>
-                @foreach($clients as $client)
-                    <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                        {{ $client->name }}
+                <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($client->id); ?>" <?php echo e(request('client_id') == $client->id ? 'selected' : ''); ?>>
+                        <?php echo e($client->name); ?>
+
                     </option>
-                @endforeach
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
             </select>
 
             <!-- Paid/Unpaid Filter -->
             <select name="payment_status" class="form-select" onchange="this.form.submit()">
               
                 <option value="">All</option>
-                <option value="1" {{ request('payment_status') == '1' ? 'selected' : '' }}>Paid</option>
-                <option value="0" {{ request('payment_status') == '0' ? 'selected' : '' }}>Unpaid</option>
-                <option value="2" {{ request('payment_status') == '2' ? 'selected' : '' }}>Cancel</option>
-                <option value="3" {{ request('payment_status') == '3' ? 'selected' : '' }}>Partial</option>
-                <option value="4" {{ request('payment_status') == '4' ? 'selected' : '' }}>Settle</option>
+                <option value="1" <?php echo e(request('payment_status') == '1' ? 'selected' : ''); ?>>Paid</option>
+                <option value="0" <?php echo e(request('payment_status') == '0' ? 'selected' : ''); ?>>Unpaid</option>
+                <option value="2" <?php echo e(request('payment_status') == '2' ? 'selected' : ''); ?>>Cancel</option>
+                <option value="3" <?php echo e(request('payment_status') == '3' ? 'selected' : ''); ?>>Partial</option>
+                <option value="4" <?php echo e(request('payment_status') == '4' ? 'selected' : ''); ?>>Settle</option>
             </select>
 
             <!-- Search bar -->
-            <input class="form-control me-2" type="search" name="search" placeholder="Search Document..." value="{{ request('search') }}">
+            <input class="form-control me-2" type="search" name="search" placeholder="Search Document..." value="<?php echo e(request('search')); ?>">
             <button class="btn btn-outline-primary" type="submit">Filter</button>
         </form>
     </div>
@@ -164,16 +169,17 @@
     <!-- Department Filter -->
 <div class="my-3 ms-4">
     <div class="btn-group flex-wrap">
-        <a href="{{ route('superadmin.invoices.index', ['type' => request('type', $type ?? '')]) }}" 
-           class="btn btn-sm {{ request('department_id') ? 'btn-outline-primary' : 'btn-primary' }}">
+        <a href="<?php echo e(route('superadmin.invoices.index', ['type' => request('type', $type ?? '')])); ?>" 
+           class="btn btn-sm <?php echo e(request('department_id') ? 'btn-outline-primary' : 'btn-primary'); ?>">
             All 
         </a>
-        @foreach($departments as $dept)
-            <a href="{{ route('superadmin.invoices.index', array_merge(request()->query(), ['department_id' => $dept->id])) }}"
-               class="btn btn-sm {{ request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary' }}">
-                {{ $dept->name }}
+        <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+            <a href="<?php echo e(route('superadmin.invoices.index', array_merge(request()->query(), ['department_id' => $dept->id]))); ?>"
+               class="btn btn-sm <?php echo e(request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
+                <?php echo e($dept->name); ?>
+
             </a>
-        @endforeach
+        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
     </div>
 </div>
     <div class="card-body">
@@ -206,29 +212,30 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($invoices as $invoice)
+                    <?php $__empty_1 = true; $__currentLoopData = $invoices; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $invoice): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ $invoice->invoice_no }}</td>
-                                <td>{{ $invoice->relatedBooking->reference_no ?? 'N/A' }}</td>
-                                <td>{{ $invoice->relatedBooking->client_name ?? $invoice->client_name ?? 'N/A' }}</td>
-                                <td>{{ $invoice->relatedBooking->client->name ?? 'N/A' }}</td>
-                            <td>{{ $invoice->gst_amount }}</td>
-                            <td>{{ $invoice->total_amount }}</td>
-                            <td>{{ \Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y') }}</td>
+                            <td><?php echo e($loop->iteration); ?></td>
+                            <td><?php echo e($invoice->invoice_no); ?></td>
+                                <td><?php echo e($invoice->relatedBooking->reference_no ?? 'N/A'); ?></td>
+                                <td><?php echo e($invoice->relatedBooking->client_name ?? $invoice->client_name ?? 'N/A'); ?></td>
+                                <td><?php echo e($invoice->relatedBooking->client->name ?? 'N/A'); ?></td>
+                            <td><?php echo e($invoice->gst_amount); ?></td>
+                            <td><?php echo e($invoice->total_amount); ?></td>
+                            <td><?php echo e(\Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y')); ?></td>
 
                              <td>
-                                {{ $invoice->bookingItems->count() }}
-                                @if($invoice->bookingItems->count() > 0)
-                                    <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#itemsModal-{{ $invoice->id }}">
+                                <?php echo e($invoice->bookingItems->count()); ?>
+
+                                <?php if($invoice->bookingItems->count() > 0): ?>
+                                    <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#itemsModal-<?php echo e($invoice->id); ?>">
                                         <i data-feather="eye" class="feather-eye ms-1"></i>
                                     </a>
                                     <!-- Modal -->
-                                    <div class="modal fade" id="itemsModal-{{ $invoice->id }}" tabindex="-1" aria-hidden="true">
+                                    <div class="modal fade" id="itemsModal-<?php echo e($invoice->id); ?>" tabindex="-1" aria-hidden="true">
                                         <div class="modal-dialog modal-dialog-centered modal-lg">
                                             <div class="modal-content">
                                                 <div class="modal-header">
-                                                    <h5 class="modal-title">Booking Items for {{ $invoice->invoice_no ?? '' }}</h5>
+                                                    <h5 class="modal-title">Booking Items for <?php echo e($invoice->invoice_no ?? ''); ?></h5>
                                                     <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
                                                         <span aria-hidden="true">&times;</span> 
                                                     </button>
@@ -248,18 +255,18 @@
                                                                 </tr>
                                                             </thead>
                                                             <tbody>
-                                                                @foreach($invoice->bookingItems as $item)
+                                                                <?php $__currentLoopData = $invoice->bookingItems; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                                                 <tr>
-                                                                    <td>{{ $item->sample_discription }}</td>
-                                                                    <td>{{ $item->job_order_no }}</td>
-                                                                    <td>{{ $item->qty }}</td>
-                                                                    <td>{{ $item->rate }}</td>
+                                                                    <td><?php echo e($item->sample_discription); ?></td>
+                                                                    <td><?php echo e($item->job_order_no); ?></td>
+                                                                    <td><?php echo e($item->qty); ?></td>
+                                                                    <td><?php echo e($item->rate); ?></td>
                                                                     
                                                 
-                                                                    <td>{{ $item->qty * $item->rate }}</td>
+                                                                    <td><?php echo e($item->qty * $item->rate); ?></td>
                                                                  
                                                                 </tr>
-                                                                @endforeach
+                                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                                             </tbody>
                                                         </table>
                                                     </div>
@@ -267,45 +274,45 @@
                                             </div>
                                         </div>
                                     </div>
-                                @endif
+                                <?php endif; ?>
                             </td>
                             
                             <td class="d-flex action-cell"> 
-                                @if(!empty($invoice->invoice_letter_path))
-                                    <a href="{{ url($invoice->invoice_letter_path) }}" 
+                                <?php if(!empty($invoice->invoice_letter_path)): ?>
+                                    <a href="<?php echo e(url($invoice->invoice_letter_path)); ?>" 
                                        class="border rounded d-flex align-items-center p-2 text-decoration-none" 
                                        target="_blank" 
                                        title="View Generated Invoice">
                                         <i class="ti ti-file-invoice"></i>
                                     </a>
-                                @elseif($invoice->relatedBooking)
-                                    <form action="{{ route('superadmin.bookingInvoiceStatuses.generateInvoice', $invoice->relatedBooking->id) }}" method="POST" target="_blank" class="m-0">
-                                        @csrf
+                                <?php elseif($invoice->relatedBooking): ?>
+                                    <form action="<?php echo e(route('superadmin.bookingInvoiceStatuses.generateInvoice', $invoice->relatedBooking->id)); ?>" method="POST" target="_blank" class="m-0">
+                                        <?php echo csrf_field(); ?>
                                         <button type="submit" class="border rounded d-flex align-items-center p-2 bg-white" title="Generate & View Invoice">
                                             <i class="ti ti-file-invoice"></i>
                                         </button>
                                     </form>
-                                @else
+                                <?php else: ?>
                                     <span class="border rounded d-flex align-items-center p-2 text-decoration-none" title="No linked booking">
                                         <i class="ti ti-file-invoice"></i>
                                     </span>
-                                @endif
+                                <?php endif; ?>
                             </td>
                         </tr>
                         
-                        <div class="modal fade" id="deleteModal{{ $invoice->id }}" tabindex="-1" aria-hidden="true">
+                        <div class="modal fade" id="deleteModal<?php echo e($invoice->id); ?>" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
                                         <div class="modal-content">
                                             <div class="modal-body text-center p-4">
                                                 <div class="icon-success bg-danger-transparent text-danger mb-2">
                                                     <i class="ti ti-trash"></i>
                                                 </div>
-                                                <h5 class="mb-3">Are you sure you want to delete this {{ $invoice->invoice_no }}?</h5>
+                                                <h5 class="mb-3">Are you sure you want to delete this <?php echo e($invoice->invoice_no); ?>?</h5>
                                                 <div class="d-flex justify-content-center gap-2">
                                                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <form action="{{ route('superadmin.invoices.destroy', $invoice->id) }}" method="POST">
-                                                        @csrf
-                                                        @method('DELETE')
+                                                    <form action="<?php echo e(route('superadmin.invoices.destroy', $invoice->id)); ?>" method="POST">
+                                                        <?php echo csrf_field(); ?>
+                                                        <?php echo method_field('DELETE'); ?>
                                                         <button type="submit" class="btn btn-danger">Delete</button>
                                                     </form>
                                                 </div>
@@ -313,20 +320,23 @@
                                         </div>
                                     </div>
                                 </div>
-                    @empty
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="10" class="text-center text-muted">No documents found.</td>
                         </tr>
-                    @endforelse
+                    <?php endif; ?>
                 </tbody> 
             </table> 
         </div>
         
         <!-- Pagination --> 
         <div class="mt-3">
-            {{ $invoices->appends(request()->query())->links('pagination::bootstrap-5') }}
+            <?php echo e($invoices->appends(request()->query())->links('pagination::bootstrap-5')); ?>
+
         </div>
     </div>
 </div>
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/accounts/invoiceList/marketing/index.blade.php ENDPATH**/ ?>

@@ -110,6 +110,7 @@
                         <tr>
                             <th class="checkbox-col"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
                             <th class="compact-col">Job Order No</th>
+                            <th style="width:120px;">Job Order Date</th>
                             <th class="ref-col">Reference No</th>
                             <th style="width:180px;">Client Name</th>
                             <th style="width:120px;">Sample Quality</th>
@@ -125,6 +126,15 @@
                         <tr>
                             <td class="checkbox-col"><label class="checkboxs mb-0" style="margin-right:2px;"><input type="checkbox"><span class="checkmarks"></span></label></td>
                             <td class="job-order-cell compact-col" data-bs-toggle="tooltip" title="<?php echo e($item->job_order_no); ?>"><?php echo e($item->job_order_no); ?></td>
+                            <td>
+                                <div class="cell-inner">
+                                    <?php
+                                        $jobOrderDate = $item->job_order_date ?? $item->booking?->job_order_date ?? null;
+                                    ?>
+                                    <?php echo e($jobOrderDate ? \Carbon\Carbon::parse($jobOrderDate)->format('d-M-Y') : '-'); ?>
+
+                                </div>
+                            </td>
                             <td class="ref-cell ref-col">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->booking?->reference_no ?? '-'); ?>">
                                     <?php echo e($item->booking?->reference_no ?? '-'); ?>
@@ -189,7 +199,7 @@
                         </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
-                            <td colspan="10" class="text-center">No items found.</td>
+                            <td colspan="11" class="text-center">No items found.</td>
                         </tr>
                         <?php endif; ?>
                     </tbody>
