@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Storage;
 use App\Models\{NewBooking, Department, Invoice, InvoiceBookingItem, PaymentSetting, SiteSetting, User, Client};
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\{GetUserActiveDepartment, BillingService};
@@ -179,14 +180,16 @@ class GenerateInvoiceStatusController extends Controller
         $gstinApiKey = config('services.gstin.key');
         
         $bankInfo = PaymentSetting::first();
-       
-        return view('superadmin.accounts.generateInvoice.show', compact('booking', 'gstinApiUrl', 'gstinApiKey', 'bankInfo'));
+
+        $ACTION_URL =  route('superadmin.bookingInvoiceStatuses.generateInvoice', $booking->id); 
+
+        return view('superadmin.accounts.generateInvoice.show', compact('booking', 'gstinApiUrl', 'gstinApiKey', 'bankInfo', 'ACTION_URL'));
     }
 
     private function storeInvoiceData(array $invoiceData, string $invoiceType)
     {   
- 
 
+       
 
         $bookingId = $invoiceData['booking_id'] ?? null;
         $booking = null;
@@ -256,9 +259,7 @@ class GenerateInvoiceStatusController extends Controller
     public function generateInvoice(GenerateInvoiceRequest $request)
     {
         try { 
-            
-            // dd($request->all());     
-            // exit; 
+
             $invoiceType = $request->input('invoice_type');
             $invoiceData = $this->billingService->generateInvoiceData($request);
             
@@ -267,7 +268,12 @@ class GenerateInvoiceStatusController extends Controller
             $invoice = $this->storeInvoiceData($invoiceData, $invoiceType);
 
             $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
-        
+            
+            $html = $request->invoice_html; 
+            Storage::put(
+                "invoices/invoice_{$invoice->id}.html",
+                $html
+            );
             
             return $this->invoicePdfService->generate($invoiceData);
 
@@ -510,5 +516,42 @@ class GenerateInvoiceStatusController extends Controller
          }
     }
 
+    
+    public function editGenerateInvoice(string $InvoiceId)
+    {
+        try {   
+            
+            $html = Storage::get("invoices/invoice_{$InvoiceId}.html");
+            $gstinApiUrl = config('services.gstin.url');
+            $gstinApiKey = config('services.gstin.key');
+           
+            $invoice = Invoice::with([
+                'bookingItems',
+                'relatedBooking.marketingPerson'
+            ])->findOrFail($InvoiceId); 
+            
+            // Replace placeholders with dynamic values
+            $html = str_replace('__CSRF_TOKEN__', csrf_token(), $html);
+            $html = str_replace('__ACTION_URL__', route('superadmin.invoices.update', $invoice->id), $html);
+            $html = preg_replace(
+                '/(<input[^>]*name="_token"[^>]*>)/i',
+                '$1<input type="hidden" name="_method" value="PUT">',
+                $html,
+                1
+            );
+
+            return view('superadmin.accounts.generateInvoice.edit-invoice', compact('invoice', 'gstinApiUrl', 'gstinApiKey', 'html'));  
+
+            if(!empty($invoice->invoice_booking_ids)) {
+                return back()->withSuccess('Currently service is not available');
+            } 
+
+        } catch (\Throwable $e) {
+            Log::error('Invoice edit error: ' . $e->getMessage(), [
+                'trace' => $e->getTraceAsString()
+            ]);
+            return back()->withErrors('Unable to load invoice. ' . $e->getMessage());
+        }
+    }
 
 } 

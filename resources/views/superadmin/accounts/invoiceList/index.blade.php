@@ -272,7 +272,8 @@
                                 
                                   @if($invoice->status == 0)
                                     <!-- Edit Button -->
-                                    <a href="{{ route('superadmin.invoices.edit', $invoice->id) }}" 
+                                    <!-- <a href="{{ route('superadmin.invoices.edit', $invoice->id) }}"  -->
+                                    <a href="{{ route('bookingInvoiceStatuses.editGenerateInvoice', $invoice->id) }}"
                                     class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
                                     title="Edit">
                                         <i data-feather="edit" class="feather-edit"></i>

@@ -591,5 +591,4 @@ document.getElementById('gstinForm').addEventListener('submit', function(e) {
 </script>
 <?php $__env->stopPush(); ?>
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/invoiceList/edit.blade.php ENDPATH**/ ?>
