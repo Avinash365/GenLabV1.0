@@ -166,6 +166,7 @@
     })();
     </script>
 
+    <script src="{{ url('assets/js/ajax-sidebar.js') }}"></script>
     @stack('scripts')
 </body>
 </html>

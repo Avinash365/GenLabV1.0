@@ -1412,28 +1412,28 @@
 
         Object.assign(toast.style, {
             position: 'fixed',
-            right: '18px',
-            bottom: '18px',
-            maxWidth: '340px',
-            padding: '10px 12px',
-            borderRadius: '12px',
+            right: '24px',
+            bottom: '24px',
+            maxWidth: '420px',
+            padding: '16px 20px',
+            borderRadius: '16px',
             background: '#ffffff',
             color: '#0f172a',
             fontWeight: '500',
-            boxShadow: '0 16px 38px rgba(0,0,0,0.20)',
+            boxShadow: '0 20px 45px rgba(0,0,0,0.22)',
             zIndex: 20000,
             opacity: '0',
-            transform: 'translateY(8px)',
+            transform: 'translateY(12px)',
             transition: 'opacity 180ms ease, transform 180ms ease',
             border: '1px solid #e2e8f0',
             display: 'flex',
-            gap: '10px',
+            gap: '16px',
             alignItems: 'center'
         });
 
         const avatar = document.createElement('div');
         Object.assign(avatar.style, {
-            width: '38px', height: '38px', borderRadius: '50%',
+            width: '48px', height: '48px', borderRadius: '50%',
             background: '#25d366', color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             fontWeight: '700', letterSpacing: '0.4px', flexShrink: '0', overflow: 'hidden'
@@ -1467,29 +1467,29 @@
         })();
 
         const textWrap = document.createElement('div');
-        Object.assign(textWrap.style, { display:'flex', flexDirection:'column', gap:'2px', minWidth:'0', flex:'1' });
+        Object.assign(textWrap.style, { display:'flex', flexDirection:'column', gap:'4px', minWidth:'0', flex:'1' });
         const titleEl = document.createElement('div');
-        Object.assign(titleEl.style, { fontWeight:'700', color:'#111827', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%' });
+        Object.assign(titleEl.style, { fontWeight:'700', color:'#111827', fontSize:'15px', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%' });
         titleEl.textContent = title || 'New message';
         const bodyEl = document.createElement('div');
-        Object.assign(bodyEl.style, { fontSize:'13px', color:'#334155', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%' });
+        Object.assign(bodyEl.style, { fontSize:'14px', color:'#475569', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis', maxWidth:'100%' });
         bodyEl.textContent = body || 'Tap to view';
         textWrap.appendChild(titleEl); textWrap.appendChild(bodyEl);
 
         // Quick reply controls
         const replyWrap = document.createElement('div');
-        Object.assign(replyWrap.style, { display:'flex', alignItems:'center', gap:'6px', width:'100%' });
+        Object.assign(replyWrap.style, { display:'flex', alignItems:'center', gap:'8px', width:'100%', marginTop:'6px' });
         const replyInput = document.createElement('input');
         replyInput.type = 'text';
         replyInput.placeholder = 'Type a reply';
         Object.assign(replyInput.style, {
-            flex:'1', border:'1px solid #e2e8f0', borderRadius:'10px', padding:'6px 10px', fontSize:'13px'
+            flex:'1', border:'1px solid #e2e8f0', borderRadius:'12px', padding:'8px 12px', fontSize:'14px'
         });
         const replyBtn = document.createElement('button');
         replyBtn.type = 'button';
         replyBtn.textContent = 'Send';
         Object.assign(replyBtn.style, {
-            border:'none', background:'#25d366', color:'#fff', borderRadius:'10px', padding:'6px 10px', fontWeight:'700', fontSize:'13px', cursor:'pointer'
+            border:'none', background:'#25d366', color:'#fff', borderRadius:'12px', padding:'8px 14px', fontWeight:'700', fontSize:'14px', cursor:'pointer'
         });
 
         const sendReply = async ()=>{
