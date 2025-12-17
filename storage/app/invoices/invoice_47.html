@@ -1,0 +1,224 @@
+<form id="previewInvoiceForm" method="POST" action="__ACTION_URL__">
+
+                <input type="hidden" name="_token" value="__CSRF_TOKEN__"><input type="hidden" name="_method" value="PUT">
+                <input type="hidden" id="td_booking_id" name="booking_id" value="23">
+
+                <input type="hidden" name="invoice_data" id="preview_invoice_data">
+                <input type="hidden" name="invoice_type" id="invoice_type" value="tax invoice">
+                <input type="hidden" name="invoice_html" id="invoice_html">
+                <!-- <input type="hidden" name="_method" value="__METHOD__">  -->
+
+                <div class="invoice-preview">
+
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-left text-uppercase">
+                                    GSTIN: 9113464642541
+                                </th>
+
+                                <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
+                                                                                    Tax Invoice
+                                                                                </th>   -->
+                                <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader">
+                                    Tax Invoice
+                                </th>
+
+                                <th class="text-centre">Scan to Pay</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            
+                            <tr>
+                                <th class="col-left text-start">Bill Issue To:</th>
+
+                                <td class="col-wide text-start text-uppercase" colspan="2" contenteditable="true" id="td_bill_block">
+
+                                    Avinash Kumar Jha<br><br>
+
+                                    <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
+                                    
+                                </td>
+
+                                <td class="text-centre">
+                        
+                                    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2ZmZmZmZiIvPjxnIHRyYW5zZm9ybT0ic2NhbGUoNC44NzgpIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik0xMCAwTDEwIDFMOCAxTDggMkw5IDJMOSAzTDggM0w4IDRMOSA0TDkgNUw4IDVMOCA3TDkgN0w5IDVMMTAgNUwxMCA4TDYgOEw2IDlMNSA5TDUgOEwwIDhMMCA5TDEgOUwxIDExTDMgMTFMMyAxMEw2IDEwTDYgMTFMNCAxMUw0IDEyTDMgMTJMMyAxM0wxIDEzTDEgMTRMMCAxNEwwIDIyTDEgMjJMMSAyNEwzIDI0TDMgMjZMMiAyNkwyIDI5TDEgMjlMMSAyOEwwIDI4TDAgMzNMMSAzM0wxIDMwTDIgMzBMMiAzM0w3IDMzTDcgMzJMNSAzMkw1IDMxTDQgMzFMNCAzMkwzIDMyTDMgMzBMNiAzMEw2IDMxTDcgMzFMNyAzMEw2IDMwTDYgMjlMNyAyOUw3IDI4TDggMjhMOCAyOUw5IDI5TDkgMjhMOCAyOEw4IDI3TDkgMjdMOSAyNkw4IDI2TDggMjdMNyAyN0w3IDI2TDYgMjZMNiAyNUw3IDI1TDcgMjRMOSAyNEw5IDI1TDEwIDI1TDEwIDI2TDEyIDI2TDEyIDI3TDExIDI3TDExIDI4TDEwIDI4TDEwIDMwTDExIDMwTDExIDMyTDEwIDMyTDEwIDMxTDkgMzFMOSAzM0w4IDMzTDggMzVMOSAzNUw5IDM2TDggMzZMOCA0MUw5IDQxTDkgNDBMMTAgNDBMMTAgMzlMMTEgMzlMMTEgMzhMMTAgMzhMMTAgMzlMOSAzOUw5IDM3TDEwIDM3TDEwIDM2TDExIDM2TDExIDM1TDkgMzVMOSAzM0wxMSAzM0wxMSAzNEwxMyAzNEwxMyAzNkwxNCAzNkwxNCAzN0wxNSAzN0wxNSAzOEwxMyAzOEwxMyAzN0wxMiAzN0wxMiAzOEwxMyAzOEwxMyAzOUwxMiAzOUwxMiA0MEwxMyA0MEwxMyA0MUwxNCA0MUwxNCA0MEwxMyA0MEwxMyAzOUwxNSAzOUwxNSA0MUwxNiA0MUwxNiAzOUwxNyAzOUwxNyAzOEwxOCAzOEwxOCA0MEwxNyA0MEwxNyA0MUwxOCA0MUwxOCA0MEwxOSA0MEwxOSAzN0wyMSAzN0wyMSAzOEwyMCAzOEwyMCAzOUwyMSAzOUwyMSA0MEwyMiA0MEwyMiA0MUwyMyA0MUwyMyAzOUwyMSAzOUwyMSAzOEwyMiAzOEwyMiAzN0wyMyAzN0wyMyAzOEwyNyAzOEwyNyAzOUwyNiAzOUwyNiA0MEwyNSA0MEwyNSAzOUwyNCAzOUwyNCA0MUwyNiA0MUwyNiA0MEwyNyA0MEwyNyA0MUwyOCA0MUwyOCA0MEwyNyA0MEwyNyAzOUwyOCAzOUwyOCAzOEwzMCAzOEwzMCA0MEwyOSA0MEwyOSA0MUwzMiA0MUwzMiA0MEwzNCA0MEwzNCA0MUwzNSA0MUwzNSA0MEwzNCA0MEwzNCAzOUwzNiAzOUwzNiA0MUwzOSA0MUwzOSA0MEw0MCA0MEw0MCAzOUwzOSAzOUwzOSAzOEw0MSAzOEw0MSAzN0wzOSAzN0wzOSAzNkwzOCAzNkwzOCAzNUw0MCAzNUw0MCAzNEw0MSAzNEw0MSAzMUw0MCAzMUw0MCAzMkwzOCAzMkwzOCAzMUwzNyAzMUwzNyAzMEwzOCAzMEwzOCAyOUwzOSAyOUwzOSAyOEwzOCAyOEwzOCAyOUwzNyAyOUwzNyAyN0wzOSAyN0wzOSAyNkw0MCAyNkw0MCAyNUwzOSAyNUwzOSAyNEwzOCAyNEwzOCAyM0wzOSAyM0wzOSAyMkwzOCAyMkwzOCAyMUw0MCAyMUw0MCAyMkw0MSAyMkw0MSAyMEwzOCAyMEwzOCAyMUwzMyAyMUwzMyAyMkwzMiAyMkwzMiAyMUwzMCAyMUwzMCAyMkwyOSAyMkwyOSAyM0wzMCAyM0wzMCAyNEwyNyAyNEwyNyAyM0wyOCAyM0wyOCAyMkwyNyAyMkwyNyAyMUwyOSAyMUwyOSAxOUwyOCAxOUwyOCAxOEwyOSAxOEwyOSAxN0wzMSAxN0wzMSAxOEwzMiAxOEwzMiAxOUwzMCAxOUwzMCAyMEwzMiAyMEwzMiAxOUwzMyAxOUwzMyAxOEwzNCAxOEwzNCAyMEwzNSAyMEwzNSAxOUwzNyAxOUwzNyAxN0wzNiAxN0wzNiAxNUwzNSAxNUwzNSAxN0wzMyAxN0wzMyAxNkwzNCAxNkwzNCAxNEwzNyAxNEwzNyAxM0wzOSAxM0wzOSAxNEwzOCAxNEwzOCAxNUwzOSAxNUwzOSAxNkwzOCAxNkwzOCAxOUwzOSAxOUwzOSAxOEw0MCAxOEw0MCAxNUwzOSAxNUwzOSAxNEw0MSAxNEw0MSAxMUwzOSAxMUwzOSAxMkwzNyAxMkwzNyAxM0wzNiAxM0wzNiAxMEwzNyAxMEwzNyAxMUwzOCAxMUwzOCAxMEwzOSAxMEwzOSA5TDQwIDlMNDAgOEwzOSA4TDM5IDlMMzggOUwzOCA4TDM3IDhMMzcgOUwzNiA5TDM2IDhMMzUgOEwzNSA5TDM0IDlMMzQgOEwzMiA4TDMyIDdMMzMgN0wzMyA2TDMyIDZMMzIgN0wzMSA3TDMxIDVMMzIgNUwzMiA0TDMzIDRMMzMgM0wzMiAzTDMyIDRMMzAgNEwzMCA1TDI3IDVMMjcgNEwyOSA0TDI5IDNMMjggM0wyOCAxTDI5IDFMMjkgMkwzMSAyTDMxIDFMMzIgMUwzMiAyTDMzIDJMMzMgMUwzMiAxTDMyIDBMMzEgMEwzMSAxTDI5IDFMMjkgMEwyOCAwTDI4IDFMMjcgMUwyNyA0TDI2IDRMMjYgM0wyNSAzTDI1IDJMMjYgMkwyNiAxTDI1IDFMMjUgMkwyNCAyTDI0IDNMMjUgM0wyNSA0TDIxIDRMMjEgM0wyMyAzTDIzIDFMMjQgMUwyNCAwTDE3IDBMMTcgMUwxNSAxTDE1IDBaTTExIDFMMTEgM0wxMiAzTDEyIDJMMTMgMkwxMyAxWk0xOCAxTDE4IDJMMTkgMkwxOSAzTDE3IDNMMTcgNEwxNiA0TDE2IDNMMTUgM0wxNSAyTDE0IDJMMTQgM0wxMyAzTDEzIDRMMTEgNEwxMSA1TDEzIDVMMTMgOEwxMSA4TDExIDlMMTAgOUwxMCAxMEwxMSAxMEwxMSAxMUwxMCAxMUwxMCAxM0wxMSAxM0wxMSAxNEwxMCAxNEwxMCAxNkw5IDE2TDkgMTRMOCAxNEw4IDE3TDYgMTdMNiAxOEw4IDE4TDggMTlMNSAxOUw1IDE4TDQgMThMNCAxN0w1IDE3TDUgMTZMNyAxNkw3IDE1TDUgMTVMNSAxMkw0IDEyTDQgMTNMMyAxM0wzIDE0TDIgMTRMMiAxNUwxIDE1TDEgMTZMMiAxNkwyIDE3TDEgMTdMMSAxOEwyIDE4TDIgMTdMMyAxN0wzIDE4TDQgMThMNCAxOUw1IDE5TDUgMjBMNyAyMEw3IDIxTDYgMjFMNiAyMkw1IDIyTDUgMjVMNiAyNUw2IDI0TDcgMjRMNyAyM0w2IDIzTDYgMjJMNyAyMkw3IDIxTDggMjFMOCAyMkwxMCAyMkwxMCAyMUwxMSAyMUwxMSAyM0wxMCAyM0wxMCAyNEwxMSAyNEwxMSAyNUwxMiAyNUwxMiAyNkwxMyAyNkwxMyAyN0wxMiAyN0wxMiAyOEwxMSAyOEwxMSAzMEwxMyAzMEwxMyAzMUwxMiAzMUwxMiAzMkwxNCAzMkwxNCAzM0wxNSAzM0wxNSAzNEwxNyAzNEwxNyAzMkwxOCAzMkwxOCAzM0wxOSAzM0wxOSAzMkwxOCAzMkwxOCAzMUwxNyAzMUwxNyAzMEwxNSAzMEwxNSAzMkwxNCAzMkwxNCAyOUwxNSAyOUwxNSAyOEwxNiAyOEwxNiAyOUwxOCAyOUwxOCAzMEwyMCAzMEwyMCAzMUwyMSAzMUwyMSAzMEwyMCAzMEwyMCAyOUwyMSAyOUwyMSAyN0wyMCAyN0wyMCAyNUwyMiAyNUwyMiAyN0wyMyAyN0wyMyAyOEwyMiAyOEwyMiAyOUwyNSAyOUwyNSAzMEwyNiAzMEwyNiAzMUwyNSAzMUwyNSAzMkwyNCAzMkwyNCAzMEwyMiAzMEwyMiAzMUwyMyAzMUwyMyAzM0wyNCAzM0wyNCAzNEwyMyAzNEwyMyAzNUwyMiAzNUwyMiAzMkwyMCAzMkwyMCAzNEwxOCAzNEwxOCAzNUwxOSAzNUwxOSAzNkwxNyAzNkwxNyAzNUwxNiAzNUwxNiAzNkwxNyAzNkwxNyAzN0wxNiAzN0wxNiAzOEwxNyAzOEwxNyAzN0wxOSAzN0wxOSAzNkwyMyAzNkwyMyAzN0wyNSAzN0wyNSAzNkwyNiAzNkwyNiAzN0wyOSAzN0wyOSAzNkwzMSAzNkwzMSAzN0wzMCAzN0wzMCAzOEwzMSAzOEwzMSAzN0wzMiAzN0wzMiAzNUwzMSAzNUwzMSAzM0wzMiAzM0wzMiAzMEwzMyAzMEwzMyAzMkwzNSAzMkwzNSAzMUwzNCAzMUwzNCAzMEwzMyAzMEwzMyAyOUwzNiAyOUwzNiAyN0wzMyAyN0wzMyAyOEwzMSAyOEwzMSAyOUwzMiAyOUwzMiAzMEwzMSAzMEwzMSAzM0wyOSAzM0wyOSAzMkwzMCAzMkwzMCAyOUwyNiAyOUwyNiAyOEwyNyAyOEwyNyAyNkwyOCAyNkwyOCAyNUwyNCAyNUwyNCAyNEwyNiAyNEwyNiAyM0wyNyAyM0wyNyAyMkwyNSAyMkwyNSAyM0wyNCAyM0wyNCAyMkwyMyAyMkwyMyAyMUwxOSAyMUwxOSAyMEwxNyAyMEwxNyAxOUwxNiAxOUwxNiAyMEwxNyAyMEwxNyAyMUwxNiAyMUwxNiAyMkwxNyAyMkwxNyAyMUwxOSAyMUwxOSAyM0wxNiAyM0wxNiAyNUwxNSAyNUwxNSAyM0wxMyAyM0wxMyAyMkwxNSAyMkwxNSAyMUwxNCAyMUwxNCAyMEwxNSAyMEwxNSAxOUwxNCAxOUwxNCAyMEwxMCAyMEwxMCAxOEw5IDE4TDkgMTdMMTEgMTdMMTEgMTRMMTMgMTRMMTMgMTVMMTIgMTVMMTIgMThMMTEgMThMMTEgMTlMMTMgMTlMMTMgMTZMMTQgMTZMMTQgMTdMMTUgMTdMMTUgMThMMTYgMThMMTYgMTdMMTcgMTdMMTcgMTZMMTggMTZMMTggMTVMMTcgMTVMMTcgMTRMMjAgMTRMMjAgMTVMMjEgMTVMMjEgMTRMMjIgMTRMMjIgMTVMMjMgMTVMMjMgMTdMMjIgMTdMMjIgMTZMMjEgMTZMMjEgMTlMMjAgMTlMMjAgMThMMTggMThMMTggMTlMMjAgMTlMMjAgMjBMMjMgMjBMMjMgMTlMMjQgMTlMMjQgMjFMMjUgMjFMMjUgMjBMMjYgMjBMMjYgMjFMMjcgMjFMMjcgMjBMMjYgMjBMMjYgMThMMjggMThMMjggMTdMMjkgMTdMMjkgMTZMMzAgMTZMMzAgMTVMMzEgMTVMMzEgMTdMMzIgMTdMMzIgMThMMzMgMThMMzMgMTdMMzIgMTdMMzIgMTRMMzMgMTRMMzMgMTNMMzUgMTNMMzUgMTJMMzMgMTJMMzMgMTFMMzUgMTFMMzUgMTBMMzQgMTBMMzQgOUwzMiA5TDMyIDhMMzEgOEwzMSA3TDMwIDdMMzAgNkwyOSA2TDI5IDhMMjcgOEwyNyA5TDI0IDlMMjQgOEwyNiA4TDI2IDZMMjcgNkwyNyA3TDI4IDdMMjggNkwyNyA2TDI3IDVMMjMgNUwyMyA3TDIyIDdMMjIgNUwyMSA1TDIxIDRMMTkgNEwxOSAzTDIwIDNMMjAgMVpNOSAzTDkgNEwxMCA0TDEwIDNaTTE0IDNMMTQgNEwxMyA0TDEzIDVMMTQgNUwxNCA0TDE1IDRMMTUgNkwxNCA2TDE0IDdMMTUgN0wxNSA5TDE0IDlMMTQgOEwxMyA4TDEzIDlMMTQgOUwxNCAxMEwxNSAxMEwxNSAxMUwxNCAxMUwxNCAxMkwxNyAxMkwxNyAxMEwxNSAxMEwxNSA5TDE4IDlMMTggOEwxNiA4TDE2IDdMMTcgN0wxNyA1TDE2IDVMMTYgNEwxNSA0TDE1IDNaTTE4IDRMMTggN0wxOSA3TDE5IDRaTTIwIDVMMjAgN0wyMSA3TDIxIDhMMjIgOEwyMiA5TDIzIDlMMjMgOEwyMiA4TDIyIDdMMjEgN0wyMSA1Wk0xMSA2TDExIDdMMTIgN0wxMiA2Wk0xNSA2TDE1IDdMMTYgN0wxNiA2Wk0yNCA2TDI0IDdMMjUgN0wyNSA2Wk0yOSA4TDI5IDlMMjcgOUwyNyAxMEwyNSAxMEwyNSAxMUwyOCAxMUwyOCAxMEwzMCAxMEwzMCAxMUwzMSAxMUwzMSAxMEwzMiAxMEwzMiAxMUwzMyAxMUwzMyAxMEwzMiAxMEwzMiA5TDMxIDlMMzEgOFpNNiA5TDYgMTBMNyAxMEw3IDExTDYgMTFMNiAxMkw3IDEyTDcgMTNMNiAxM0w2IDE0TDcgMTRMNyAxM0w5IDEzTDkgMTJMNyAxMkw3IDExTDkgMTFMOSAxMEw4IDEwTDggOVpNMTkgOUwxOSAxMEwxOCAxMEwxOCAxMUwxOSAxMUwxOSAxMEwyMCAxMEwyMCAxMkwyMSAxMkwyMSAxM0wyMCAxM0wyMCAxNEwyMSAxNEwyMSAxM0wyMiAxM0wyMiAxMkwyMyAxMkwyMyAxNEwyNCAxNEwyNCAxNUwyNiAxNUwyNiAxNkwyNSAxNkwyNSAxN0wyMyAxN0wyMyAxOEwyMiAxOEwyMiAxOUwyMyAxOUwyMyAxOEwyNCAxOEwyNCAxOUwyNSAxOUwyNSAxN0wyOCAxN0wyOCAxNkwyOSAxNkwyOSAxNUwzMCAxNUwzMCAxNEwyNyAxNEwyNyAxNUwyNiAxNUwyNiAxNEwyNSAxNEwyNSAxM0wyNiAxM0wyNiAxMkwyNSAxMkwyNSAxM0wyNCAxM0wyNCAxMkwyMyAxMkwyMyAxMUwyMiAxMUwyMiAxMEwyMSAxMEwyMSA5Wk0zMCA5TDMwIDEwTDMxIDEwTDMxIDlaTTM3IDlMMzcgMTBMMzggMTBMMzggOVpNMTIgMTJMMTIgMTNMMTMgMTNMMTMgMTRMMTcgMTRMMTcgMTNMMTMgMTNMMTMgMTJaTTE4IDEyTDE4IDEzTDE5IDEzTDE5IDEyWk0yNyAxMkwyNyAxM0wyOCAxM0wyOCAxMlpNMzEgMTJMMzEgMTRMMzIgMTRMMzIgMTNMMzMgMTNMMzMgMTJaTTM5IDEyTDM5IDEzTDQwIDEzTDQwIDEyWk0yIDE1TDIgMTZMMyAxNkwzIDE1Wk0xNCAxNUwxNCAxNkwxNSAxNkwxNSAxNVpNMTYgMTVMMTYgMTZMMTcgMTZMMTcgMTVaTTM1IDE3TDM1IDE4TDM2IDE4TDM2IDE3Wk0yIDE5TDIgMjBMMSAyMEwxIDIxTDIgMjFMMiAyM0wzIDIzTDMgMjJMNCAyMkw0IDIwTDMgMjBMMyAxOVpNMiAyMEwyIDIxTDMgMjFMMyAyMFpNOSAyMEw5IDIxTDEwIDIxTDEwIDIwWk0xMiAyMUwxMiAyMkwxMyAyMkwxMyAyMVpNMjAgMjJMMjAgMjNMMjEgMjNMMjEgMjRMMjIgMjRMMjIgMjVMMjMgMjVMMjMgMjZMMjQgMjZMMjQgMjhMMjUgMjhMMjUgMjdMMjYgMjdMMjYgMjZMMjQgMjZMMjQgMjVMMjMgMjVMMjMgMjRMMjQgMjRMMjQgMjNMMjMgMjNMMjMgMjJMMjIgMjJMMjIgMjNMMjEgMjNMMjEgMjJaTTMxIDIyTDMxIDIzTDMyIDIzTDMyIDI0TDM0IDI0TDM0IDI1TDMyIDI1TDMyIDI2TDMxIDI2TDMxIDI1TDMwIDI1TDMwIDI2TDI5IDI2TDI5IDI4TDMwIDI4TDMwIDI3TDMyIDI3TDMyIDI2TDM0IDI2TDM0IDI1TDM1IDI1TDM1IDI0TDM2IDI0TDM2IDI1TDM3IDI1TDM3IDIzTDM4IDIzTDM4IDIyTDM3IDIyTDM3IDIzTDM1IDIzTDM1IDIyTDM0IDIyTDM0IDIzTDMyIDIzTDMyIDIyWk0xMiAyM0wxMiAyNUwxNCAyNUwxNCAyNkwxNSAyNkwxNSAyN0wxNCAyN0wxNCAyOEwxNSAyOEwxNSAyN0wxNiAyN0wxNiAyOEwxNyAyOEwxNyAyN0wxNiAyN0wxNiAyNkwxNyAyNkwxNyAyNUwxNiAyNUwxNiAyNkwxNSAyNkwxNSAyNUwxNCAyNUwxNCAyNEwxMyAyNEwxMyAyM1pNMjIgMjNMMjIgMjRMMjMgMjRMMjMgMjNaTTE4IDI1TDE4IDI3TDE5IDI3TDE5IDI4TDE4IDI4TDE4IDI5TDIwIDI5TDIwIDI3TDE5IDI3TDE5IDI1Wk0wIDI2TDAgMjdMMSAyN0wxIDI2Wk0zIDI2TDMgMjdMNCAyN0w0IDI5TDUgMjlMNSAyOEw3IDI4TDcgMjdMNiAyN0w2IDI2TDUgMjZMNSAyN0w0IDI3TDQgMjZaTTEyIDI4TDEyIDI5TDEzIDI5TDEzIDI4Wk00MCAyOEw0MCAzMEw0MSAzMEw0MSAyOFpNMiAyOUwyIDMwTDMgMzBMMyAyOVpNMjcgMzBMMjcgMzFMMjYgMzFMMjYgMzJMMjUgMzJMMjUgMzNMMjggMzNMMjggMzRMMjQgMzRMMjQgMzVMMjMgMzVMMjMgMzZMMjQgMzZMMjQgMzVMMjggMzVMMjggMzZMMjkgMzZMMjkgMzVMMjggMzVMMjggMzRMMjkgMzRMMjkgMzNMMjggMzNMMjggMzJMMjkgMzJMMjkgMzFMMjggMzFMMjggMzBaTTE2IDMxTDE2IDMyTDE3IDMyTDE3IDMxWk0yNyAzMUwyNyAzMkwyOCAzMkwyOCAzMVpNMzYgMzFMMzYgMzJMMzcgMzJMMzcgMzNMMzggMzNMMzggMzJMMzcgMzJMMzcgMzFaTTMzIDMzTDMzIDM2TDM2IDM2TDM2IDMzWk0zOSAzM0wzOSAzNEw0MCAzNEw0MCAzM1pNMzQgMzRMMzQgMzVMMzUgMzVMMzUgMzRaTTE0IDM1TDE0IDM2TDE1IDM2TDE1IDM1Wk0zNCAzN0wzNCAzOEwzMiAzOEwzMiAzOUwzMSAzOUwzMSA0MEwzMiA0MEwzMiAzOUwzNCAzOUwzNCAzOEwzNyAzOEwzNyA0MEwzOSA0MEwzOSAzOUwzOCAzOUwzOCAzOEwzNyAzOEwzNyAzN1pNMCAwTDAgN0w3IDdMNyAwWk0xIDFMMSA2TDYgNkw2IDFaTTIgMkwyIDVMNSA1TDUgMlpNMzQgMEwzNCA3TDQxIDdMNDEgMFpNMzUgMUwzNSA2TDQwIDZMNDAgMVpNMzYgMkwzNiA1TDM5IDVMMzkgMlpNMCAzNEwwIDQxTDcgNDFMNyAzNFpNMSAzNUwxIDQwTDYgNDBMNiAzNVpNMiAzNkwyIDM5TDUgMzlMNSAzNloiIGZpbGw9IiMwMDAwMDAiLz48L2c+PC9nPjwvc3ZnPgo=" width="100">
+                                 
+                                </td>
+                            </tr>
+
+                            
+                            <tr>
+                                <th class="text-start">Invoice No:</th>
+                                <td colspan="3" class="text-uppercase" contenteditable="true" id="td_invoice_no">
+                                    ITL/25-26/1064559
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Invoice Date:</th>
+                                <td colspan="3" contenteditable="true" id="td_invoice_date">
+                                    17-12-2025
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Ref. No &amp; Date:</th>
+                                <td colspan="3" contenteditable="false" id="td_reference_block">
+                                    7887897
+                                    &nbsp;&amp;&nbsp;
+                                    13-12-2025
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Name of Work:</th>
+                                <td colspan="3" contenteditable="true" id="td_name_of_work">
+                                    Avinash Kumar Jha
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    
+                    <table>
+                        <thead>
+                            <tr class="item-row">
+                                <!-- <th style="width:9%;">#</th> -->
+                                <th style="width:35%;">Description</th>
+                                <th style="width:27%;">Job Order No</th>
+                                <th style="width:11%;">SAC Code</th>
+                                <th style="width:9%;">Qty</th>
+                                <th style="width:14%;">Rate</th>
+                                <th style="width:20%;">Amount</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                                                                                                <tr class="item-row selected" data-original="
+                                        &lt;!-- &lt;td contenteditable=&quot;true&quot;&gt;1&lt;/td&gt; --&gt;
+                                        &lt;td contenteditable=&quot;true&quot; class=&quot;editable description &quot;&gt;
+                                            Hii
+                                        &lt;/td&gt;
+                                        &lt;td&gt;91134646&lt;/td&gt;
+                                        &lt;td&gt;998346&lt;/td&gt;
+                                        &lt;td contenteditable=&quot;true&quot; class=&quot;editable qty &quot;&gt;
+                                            1
+                                        &lt;/td&gt;
+                                        &lt;td contenteditable=&quot;true&quot; class=&quot;editable rate &quot;&gt;
+                                            896,565.00
+                                        &lt;/td&gt;
+                                        &lt;td class=&quot;amount&quot;&gt;896565.00&lt;/td&gt;
+                                    " data-merged="1">
+                            <td contenteditable="true" colspan="3" class="editable description">
+                                Hii
+                    Job: 91134646
+                    SAC: 998346
+                            </td>
+                            <td contenteditable="true" class="editable qty ">1</td>
+                            <td contenteditable="true" class="editable rate ">896,565.00</td>
+                            <td contenteditable="true" class="amount">896565.00</td>
+                        </tr>
+                                                            
+                            
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">Total Amount</td>
+                                <td id="totalAmount">896565.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="discountRow">
+                                <td colspan="5" class="text-right">
+                                    Discount (
+                                    <span contenteditable="true" id="discountPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="discountAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="afterDiscountRow">
+                                <td colspan="5" class="text-right">After Discount</td>
+                                <td id="afterDiscount">896565.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    CGST (
+                                    <span contenteditable="true" id="cgstPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="cgstAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    SGST (
+                                    <span contenteditable="true" id="sgstPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="sgstAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    IGST (
+                                    <span contenteditable="true" id="igstPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="igstAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="roundOffRow">
+                                <td colspan="5" class="text-right">Round Off</td>
+                                <td id="roundOff">0.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">Payable Amount</td>
+                                <td id="payableAmount">896565.00</td>
+                            </tr>
+
+                            <tr>
+                                <th colspan="6" id="amountInWords" class="text-centre"><strong>Amount in Words:</strong> Eight Lakh Ninety Six Thousand Five Hundred Sixty Five Rupees Only</th>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                    
+                    <!-- Bank Details -->
+                    <table class="bank-table">
+                        <tbody>
+                            <tr>
+                                <th class="text-start">INSTRUCTIONS:</th>
+                                <td colspan="2" id="td_bank_instructions">
+                                    ABCSVHGVGHVSVGHSVD
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">BANK NAME:</th>
+                                <td id="td_bank_name">SBI</td>
+                                <td class="text-centre text-uppercase">For </td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">ACCOUNT NO:</th>
+                                <td id="td_account_no"></td>
+                                <td rowspan="5" class="text-bottom">Authorised Signatory</td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">BRANCH:</th>
+                                <td class="text-uppercase" id="td_branch_name"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">IFSC CODE:</th>
+                                <td class="text-uppercase" id="td_ifsc_code"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">PAN NO:</th>
+                                <td class="text-uppercase" id="td_pan_no"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">GSTIN:</th>
+                                <td class="text-uppercase" id="td_gstin"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </form>

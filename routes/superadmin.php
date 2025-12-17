@@ -681,7 +681,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::patch('/bank/soft-delete/{id}', [BankTransactionController::class, 'softDeleteOrUndo'])->name('bank.softDeleteOrUndo');
 
     });
-
+    
 
         // Store
         Route::prefix('store')->name('store.')->group(function () {
@@ -891,3 +891,4 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
 
     Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
+    Route::get('invoices/{invoice}/download',[GenerateInvoiceStatusController::class, 'downloadInvoice'])->name('invoices.download'); 

@@ -150,6 +150,7 @@
   align-items: center;
   justify-content: center;
 }
+#chatActiveAvatar img { width:100%; height:100%; border-radius:50%; object-fit:cover; display:block; }
 #chatActiveTitle {
   font-size: 15px;
   font-weight: 600;
@@ -405,6 +406,59 @@
             // join with app base (handles subfolder installs)
             return APP_BASE + s;
         } catch(_) { return String(u || ''); }
+    }
+
+    // Helper: try loading an image from multiple candidate URLs in sequence.
+    // imgElem: HTMLImageElement, candidates: array of URL strings.
+    function tryLoadImage(imgElem, candidates){
+        if (!imgElem || !Array.isArray(candidates) || candidates.length === 0) return;
+        let i = 0;
+        function tryNext(){
+            if (i >= candidates.length){ imgElem.dispatchEvent(new Event('loaderror')); return; }
+            try {
+                imgElem.src = candidates[i++] || '';
+            } catch(e){ tryNext(); }
+        }
+        imgElem.addEventListener('error', function onerr(){ imgElem.removeEventListener('error', onerr); tryNext(); });
+        // allow caller to listen for 'loaderror' if all candidates fail
+        tryNext();
+    }
+
+    function buildAvatarCandidates(path){
+        if (!path) return [];
+        const out = [];
+        const p = String(path || '');
+        if (/^https?:\/\//i.test(p) || p.startsWith('data:')) return [p];
+        const clean = p.startsWith('/') ? p : ('/' + p);
+        out.push(clean);
+        out.push(APP_BASE + clean);
+        const l = p.replace(/^\//, '');
+        if (!clean.startsWith('/storage/')){
+            out.push('/storage/' + l);
+            out.push(APP_BASE + '/storage/' + l);
+        }
+        return Array.from(new Set(out));
+    }
+
+    // Helper: resolve avatar/profile image from common keys and nested objects
+    function getAvatarUrl(obj){
+        if (!obj || typeof obj !== 'object') return null;
+        const keys = ['avatar','profile_picture','profile_pic','picture','image','photo','photo_url','avatar_url'];
+        for (const k of keys){ if (obj[k]) return toAbsoluteUrl(obj[k]); }
+        // nested user/admin/latest objects
+        if (obj.user && typeof obj.user === 'object'){
+            for (const k of keys){ if (obj.user[k]) return toAbsoluteUrl(obj.user[k]); }
+        }
+        if (obj.latest && typeof obj.latest === 'object'){
+            for (const k of keys){ if (obj.latest[k]) return toAbsoluteUrl(obj.latest[k]); }
+            if (obj.latest.user && typeof obj.latest.user === 'object'){
+                for (const k of keys){ if (obj.latest.user[k]) return toAbsoluteUrl(obj.latest.user[k]); }
+            }
+        }
+        if (obj.admin && typeof obj.admin === 'object'){
+            for (const k of keys){ if (obj.admin[k]) return toAbsoluteUrl(obj.admin[k]); }
+        }
+        return null;
     }
 
     // Elements
@@ -713,10 +767,18 @@
             item.dataset.groupId = g.id; item.dataset.groupName = g.name;
 
             const initials2 = (g.name||'?').split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase();
-            const absAvatar = (g.avatar || g.profile_picture) ? toAbsoluteUrl(g.avatar || g.profile_picture) : null;
-            const avatarHtml = absAvatar
-                ? `<div class="wa-avatar me-2"><img src="${absAvatar}" alt="${g.name||'Group'}" loading="lazy"></div>`
-                : `<div class="wa-avatar me-2">${initials2}</div>`;
+            const absAvatar = getAvatarUrl(g);
+            // Build avatar element with fallback attempts
+            const avatarEl = document.createElement('div'); avatarEl.className = 'wa-avatar me-2';
+            if (absAvatar) {
+                const img = document.createElement('img'); img.alt = g.name || 'Group'; img.loading = 'lazy'; img.decoding = 'async';
+                const cands = buildAvatarCandidates(absAvatar);
+                tryLoadImage(img, cands);
+                img.addEventListener('loaderror', function(){ avatarEl.textContent = initials2; });
+                avatarEl.appendChild(img);
+            } else {
+                avatarEl.textContent = initials2;
+            }
 
             const latest = g.latest || {};
             // Do not show unread badge for the currently open group
@@ -755,7 +817,9 @@
                  </div>
                  <div class="chat-preview">${previewText}</div>`;
 
-            item.innerHTML = avatarHtml + meta.outerHTML + right.outerHTML;
+            item.appendChild(avatarEl);
+            item.appendChild(meta);
+            item.appendChild(right);
             item.addEventListener('contextmenu', (e)=> openGroupMenu(e, g));
             item.addEventListener('click', (e)=>{ e.preventDefault(); selectGroup(g.id, g.name, item); });
             groupsEl.appendChild(item);
@@ -866,7 +930,26 @@
         activeFilters.clear(); updateFilterButtons();
         groupsEl.querySelectorAll('.list-group-item').forEach(n=>n.classList.remove('active'));
         if (node) node.classList.add('active');
-        activeGroupId = id; window.activeGroupId = id; activeTitle.textContent = name; activeAvatar.textContent = initials(name);
+        activeGroupId = id; window.activeGroupId = id; activeTitle.textContent = name;
+        // Try to show group/user avatar if available, otherwise fallback to initials
+        (function(){
+            const gObj = Array.isArray(allGroups) ? allGroups.find(x => String(x.id) === String(id)) : null;
+            let avatarUrl = null;
+            if (gObj) {
+                avatarUrl = getAvatarUrl(gObj) || (gObj.user ? getAvatarUrl(gObj.user) : null);
+            }
+            if (avatarUrl) {
+                try {
+                    activeAvatar.innerHTML = '';
+                    const img = document.createElement('img'); img.alt = name || 'Avatar'; img.loading='lazy'; img.decoding='async';
+                    tryLoadImage(img, buildAvatarCandidates(avatarUrl));
+                    img.addEventListener('loaderror', function(){ activeAvatar.textContent = initials(name); });
+                    activeAvatar.appendChild(img);
+                } catch(e){ activeAvatar.textContent = initials(name); }
+            } else {
+                activeAvatar.textContent = initials(name);
+            }
+        })();
         inputAreaEl.style.display = 'flex';
         lastMessageId = 0; window.lastMessageId = 0; cache = []; idIndex.clear(); // reset index on group change
         messagesEl.querySelectorAll('.wa-row, .reaction-chip').forEach(n=>n.remove()); emptyEl.style.display = 'flex';
@@ -956,11 +1039,21 @@
             groupsEl.innerHTML = '';
             users.forEach(u=>{
                 const a = document.createElement('a'); a.href='#'; a.className='list-group-item d-flex align-items-center';
-                a.innerHTML = `<div class="wa-avatar me-2">${initials(u.name||('U'+u.id))}</div>
-                               <div class="flex-grow-1">
-                                 <div class="fw-semibold">${u.name || ('User '+u.id)}</div>
-                                 <div class="small text-muted">Start chat</div>
-                               </div>`;
+                    try{
+                        const abs = getAvatarUrl(u);
+                        const name = u.name || ('User '+u.id);
+                        const avatarEl = document.createElement('div'); avatarEl.className='wa-avatar me-2';
+                        if (abs) {
+                            const img = document.createElement('img'); img.alt = name; img.loading='lazy'; img.decoding='async';
+                            tryLoadImage(img, buildAvatarCandidates(abs));
+                            img.addEventListener('loaderror', () => { avatarEl.textContent = initials(name); });
+                            avatarEl.appendChild(img);
+                        } else { avatarEl.textContent = initials(name); }
+                        const metaWrap = document.createElement('div'); metaWrap.className='flex-grow-1'; metaWrap.innerHTML = `<div class="fw-semibold">${name}</div><div class="small text-muted">Start chat</div>`;
+                        a.appendChild(avatarEl); a.appendChild(metaWrap);
+                    }catch(e){
+                        a.innerHTML = `<div class="wa-avatar me-2">${initials(u.name||('U'+u.id))}</div><div class="flex-grow-1"><div class="fw-semibold">${u.name || ('User '+u.id)}</div><div class="small text-muted">Start chat</div></div>`;
+                    }
                 a.addEventListener('click', (e)=>{ e.preventDefault(); openPeerChat(u.id); });
                 groupsEl.appendChild(a);
             });
@@ -1053,9 +1146,17 @@
 
     function avatarLabel(m){
         // If avatar URL provided, render <img> (CHANGED: normalize URL)
-        if (m && m.user && (m.user.avatar || m.user.profile_picture)) {
-            const url = toAbsoluteUrl(m.user.avatar || m.user.profile_picture);
-            return { html: '<img src="'+url+'" alt="'+(m.user.name||'U')+'" loading="lazy">', text: null };
+        // Prefer robust resolver that checks common keys and nested objects
+        const resolved = getAvatarUrl(m) || (m && m.user ? getAvatarUrl(m.user) : null);
+        if (resolved) {
+            const name = (m && m.user && (m.user.name || m.user.full_name)) ? (m.user.name || m.user.full_name) : (m && m.sender_name) || 'U';
+            const wrap = document.createElement('div'); wrap.className = 'wa-avatar';
+            const img = document.createElement('img'); img.alt = name || 'U'; img.loading = 'lazy'; img.decoding = 'async';
+            const candidates = buildAvatarCandidates(resolved);
+            tryLoadImage(img, candidates);
+            img.addEventListener('loaderror', function(){ wrap.textContent = displayInitials(m ? (m.user || { name: m.sender_name }) : null); });
+            wrap.appendChild(img);
+            return { el: wrap, text: null };
         }
         const n = senderName(m);
         const init = n ? n.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() : 'U';
@@ -1335,9 +1436,35 @@
             width: '38px', height: '38px', borderRadius: '50%',
             background: '#25d366', color: '#fff',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: '700', letterSpacing: '0.4px', flexShrink: '0'
+            fontWeight: '700', letterSpacing: '0.4px', flexShrink: '0', overflow: 'hidden'
         });
-        avatar.textContent = initialsVal || 'N';
+        // Try to resolve a real avatar image from available data (opts.groupId -> allGroups.latest/user)
+        (function(){
+            try {
+                let resolved = null;
+                if (opts && opts.groupId) {
+                    const g = (allGroups || []).find(x => String(x.id) === String(opts.groupId));
+                    if (g) {
+                        resolved = getAvatarUrl(g) || (g.latest ? getAvatarUrl(g.latest) : null) || (g.user ? getAvatarUrl(g.user) : null);
+                    }
+                }
+                // Allow caller to pass `sender` in opts for direct notifications
+                if (!resolved && opts && opts.sender) {
+                    resolved = getAvatarUrl(opts.sender) || (opts.sender.user ? getAvatarUrl(opts.sender.user) : null);
+                }
+                if (resolved) {
+                    const img = document.createElement('img');
+                    img.src = resolved;
+                    img.alt = title || 'User';
+                    img.style.width = '100%'; img.style.height = '100%'; img.style.objectFit = 'cover'; img.style.display = 'block';
+                    img.loading = 'lazy';
+                    img.onerror = function(){ this.onerror=null; avatar.textContent = initialsVal || 'N'; };
+                    avatar.appendChild(img);
+                    return;
+                }
+            } catch(_) {}
+            avatar.textContent = initialsVal || 'N';
+        })();
 
         const textWrap = document.createElement('div');
         Object.assign(textWrap.style, { display:'flex', flexDirection:'column', gap:'2px', minWidth:'0', flex:'1' });
@@ -1494,7 +1621,9 @@
         row.dataset.msgId = m.id;
         const avatar = document.createElement('div'); avatar.className='wa-avatar';
         const av = avatarLabel(m);
-        if (av && av.html) { avatar.innerHTML = av.html; } else { avatar.textContent = av.text || 'U'; }
+        if (av && av.el) { avatar.innerHTML = ''; avatar.appendChild(av.el); }
+        else if (av && av.html) { avatar.innerHTML = av.html; }
+        else { avatar.textContent = av.text || 'U'; }
         const bubble = document.createElement('div'); bubble.className = 'wa-bubble ' + (mine ? 'sent' : 'received');
         if (m.reply_to_message_id) {
             bubble.addEventListener('click', (e)=>{

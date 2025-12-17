@@ -193,10 +193,12 @@
         }
     </style>
 
+    
+    
 
     <div class="row">
         {{-- ===================== INVOICE PAGE ===================== --}}
-         <div class="a4-page">
+        <div class="a4-page">
             <div class="print-page-header">
                 <span class="page-number"></span>
             </div>
@@ -208,7 +210,7 @@
             <div class="card shadow-sm position-sticky invoice-settings-card">
                 <div class="card-header fw-semibold d-flex align-items-center gap-2">
                     ⚙️ Invoice Settings
-                </div>
+                </div> 
                 <!--  Make body scrollable -->
                 <div class="card-body invoice-settings-body">
 
@@ -280,6 +282,11 @@
                             <i class="fa fa-file-pdf me-2"></i> Save Invoice
                         </button>
                     </div>
+                    <div class="d-flex">
+                        <a href="{{ route('invoices.download', $invoice->id) }}" class="btn btn-sm mt-3 btn-outline-danger">
+                            <i class="fa fa-file-pdf me-2"></i> ⬇ Download Invoice
+                        </a>
+                    </div>
 
                     <hr>
                     {{-- ================= UPLOAD Bill INVOICE ================= --}}
@@ -328,7 +335,7 @@
                                             <a href="{{ $invoice->invoice_letter_path
         ? url($invoice->invoice_letter_path)
         : '#' }}" target="_blank" class="btn btn-outline-secondary btn-sm
-                                                    {{ empty($invoice->invoice_letter_path) ? 'disabled' : '' }}">
+                                                        {{ empty($invoice->invoice_letter_path) ? 'disabled' : '' }}">
                                                 <i class="bi bi-eye">View</i>
                                             </a>
 
@@ -400,6 +407,25 @@
         document.getElementById('previewInvoiceForm')
             .addEventListener('submit', function () {
 
+                /* ================= FORCE CLEAN STATE ================= */
+                const enableDiscount =
+                    document.getElementById('enableDiscount')?.checked ?? true;
+
+                const enableRoundOff =
+                    document.getElementById('enableRoundOff')?.checked ?? true;
+
+                // Reset values if disabled
+                if (!enableDiscount) {
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
+                }
+
+                if (!enableRoundOff) {
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
+
                 recalculateAll(); // ensure totals are correct
 
                 document.getElementById('invoice_type').value =
@@ -458,12 +484,16 @@
 
                 // ITEMS (match OLD controller exactly)
                 document.querySelectorAll('.item-row').forEach(row => {
+                    let jobOrderNo = '';
+                    if (!row.dataset.merged) {
+                        jobOrderNo = row.children[1]?.innerText || '';
+                    }
                     invoiceData.items.push({
                         description: row.querySelector('.description')?.innerText || '',
-                        job_order_no: row.children[1]?.innerText || '',
-                        qty: row.querySelector('.qty')?.innerText || 0,
-                        rate: row.querySelector('.rate')?.innerText || 0,
-                        amount: row.querySelector('.amount')?.innerText || 0
+                        job_order_no: jobOrderNo,
+                        qty: row.querySelector('.qty')?.innerText || '0',
+                        rate: row.querySelector('.rate')?.innerText || '0',
+                        amount: row.querySelector('.amount')?.innerText || '0'
                     });
                 });
 
@@ -696,13 +726,32 @@
     {{-- ===================== ROUND OFF TOGGLE ===================== --}}
     <script>
         document.getElementById('enableRoundOff')
-            .addEventListener('change', recalculateAll);
+            .addEventListener('change', function () {
+
+                if (!this.checked) {
+                    // Reset round off
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
+
+                recalculateAll();
+            });
     </script>
 
     {{-- ===================== DISCOUNT TOGGLE ===================== --}}
-    <script>
+   <script>
         document.getElementById('enableDiscount')
-            .addEventListener('change', recalculateAll);
+            .addEventListener('change', function () {
+
+                if (!this.checked) {
+                    // Reset discount values
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
+                }
+
+                recalculateAll();
+            });
     </script>
 
     {{-- ===================== ROW SELECT HIGHLIGHT ===================== --}}
@@ -711,11 +760,15 @@
             const row = e.target.closest('.item-row');
             if (!row) return;
 
+            const isSelected = row.classList.contains('selected');
+
             document
                 .querySelectorAll('.item-row')
                 .forEach(r => r.classList.remove('selected'));
 
-            row.classList.add('selected');
+            if (!isSelected) {
+                row.classList.add('selected');
+            }
         });
     </script>
 
@@ -733,13 +786,13 @@
             newRow.className = 'item-row';
 
             newRow.innerHTML = `
-                        <td contenteditable="true" class="editable description"></td>
-                        <td contenteditable="true"></td>
-                        <td contenteditable="true"></td>
-                        <td contenteditable="true" class="editable qty">1</td>
-                        <td contenteditable="true" class="editable rate">0.00</td>
-                        <td contenteditable="true" class="amount">0.00</td>
-                    `;
+                            <td contenteditable="true" class="editable description"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true" class="editable qty">1</td>
+                            <td contenteditable="true" class="editable rate">0.00</td>
+                            <td contenteditable="true" class="amount">0.00</td>
+                        `;
 
             selected.after(newRow);
 
@@ -823,10 +876,10 @@
 
             // Build combined text from current columns
             const combinedText = `
-                ${cells[0].innerText}
-                Job: ${cells[1].innerText}
-                SAC: ${cells[2].innerText}
-                `.trim();
+                    ${cells[0].innerText}
+                    Job: ${cells[1].innerText}
+                    SAC: ${cells[2].innerText}
+                    `.trim();
 
             // Save original row (for future undo)
             row.dataset.original = row.innerHTML;
@@ -836,15 +889,15 @@
             // - 1 combined column (Desc + Job + SAC + Qty + Rate)
             // - Amount column preserved
             row.innerHTML = `
-                        <td contenteditable="true"
-                            colspan="3"
-                            class="editable description">
-                            ${combinedText}
-                        </td>
-                        <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
-                        <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
-                        <td contenteditable="true" class="amount">${cells[5].innerText}</td>
-                    `;
+                            <td contenteditable="true"
+                                colspan="3"
+                                class="editable description">
+                                ${combinedText}
+                            </td>
+                            <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
+                            <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
+                            <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                        `;
 
             recalculateAll();
         }
@@ -914,16 +967,18 @@
             const tr = document.createElement('tr');
             tr.className = 'page-subtotal-row';
             tr.innerHTML = `
-                        <td colspan="5" class="text-right">
-                            Sub Total (This Page)
-                        </td>
-                        <td>${total.toFixed(2)}</td>
-                    `;
+                            <td colspan="5" class="text-right">
+                                Sub Total (This Page)
+                            </td>
+                            <td>${total.toFixed(2)}</td>
+                        `;
             afterRow.after(tr);
         }
 
         // Hook into print
         window.addEventListener('beforeprint', addPageSubtotalsForPrint);
     </script>
-
+<script>
+    window.open(`/invoices/${invoiceId}/download`, '_blank');
+</script>
 @endsection
