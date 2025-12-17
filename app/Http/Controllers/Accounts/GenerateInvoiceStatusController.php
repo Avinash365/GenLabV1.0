@@ -171,6 +171,12 @@ class GenerateInvoiceStatusController extends Controller
                 abort(404, 'Booking not found');
             }
             
+            if ($booking->generatedInvoice) {
+                return redirect()->route(
+                    'bookingInvoiceStatuses.editGenerateInvoice',
+                    $booking->generatedInvoice->id 
+                );
+            }
 
             $booking->invoice_no = $booking->generatedInvoice?->invoice_no 
                 ?? $this->billingService->generateInvoiceNo();
@@ -189,7 +195,6 @@ class GenerateInvoiceStatusController extends Controller
     private function storeInvoiceData(array $invoiceData, string $invoiceType)
     {   
 
-       
 
         $bookingId = $invoiceData['booking_id'] ?? null;
         $booking = null;
@@ -234,15 +239,36 @@ class GenerateInvoiceStatusController extends Controller
         ]);
 
         foreach ($invoiceData['items'] ?? [] as $item) {
+
+            $jobOrderNo = trim($item['job_order_no'] ?? '');
+            $rate       = trim($item['rate'] ?? '');
+            $qty        = (int) ($item['qty'] ?? 0);
+
+            // Convert empty strings to null
+            $jobOrderNo = $jobOrderNo === '' ? null : $jobOrderNo;
+            $rate       = $rate === '' ? null : $rate;
+
+            // Skip if both job_order_no and rate are null
+            if (is_null($jobOrderNo) && is_null($rate || $rate === '0.00')) {
+                continue;
+            }
+
+            // If job_order_no is null but rate or qty exists
+            if (is_null($jobOrderNo) && (!is_null($rate) || $qty > 0)) {
+                $jobOrderNo = '0000000';
+            }
+
             InvoiceBookingItem::create([
                 'invoice_booking_id' => $invoice->id,
                 'invoice_no'         => $invoice->invoice_no,
-                'job_order_no'       => $item['job_order_no'] ?? null,
-                'qty'                => $item['qty'] ?? 0,
-                'rate'               => $item['rate'] ?? 0,
+                'job_order_no'       => $jobOrderNo,
+                'qty'                => $qty,
+                'rate'               => $rate ?? 0,
                 'sample_discription' => $item['description'] ?? null,
             ]);
         }
+
+
 
         if ($booking = NewBooking::with('items')->find($invoiceData['booking_id'])) {
             $amounts = array_column($invoiceData['items'], 'rate');
@@ -259,6 +285,7 @@ class GenerateInvoiceStatusController extends Controller
     public function generateInvoice(GenerateInvoiceRequest $request)
     {
         try { 
+            
 
             $invoiceType = $request->input('invoice_type');
             $invoiceData = $this->billingService->generateInvoiceData($request);
@@ -266,16 +293,18 @@ class GenerateInvoiceStatusController extends Controller
             $invoiceData['booking_id'] = $request->booking_id;
 
             $invoice = $this->storeInvoiceData($invoiceData, $invoiceType);
-
+ 
             $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
-            
+            $invoiceData['invoice']['id'] = $invoice->id; 
+
             $html = $request->invoice_html; 
             Storage::put(
                 "invoices/invoice_{$invoice->id}.html",
                 $html
             );
             
-            return $this->invoicePdfService->generate($invoiceData);
+            // return $this->invoicePdfService->generate($invoiceData);
+            return $this->invoicePdfService->generateHtml2Pdf($invoice);
 
         } catch (\Throwable $e) {
             Log::error('Invoice creation failed: '.$e->getMessage(), ['trace' => $e->getTraceAsString()]);
@@ -540,6 +569,11 @@ class GenerateInvoiceStatusController extends Controller
                 1
             );
 
+            $qrcode= $this->invoicePdfService->generateQrCode($invoice->total_amount, "Invoice #{$invoice->invoice_no}");   
+            $qrcodeBase64 = 'data:image/svg+xml;base64,' . $qrcode;  
+
+            $html = str_replace('__QR_CODE_IMAGE__',$qrcodeBase64,$html); 
+
             return view('superadmin.accounts.generateInvoice.edit-invoice', compact('invoice', 'gstinApiUrl', 'gstinApiKey', 'html'));  
 
             if(!empty($invoice->invoice_booking_ids)) {
@@ -554,4 +588,8 @@ class GenerateInvoiceStatusController extends Controller
         }
     }
 
-} 
+    public function downloadInvoice(Invoice $invoice)
+    {
+        return $this->invoicePdfService->generateHtml2Pdf($invoice);
+    } 
+}

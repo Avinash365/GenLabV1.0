@@ -28,7 +28,7 @@ class GenerateInvoiceRequest extends FormRequest
     
 
     }
-
+    
     public function withValidator($validator)
     {
         $validator->after(function ($validator) {
@@ -55,10 +55,10 @@ class GenerateInvoiceRequest extends FormRequest
 
                 'items'                       => 'required|array|min:1',
                 'items.*.description'         => 'nullable|string|max:500',
-                'items.*.job_order_no'        => 'required|string|max:50',
-                'items.*.qty'                 => 'required|numeric|min:1',
-                'items.*.rate'                => 'required|string',
-                'items.*.amount'              => 'required|string',
+                'items.*.job_order_no'        => 'nullable|string|max:50',
+                'items.*.qty'                 => 'nullable|numeric',
+                'items.*.rate'                => 'nullable|string',
+                'items.*.amount'              => 'nullable|string',
 
                 'totals.total_amount'         => 'required|string',
                 'totals.discount_percent'     => 'nullable|numeric|min:0',

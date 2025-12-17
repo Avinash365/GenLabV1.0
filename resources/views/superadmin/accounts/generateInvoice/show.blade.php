@@ -217,7 +217,7 @@
                     <table>
                         <thead>
                             <tr>
-                                <th class="col-left text-uppercase" contenteditable="true">
+                                <th class="col-left text-uppercase" >
                                     GSTIN: {{ $booking->gstin ?? '9113464642541' }}
                                 </th>
 
@@ -225,7 +225,7 @@
                                                                                     {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice' }}
                                                                                 </th>   -->
                                 <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader"
-                                    contenteditable="true">
+                                    >
                                     {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice' }}
                                 </th>
 
@@ -248,9 +248,9 @@
                                 </td>
 
                                 <td class="text-centre">
-                                    @if(!empty($qrcode))
-                                        <img src="data:image/svg+xml;base64,{{ $qrcode }}" width="100">
-                                    @endif
+                        
+                                    <img src="__QR_CODE_IMAGE__" width="100">
+                                 
                                 </td>
                             </tr>
 
@@ -290,14 +290,14 @@
                     {{-- ===================== ITEM DETAILS ===================== --}}
                     <table>
                         <thead>
-                            <tr>
+                            <tr class="item-row">
                                 <!-- <th style="width:9%;">#</th> -->
                                 <th style="width:35%;">Description</th>
-                                <th style="width:20%;">Job Order No</th>
-                                <th style="width:10%;">SAC Code</th>
-                                <th style="width:10%;">Qty</th>
-                                <th style="width:20%;">Rate</th>
-                                <th style="width:25%;">Amount</th>
+                                <th style="width:27%;">Job Order No</th>
+                                <th style="width:11%;">SAC Code</th>
+                                <th style="width:9%;">Qty</th>
+                                <th style="width:14%;">Rate</th>
+                                <th style="width:20%;">Amount</th>
                             </tr>
                         </thead>
 
@@ -310,7 +310,7 @@
                                             {{ $item->sample_description }}
                                         </td>
                                         <td>{{ $item->job_order_no }}</td>
-                                        <td>{{ $booking->sac_code ?? '' }}</td>
+                                        <td>{{ $booking->sac_code ?? '998346' }}</td>
                                         <td contenteditable="true" class="editable qty ">
                                             {{ $item->qty ?? 1 }}
                                         </td>
@@ -633,92 +633,115 @@
 
     {{-- ===================== PREVIEW FORM SUBMISSION ===================== --}}
     <script>
-        document.getElementById('previewInvoiceForm')
-            .addEventListener('submit', function () {
+    document.getElementById('previewInvoiceForm')
+        .addEventListener('submit', function () {
 
-                recalculateAll(); // ensure totals are correct
+            /* ================= FORCE CLEAN STATE ================= */
+            const enableDiscount =
+                document.getElementById('enableDiscount')?.checked ?? true;
 
-                document.getElementById('invoice_type').value =
-                    document.getElementById('invoiceTypeHeader').innerText.trim().toLowerCase();
+            const enableRoundOff =
+                document.getElementById('enableRoundOff')?.checked ?? true;
 
+            // Reset values if disabled
+            if (!enableDiscount) {
+                document.getElementById('discountPercent').innerText = '0';
+                document.getElementById('discountAmount').innerText = '0.00';
+                document.getElementById('afterDiscount').innerText =
+                    document.getElementById('totalAmount').innerText;
+            }
 
-                const billing = extractBillingInfo();
-                const reference = extractReferenceInfo();
+            if (!enableRoundOff) {
+                document.getElementById('roundOff').innerText = '0.00';
+            }
 
-                let invoiceData = {
+            recalculateAll(); // FINAL clean calculation
 
-                    booking_info: {
-                        booking_id: "{{ $booking->id }}",
-                        client_name: "{{ $booking->client->name ?? '' }}",
-                        marketing_person: "{{ $booking->marketingPerson->name ?? '' }}",
-                        invoice_no: document.getElementById('td_invoice_no').innerText,
+            /* ================= EXISTING CODE ================= */
 
-                        reference_no: reference.reference_no,
-                        letter_date: reference.letter_date,
+            document.getElementById('invoice_type').value =
+                document.getElementById('invoiceTypeHeader').innerText.trim().toLowerCase();
 
-                        invoice_date: document.getElementById('td_invoice_date').innerText,
-                        name_of_work: document.getElementById('td_name_of_work').innerText,
+            const billing = extractBillingInfo();
+            const reference = extractReferenceInfo();
 
-                        bill_issue_to: billing.bill_issue_to,
-                        client_gstin: billing.client_gstin || "{{ $booking->gstin ?? '' }}",
-                        address: billing.address
-                    },
+            let invoiceData = {
 
-                    items: [],
+                booking_info: {
+                    booking_id: "{{ $booking->id }}",
+                    client_name: "{{ $booking->client->name ?? '' }}",
+                    marketing_person: "{{ $booking->marketingPerson->name ?? '' }}",
+                    invoice_no: document.getElementById('td_invoice_no').innerText,
 
-                    totals: {
-                        total_amount: document.getElementById('totalAmount').innerText,
-                        discount_percent: document.getElementById('discountPercent').innerText,
-                        discount_amount: document.getElementById('discountAmount').innerText,
-                        after_discount: document.getElementById('afterDiscount').innerText,
-                        cgst_percent: document.getElementById('cgstPercent').innerText,
-                        cgst_amount: document.getElementById('cgstAmount').innerText,
-                        sgst_percent: document.getElementById('sgstPercent').innerText,
-                        sgst_amount: document.getElementById('sgstAmount').innerText,
-                        igst_percent: document.getElementById('igstPercent').innerText,
-                        igst_amount: document.getElementById('igstAmount').innerText,
-                        round_off: document.getElementById('roundOff').innerText,
-                        payable_amount: document.getElementById('payableAmount').innerText
-                    },
+                    reference_no: reference.reference_no,
+                    letter_date: reference.letter_date,
 
-                    bank_info: {
-                        instructions: "{{ $bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD' }}",
-                        name: "{{ $bankInfo->name ?? 'SBI' }}",
-                        branch_name: "{{ $bankInfo->branch ?? 'Harauli' }}",
-                        account_no: "{{ $bankInfo->account_no ?? '000121210' }}",
-                        ifsc_code: "{{ $bankInfo->ifsc_code ?? 'SB00001' }}",
-                        pan_no: "{{ $bankInfo->pan_no ?? 'AHTPJ45454' }}",
-                        gstin: "{{ $bankInfo->gstin ?? '87457187441417644' }}"
-                    }
-                };
+                    invoice_date: document.getElementById('td_invoice_date').innerText,
+                    name_of_work: document.getElementById('td_name_of_work').innerText,
 
-                // ITEMS (match OLD controller exactly)
-                document.querySelectorAll('.item-row').forEach(row => {
-                    invoiceData.items.push({
-                        description: row.querySelector('.description')?.innerText || '',
-                        job_order_no: row.children[1]?.innerText || '',
-                        qty: row.querySelector('.qty')?.innerText || 0,
-                        rate: row.querySelector('.rate')?.innerText || 0,
-                        amount: row.querySelector('.amount')?.innerText || 0
-                    });
+                    bill_issue_to: billing.bill_issue_to,
+                    client_gstin: billing.client_gstin || "{{ $booking->gstin ?? '' }}",
+                    address: billing.address
+                },
+
+                items: [],
+
+                totals: {
+                    total_amount: document.getElementById('totalAmount').innerText,
+                    discount_percent: document.getElementById('discountPercent').innerText,
+                    discount_amount: document.getElementById('discountAmount').innerText,
+                    after_discount: document.getElementById('afterDiscount').innerText,
+                    cgst_percent: document.getElementById('cgstPercent').innerText,
+                    cgst_amount: document.getElementById('cgstAmount').innerText,
+                    sgst_percent: document.getElementById('sgstPercent').innerText,
+                    sgst_amount: document.getElementById('sgstAmount').innerText,
+                    igst_percent: document.getElementById('igstPercent').innerText,
+                    igst_amount: document.getElementById('igstAmount').innerText,
+                    round_off: document.getElementById('roundOff').innerText,
+                    payable_amount: document.getElementById('payableAmount').innerText
+                },
+
+                bank_info: {
+                    instructions: "{{ $bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD' }}",
+                    name: "{{ $bankInfo->name ?? 'SBI' }}",
+                    branch_name: "{{ $bankInfo->branch ?? 'Harauli' }}",
+                    account_no: "{{ $bankInfo->account_no ?? '000121210' }}",
+                    ifsc_code: "{{ $bankInfo->ifsc_code ?? 'SB00001' }}",
+                    pan_no: "{{ $bankInfo->pan_no ?? 'AHTPJ45454' }}",
+                    gstin: "{{ $bankInfo->gstin ?? '87457187441417644' }}"
+                }
+            };
+
+            // ITEMS
+            document.querySelectorAll('.item-row').forEach(row => {
+                let jobOrderNo = '';
+                if (!row.dataset.merged) {
+                    jobOrderNo = row.children[1]?.innerText || '';
+                }
+
+                invoiceData.items.push({
+                    description: row.querySelector('.description')?.innerText || '',
+                    job_order_no: jobOrderNo,
+                    qty: row.querySelector('.qty')?.innerText || '0',
+                    rate: row.querySelector('.rate')?.innerText || '0',
+                    amount: row.querySelector('.amount')?.innerText || '0'
                 });
-
-
-                let html = document.getElementById('previewInvoiceForm').outerHTML;
-
-                html = html.replace(/action="[^"]*"/i, 'action="__ACTION_URL__"');
-                html = html.replace(
-                    /<input[^>]*name="_token"[^>]*value="[^"]*"[^>]*>/gi,
-                    '<input type="hidden" name="_token" value="__CSRF_TOKEN__">'
-                );
-                // $html = str_replace('__METHOD__', 'PUT', $html);  
-
-                document.getElementById('invoice_html').value = html;
-
-                document.getElementById('preview_invoice_data').value =
-                    JSON.stringify(invoiceData);
             });
+
+            let html = document.getElementById('previewInvoiceForm').outerHTML;
+
+            html = html.replace(/action="[^"]*"/i, 'action="__ACTION_URL__"');
+            html = html.replace(
+                /<input[^>]*name="_token"[^>]*value="[^"]*"[^>]*>/gi,
+                '<input type="hidden" name="_token" value="__CSRF_TOKEN__">'
+            );
+
+            document.getElementById('invoice_html').value = html;
+            document.getElementById('preview_invoice_data').value =
+                JSON.stringify(invoiceData);
+        });
     </script>
+
 
 
     {{-- ===================== GST AOUT CALULATE (PDF) ===================== --}}
@@ -931,26 +954,48 @@
     {{-- ===================== ROUND OFF TOGGLE ===================== --}}
     <script>
         document.getElementById('enableRoundOff')
-            .addEventListener('change', recalculateAll);
-    </script>
+            .addEventListener('change', function () {
 
+                if (!this.checked) {
+                    // Reset round off
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
+
+                recalculateAll();
+            });
+    </script>
     {{-- ===================== DISCOUNT TOGGLE ===================== --}}
     <script>
         document.getElementById('enableDiscount')
-            .addEventListener('change', recalculateAll);
+            .addEventListener('change', function () {
+
+                if (!this.checked) {
+                    // Reset discount values
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
+                }
+
+                recalculateAll();
+            });
     </script>
 
     {{-- ===================== ROW SELECT HIGHLIGHT ===================== --}}
-    <script>
+     <script>
         document.addEventListener('click', function (e) {
             const row = e.target.closest('.item-row');
             if (!row) return;
+
+            const isSelected = row.classList.contains('selected');
 
             document
                 .querySelectorAll('.item-row')
                 .forEach(r => r.classList.remove('selected'));
 
-            row.classList.add('selected');
+            if (!isSelected) {
+                row.classList.add('selected');
+            }
         });
     </script>
 

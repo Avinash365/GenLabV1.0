@@ -9,6 +9,8 @@ use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 use App\Models\SiteSetting;
 use App\Models\PaymentSetting;
+use Illuminate\Support\Facades\Storage;  
+use App\Models\Invoice;
 
 
 class InvoicePdfService
@@ -51,7 +53,42 @@ class InvoicePdfService
         $canvas->page_text(500, 85, "Page {PAGE_NUM} of {PAGE_COUNT}", $fontMetrics->getFont('Arial', 'normal'), 10);
 
         return $pdf->stream($filename);
-    } 
+    }   
+    
+    public function generateHtml2Pdf(Invoice $invoice, string $view = 'superadmin.accounts.generateInvoice.bill_pdf-new', string $filename = 'invoice.pdf'){
+        
+        $amount = $invoice->total_amount ?? '1';
+
+        // Fetch UPI & Holder Name from DB
+        $paymentSetting = PaymentSetting::latest()->first();
+
+        $upiId = $paymentSetting->upi ?? "7739136208.etb@icici"; 
+        
+
+        $payeeName =  $paymentSetting->branch_holder_name ?? "Avinash Kumar Jha"; 
+        $description = "In:10001";
+
+        $upiLink = "upi://pay?pa={$upiId}&pn=" . urlencode($payeeName) . "&am={$amount}&cu=INR&tn=" . urlencode($description);
+
+        $qrcode = base64_encode( QrCode::format('svg')->size(200)->generate($upiLink));
+
+
+        $html = Storage::get("invoices/invoice_{$invoice->id}.html");
+
+        $qrcodeBase64 = 'data:image/svg+xml;base64,' . $qrcode; 
+
+        $html = str_replace('__QR_CODE_IMAGE__',$qrcodeBase64,$html); 
+        
+        
+        $pdf = Pdf::loadView($view, compact('html'))->setPaper('A4');
+
+        $pdf->output();
+        $canvas = $pdf->getDomPDF()->getCanvas();
+        $fontMetrics = new \Dompdf\FontMetrics($canvas, $pdf->getDomPDF()->getOptions());
+        $canvas->page_text(500, 85, "Page {PAGE_NUM} of {PAGE_COUNT}", $fontMetrics->getFont('Arial', 'normal'), 10);
+
+        return $pdf->stream($filename);
+    }
 
     public function generateQrCode(float $totalAmount, string $description = 'Invoice Payment')
     {
