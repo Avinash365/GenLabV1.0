@@ -187,9 +187,11 @@ class GenerateInvoiceStatusController extends Controller
         
         $bankInfo = PaymentSetting::first();
 
+        $companyName = SiteSetting::value('company_name'); 
+
         $ACTION_URL =  route('superadmin.bookingInvoiceStatuses.generateInvoice', $booking->id); 
 
-        return view('superadmin.accounts.generateInvoice.show', compact('booking', 'gstinApiUrl', 'gstinApiKey', 'bankInfo', 'ACTION_URL'));
+        return view('superadmin.accounts.generateInvoice.show', compact('booking', 'gstinApiUrl', 'gstinApiKey', 'bankInfo', 'ACTION_URL', 'companyName'));
     }
 
     private function storeInvoiceData(array $invoiceData, string $invoiceType)
