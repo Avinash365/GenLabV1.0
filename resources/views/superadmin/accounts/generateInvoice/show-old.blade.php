@@ -302,7 +302,7 @@
                     </tr>
                     <tr>
                         <th>Bank Name</th>
-                        <td class="noteditable" id="td_bank_name">{{ $bankInfo->name ?? 'SBI' }}</td>
+                        <td class="noteditable" id="td_bank_name">{{ $bankInfo->bank_name ?? 'SBI' }}</td>
                     </tr>
                     <tr>
                         <th>Branch Name</th>
