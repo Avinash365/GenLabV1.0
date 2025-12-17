@@ -407,7 +407,7 @@
                             </tr>
                             <tr>
                                 <th class="text-start">BANK NAME:</th>
-                                <td id="td_bank_name">{{ $bankInfo->name ?? 'SBI' }}</td>
+                                <td id="td_bank_name">{{ $bankInfo->bank_name ?? 'SBI' }}</td>
                                 <td class="text-centre text-uppercase">For {{$companyName ?? ''}}</td>
                             </tr>
                             <tr>
