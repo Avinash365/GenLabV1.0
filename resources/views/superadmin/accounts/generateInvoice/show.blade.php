@@ -417,7 +417,7 @@
                             </tr>
                             <tr>
                                 <th class="text-start">BRANCH:</th>
-                                <td class="text-uppercase" id="td_branch_name">{{ $bankInfo->branch_name ?? '' }}</td>
+                                <td class="text-uppercase" id="td_branch_name">{{ $bankInfo->branch ?? '' }}</td>
                             </tr>
                             <tr>
                                 <th class="text-start">IFSC CODE:</th>
