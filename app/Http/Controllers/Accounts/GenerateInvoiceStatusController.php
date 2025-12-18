@@ -337,6 +337,12 @@ class GenerateInvoiceStatusController extends Controller
             return redirect()
                 ->route('superadmin.bookingInvoiceStatuses.index')
                 ->withErrors(['No valid bookings found.']);
+        } 
+        if ($bookings->first()->generatedInvoice) {
+                return redirect()->route(
+                    'bookingInvoiceStatuses.editGenerateInvoice',
+                    $bookings->first()->generatedInvoice->id
+                );
         }
 
         // Validation: check same client
@@ -430,7 +436,7 @@ class GenerateInvoiceStatusController extends Controller
                     'total_amount' => $invoiceData['totals']['payable_amount'] ?? 0,
                     'address' => $invoiceData['booking_info']['address'] ?? null,
                     'invoice_date' => now(),
-                    'generated_by' => Auth::id(),
+                    'generated_by' => null,
                 ]);
 
                 $items = collect($invoiceData['items'])
@@ -507,7 +513,7 @@ class GenerateInvoiceStatusController extends Controller
             );
 
             // Generate and return PDF
-            return $this->generateBulkInvoicePdf($invoice->id);
+            return $this->invoicePdfService->generateHtml2Pdf($invoice);
 
         } catch (\Exception $e) {
             \Log::error('Invoice creation failed: ' . $e->getMessage());
