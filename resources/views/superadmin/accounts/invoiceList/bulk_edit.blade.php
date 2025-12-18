@@ -1,493 +1,921 @@
-@php
-    use Illuminate\Support\Str;
-@endphp
-
 @extends('superadmin.layouts.app')
 
 @section('title', 'Invoice Report')
 
 @section('content')
-@if ($errors->any())
-    <div class="alert alert-danger">
-        <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
-        </ul>
-    </div>
-@endif
 
-@if (session('success'))
-    <div class="alert alert-success">
-        {{ session('success') }}
-    </div>
-@endif
-
-<div class="row g-3">
-
-    <!-- Card 1: GSTIN Search -->
-    <div class="col-sm-6">
-        <div class="card">
-            <div class="card-body">
-                <form id="gstinForm" class="row g-2 align-items-end" method="POST" action="">
-                    @csrf
-                    <div class="col-sm-8">
-                        <label class="form-label">ENTER GSTIN</label>
-                        <input type="text" name="gstin" id="gstinInput" class="form-control" placeholder="Enter GSTIN" required>
-                    </div>
-                    <div class="col-sm-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">Search</button>
-                    </div>
-                </form>
-            </div>
+    {{-- ===================== FLASH / VALIDATION MESSAGES ===================== --}}
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
-    </div>
+    @endif
 
-    <!-- Card 2: File Upload -->
-    <div class="col-sm-6">
-        <div class="card">
-            <div class="card-body">
-                <form id="gstinUploadForm" class="d-flex flex-column" enctype="multipart/form-data" method="POST" action="{{route('superadmin.gstin.upload')}}">
-                    @csrf
-                    <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
-                    <label for="gstinFile" class="btn btn-secondary w-50 mb-2">Upload File</label>
-                    <input type="file" id="gstinFile" name="gstin_file" class="d-none">
-                    <small id="fileName" class="text-muted">No file selected</small>
-                    <button type="submit" class="btn btn-success w-50 mt-3">Save</button>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
+    @if (session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
 
-<!-- GSTIN Details / Error Modal -->
-<div class="modal fade" id="gstinModal" tabindex="-1" aria-labelledby="gstinModalLabel" aria-hidden="true">
-  <div class="modal-dialog">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="gstinModalLabel">GSTIN Details</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-      </div>
-      <div class="modal-body">
-        <div id="gstinError" class="alert alert-danger d-none"></div>
-        <div id="gstinDetails" class="d-none">
-          <p><strong>Business Name:</strong> <span id="tradeNam"></span></p>
-          <p><strong>PAN No:</strong> <span id="panNo"></span></p>
-          <p><strong>Legal Name:</strong> <span id="legalName"></span></p>
-          <p><strong>Address:</strong> <span id="address"></span></p>
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-      </div>
-    </div>
-  </div>
-</div>
+    @if (session('success'))
+        <div class="alert alert-success">{{ session('success') }}</div>
+    @endif
 
 
-<div class="content">
-
-    <form id="invoiceForm" method="POST">
-        @csrf
-        @method('PUT') 
-
-
-        <input type="hidden" id="td_booking_id" name="booking_id" value="{{ $invoice->new_booking_id}}">
-        <input type="hidden" id="td_invoice_id" name="invoice_id" value="{{ $invoice->id}}">
-        <input type="hidden" id="td_invoice_no" name="invoice_no" value="{{ $invoice->invoice_no}}">
-
-        <div class="page-header d-flex justify-content-between align-items-center">
-            <div class="page-title">
-                <h4 class="fw-bold text-uppercase">{{ str_replace('_', ' ', $invoice->type) }}</h4>
-                <h6>PDF </h6>
-            </div>
-            <div class="page-btn">
-                <button type="submit" class="btn btn-danger" formaction="{{ route('superadmin.invoices.generateInvoice', $invoice->id) }}">
-                    <i class="fa fa-file-pdf me-2"></i>Download PDF
-                </button>
-            </div>
-        </div>
-
-        <div class="card">
-            <div class="card-body">
-
-                <!-- invoice Information -->
-                <h5 class="fw-bold mb-2">Invoice Information Bulk</h5>
-                <table class="table table-bordered mb-4">
-                    <tr>
-                        <th>Client Name</th>
-                        <td class="noteditable" id="td_client_name">{{ $invoice->relatedBooking->client_name ?? 'N/A' }}</td>
-                        <th>Marketing Person</th>
-                        <td class="noteditable" id="td_marketing_person">{{ $invoice->relatedBooking->marketingPerson->name ?? 'N/A' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Invoice No </th>
-                        <td   class="noteditable" id="td_invoice_no">{{$invoice->invoice_no ?? ''}}</td>
-                        <th>Reference No</th>
-                        <td contenteditable="true" class="editable" id="td_reference_no"> {{ $relatedBookings->pluck('reference_no')->implode(', ') }}</td>
-                    </tr>
-                    <tr>
-                        <th>Invoice Date</th>
-                        <td contenteditable="true" class="editable" id="td_invoice_date">{{ $invoice->invoice_date }}</td>
-                        <th>Letter Date</th>
-                        <td  contenteditable="true" class="editable" id="td_letter_date">
-                             {{ $relatedBookings->map(fn($b) => \Carbon\Carbon::parse($b->letter_date)->format('d-m-Y'))->implode(', ') }}
-                        </td>
-                    </tr>
-                    <tr>
-                        <th>Name of Work</th>
-                        <td contenteditable="true" class="editable" id="td_name_of_work">{{ $invoice->name_of_work ?? '' }}</td>
-                        <th>Bill Issue To</th>
-                        <td contenteditable="true" class="editable" id="td_bill_issue_to">{{ $invoice->issue_to ?? '' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Client GSTIN</th>
-                        <td contenteditable="true" class="editable" id="td_client_gstin">{{ $invoice->client_gstin ?? '' }}</td>
-                        <th>Address</th>
-                        <td contenteditable="true" class="editable" id="td_address">{{ $invoice->address ?? '' }}</td>
-                    </tr>
-                </table>
-
-                <!-- Data Fields (Items) -->
-                <h5 class="fw-bold mb-2">Data Fields</h5>
-                <table class="table table-bordered mb-4" id="invoiceTable">
-                    <thead style="background:#e9ecef;">
-                        <tr>
-                            <th>#</th>
-                            <th>Sample Description</th>
-                            <th>Job Order No</th>
-                            <th>Qty</th>
-                            <th>Rate</th>
-                            <th>Amount</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach($invoice->bookingItems as $item)
-                            <tr>
-                                <td>{{ $loop->iteration }}</td>
-                                <td contenteditable="true" class="editable">{{ $item->sample_discription }}</td>
-                                <td>{{ $item->job_order_no }}</td>
-                                <td contenteditable="true" class="editable qty">{{ $item->qty ?? 1 }}</td>
-                                <td contenteditable="true" class="editable rate">{{ number_format($item->rate,2) }}</td>
-                                <td class="amount">0.00</td>
-                            </tr>
-                        @endforeach
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <th colspan="5" class="text-end">Total</th>
-                            <th id="totalAmount">0.00</th>
-                        </tr>
-                        <tr>
-                            <th colspan="4" class="text-end">Discount %</th>
-                            <td contenteditable="true" class="editable" id="discountPercent">{{$invoice->discount_percent}}</td>
-                            <th id="discountAmount">0.00</th>
-                        </tr>
-                        <tr>
-                            <th colspan="5" class="text-end">After Discount Amount</th>
-                            <th id="afterDiscount">0.00</th>
-                        </tr>
-                        <tr>
-                            <th colspan="4" class="text-end">CGST %</th>
-                            <td contenteditable="true" class="editable" id="cgstPercent">{{$invoice->cgst_percent ?? 0}}</td>
-                            <th id="cgstAmount">0.00</th>
-                        </tr>
-                        <tr>
-                            <th colspan="4" class="text-end">SGST %</th>
-                            <td contenteditable="true" class="editable" id="sgstPercent">{{$invoice->sgst_percent ?? 0}}</td>
-                            <th id="sgstAmount">0.00</th>
-                        </tr>
-                        <tr>
-                            <th colspan="4" class="text-end">IGST %</th>
-                            <td contenteditable="true" class="editable" id="igstPercent">{{$invoice->igst_percent ?? 0}}</td>
-                            <th id="igstAmount">0.00</th>
-                        </tr>
-                        <tr>
-                            <th colspan="4" class="text-end">Round Off</th>
-                            <td><input type="checkbox" id="roundOffCheckbox"></td>
-                            <th id="roundOffAmount">0.00</th>
-                        </tr>
-                        <tr>
-                            <th colspan="5" class="text-end">Payable Amount</th>
-                            <th id="payableAmount">0.00</th>
-                        </tr>
-                    </tfoot>
-                </table>
-
-                <!-- Banking Information -->
-                <h5 class="fw-bold mb-2">Banking Information</h5>
-                <table class="table table-bordered mb-4">
-                    <tr>
-                        <th>Instructions</th>
-                        <td class="noteditable" id="td_bank_instructions">{{ $bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Bank Name</th>
-                        <td class="noteditable" id="td_bank_name">{{ $bankInfo->name ?? 'SBI' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Branch Name</th>
-                        <td class="noteditable" id="td_branch_name">{{ $bankInfo->branch_name ?? 'Harauli' }}</td>
-                    </tr>
-                    <tr>
-                        <th>Account No</th>
-                        <td class="noteditable" id="td_account_no">{{ $bankInfo->account_no ?? '000121210' }}</td>
-                    </tr>
-                    <tr>
-                        <th>IFSC CODE</th>
-                        <td class="noteditable" id="td_ifsc_code">{{ $bankInfo->ifsc_code ?? "SB00001"}}</td>
-                    </tr>
-                    <tr>
-                        <th>Pan No</th>
-                        <td class="noteditable" id="td_pan_no">{{$bankInfo->pan_no??'AHTPJ45454'}}</td>
-                    </tr>
-                    <tr>
-                        <th>GSTIN</th>
-                        <td class="noteditable" id="td_gstin">{{$bankInfo->gstin??'87457187441417644'}}</td>
-                    </tr>
-                </table>
-
-                <!-- Hidden inputs to send to controller -->
-                <input type="hidden" name="invoice_data" id="invoice_data">
-                <input type="hidden" id="invoice_type" name="invoice_type" value="">
-
-                <!-- Option to select type -->
-                <div class="d-flex justify-content-end align-items-center gap-3 mb-3">
-
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="typeOption" id="typeInvoice" value="tax_invoice" {{ $invoice->type === 'tax_invoice' ? 'checked' : '' }}>
-                        <label class="form-check-label" for="typeInvoice">Tax Invoice</label>
-                    </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="radio" name="typeOption" id="typePI" value="proforma_invoice" {{ $invoice->type === 'proforma_invoice' ? 'checked' : '' }}>
-                        <label class="form-check-label" for="typePI">Proforma Invoice</label>
-                    </div>
-                </div>
-
-                 <div class="d-flex justify-content-end">
-                    <button type="submit" class="btn btn-success" formaction="{{ route('superadmin.invoices.update', $invoice->id ) }}">
-                        <i class="fa fa-file-pdf me-2"></i>Save Invoice
-                    </button>
-                </div>
-
-            </div>
-        </div>
-    </form>
-</div>
-
-@push('styles')
-<style>
-    .table-bordered th, .table-bordered td {
-        border: 1px solid #000 !important;
-        padding: 6px 10px;
-        font-size: 13px;
-    }
-    .table th {
-        text-transform: uppercase;
-        font-weight: bold;
-    }
-    .editable {
-        background-color: #fff9c4;
-        cursor: text;
-    }
-    .editable.edited {
-        background-color: #c2f0c2;
-    }
-    .noteditable {
-        font-weight: bold;
-    }
-</style>
-@endpush
-
-@push('scripts')
-<script> 
-    function updateAmounts() {
-        let total = 0;
-        document.querySelectorAll('#invoiceTable tbody tr').forEach(function(row) {
-            let qty = parseFloat(row.querySelector('.qty')?.textContent) || 0;
-            let rate = parseFloat(row.querySelector('.rate')?.textContent.replace(/,/g,'')) || 0;
-            let amount = qty * rate;
-            row.querySelector('.amount').textContent = amount.toFixed(2);
-            total += amount;
-        });
-
-        document.getElementById('totalAmount').textContent = total.toFixed(2);
-
-        let discountPercent = parseFloat(document.getElementById('discountPercent')?.textContent) || 0;
-        let discountAmount = total * discountPercent / 100;
-        document.getElementById('discountAmount').textContent = discountAmount.toFixed(2);
-
-        let afterDiscount = total - discountAmount;
-        document.getElementById('afterDiscount').textContent = afterDiscount.toFixed(2);
-
-        let cgstPercent = parseFloat(document.getElementById('cgstPercent')?.textContent) || 0;
-        let sgstPercent = parseFloat(document.getElementById('sgstPercent')?.textContent) || 0;
-        let igstPercent = parseFloat(document.getElementById('igstPercent')?.textContent) || 0;
-
-        let cgstAmount = afterDiscount * cgstPercent / 100;
-        let sgstAmount = afterDiscount * sgstPercent / 100;
-        let igstAmount = afterDiscount * igstPercent / 100;
-
-        document.getElementById('cgstAmount').textContent = cgstAmount.toFixed(2);
-        document.getElementById('sgstAmount').textContent = sgstAmount.toFixed(2);
-        document.getElementById('igstAmount').textContent = igstAmount.toFixed(2);
-
-        let payable = afterDiscount + cgstAmount + sgstAmount + igstAmount;
-
-        let roundOffAmount = 0;
-        if (document.getElementById('roundOffCheckbox').checked) {
-            let roundedPayable = Math.round(payable);
-            roundOffAmount = (roundedPayable - payable).toFixed(2);
-            payable = roundedPayable;
+    {{-- ===================== INVOICE STYLES ===================== --}}
+    <style>
+        /* ================= A4 PAGE ================= */
+        .a4-page {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto;
+            padding: 15mm;
+            background: #fff;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.15);
         }
-        document.getElementById('roundOffAmount').textContent = roundOffAmount;
-        document.getElementById('payableAmount').textContent = payable.toFixed(2);
-    }
 
-    // Gather all data before submitting
-    document.getElementById('invoiceForm').addEventListener('submit', function(e){
-        // Update amounts first
-        
-        
-        updateAmounts();
+        /* ================= INVOICE ================= */
+        .invoice-preview {
+            font-family: 'Noto Sans', Arial, sans-serif;
+            font-size: 12px;
+            color: #333;
+            line-height: 1.2;
+        }
 
-        let invoiceData = {
-            booking_info: { 
-                booking_id: document.getElementById('td_booking_id').value, 
-                invoice_id: document.getElementById('td_invoice_id').value, 
-                client_name: document.getElementById('td_client_name').textContent,
-                marketing_person: document.getElementById('td_marketing_person').textContent,
-                invoice_no: document.getElementById('td_invoice_no').value,
-                reference_no: document.getElementById('td_reference_no').textContent,
-                invoice_date: document.getElementById('td_invoice_date').textContent,
-                letter_date: document.getElementById('td_letter_date').textContent,
-                name_of_work: document.getElementById('td_name_of_work').textContent,
-                bill_issue_to: document.getElementById('td_bill_issue_to').textContent,
-                client_gstin: document.getElementById('td_client_gstin').textContent,
-                address: document.getElementById('td_address').innerHTML
-                                .replace(/<div>/g, '\n')   // convert div to newline
-                                .replace(/<\/div>/g, '')   // remove closing div
-                                .replace(/<br>/g, '\n')    // convert <br> to newline
-                                .replace(/&nbsp;/g, ' ')
-                                .trim()
-            },
-            items: [],
-            totals: {
-                total_amount: document.getElementById('totalAmount').textContent,
-                discount_percent: document.getElementById('discountPercent').textContent,
-                discount_amount: document.getElementById('discountAmount').textContent,
-                after_discount: document.getElementById('afterDiscount').textContent,
-                cgst_percent: document.getElementById('cgstPercent').textContent,
-                cgst_amount: document.getElementById('cgstAmount').textContent,
-                sgst_percent: document.getElementById('sgstPercent').textContent,
-                sgst_amount: document.getElementById('sgstAmount').textContent,
-                igst_percent: document.getElementById('igstPercent').textContent,
-                igst_amount: document.getElementById('igstAmount').textContent,
-                round_off: document.getElementById('roundOffAmount').textContent,
-                payable_amount: document.getElementById('payableAmount').textContent
-            },
-            bank_info: {
-                instructions: document.getElementById('td_bank_instructions').textContent,
-                name: document.getElementById('td_bank_name').textContent,
-                branch_name: document.getElementById('td_branch_name').textContent,
-                account_no: document.getElementById('td_account_no').textContent,
-                ifsc_code: document.getElementById('td_ifsc_code').textContent,
-                pan_no: document.getElementById('td_pan_no').textContent,
-                gstin: document.getElementById('td_gstin').textContent
+        .invoice-preview table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 10px;
+            table-layout: fixed;
+        }
+
+        .invoice-preview th,
+        .invoice-preview td {
+            border: 1px solid #000;
+            padding: 6px 10px;
+            font-size: 12px;
+            word-wrap: break-word;
+        }
+
+        /* Remove all borders inside the row */
+        tr.item-row td {
+            border-top: none !important;
+            /* border-bottom: none !important; */
+            /* border-left: none !important; */
+            border-right: none !important;
+        }
+
+        /* Keep ONLY left border on first column */
+        tr.item-row td:first-child {
+            border-left: 1px solid #000 !important;
+        }
+
+        /* Keep ONLY right border on last column */
+        tr.item-row td:last-child {
+            border-right: 1px solid #000 !important;
+        }
+
+        /* Last column right border */
+        tr.item-row td:last-child {
+            border-right: 1px solid #000 !important;
+        }
+
+
+        .invoice-preview th {
+            background: #e9ecef;
+            font-weight: bold;
+        }
+
+        /* ================= TEXT HELPERS ================= */
+        .invoice-preview .text-start {
+            text-align: left;
+            text-transform: uppercase;
+        }
+
+        .invoice-preview .text-uppercase {
+            text-transform: uppercase;
+        }
+
+        .invoice-preview .text-right {
+            text-align: right;
+        }
+
+        .invoice-preview .text-centre {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .invoice-preview .text-bottom {
+            text-align: center;
+            font-weight: bold;
+            vertical-align: bottom;
+        }
+
+        .invoice-preview .total-row {
+            font-weight: bold;
+            background: #f9f9f9;
+        }
+
+        /* ================= COLUMN WIDTHS ================= */
+        .invoice-preview .col-left {
+            width: 30%;
+        }
+
+        .invoice-preview .col-wide {
+            width: 52%;
+        }
+
+        /* ================= EDITABLE FIELDS ================= */
+        .invoice-preview [contenteditable="true"] {
+            background: #ffffff;
+            cursor: text;
+        }
+
+        .invoice-preview [contenteditable="true"]:focus {
+            outline: 2px solid #ffc107;
+            background: #fff3a0;
+        }
+
+        .item-row.selected {
+            background: #fff3cd !important;
+            outline: 2px solid #ffc107;
+        }
+
+
+        .invoice-settings-card {
+            top: 90px;
+            max-height: calc(100vh - 110px);
+            /* header + top gap */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .invoice-settings-body {
+            overflow-y: auto;
+            flex: 1;
+            padding-right: 6px;
+            /* avoids scrollbar overlap */
+        }
+
+        /* Optional: smooth scrollbar */
+        .invoice-settings-body::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .invoice-settings-body::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+        }
+
+        /* ================= PRINT ================= */
+        @media print {
+            body * {
+                visibility: hidden !important;
             }
-        };
 
-        document.querySelectorAll('#invoiceTable tbody tr').forEach(function(row){
-            invoiceData.items.push({
-                description: row.cells[1].textContent,
-                job_order_no: row.cells[2].textContent,
-                qty: row.cells[3].textContent,
-                rate: row.cells[4].textContent,
-                amount: row.cells[5].textContent
+            .a4-page,
+            .a4-page * {
+                visibility: visible !important;
+            }
+
+            .a4-page {
+                box-shadow: none;
+                margin: 0;
+                padding: 15mm;
+                width: 210mm;
+                height: 297mm;
+                page-break-after: always;
+            }
+        }
+    </style>
+
+
+    <div class="row">
+        {{-- ===================== INVOICE PAGE ===================== --}}
+
+        <div class="a4-page">
+            <div class="print-page-header">
+                <span class="page-number"></span>
+            </div>
+            {!! $html !!}
+        </div>
+
+        {{-- ================= EDIT PANEL (RIGHT SIDE) ================= --}}
+        <div class="col-lg-3">
+            <div class="card shadow-sm position-sticky invoice-settings-card">
+                <div class="card-header fw-semibold d-flex align-items-center gap-2">
+                    ⚙️ Invoice Settings
+                </div>
+                <!--  Make body scrollable -->
+                <div class="card-body invoice-settings-body">
+
+                    {{-- ================= INVOICE TYPE ================= --}}
+                    <div class="mb-3">
+                        <label class="fw-semibold mb-1 d-block">
+                            Invoice Type
+                        </label>
+
+                        <select class="form-select form-select-sm" id="invoiceTypeSelector">
+                            <option value="tax_invoice" selected>Tax Invoice</option>
+                            <option value="proforma_invoice">Proforma Invoice</option>
+                        </select>
+                    </div>
+
+                    <hr>
+
+                    {{-- ================= MARKETING PERSON ================= --}}
+                    <div class="mb-3">
+                        <label class="fw-semibold mb-1 d-block">
+                            🧍 Marketing Person
+                        </label>
+
+                        <div class="btn btn-sm btn-outline-primary w-100 text-start" id="td_marketing_person">
+                            {{ $invoice->relatedBooking->marketingPerson->name ?? '-' }}
+                        </div>
+                    </div>
+
+                    <hr>
+
+                    {{-- ================= ROW ACTIONS ================= --}}
+                    <div class="fw-semibold mb-2">Item Row Actions</div>
+
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="addRowAfterSelected()">
+                        ➕ Add Row After
+                    </button>
+
+                    <button type="button" class="btn btn-sm btn-outline-danger w-100" onclick="removeSelectedRow()">
+                        ❌ Remove Selected Row
+                    </button>
+
+                    <div class="mt-3 small text-muted">
+                        💡 <strong>Tip:</strong> Select a row and press
+                        <kbd>Ctrl</kbd> + <kbd>M</kbd> to merge it.
+                    </div>
+
+                    <hr>
+
+                    {{-- ================= CALCULATION OPTIONS ================= --}}
+                    <div class="fw-semibold mb-2">Calculation Options</div>
+
+                    <div class="form-check mb-2">
+                        <input class="form-check-input" type="checkbox" id="enableRoundOff" checked>
+                        <label class="form-check-label fw-semibold">
+                            Enable Round Off
+                        </label>
+                    </div>
+
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="enableDiscount" checked>
+                        <label class="form-check-label fw-semibold">
+                            Discount Applicable
+                        </label>
+                    </div>
+                    <hr>
+                    {{-- ================= Generat Invoice ================= --}}
+                    <div class="d-flex">
+                        <button type="submit" class="btn btn-success w-100" form="previewInvoiceForm">
+                            <i class="fa fa-file-pdf me-2"></i> Save Invoice
+                        </button>
+                    </div>
+                    <div class="d-flex">
+                        <a href="{{ route('invoices.download', $invoice->id) }}" class="btn btn-sm mt-3 btn-outline-danger">
+                            <i class="fa fa-file-pdf me-2"></i> ⬇ Download Invoice
+                        </a>
+                    </div>
+
+                    <hr>
+                    {{-- ================= UPLOAD Bill INVOICE ================= --}}
+                    <div>
+                        <div class="card shadow-sm h-100 border-0">
+                            <div class="card-body p-4">
+
+                                <!-- Header -->
+                                <h6 class="fw-semibold mb-3 d-flex align-items-center gap-2">
+                                    <span class="bg-primary bg-opacity-10 text-primary rounded-circle p-2">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </span>
+                                    Upload Invoice
+                                </h6>
+
+                                <form id="gstinUploadForm" enctype="multipart/form-data" method="POST"
+                                    action="{{ route('superadmin.gstin.upload') }}">
+
+                                    @csrf
+                                    <input type="hidden" name="invoice_id" value="{{ $invoice->id ?? '0' }}">
+
+                                    <!-- Hidden File Input -->
+                                    <input type="file" id="gstinFile" name="gstin_file" class="d-none"
+                                        onchange="document.getElementById('fileName').innerText = this.files[0]?.name || 'No file selected'">
+
+                                    <!-- Upload Area -->
+                                    <label for="gstinFile"
+                                        class="w-100 border border-dashed rounded-3 p-4 text-center bg-light mb-3"
+                                        style="cursor:pointer">
+                                        <i class="bi bi-cloud-upload fs-3 text-primary mb-1 d-block"></i>
+                                        <div class="fw-medium">Click to upload invoice</div>
+                                        <small class="text-muted">PDF, JPG, PNG</small>
+                                    </label>
+
+                                    <!-- Footer Actions -->
+                                    <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+
+                                        <small id="fileName" class="text-muted">
+                                            No file selected
+                                        </small>
+
+                                        <div class="d-flex gap-2">
+
+                                            <!-- View Button -->
+                                            <a href="{{ $invoice->invoice_letter_path
+        ? url($invoice->invoice_letter_path)
+        : '#' }}" target="_blank" class="btn btn-outline-secondary btn-sm
+                                            {{ empty($invoice->invoice_letter_path) ? 'disabled' : '' }}">
+                                                <i class="bi bi-eye">View</i>
+                                            </a>
+
+                                            <!-- Save Button -->
+                                            <button type="submit" class="btn btn-success btn-sm px-3">
+                                                <i class="bi bi-check-circle me-1"></i> Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+
+    {{-- ===================== EXTRACT BILLING INFO ===================== --}}
+    <script>
+        function extractBillingInfo() {
+            const td = document.getElementById('td_bill_block');
+            if (!td) return { bill_issue_to: '', address: '', client_gstin: '' };
+
+            const lines = td.innerText
+                .split('\n')
+                .map(l => l.trim())
+                .filter(Boolean);
+
+            let bill_issue_to = '';
+            let address = '';
+            let client_gstin = '';
+
+            lines.forEach(line => {
+                if (/^GSTIN/i.test(line)) {
+                    client_gstin = line.replace(/GSTIN\s*:?\s*/i, '').trim();
+                } else if (!bill_issue_to) {
+                    bill_issue_to = line;
+                } else {
+                    address += (address ? ', ' : '') + line;
+                }
+            });
+
+            return { bill_issue_to, address, client_gstin };
+        }
+    </script>
+
+    <script>
+        function extractReferenceInfo() {
+            const td = document.getElementById('td_reference_block');
+            if (!td) return { reference_no: '', letter_date: '' };
+
+            const text = td.innerText.replace(/\s+/g, ' ').trim();
+
+            // split by && (with or without spaces)
+            const parts = text.split(/\s*&\s*/);
+
+            return {
+                reference_no: parts[0] || '',
+                letter_date: parts[1] || ''
+            };
+        }
+    </script>
+
+
+    {{-- ===================== PREVIEW FORM SUBMISSION ===================== --}}
+    <script>
+        document.getElementById('previewInvoiceForm')
+            .addEventListener('submit', function (e) {
+                e.preventDefault();
+
+                /* ================= FORCE CLEAN STATE ================= */
+                const enableDiscount =
+                    document.getElementById('enableDiscount')?.checked ?? true;
+
+                const enableRoundOff =
+                    document.getElementById('enableRoundOff')?.checked ?? true;
+
+                // Reset values if disabled
+                if (!enableDiscount) {
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
+                }
+
+                if (!enableRoundOff) {
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
+
+                recalculateAll(); // FINAL clean calculation
+
+                /* ================= EXISTING CODE ================= */
+
+                document.getElementById('invoice_type').value =
+                    document.getElementById('invoiceTypeHeader').innerText.trim().toLowerCase();
+
+                const billing = extractBillingInfo();
+                const reference = extractReferenceInfo();
+
+                let invoiceData = {
+
+                    booking_info: {
+                        booking_ids: "{{ $invoice->invoice_booking_ids ?? '0' }}", 
+                        client_name: "{{ $invoice->client->name ?? '' }}",
+                        marketing_person: "{{ $invoice->marketingPerson->name ?? '' }}",
+                        invoice_no: document.getElementById('td_invoice_no').innerText,
+
+                        reference_no: reference.reference_no,
+                        letter_date: reference.letter_date,
+
+                        invoice_date: document.getElementById('td_invoice_date').innerText,
+                        name_of_work: document.getElementById('td_name_of_work').innerText,
+
+                        bill_issue_to: billing.bill_issue_to,
+                        client_gstin: billing.client_gstin || "{{ $invoice->gstin ?? '' }}",
+                        address: billing.address
+                    },
+
+                    items: [],
+
+                    totals: {
+                        total_amount: document.getElementById('totalAmount').innerText,
+                        discount_percent: document.getElementById('discountPercent').innerText,
+                        discount_amount: document.getElementById('discountAmount').innerText,
+                        after_discount: document.getElementById('afterDiscount').innerText,
+                        cgst_percent: document.getElementById('cgstPercent').innerText,
+                        cgst_amount: document.getElementById('cgstAmount').innerText,
+                        sgst_percent: document.getElementById('sgstPercent').innerText,
+                        sgst_amount: document.getElementById('sgstAmount').innerText,
+                        igst_percent: document.getElementById('igstPercent').innerText,
+                        igst_amount: document.getElementById('igstAmount').innerText,
+                        round_off: document.getElementById('roundOff').innerText,
+                        payable_amount: document.getElementById('payableAmount').innerText
+                    },
+
+                    bank_info: {
+                        instructions: "{{ $bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD' }}",
+                        name: "{{ $bankInfo->bank_name ?? 'SBI' }}",
+                        branch_name: "{{ $bankInfo->branch ?? 'Harauli' }}",
+                        account_no: "{{ $bankInfo->account_no ?? '000121210' }}",
+                        ifsc_code: "{{ $bankInfo->ifsc_code ?? 'SB00001' }}",
+                        pan_no: "{{ $bankInfo->pan_no ?? 'AHTPJ45454' }}",
+                        gstin: "{{ $bankInfo->gstin ?? '87457187441417644' }}"
+                    }
+                };
+
+                // ITEMS
+                document.querySelectorAll('.item-row').forEach(row => {
+                    let jobOrderNo = '';
+                    if (!row.dataset.merged) {
+                        jobOrderNo = row.children[1]?.innerText || '';
+                    }
+
+                    invoiceData.items.push({
+                        description: row.querySelector('.description')?.innerText || '',
+                        job_order_no: jobOrderNo,
+                        qty: row.querySelector('.qty')?.innerText || '0',
+                        rate: row.querySelector('.rate')?.innerText || '0',
+                        amount: row.querySelector('.amount')?.innerText || '0'
+                    });
+                });
+
+                let html = document.getElementById('previewInvoiceForm').outerHTML;
+
+                html = html.replace(/action="[^"]*"/i, 'action="__ACTION_URL__"');
+                html = html.replace(
+                    /<input[^>]*name="_token"[^>]*value="[^"]*"[^>]*>/gi,
+                    '<input type="hidden" name="_token" value="__CSRF_TOKEN__">'
+                );
+
+                document.getElementById('invoice_html').value = html;
+                document.getElementById('preview_invoice_data').value =
+                    JSON.stringify(invoiceData);
+                this.submit();
+            });
+    </script>
+
+
+
+    {{-- ===================== GST AOUT CALULATE (PDF) ===================== --}}
+    <script>
+        function recalculateAll() {
+
+            let totalAmount = 0;
+
+            // ================= ITEM ROW CALC =================
+            document.querySelectorAll('.invoice-preview tbody tr').forEach(row => {
+
+                const qtyEl = row.querySelector('.qty');
+                const rateEl = row.querySelector('.rate');
+                const amountEl = row.querySelector('.amount');
+
+                if (!qtyEl || !rateEl || !amountEl) return;
+
+                const qty = parseFloat(qtyEl.innerText) || 0;
+                const rate = parseFloat(rateEl.innerText.replace(/,/g, '')) || 0;
+
+                const rowAmount = qty * rate;
+                amountEl.innerText = rowAmount.toFixed(2);
+
+                totalAmount += rowAmount;
+            });
+
+            // ================= TOTAL =================
+            document.getElementById('totalAmount').innerText = totalAmount.toFixed(2);
+
+
+            // ================= DISCOUNT =================
+            const enableDiscount =
+                document.getElementById('enableDiscount')?.checked ?? true;
+
+            let discountPercent = 0;
+            let discountAmount = 0;
+            let afterDiscount = totalAmount;
+
+            if (enableDiscount) {
+
+                document.getElementById('discountRow').style.display = '';
+                document.getElementById('afterDiscountRow').style.display = '';
+
+                discountPercent = parseFloat(
+                    document.getElementById('discountPercent').innerText
+                ) || 0;
+
+                discountAmount = (totalAmount * discountPercent) / 100;
+                afterDiscount = totalAmount - discountAmount;
+
+            } else {
+
+                document.getElementById('discountRow').style.display = 'none';
+                document.getElementById('afterDiscountRow').style.display = 'none';
+
+                discountAmount = 0;
+                afterDiscount = totalAmount;
+            }
+
+            document.getElementById('discountAmount').innerText =
+                discountAmount.toFixed(2);
+
+            document.getElementById('afterDiscount').innerText =
+                afterDiscount.toFixed(2);
+
+            // ================= GST =================
+            const cgstPercent = parseFloat(document.getElementById('cgstPercent').innerText) || 0;
+            const sgstPercent = parseFloat(document.getElementById('sgstPercent').innerText) || 0;
+            const igstPercent = parseFloat(document.getElementById('igstPercent').innerText) || 0;
+
+            const cgstAmount = (afterDiscount * cgstPercent) / 100;
+            const sgstAmount = (afterDiscount * sgstPercent) / 100;
+            const igstAmount = (afterDiscount * igstPercent) / 100;
+
+            document.getElementById('cgstAmount').innerText = cgstAmount.toFixed(2);
+            document.getElementById('sgstAmount').innerText = sgstAmount.toFixed(2);
+            document.getElementById('igstAmount').innerText = igstAmount.toFixed(2);
+
+            // ================= PAYABLE =================
+            const enableRoundOff =
+                document.getElementById('enableRoundOff')?.checked ?? true;
+
+            let payable =
+                afterDiscount + cgstAmount + sgstAmount + igstAmount;
+
+            let finalPayable = payable;
+            let roundOffValue = 0;
+
+            if (enableRoundOff) {
+                const roundedPayable = Math.round(payable);
+                roundOffValue = roundedPayable - payable;
+                finalPayable = roundedPayable;
+
+                document.getElementById('roundOffRow').style.display = '';
+            } else {
+                document.getElementById('roundOffRow').style.display = 'none';
+            }
+
+            document.getElementById('roundOff').innerText =
+                roundOffValue.toFixed(2);
+
+            document.getElementById('payableAmount').innerText =
+                finalPayable.toFixed(2);
+
+
+            //  ALWAYS update words immediately
+            updateAmountInWordsFromDOM();
+        }
+    </script>
+
+    {{-- ===================== NUMBER TO WORDS CONVERSION ===================== --}}
+    <script>
+        function numberToWords(num) {
+            const ones = [
+                '', 'One', 'Two', 'Three', 'Four', 'Five', 'Six',
+                'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve',
+                'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen',
+                'Seventeen', 'Eighteen', 'Nineteen'
+            ];
+
+            const tens = [
+                '', '', 'Twenty', 'Thirty', 'Forty',
+                'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety'
+            ];
+
+            function convertBelowThousand(n) {
+                let str = '';
+                if (n >= 100) {
+                    str += ones[Math.floor(n / 100)] + ' Hundred ';
+                    n %= 100;
+                }
+                if (n >= 20) {
+                    str += tens[Math.floor(n / 10)] + ' ';
+                    n %= 10;
+                }
+                if (n > 0) {
+                    str += ones[n] + ' ';
+                }
+                return str.trim();
+            }
+
+            if (num === 0) return 'Zero';
+
+            let words = '';
+            if (num >= 10000000) {
+                words += convertBelowThousand(Math.floor(num / 10000000)) + ' Crore ';
+                num %= 10000000;
+            }
+            if (num >= 100000) {
+                words += convertBelowThousand(Math.floor(num / 100000)) + ' Lakh ';
+                num %= 100000;
+            }
+            if (num >= 1000) {
+                words += convertBelowThousand(Math.floor(num / 1000)) + ' Thousand ';
+                num %= 1000;
+            }
+            if (num > 0) {
+                words += convertBelowThousand(num);
+            }
+
+            return words.trim();
+        }
+    </script>
+    {{-- ===================== AMOUNT IN WORDS UPDATE ===================== --}}
+    <script>
+        function updateAmountInWordsFromDOM() {
+
+            const payableText =
+                document.getElementById('payableAmount').innerText || '0';
+
+            const amount = parseFloat(payableText) || 0;
+
+            let rupees = Math.floor(amount);
+            let paise = Math.round((amount - rupees) * 100);
+
+            let words = rupees > 0
+                ? numberToWords(rupees) + ' Rupees'
+                : 'Zero Rupees';
+
+            if (paise > 0) {
+                words += ' and ' + numberToWords(paise) + ' Paise';
+            }
+
+            words += ' Only';
+
+            document.getElementById('amountInWords').innerHTML =
+                `<strong>Amount in Words:</strong> ${words}`;
+        }
+    </script>
+    {{-- ===================== EVENT LISTENERS ===================== --}}
+    <script>
+        ['input', 'keyup', 'blur'].forEach(evt => {
+            document.querySelectorAll('.qty, .rate, .editable-percent').forEach(el => {
+                el.addEventListener(evt, recalculateAll);
             });
         });
 
-        document.getElementById('invoice_data').value = JSON.stringify(invoiceData);
-    });
+        // Initial load
+        window.addEventListener('DOMContentLoaded', recalculateAll);
+    </script>
+    {{-- ===================== INITIAL CALCULATION ON LOAD ===================== --}}
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            recalculateAll();
 
-    // Editable cells event
-    document.querySelectorAll('.editable').forEach(function(cell){
-        cell.addEventListener('input', function() {
-            this.classList.add('edited');
-            updateAmounts();
+            //  FORCE update words after render
+            setTimeout(updateAmountInWordsFromDOM, 50);
         });
-        cell.addEventListener('blur', updateAmounts);
-    });
+    </script>
+    {{-- ===================== ROUND OFF TOGGLE ===================== --}}
+    <script>
+        document.getElementById('enableRoundOff')
+            .addEventListener('change', function () {
 
-    // Round off checkbox
-    document.getElementById('roundOffCheckbox').addEventListener('change', updateAmounts);
+                if (!this.checked) {
+                    // Reset round off
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
 
-    window.addEventListener('DOMContentLoaded', updateAmounts);
-</script>
-@endpush
+                recalculateAll();
+            });
+    </script>
+    {{-- ===================== DISCOUNT TOGGLE ===================== --}}
+    <script>
+        document.getElementById('enableDiscount')
+            .addEventListener('change', function () {
 
-@push('scripts')
-<script>
-document.getElementById('gstinForm').addEventListener('submit', function(e) {
-    e.preventDefault();
+                if (!this.checked) {
+                    // Reset discount values
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
+                }
 
-    const gstinApiUrl = @json($gstinApiUrl);
-    const gstinApiKey = @json($gstinApiKey);
+                recalculateAll();
+            });
+    </script>
 
-    let gstin = document.getElementById('gstinInput').value;
+    {{-- ===================== ROW SELECT HIGHLIGHT ===================== --}}
+    <script>
+        document.addEventListener('click', function (e) {
+            const row = e.target.closest('.item-row');
+            if (!row) return;
 
-    fetch(`${gstinApiUrl}/${gstinApiKey}/${gstin}`)
-        .then(response => response.json())
-        .then(data => {
-            var gstinModal = new bootstrap.Modal(document.getElementById('gstinModal'));
-            var detailsDiv = document.getElementById('gstinDetails');
-            var errorDiv = document.getElementById('gstinError');
+            const isSelected = row.classList.contains('selected');
 
-            if(data.flag) {
-                // Populate data
-                document.getElementById('tradeNam').textContent = data.data.tradeNam || 'N/A';
-                document.getElementById('panNo').textContent = data.data.gstin 
-                    ? data.data.gstin.substring(2, 12) // PAN
-                    : 'N/A';
-                document.getElementById('legalName').textContent = data.data.lgnm || 'N/A';
-                document.getElementById('address').textContent = data.data.pradr?.adr || 'N/A';
+            document
+                .querySelectorAll('.item-row')
+                .forEach(r => r.classList.remove('selected'));
 
-                // Show details and hide error
-                detailsDiv.classList.remove('d-none');
-                errorDiv.classList.add('d-none');
-            } else {
-                // Show error and hide details
-                errorDiv.textContent = data.message || 'GSTIN not found';
-                errorDiv.classList.remove('d-none');
-                detailsDiv.classList.add('d-none');
+            if (!isSelected) {
+                row.classList.add('selected');
+            }
+        });
+    </script>
+
+    {{-- ===================== ADD / REMOVE ROWS ===================== --}}
+    <script>
+        function addRowAfterSelected() {
+            const selected = document.querySelector('.item-row.selected');
+
+            if (!selected) {
+                alert('Please select a row first');
+                return;
             }
 
-            // Show modal
-            gstinModal.show();
-        })
-        .catch(err => {
-            var gstinModal = new bootstrap.Modal(document.getElementById('gstinModal'));
-            var detailsDiv = document.getElementById('gstinDetails');
-            var errorDiv = document.getElementById('gstinError');
+            const newRow = document.createElement('tr');
+            newRow.className = 'item-row';
 
-            errorDiv.textContent = 'Something went wrong. Please try again.';
-            errorDiv.classList.remove('d-none');
-            detailsDiv.classList.add('d-none');
+            newRow.innerHTML = `
+                                                                                                <td contenteditable="true" class="editable description"></td>
+                                                                                                <td contenteditable="true">10101</td>
+                                                                                                <td contenteditable="true"></td>
+                                                                                                <td contenteditable="true" class="editable qty">1</td>
+                                                                                                <td contenteditable="true" class="editable rate">0.00</td>
+                                                                                                <td contenteditable="true" class="amount">0.00</td>
+                                                                                            `;
 
-            gstinModal.show();
-            console.error(err);
+            selected.after(newRow);
+
+            renumberRows();
+            recalculateAll();
+        }
+
+        function removeSelectedRow() {
+            const selected = document.querySelector('.item-row.selected');
+
+            if (!selected) {
+                alert('Please select a row to remove');
+                return;
+            }
+
+            if (document.querySelectorAll('.item-row').length === 1) {
+                alert('At least one item row is required');
+                return;
+            }
+
+            selected.remove();
+
+            renumberRows();
+            recalculateAll();
+        }
+
+
+    </script>
+
+
+    {{-- ===================== GLOBAL INPUT LISTENER ===================== --}}
+
+    <!--  GLOBAL INPUT LISTENER (PUT HERE) -->
+    <script>
+        document.addEventListener('input', function (e) {
+            if (
+                e.target.classList.contains('qty') ||
+                e.target.classList.contains('rate') ||
+                e.target.classList.contains('editable-percent')
+            ) {
+                recalculateAll();
+            }
         });
-});
-</script>
-@endpush
+    </script>
 
-@push('scripts')
-<script>
-    // Show selected file name below upload button
-    document.getElementById('gstinFile').addEventListener('change', function() {
-        const fileName = this.files[0]?.name || 'No file selected';
-        document.getElementById('fileName').textContent = fileName;
-    });
-</script>
-@endpush
+    {{-- ===================== INITIAL RECALCULATION ===================== --}}
+    <script>
+        window.addEventListener('DOMContentLoaded', () => {
+            recalculateAll();
+        });
+    </script>
+
+
+
+
+    {{-- ===================== KEYBOARD SHORTCUTS ===================== --}}
+    <script>
+        document.addEventListener('keydown', function (e) {
+
+            // CTRL + M → Merge selected row
+            if (e.ctrlKey && e.key.toLowerCase() === 'm') {
+                e.preventDefault();
+                mergeSelectedRow();
+            }
+        });
+    </script>
+    {{-- ===================== MERGE SELECTED ROW ===================== --}}
+    <script>
+        function mergeSelectedRow() {
+            const row = document.querySelector('.item-row.selected');
+
+            if (!row) {
+                alert('Please select a row first');
+                return;
+            }
+
+            // Prevent double merge
+            if (row.dataset.merged === '1') return;
+
+            const cells = row.children;
+
+            // Build combined text from current columns
+            const combinedText = `
+                                                                                        ${cells[0].innerText}
+                                                                                        Job: ${cells[1].innerText}
+                                                                                        SAC: ${cells[2].innerText}
+                                                                                        `.trim();
+
+            // Save original row (for future undo)
+            row.dataset.original = row.innerHTML;
+            row.dataset.merged = '1';
+
+            // Rebuild row:
+            // - 1 combined column (Desc + Job + SAC + Qty + Rate)
+            // - Amount column preserved
+            row.innerHTML = `
+                                                                                                <td contenteditable="true"
+                                                                                                    colspan="3"
+                                                                                                    class="editable description">
+                                                                                                    ${combinedText}
+                                                                                                </td>
+                                                                                                <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
+                                                                                                <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
+                                                                                                <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                                                                                            `;
+
+            recalculateAll();
+        }
+    </script>
+
+    {{-- ===================== INVOICE TYPE SELECTOR ===================== --}}
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const selector = document.getElementById('invoiceTypeSelector');
+            const header = document.getElementById('invoiceTypeHeader');
+
+            // Set dropdown from header on load
+            selector.value = header.innerText.trim();
+
+            // Change header when dropdown changes
+            selector.addEventListener('change', function () {
+                header.innerText = this.value;
+            });
+        });
+    </script>
+
+    {{-- ===================== PRINT PAGE SUBTOTALS ===================== --}}
+
 @endsection

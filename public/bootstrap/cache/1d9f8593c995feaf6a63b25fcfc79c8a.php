@@ -167,9 +167,7 @@
         .invoice-settings-body::-webkit-scrollbar-thumb {
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 4px;
-        }
-
-
+        }   
         /* ================= PRINT ================= */
         @media print {
             body * {
@@ -197,9 +195,7 @@
         
 
         <div class="a4-page">
-            <div class="print-page-header">
-                <span class="page-number"></span>
-            </div>
+          
             <form id="previewInvoiceForm" method="POST" action="<?php echo e($ACTION_URL); ?>">
 
                 <?php echo csrf_field(); ?>
@@ -420,7 +416,7 @@
                             </tr>
                             <tr>
                                 <th class="text-start">BANK NAME:</th>
-                                <td id="td_bank_name"><?php echo e($bankInfo->name ?? 'SBI'); ?></td>
+                                <td id="td_bank_name"><?php echo e($bankInfo->bank_name ?? 'SBI'); ?></td>
                                 <td class="text-centre text-uppercase">For <?php echo e($companyName ?? ''); ?></td>
                             </tr>
                             <tr>
@@ -430,7 +426,7 @@
                             </tr>
                             <tr>
                                 <th class="text-start">BRANCH:</th>
-                                <td class="text-uppercase" id="td_branch_name"><?php echo e($bankInfo->branch_name ?? ''); ?></td>
+                                <td class="text-uppercase" id="td_branch_name"><?php echo e($bankInfo->branch ?? ''); ?></td>
                             </tr>
                             <tr>
                                 <th class="text-start">IFSC CODE:</th>
@@ -648,7 +644,8 @@
     
     <script>
     document.getElementById('previewInvoiceForm')
-        .addEventListener('submit', function () {
+        .addEventListener('submit', function (e) { 
+            e.preventDefault();
 
             /* ================= FORCE CLEAN STATE ================= */
             const enableDiscount =
@@ -752,8 +749,10 @@
 
             document.getElementById('invoice_html').value = html;
             document.getElementById('preview_invoice_data').value =
-                JSON.stringify(invoiceData);
-        });
+                JSON.stringify(invoiceData); 
+                
+            this.submit();
+        }); 
     </script>
 
 

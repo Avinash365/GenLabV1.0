@@ -14,6 +14,9 @@ use App\Services\InvoicePdfService;
 use App\Http\Requests\GenerateInvoiceRequest;
 use App\Jobs\SendMarketingNotificationJob;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\Auth;
+
 
 use App\Http\Controllers\Transactions\CashPaymentController;
 
@@ -194,10 +197,153 @@ class InvoiceController extends Controller
         }
     }
 
+    public function updateBulk(Request $request, $invoiceId)
+    {
+       
+
+        $request->validate([
+            'invoice_data' => 'required',
+            'invoice_type' => 'required|string',
+            'invoice_html' => 'required|string',
+        ]);
+
+        $invoiceData = json_decode($request->invoice_data, true);
+
+        if (!$invoiceData) {
+            return back()->withErrors(['invoice_data' => 'Invalid invoice data.']);
+        }
+
+        $bookingIds = json_decode($request->booking_ids, true) ?? [];
+
+        try {
+
+            $invoice = Invoice::findOrFail($invoiceId);
+
+            $firstBookingId = $bookingIds[0] ?? null;
+
+            $booking = $firstBookingId
+                ? NewBooking::select('client_id', 'marketing_id')->find($firstBookingId)
+                : null;
+
+            DB::transaction(function () use ($invoice, $invoiceData, $bookingIds, $request, $booking) {
+
+                /* ===================== UPDATE INVOICE HEADER ===================== */
+                $invoice->update([
+                    'client_id' => $booking->client_id ?? null,
+                    'marketing_user_code' => $booking->marketing_id ?? null,
+
+                    'new_booking_id' => $bookingIds[0] ?? null,
+                    'invoice_booking_ids' => implode(',', $bookingIds),
+
+                    'invoice_no' => $invoiceData['booking_info']['invoice_no'] ?? $invoice->invoice_no,
+                    'type' => $request->invoice_type,
+                    'issue_to' => $invoiceData['booking_info']['bill_issue_to'] ?? null,
+                    'name_of_work' => $invoiceData['booking_info']['name_of_work'] ?? null,
+                    'client_gstin' => $invoiceData['booking_info']['client_gstin'] ?? null,
+
+                    'discount_percent' => $invoiceData['totals']['discount_percent'] ?? 0,
+                    'cgst_percent' => $invoiceData['totals']['cgst_percent'] ?? 0,
+                    'sgst_percent' => $invoiceData['totals']['sgst_percent'] ?? 0,
+                    'igst_percent' => $invoiceData['totals']['igst_percent'] ?? 0,
+
+                    'gst_amount' => $this->calculateGstAmount($invoiceData['totals']),
+                    'total_amount' => $invoiceData['totals']['payable_amount'] ?? 0,
+
+                    'address' => $invoiceData['booking_info']['address'] ?? null,
+                    'invoice_date' => now(),
+                    'generated_by' => Auth::id(),
+                ]);
+
+                /* ===================== DELETE OLD ITEMS ===================== */
+                InvoiceBookingItem::where('invoice_booking_id', $invoice->id)->delete();
+
+                /* ===================== PREPARE NEW ITEMS ===================== */
+                $items = collect($invoiceData['items'])
+
+                    ->map(function ($item) {
+
+                        $jobOrderNo = trim($item['job_order_no'] ?? '');
+                        $qty = (int) ($item['qty'] ?? 0);
+
+                        $rate = isset($item['rate'])
+                            ? (float) str_replace(',', '', $item['rate'])
+                            : 0;
+
+                        $jobOrderNo = $jobOrderNo === '' ? null : $jobOrderNo;
+                        $rate = $rate > 0 ? $rate : 0;
+
+                        return [
+                            'jobOrderNo' => $jobOrderNo,
+                            'qty' => $qty,
+                            'rate' => $rate,
+                            'description' => $item['description'] ?? null,
+                        ];
+                    })
+
+                    ->filter(function ($row) {
+                        return !(
+                            is_null($row['jobOrderNo']) &&
+                            $row['qty'] === 0 &&
+                            $row['rate'] === 0
+                        );
+                    })
+
+                    ->map(function ($row) use ($invoice) {
+
+                        if (is_null($row['jobOrderNo']) && ($row['qty'] > 0 || $row['rate'] > 0)) {
+                            $row['jobOrderNo'] = '0000000';
+                        }
+
+                        return [
+                            'invoice_booking_id' => $invoice->id,
+                            'invoice_no' => $invoice->invoice_no,
+                            'job_order_no' => $row['jobOrderNo'],
+                            'qty' => $row['qty'],
+                            'rate' => $row['rate'],
+                            'sample_discription' => $row['description'],
+                            'created_at' => now(),
+                            'updated_at' => now(),
+                        ];
+                    })
+                    ->values()
+                    ->toArray();
+
+                if (!empty($items)) {
+                    InvoiceBookingItem::insert($items);
+                }
+            });
+
+            /* ===================== UPDATE HTML FILE ===================== */
+            Storage::put(
+                "invoices/invoice_{$invoice->id}.html",
+                $request->invoice_html
+            );
+
+            /* ===================== GENERATE PDF ===================== */
+            return redirect()->back()->with('success', 'Invoice updated successfully.');
+
+        } catch (\Exception $e) {
+            \Log::error('Invoice update failed: ' . $e->getMessage());
+
+            return redirect()
+                ->back()
+                ->withErrors(['error' => 'Something went wrong while updating the invoice.']);
+        }
+    }
+
+    private function calculateGstAmount($totals)
+    {
+        return floatval($totals['cgst_amount'] ?? 0)
+            + floatval($totals['sgst_amount'] ?? 0)
+            + floatval($totals['igst_amount'] ?? 0);
+    }
+
+
     public function update(Request $request, Invoice $invoice)
     {
         try {
 
+           
             $html = $request->invoice_html;
             Storage::put(
                 "invoices/invoice_{$invoice->id}.html",
@@ -472,8 +618,8 @@ class InvoiceController extends Controller
 
             return redirect()->back()->with('error', 'Something went wrong while processing the invoice.');
         }
-    } 
+    }
 
-    
+
 
 }
