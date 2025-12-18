@@ -251,7 +251,7 @@ class InvoiceController extends Controller
 
                     'address' => $invoiceData['booking_info']['address'] ?? null,
                     'invoice_date' => now(),
-                    'generated_by' => Auth::id(),
+                    'generated_by' => null,
                 ]);
 
                 /* ===================== DELETE OLD ITEMS ===================== */

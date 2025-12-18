@@ -642,7 +642,8 @@
     
     <script>
         document.getElementById('previewInvoiceForm')
-            .addEventListener('submit', function () {
+            .addEventListener('submit', function (e) { 
+               e.preventDefault(); 
 
                 /* ================= FORCE CLEAN STATE ================= */
                 const enableDiscount =
@@ -747,6 +748,7 @@
                 document.getElementById('invoice_html').value = html;
                 document.getElementById('preview_invoice_data').value =
                     JSON.stringify(invoiceData);
+                this.submit();
             });
     </script>
 

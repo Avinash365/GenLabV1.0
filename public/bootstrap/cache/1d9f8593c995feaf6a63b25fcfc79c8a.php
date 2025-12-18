@@ -214,7 +214,7 @@
                         <thead>
                             <tr>
                                 <th class="col-left text-uppercase" >
-                                    GSTIN: <?php echo e($booking->gstin ?? '9113464642541'); ?>
+                                    GSTIN: <?php echo e($bankInfo->gstin ?? '9113464642541'); ?>
 
                                 </th>
 
@@ -243,7 +243,7 @@
                                     <?php echo e($booking->name_of_work ?? ''); ?><br><br>
 
                                     <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
-                                    <?php echo e($booking->gstin ?? ''); ?>
+                                    <?php echo e($booking->client->gstin ?? ''); ?>
 
                                 </td>
 
@@ -750,7 +750,7 @@
             document.getElementById('invoice_html').value = html;
             document.getElementById('preview_invoice_data').value =
                 JSON.stringify(invoiceData); 
-                
+
             this.submit();
         }); 
     </script>
