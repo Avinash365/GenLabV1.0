@@ -19,7 +19,9 @@ trait HandlesMarketingExpenses
     {
         if ($groupPersonal) {
             $collection = $query->get();
-            $submitted = $collection->filter(fn ($expense) => (bool) $expense->submitted_for_approval)->values();
+            // Previously this filtered by `submitted_for_approval`. Now prefer
+            // items that have an `approval_summary_path` to identify submitted groups.
+            $submitted = $collection->filter(fn ($expense) => !empty($expense->approval_summary_path))->values();
             $summaries = $this->buildPersonalMonthlySummaries($submitted);
             $paginator = $this->paginateCollection($summaries, $perPage);
             $paginator->appends(request()->query());
@@ -118,7 +120,7 @@ trait HandlesMarketingExpenses
                 $summary->to_date = $group->max('to_date');
                 $summary->created_at = $group->max('created_at');
                 $summary->approval_summary_path = $group->pluck('approval_summary_path')->filter()->first();
-                $summary->submitted_for_approval = true;
+                // no longer set submitted_for_approval flag on the generated summary
                 $summary->status = $this->resolveAggregateStatus($group);
                 $summary->setAttribute('receipt_paths', $group->pluck('file_path')->filter()->unique()->values()->all());
 
@@ -200,9 +202,8 @@ trait HandlesMarketingExpenses
 
     protected function refreshPersonalSummaryForExpense(MarketingExpense $expense): ?MarketingExpense
     {
-        if (!$expense->submitted_for_approval) {
-            return null;
-        }
+        // Proceed regardless of a submitted_for_approval flag; prefer checking
+        // for an existing approval_summary_path to locate grouped expenses.
 
         $summaryPath = $expense->approval_summary_path;
 
@@ -237,13 +238,12 @@ trait HandlesMarketingExpenses
         $period = Carbon::create($periodBase->year, $periodBase->month, 1);
         $summaryPath = $summaryPath ?: $groupExpenses->pluck('approval_summary_path')->filter()->first();
 
-        if (!$summaryPath) {
+            if (!$summaryPath) {
             $summaryFilename = sprintf('personal-expenses-%s-%s.pdf', $period->format('Y_m'), Str::lower(Str::random(6)));
             $summaryPath = 'marketing_expenses/' . $summaryFilename;
 
             MarketingExpense::whereIn('id', $expenseIds)->update([
                 'approval_summary_path' => $summaryPath,
-                'submitted_for_approval' => true,
             ]);
 
             $groupExpenses = MarketingExpense::with(['marketingPerson', 'approver'])

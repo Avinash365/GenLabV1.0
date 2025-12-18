@@ -5,7 +5,8 @@ $app->make(Illuminate\Contracts\Console\Kernel::class)->bootstrap();
 
 use App\Models\MarketingExpense;
 
-$rows = MarketingExpense::select(['id','person_name','marketing_person_code','status','submitted_for_approval','approval_summary_path','created_at','amount'])
+// derive submitted status from presence of approval_summary_path
+$rows = MarketingExpense::select(['id','person_name','marketing_person_code','status','approval_summary_path','created_at','amount'])
     ->where('section','personal')
     ->orderByDesc('created_at')
     ->limit(50)
@@ -16,7 +17,7 @@ $rows = MarketingExpense::select(['id','person_name','marketing_person_code','st
             'person_name' => $r->person_name,
             'marketing_person_code' => $r->marketing_person_code,
             'status' => $r->status,
-            'submitted_for_approval' => (bool)$r->submitted_for_approval,
+            'submitted_for_approval' => !empty($r->approval_summary_path),
             'approval_summary_path' => $r->approval_summary_path,
             'created_at' => (string)$r->created_at,
             'amount' => (float)$r->amount,

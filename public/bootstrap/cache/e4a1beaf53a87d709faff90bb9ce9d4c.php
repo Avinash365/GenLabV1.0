@@ -113,6 +113,7 @@
                     <tr>
                         <th>#</th>
                         <th><?php echo e(($section ?? 'marketing') === 'personal' ? 'Summary' : 'Person'); ?></th>
+                        <th>Description</th>
                         <th>Total Expenses</th>
                         <th>Upload Date</th>
                         <th>From To</th>
@@ -125,13 +126,13 @@
                         <?php echo $__env->make('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'serial' => $expenses->firstItem() + $index], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
-                            <td colspan="7" class="text-center">No records found.</td>
+                            <td colspan="8" class="text-center">No records found.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
                 <tfoot class="table-light fw-bold">
                     <tr>
-                        <td colspan="2" class="text-end">Grand Total:</td>
+                        <td colspan="3" class="text-end">Grand Total:</td>
                         <td id="totalExp"><?php echo e(number_format($totals['total_expenses'], 2)); ?></td>
                         <td colspan="4"></td>
                     </tr>

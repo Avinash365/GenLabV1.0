@@ -112,6 +112,7 @@
                     <tr>
                         <th>#</th>
                         <th>{{ ($section ?? 'marketing') === 'personal' ? 'Summary' : 'Person' }}</th>
+                        <th>Description</th>
                         <th>Total Expenses</th>
                         <th>Upload Date</th>
                         <th>From To</th>
@@ -124,13 +125,13 @@
                         @include('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'serial' => $expenses->firstItem() + $index])
                     @empty
                         <tr>
-                            <td colspan="7" class="text-center">No records found.</td>
+                            <td colspan="8" class="text-center">No records found.</td>
                         </tr>
                     @endforelse
                 </tbody>
                 <tfoot class="table-light fw-bold">
                     <tr>
-                        <td colspan="2" class="text-end">Grand Total:</td>
+                        <td colspan="3" class="text-end">Grand Total:</td>
                         <td id="totalExp">{{ number_format($totals['total_expenses'], 2) }}</td>
                         <td colspan="4"></td>
                     </tr>

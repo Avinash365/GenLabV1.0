@@ -22,9 +22,10 @@
         <thead>
             <tr>
                 <th>#</th>
-                @unless(!empty($singlePersonName))
-                    <th>Person / Description</th>
-                @endunless
+                @if(empty($singlePersonName))
+                    <th>Person</th>
+                @endif
+                <th>Description</th>
                 <th class="text-right">Amount</th>
                 <th class="text-right">Approved Amount</th>
                 <th>From - To</th>
@@ -35,7 +36,7 @@
             @foreach($expenses as $i => $row)
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    @unless(!empty($singlePersonName))
+                    @if(empty($singlePersonName))
                         <td>
                             @if($row->marketingPerson)
                                 <strong>{{ $row->marketingPerson->name }}</strong>
@@ -44,7 +45,8 @@
                                 {{ $row->person_name ?? 'Personal' }}
                             @endif
                         </td>
-                    @endunless
+                    @endif
+                    <td>{{ $row->description ? \Illuminate\Support\Str::limit($row->description, 120) : '-' }}</td>
                     <td class="text-right">{{ number_format((float)$row->amount, 2) }}</td>
                     <td class="text-right">{{ number_format((float)(($row->approved_amount ?? 0) ?: $row->amount), 2) }}</td>
                     <td>{{ optional($row->from_date)->format('d M Y') }} - {{ optional($row->to_date)->format('d M Y') }}</td>
@@ -53,9 +55,9 @@
             @endforeach
             <tr>
                 @if(!empty($singlePersonName))
-                    <td colspan="1" class="text-right"><strong>Grand Total Approved:</strong></td>
-                @else
                     <td colspan="2" class="text-right"><strong>Grand Total Approved:</strong></td>
+                @else
+                    <td colspan="3" class="text-right"><strong>Grand Total Approved:</strong></td>
                 @endif
                 <td class="text-right">{{ number_format($totals['total_expenses'] ?? 0, 2) }}</td>
                 <td class="text-right">{{ number_format($totals['approved'] ?? 0, 2) }}</td>

@@ -245,18 +245,19 @@ class MarketingPersonInfo extends Controller
     public function personalExpensesListApi(Request $request, $user_code)
     {
         $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
-
-        $query = \App\Models\PersonalExpense::where('user_code', $marketingPerson->user_code);
+        // Query MarketingExpense by marketing_person_code
+        $query = \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code);
 
         if ($request->filled('section')) {
             $query->where('section', $request->section);
         }
 
+        // filter by from_date (MarketingExpense uses from_date/to_date)
         if ($request->filled('year')) {
-            $query->whereYear('expense_date', $request->year);
+            $query->whereYear('from_date', $request->year);
         }
         if ($request->filled('month')) {
-            $query->whereMonth('expense_date', $request->month);
+            $query->whereMonth('from_date', $request->month);
         }
 
         if ($request->filled('search')) {
@@ -267,43 +268,73 @@ class MarketingPersonInfo extends Controller
             });
         }
 
-        $perPage = (int) $request->get('perPage', 25);
-        $items = $query->latest()->paginate($perPage);
+        try {
+            $perPage = (int) $request->get('perPage', 25);
+            $items = $query->latest()->paginate($perPage);
 
-        $data = $items->through(function($it){
-            $fileUrl = null;
-            if (!empty($it->file_path)) {
-                $path = $it->file_path;
-                if (preg_match('#^https?://#i', $path)) { $fileUrl = $path; }
-                else {
-                    try { $fileUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : asset($path); } catch (\Exception $_) { $fileUrl = asset($path); }
+            // Totals across the filtered set (not just page)
+            $totalAmount = (float) $query->sum('amount');
+            $totalApproved = (float) $query->sum('approved_amount') ?: 0.0;
+            $totalPending = max(0, $totalAmount - $totalApproved);
+
+            $data = $items->through(function($it){
+                $fileUrl = null;
+                $fileName = null;
+                if (!empty($it->file_path)) {
+                    $path = $it->file_path;
+                    $fileName = basename($path);
+                    if (preg_match('#^https?://#i', $path)) { $fileUrl = $path; }
+                    else {
+                        try { $fileUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : asset($path); } catch (\Exception $_) { $fileUrl = asset($path); }
+                    }
                 }
-            }
 
-            return [
-                'id' => $it->id,
-                'section' => $it->section,
-                'expense_date' => $it->expense_date?->toDateString(),
-                'amount' => $it->amount,
-                'description' => $it->description,
-                'file_url' => $fileUrl,
-                'status' => $it->status,
-            ];
-        });
+                $approvedAmount = (float) ($it->approved_amount ?? 0);
+                if ((string)$it->status === 'approved' || $it->status === 1) { $approvedAmount = (float) $it->amount; }
+                $dueAmount = max(0, (float)$it->amount - $approvedAmount);
 
-        return response()->json([
-            'status' => true,
-            'message' => 'Personal expenses fetched',
-            'data' => [
-                'items' => $data,
-                'meta' => [
-                    'total' => $items->total(),
-                    'per_page' => $items->perPage(),
-                    'current_page' => $items->currentPage(),
-                    'last_page' => $items->lastPage(),
+                return [
+                    'id' => $it->id,
+                    'section' => $it->section,
+                    'expense_date' => $it->from_date?->toDateString(),
+                    'amount' => (float) $it->amount,
+                    'approved_amount' => $approvedAmount,
+                    'due_amount' => $dueAmount,
+                    'submitted_for_approval' => (bool) ($it->approval_summary_path ?? false),
+                    'description' => $it->description,
+                    'receipt_filename' => $fileName,
+                    'receipt_url' => $fileUrl,
+                    'status' => $it->status,
+                ];
+            });
+
+            return response()->json([
+                'status' => true,
+                'message' => 'Personal/marketing expenses fetched',
+                'data' => [
+                    'items' => $data,
+                    'totals' => [
+                        'total_amount' => $totalAmount,
+                        'approved_amount' => $totalApproved,
+                        'pending_amount' => $totalPending,
+                    ],
+                    'meta' => [
+                        'total' => $items->total(),
+                        'per_page' => $items->perPage(),
+                        'current_page' => $items->currentPage(),
+                        'last_page' => $items->lastPage(),
+                    ],
                 ],
-            ],
-        ], 200);
+            ], 200);
+        } catch (\Exception $e) {
+            $payload = [
+                'status' => false,
+                'message' => 'Failed to fetch personal/marketing expenses',
+                'error' => $e->getMessage(),
+            ];
+            if (config('app.debug')) { $payload['trace'] = $e->getTraceAsString(); }
+            return response()->json($payload, 500);
+        }
     }
 
 
@@ -314,48 +345,77 @@ class MarketingPersonInfo extends Controller
     public function personalExpensesStoreApi(Request $request, $user_code)
     {
         $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
-
         $validated = $request->validate([
             'section' => 'nullable|string|max:191',
             'expense_date' => 'nullable|date',
+            'from_date' => 'nullable|date',
+            'to_date' => 'nullable|date',
             'amount' => 'required|numeric',
             'description' => 'nullable|string',
+            // Accept both `file` and `pdf` keys (web uses `pdf`)
             'file' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf',
+            'pdf' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf',
         ]);
 
         $filePath = null;
-        if ($request->hasFile('file')) {
+        if ($request->hasFile('pdf')) {
+            $file = $request->file('pdf');
+            $filePath = $file->store('marketing_expenses', 'public');
+        } elseif ($request->hasFile('file')) {
             $file = $request->file('file');
-            $filePath = $file->store('personal_expenses', 'public');
+            $filePath = $file->store('marketing_expenses', 'public');
         }
 
-        $expense = \App\Models\PersonalExpense::create([
-            'user_code' => $marketingPerson->user_code,
+        // Map incoming fields to MarketingExpense model
+        $expenseData = [
+            'marketing_person_code' => $marketingPerson->user_code,
+            'person_name' => $marketingPerson->name ?? $marketingPerson->person_name ?? ($marketingPerson->first_name ?? null),
             'section' => $validated['section'] ?? null,
-            'expense_date' => $validated['expense_date'] ?? now()->toDateString(),
+            'from_date' => $validated['from_date'] ?? $validated['expense_date'] ?? now()->toDateString(),
+            // Ensure to_date is not null in DB: fallback to from_date when not provided
+            'to_date' => $validated['to_date'] ?? ($validated['from_date'] ?? $validated['expense_date'] ?? now()->toDateString()),
             'amount' => $validated['amount'],
             'description' => $validated['description'] ?? null,
             'file_path' => $filePath,
-            'status' => 0,
-        ]);
+            'status' => 'pending',
+            'submitted_for_approval' => 0,
+            'approved_amount' => 0,
+        ];
+
+        $expense = \App\Models\MarketingExpense::create($expenseData);
 
         $fileUrl = null;
         if ($filePath) {
-            $fileUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($filePath);
+            try { $fileUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($filePath); } catch (\Exception $_) { $fileUrl = asset($filePath); }
+        }
+
+        // Render HTML fragments so the same API can be used by web JS (daily row insertion)
+        $dailyRowHtml = '';
+        $rowHtml = '';
+        try {
+            if (view()->exists('superadmin.personal.expenses._daily_row')) {
+                $dailyRowHtml = view('superadmin.personal.expenses._daily_row', ['expense' => $expense, 'serial' => null])->render();
+                $rowHtml = $dailyRowHtml; // reuse partial for summary row if needed
+            }
+        } catch (\Throwable $e) {
+            // ignore rendering errors
         }
 
         return response()->json([
-            'status' => true,
-            'message' => 'Personal expense created',
+            'success' => true,
+            'message' => 'Personal/marketing expense created',
+            'submitted_for_approval' => (bool) ($expense->approval_summary_path ?? false),
             'data' => [
                 'id' => $expense->id,
                 'section' => $expense->section,
-                'expense_date' => $expense->expense_date?->toDateString(),
-                'amount' => $expense->amount,
+                'expense_date' => $expense->from_date?->toDateString(),
+                'amount' => (float) $expense->amount,
                 'description' => $expense->description,
                 'file_url' => $fileUrl,
                 'status' => $expense->status,
             ],
+            'dailyRowHtml' => $dailyRowHtml,
+            'rowHtml' => $rowHtml,
         ], 201);
     }
 

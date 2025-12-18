@@ -22,7 +22,6 @@ class MarketingExpense extends Model
         'approval_note',
         'approval_summary_path',
         'status',
-        'submitted_for_approval',
         'approved_by',
         'approved_at',
     ];
@@ -33,7 +32,6 @@ class MarketingExpense extends Model
         'amount'    => 'decimal:2',
         'approved_amount' => 'decimal:2',
         'approved_at' => 'datetime',
-        'submitted_for_approval' => 'boolean',
     ];
 
     public function marketingPerson()

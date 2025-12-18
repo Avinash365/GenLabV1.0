@@ -608,9 +608,35 @@ class ChatController extends Controller
                 $data['sender_name'] = ucfirst(str_replace('_',' ', $m->sender_guard));
             }
         }
-        // If user is present, attempt to include avatar URL from common fields
-        if (!empty($data['user']) && $m->relationLoaded('user') && $m->user) {
-            $data['user']['avatar'] = $this->userAvatarUrl($m->user);
+        // If user is present, attempt to include avatar URL from common fields.
+        // Use a full User record lookup to ensure we have all avatar-related columns
+        // even when the relation was eager-loaded with limited columns.
+        try {
+            $fullUser = null;
+            if ($m->relationLoaded('user') && $m->user) {
+                $uid = $m->user->id ?? null;
+                if ($uid) {
+                    $fullUser = User::find($uid);
+                }
+            } elseif ($m->user_id) {
+                $fullUser = User::find($m->user_id);
+            }
+
+            if ($fullUser) {
+                $data['user'] = [
+                    'id' => $fullUser->id,
+                    'name' => $fullUser->name,
+                    'is_chat_admin' => (bool) ($fullUser->is_chat_admin ?? false),
+                    'avatar' => $this->userAvatarUrl($fullUser),
+                ];
+                // Top-level avatar: helpful for front-end lookup (avatar on message object)
+                $data['avatar'] = $data['user']['avatar'];
+            } else {
+                $data['avatar'] = null;
+            }
+        } catch (\Throwable $e) {
+            $data['avatar'] = null;
+            if (!empty($data['user'])) $data['user']['avatar'] = null;
         }
 
         return $data;
@@ -619,27 +645,99 @@ class ChatController extends Controller
     protected function userAvatarUrl($user): ?string
     {
         if (!$user) return null;
+        // Helper to ensure we return an absolute URL
+        $makeAbsolute = function(?string $u) {
+            if (!$u) return null;
+            $u = (string) $u;
+            // If it's already an absolute external URL, keep it
+            if (preg_match('/^https?:\/\//i', $u)) {
+                // If the absolute URL points to this app's host, convert to root-relative
+                try {
+                    $appHost = parse_url(rtrim(url('/'), '/'), PHP_URL_HOST);
+                    $host = parse_url($u, PHP_URL_HOST);
+                    if ($host && $appHost && $host === $appHost) {
+                        $path = parse_url($u, PHP_URL_PATH) ?: '/';
+                        $query = parse_url($u, PHP_URL_QUERY);
+                        return $path . ($query ? ('?' . $query) : '');
+                    }
+                } catch (\Throwable $_) {
+                    // ignore and return as-is
+                }
+                return $u;
+            }
+            // If it's a root-relative path, return it unchanged (so clients resolve to current host)
+            if (str_starts_with($u, '/')) {
+                return $u;
+            }
+            // If it's a relative storage path, try fileUrl to normalize
+            $fromFile = $this->fileUrl($u);
+            if ($fromFile && preg_match('/^https?:\/\//i', $fromFile)) return $fromFile;
+            if ($fromFile && str_starts_with($fromFile, '/')) return rtrim(url('/'), '/') . $fromFile;
+            return $u;
+        };
+
         // Prefer direct profile_photo_url if present (Jetstream/etc.)
         if (!empty($user->profile_photo_url)) {
-            return (string) $user->profile_photo_url;
+            return $makeAbsolute((string) $user->profile_photo_url);
         }
-        // Common DB-backed candidate fields
-        $cand = $user->profile_picture ?? $user->avatar ?? $user->photo ?? null;
-        if ($cand) {
-            return $this->fileUrl((string)$cand);
-        }
-        // Fallback: check public avatars by user id (avatars/{id}.{ext})
-        $exts = ['png','jpg','jpeg','webp','gif'];
-        foreach ($exts as $ext) {
-            $rel = "avatars/{$user->id}.{$ext}";
-            try {
-                if (Storage::disk('public')->exists($rel)) {
-                    return Storage::disk('public')->url($rel);
+
+        // Common DB-backed candidate fields (cover more possible column names)
+        $cand = $user->profile_picture ?? $user->avatar ?? $user->photo ?? $user->profile_photo ?? $user->profile_photo_path ?? $user->image ?? null;
+
+        // If user has an employee relation with a profile photo, prefer that
+        try {
+            if (empty($cand) && isset($user->employee) && $user->employee) {
+                if (!empty($user->employee->profile_photo_path)) {
+                    return $makeAbsolute(Storage::disk('public')->url($user->employee->profile_photo_path));
                 }
-            } catch (\Throwable $e) {
-                // ignore storage issues
+                if (!empty($user->employee->profile_photo_url)) {
+                    return $makeAbsolute((string) $user->employee->profile_photo_url);
+                }
             }
+        } catch (\Throwable $e) {
+            // ignore and continue to other fallbacks
         }
+
+        // If a DB column contains a candidate value, try to normalize it (handles absolute and storage paths)
+        if ($cand) {
+            try {
+                $resolved = $this->fileUrl((string)$cand);
+                if ($resolved) return $makeAbsolute($resolved);
+            } catch (\Throwable $_) {}
+        }
+
+        // Additional filename patterns to try under public storage
+        $exts = ['png','jpg','jpeg','webp','gif','bmp','svg'];
+        $prefixes = ['', 'avatars/', 'profile_pictures/', 'uploads/avatars/', 'uploads/profile_photos/', 'profiles/', 'users/avatars/', 'public/avatars/', 'storage/avatars/'];
+        $tried = [];
+        try {
+            foreach ($prefixes as $pref) {
+                foreach ($exts as $ext) {
+                    $rel = ltrim($pref . $user->id . '.' . $ext, '/');
+                    $tried[] = $rel;
+                    try {
+                        if (Storage::disk('public')->exists($rel)) {
+                            return $makeAbsolute(Storage::disk('public')->url($rel));
+                        }
+                    } catch (\Throwable $_) {
+                        // ignore storage issues for this candidate
+                    }
+                }
+            }
+        } catch (\Throwable $_) {}
+
+        // As a last resort, attempt to find any file under avatars/ matching the id with any extension
+        try {
+            foreach ($exts as $ext) {
+                $rel = 'avatars/' . $user->id . '.' . $ext;
+                $tried[] = $rel;
+                if (Storage::disk('public')->exists($rel)) {
+                    return $makeAbsolute(Storage::disk('public')->url($rel));
+                }
+            }
+        } catch (\Throwable $_) {}
+
+        // Optionally, if debugging needed, we could log $tried patterns
         return null;
     }
 

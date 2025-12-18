@@ -31,13 +31,12 @@ $existingSummaryPaths = $pendingExpenses->pluck('approval_summary_path')->filter
 $summaryFilename = sprintf('personal-expenses-%s-%s.pdf', $period->format('Y_m'), Str::lower(Str::random(6)));
 $summaryPath = 'marketing_expenses/'.$summaryFilename;
 
-echo "Marking " . $pendingIds->count() . " rows as submitted_for_approval and generating summary: {$summaryPath}\n";
+echo "Generating summary and assigning approval_summary_path: {$summaryPath} for {$pendingIds->count()} rows\n";
 
 MarketingExpense::whereIn('id', $pendingIds->all())->update([
     'approval_note' => 'Submitted for approval - '.$period->format('F Y'),
     'approved_by'   => null,
     'approved_at'   => null,
-    'submitted_for_approval' => true,
     'approval_summary_path'  => $summaryPath,
 ]);
 

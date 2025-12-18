@@ -363,12 +363,73 @@
         // Super-admin in chat if root OR web is promoted
         $isChatAdmin = $isRootAdmin || ($web && ($web->is_chat_admin ?? false));
     @endphp
-    const currentUser = { id: {{ $authUser ? (int)$authUser->id : 'null' }}, name: @json($authUser->name ?? 'Guest') };
+    @php
+        // Determine chat avatar URL: prefer header-provided $avatarUrl when present
+        $chatAvatarUrl = $avatarUrl ?? null;
+        if (empty($chatAvatarUrl) && $authUser) {
+            $tryExt = ['jpg','jpeg','png','webp'];
+            $found = null;
+            $candidates = [];
+            if(!empty($authUser->id)) $candidates[] = $authUser->id;
+            if(!empty($authUser->user_code)) $candidates[] = $authUser->user_code;
+            if(!empty($authUser->code)) $candidates[] = $authUser->code;
+            foreach($candidates as $cid){
+                foreach($tryExt as $ext){
+                    if(\Illuminate\Support\Facades\Storage::disk('public')->exists("avatars/{$cid}.{$ext}")){
+                        $found = \Illuminate\Support\Facades\Storage::url("avatars/{$cid}.{$ext}");
+                        break 2;
+                    }
+                }
+            }
+            if(!$found){
+                $avatarField = $authUser->profile_photo_url ?? $authUser->avatar ?? $authUser->photo ?? null;
+                if(is_string($avatarField) && $avatarField){
+                    if (str_starts_with($avatarField, 'data:') || str_starts_with($avatarField, 'http')) {
+                        $found = $avatarField;
+                    } else {
+                        try{
+                            if (\Illuminate\Support\Facades\Storage::disk('public')->exists($avatarField)){
+                                $found = \Illuminate\Support\Facades\Storage::url($avatarField);
+                            } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists('avatars/'.$avatarField)){
+                                $found = \Illuminate\Support\Facades\Storage::url('avatars/'.$avatarField);
+                            } else {
+                                if (file_exists(public_path($avatarField))){
+                                    $found = asset($avatarField);
+                                } elseif (file_exists(public_path('storage/'.ltrim($avatarField, '/')))){
+                                    $found = asset('storage/'.ltrim($avatarField, '/'));
+                                } else {
+                                    $found = asset('storage/'.ltrim($avatarField, '/'));
+                                }
+                            }
+                        } catch(\Throwable $e){
+                            $found = asset('storage/'.ltrim($avatarField, '/'));
+                        }
+                    }
+                }
+            }
+            if($found) $chatAvatarUrl = $found;
+        }
+    @endphp
+    const currentUser = { id: {{ $authUser ? (int)$authUser->id : 'null' }}, name: @json($authUser->name ?? 'Guest'), avatar: @json($chatAvatarUrl ?? null) };
     const isSuperAdmin = {{ $isChatAdmin ? 'true' : 'false' }};
     const isRootAdmin = {{ $isRootAdmin ? 'true' : 'false' }};
     window.currentUser = currentUser;
     window.isSuperAdmin = isSuperAdmin;
     window.isRootAdmin = isRootAdmin;
+
+    // Ensure currentUser.avatar is populated at runtime from header DOM if server-side value is missing
+    try{
+        if (!window.currentUser.avatar) {
+            const hdrImg = document.querySelector('#userDropdown img');
+            if (hdrImg && hdrImg.getAttribute) {
+                const s = hdrImg.getAttribute('src');
+                if (s) {
+                    window.currentUser.avatar = s;
+                    try { console.debug('chat: populated currentUser.avatar from header DOM', s); } catch(_){}
+                }
+            }
+        }
+    }catch(e){}
 
     const routes = {
         groups: '{{ url('/chat/groups') }}',
@@ -412,6 +473,7 @@
     // imgElem: HTMLImageElement, candidates: array of URL strings.
     function tryLoadImage(imgElem, candidates){
         if (!imgElem || !Array.isArray(candidates) || candidates.length === 0) return;
+        try{ imgElem.dataset.candidates = JSON.stringify(candidates); }catch(_){ }
         let i = 0;
         function tryNext(){
             if (i >= candidates.length){ imgElem.dispatchEvent(new Event('loaderror')); return; }
@@ -420,6 +482,22 @@
             } catch(e){ tryNext(); }
         }
         imgElem.addEventListener('error', function onerr(){ imgElem.removeEventListener('error', onerr); tryNext(); });
+        imgElem.addEventListener('load', function onload(){
+            try {
+                imgElem.dataset.loadedCandidate = imgElem.src;
+                try { imgElem.title = 'Avatar loaded: ' + imgElem.src; } catch(_){}
+                try { imgElem.style.outline = ''; imgElem.style.border = ''; } catch(_){}
+                console.debug('Avatar loaded:', imgElem.src);
+            } catch(_){ }
+        });
+        imgElem.addEventListener('loaderror', function(){
+            try {
+                console.debug('Avatar: all candidates failed for', imgElem, candidates);
+                // visual indicator for failed avatars to help debugging
+                try { imgElem.style.border = '2px dashed #f43f5e'; } catch(_){}
+                try { imgElem.title = 'Avatar candidates failed: ' + (Array.isArray(candidates) ? candidates.join(' | ') : String(candidates)); } catch(_){}
+            } catch(_){}
+        });
         // allow caller to listen for 'loaderror' if all candidates fail
         tryNext();
     }
@@ -436,13 +514,25 @@
         if (!clean.startsWith('/storage/')){
             out.push('/storage/' + l);
             out.push(APP_BASE + '/storage/' + l);
+            // If the provided path is just a filename or lacks the avatars folder, try the avatars folder
+            const baseName = l.split('/').pop();
+            if (baseName && l.indexOf('avatars') === -1) {
+                out.push('/storage/avatars/' + baseName);
+                out.push(APP_BASE + '/storage/avatars/' + baseName);
+            }
         }
-        return Array.from(new Set(out));
+        const uniq = Array.from(new Set(out));
+        // Debug: expose candidates to console for easier troubleshooting
+        try { console.debug('Avatar candidates for', path, uniq); } catch(_) {}
+        return uniq;
     }
 
     // Helper: resolve avatar/profile image from common keys and nested objects
     function getAvatarUrl(obj){
-        if (!obj || typeof obj !== 'object') return null;
+        if (!obj) return null;
+        // If a plain string was passed (top-level 'avatar' may be a string), normalize it
+        if (typeof obj === 'string') return toAbsoluteUrl(obj);
+        if (typeof obj !== 'object') return null;
         const keys = ['avatar','profile_picture','profile_pic','picture','image','photo','photo_url','avatar_url'];
         for (const k of keys){ if (obj[k]) return toAbsoluteUrl(obj[k]); }
         // nested user/admin/latest objects
@@ -1158,6 +1248,60 @@
             wrap.appendChild(img);
             return { el: wrap, text: null };
         }
+        // Fallback: only use `currentUser.avatar` if this message actually belongs to the logged-in user
+        try{
+            if ((!resolved) && window && window.currentUser && window.currentUser.avatar) {
+                const uid = (window.currentUser && window.currentUser.id != null) ? Number(window.currentUser.id) : null;
+                const senderIds = [
+                    m && (m.user && m.user.id),
+                    m && m.user_id,
+                    m && m.sender_id,
+                    m && m.sent_by,
+                    m && m.admin_id,
+                    m && (m.sender && m.sender.id)
+                ].filter(x => x !== undefined && x !== null).map(x => Number(x));
+                const belongsToMe = (typeof m.mine === 'boolean' && m.mine) || (uid !== null && senderIds.includes(uid));
+                if (belongsToMe) {
+                    const name = (m && m.user && (m.user.name || m.user.full_name)) ? (m.user.name || m.user.full_name) : (m && m.sender_name) || 'U';
+                    const wrap2 = document.createElement('div'); wrap2.className = 'wa-avatar';
+                    const img2 = document.createElement('img'); img2.alt = name || 'U'; img2.loading = 'lazy'; img2.decoding = 'async';
+                    tryLoadImage(img2, buildAvatarCandidates(window.currentUser.avatar));
+                    img2.addEventListener('loaderror', function(){ wrap2.textContent = displayInitials(m ? (m.user || { name: m.sender_name }) : null); });
+                    wrap2.appendChild(img2);
+                    return { el: wrap2, text: null };
+                }
+            }
+        } catch(e) {}
+
+        // If still unresolved, try constructing avatar URLs from common avatar filename patterns using sender/user id
+        try{
+            const ids = [];
+            if (m && m.user && (m.user.id || m.user.id === 0)) ids.push(m.user.id);
+            if (m && (m.user_id || m.user_id === 0)) ids.push(m.user_id);
+            if (m && (m.sender_id || m.sender_id === 0)) ids.push(m.sender_id);
+            if (m && (m.admin_id || m.admin_id === 0)) ids.push(m.admin_id);
+            if (m && m.sender && (m.sender.id || m.sender.id === 0)) ids.push(m.sender.id);
+            // unique ids
+            const uniqIds = Array.from(new Set(ids.map(x=>Number(x)).filter(x=>!isNaN(x) && x>0)));
+            if (uniqIds.length){
+                const wrap3 = document.createElement('div'); wrap3.className = 'wa-avatar';
+                const img3 = document.createElement('img'); img3.loading='lazy'; img3.decoding='async';
+                // build candidates for each id with common extensions
+                const exts = ['jpg','jpeg','png','webp'];
+                const cands = [];
+                uniqIds.forEach(idn => {
+                    exts.forEach(ext => {
+                        cands.push('/storage/avatars/' + idn + '.' + ext);
+                        cands.push(APP_BASE + '/storage/avatars/' + idn + '.' + ext);
+                    });
+                });
+                // try to load; on full failure fall back to initials
+                tryLoadImage(img3, Array.from(new Set(cands)));
+                img3.addEventListener('loaderror', function(){ wrap3.textContent = displayInitials(m && (m.user || m.sender) ? (m.user || m.sender) : { name: m && m.sender_name }); });
+                wrap3.appendChild(img3);
+                return { el: wrap3, text: null };
+            }
+        } catch(e){}
         const n = senderName(m);
         const init = n ? n.split(' ').map(p=>p[0]).slice(0,2).join('').toUpperCase() : 'U';
         return { html: null, text: init };
@@ -1620,10 +1764,23 @@
         const row = document.createElement('div'); row.className = 'wa-row ' + (mine ? 'sent' : 'received');
         row.dataset.msgId = m.id;
         const avatar = document.createElement('div'); avatar.className='wa-avatar';
-        const av = avatarLabel(m);
-        if (av && av.el) { avatar.innerHTML = ''; avatar.appendChild(av.el); }
-        else if (av && av.html) { avatar.innerHTML = av.html; }
-        else { avatar.textContent = av.text || 'U'; }
+        // If this message is sent by current user, prefer the `currentUser.avatar` as a definitive source
+        if (mine && window.currentUser && window.currentUser.avatar) {
+            try {
+                avatar.innerHTML = '';
+                const img = document.createElement('img'); img.alt = (window.currentUser.name || 'You'); img.loading = 'lazy'; img.decoding = 'async';
+                const cands = buildAvatarCandidates(window.currentUser.avatar);
+                tryLoadImage(img, cands);
+                img.addEventListener('loaderror', function(){ avatar.textContent = displayInitials(window.currentUser); });
+                avatar.appendChild(img);
+                try { console.debug('chat: messageRow using currentUser.avatar for mine', m.id, cands); } catch(_){}
+            } catch(e){ avatar.textContent = displayInitials(window.currentUser); }
+        } else {
+            const av = avatarLabel(m);
+            if (av && av.el) { avatar.innerHTML = ''; avatar.appendChild(av.el); }
+            else if (av && av.html) { avatar.innerHTML = av.html; }
+            else { avatar.textContent = av.text || 'U'; }
+        }
         const bubble = document.createElement('div'); bubble.className = 'wa-bubble ' + (mine ? 'sent' : 'received');
         if (m.reply_to_message_id) {
             bubble.addEventListener('click', (e)=>{

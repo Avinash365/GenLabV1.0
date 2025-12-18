@@ -321,6 +321,9 @@
                                             Employees Salary
                                         </a>
                                     </li>
+                                    <li>
+                                        <a href="{{ route('superadmin.accounts.cleared_expenses') }}" class="{{ Request::routeIs('superadmin.accounts.cleared_expenses') ? 'active' : '' }}">Cleared Expenses</a>
+                                    </li>
                                 </ul>
                             </li> 
                         @endif   

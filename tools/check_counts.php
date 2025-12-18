@@ -7,7 +7,7 @@ $kernel->bootstrap();
 use App\Models\MarketingExpense;
 
 $marketing = MarketingExpense::where('section','marketing')->where('status','pending')->count();
-$personalPending = MarketingExpense::where('section','personal')->where('status','pending')->where('submitted_for_approval',true)->count();
+$personalPending = MarketingExpense::where('section','personal')->where('status','pending')->whereNotNull('approval_summary_path')->count();
 
 echo "marketing_pending_count:$marketing\n";
 echo "personal_pending_count:$personalPending\n";
@@ -16,7 +16,7 @@ echo "personal_pending_count:$personalPending\n";
 $personalCollection = MarketingExpense::with(['marketingPerson','approver'])
     ->where('section','personal')
     ->where('status','pending')
-    ->where('submitted_for_approval',true)
+    ->whereNotNull('approval_summary_path')
     ->get();
 
 if ($personalCollection->isEmpty()) {

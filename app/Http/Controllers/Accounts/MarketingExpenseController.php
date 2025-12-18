@@ -15,6 +15,8 @@ use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\MarketingExpensesExport;
 use Mpdf\Mpdf;
+use App\Models\ClearedExpense;
+use Illuminate\Support\Facades\DB;
 
 class MarketingExpenseController extends Controller
 {
@@ -50,8 +52,7 @@ class MarketingExpenseController extends Controller
             $perPage = (int) ($request->input('perPage') ?? 15);
             $marketingExpenses = $this->buildExportQuery($request, 'marketing', 'pending')->get();
 
-            $personalQuery = $this->buildExportQuery($request, 'personal', 'pending')
-                ->where('submitted_for_approval', true);
+            $personalQuery = $this->buildExportQuery($request, 'personal', 'pending');
             $personalPending = $personalQuery->get();
 
             // Show personal expenses individually in approvals (do not combine into summaries)
@@ -145,7 +146,7 @@ class MarketingExpenseController extends Controller
         $query = $this->buildExportQuery($request, $section, 'pending');
 
         if($section === 'personal'){
-            $query->where('submitted_for_approval', true);
+            // Personal section: show personal expenses (pending) in listings.
         }
 
         $listing = $this->buildListingFromQuery($query, $section === 'personal');
@@ -317,33 +318,28 @@ class MarketingExpenseController extends Controller
                   ->orWhere('person_name', $user->name);
             })
             ->whereIn('status', ['approved', 'rejected'])
-            ->where(function($q){
-                $q->where('submitted_for_approval', false)
-                  ->orWhereNull('submitted_for_approval');
-            });
+            // Exclude items that have been attached to a summary PDF
+            ->whereNull('approval_summary_path');
 
         // Use same per-page as main listing if available, otherwise default to 15
         $defaultPerPage = method_exists($listing['expenses'], 'perPage') ? $listing['expenses']->perPage() : 15;
         $perPage = (int) ($request->input('approved_per_page') ?? $defaultPerPage);
         $approvedRejected = $approvedRejectedQuery->paginate($perPage)->withQueryString();
 
-        // Build 'Checked In' items from saved cleared PDFs that belong to this user
-        $base = 'marketing_expenses/in_account';
-        // $files = Storage::disk('public')->directoryExists($base) ? Storage::disk('public')->files($base) : [];  
+        // Build 'Checked In' items from DB-backed cleared_expenses records (falls back to storage files elsewhere)
+        try {
+            $records = ClearedExpense::orderByDesc('created_at')->get();
+        } catch (\Throwable $_) {
+            $records = collect();
+        }
 
-        $files = Storage::disk('public')->directoryExists($base)? Storage::disk('public')->files($base): [];
-
-        $checkedIn = collect($files)->filter(function($f){ return str_ends_with($f, '.pdf'); })->map(function($path){
-            $metaPath = $path . '.json';
-            $meta = null;
-            if (Storage::disk('public')->exists($metaPath)){
-                try { $meta = json_decode(Storage::disk('public')->get($metaPath), true); } catch (\Throwable $e) { $meta = null; }
-            }
+        $checkedIn = $records->map(function($rec){
+            $path = $rec->path;
             return [
                 'path' => $path,
                 'url' => asset('storage/' . $path),
-                'filename' => basename($path),
-                'meta' => $meta,
+                'filename' => $rec->filename,
+                'meta' => $rec->meta ?? [],
             ];
         })->values();
 
@@ -682,17 +678,31 @@ class MarketingExpenseController extends Controller
             }
 
             Storage::disk('public')->put($storagePath . '.json', json_encode($metadata));
-            // After saving the PDF and metadata, mark the involved expense records as cleared
+
+            // Persist cleared export into database and remove moved expense rows when possible.
+            $expenseIds = $expenses->pluck('id')->filter()->unique()->values()->all();
             try {
-                $expenseIds = $expenses->pluck('id')->filter()->unique()->values()->all();
-                if (!empty($expenseIds)) {
-                    MarketingExpense::whereIn('id', $expenseIds)->update([
-                        'cleared_at' => now(),
-                        'cleared_by' => optional(auth('admin')->user())->id ?? optional(auth('web')->user())->id,
+                DB::transaction(function() use ($storagePath, $filename, $metadata, $expenseIds, $totals, $approvedSection) {
+                    $record = ClearedExpense::create([
+                        'filename' => $filename,
+                        'path' => $storagePath,
+                        'approver_id' => optional(auth('admin')->user())->id ?? optional(auth('web')->user())->id,
+                        'approved_total' => $totals['approved'] ?? 0,
+                        'total_expenses' => $totals['total_expenses'] ?? 0,
+                        'approved_section' => $approvedSection,
+                        'person_name' => $metadata['person_name'] ?? null,
+                        'person_code' => $metadata['person_code'] ?? null,
+                        'meta' => $metadata,
+                        'expense_ids' => !empty($expenseIds) ? $expenseIds : null,
                     ]);
-                }
-            } catch (\Throwable $_) {
-                // ignore update failures
+
+                    // If explicit expense IDs exist, remove those rows from marketing_expenses table
+                    if (!empty($expenseIds)) {
+                        MarketingExpense::whereIn('id', $expenseIds)->delete();
+                    }
+                });
+            } catch (\Throwable $e) {
+                // ignore DB failures and fall back to existing behavior
             }
 
             // If the request expects JSON (AJAX), return a JSON success response so the
@@ -724,63 +734,60 @@ class MarketingExpenseController extends Controller
      */
     public function clearedExpenses(Request $request)
     {
-        $base = 'marketing_expenses/in_account';
-        $files = Storage::disk('public')->exists($base) ? Storage::disk('public')->files($base) : [];
+        // Prefer DB-backed cleared_expenses records; fallback to storage files if DB table doesn't exist
+        try {
+            $records = ClearedExpense::orderByDesc('created_at')->get();
+        } catch (\Throwable $_) {
+            $records = collect();
+        }
 
-        $items = collect($files)->filter(function($f){ return str_ends_with($f, '.pdf'); })->map(function($path){
-            $metaPath = $path . '.json';
-            $meta = null;
-            if (Storage::disk('public')->exists($metaPath)) {
-                try { $meta = json_decode(Storage::disk('public')->get($metaPath), true); } catch (\Throwable $e) { $meta = null; }
-            }
-            // Build a URL that respects the current request base URL (works when app runs in a subdirectory)
+        $items = $records->map(function($rec){
+            $path = $rec->path;
             $baseUrl = rtrim(request()->getBaseUrl(), '/');
             $host = request()->getSchemeAndHttpHost();
             $relative = $baseUrl ? $baseUrl . '/storage/' . $path : '/storage/' . $path;
             $fullUrl = $host . $relative;
             return [
+                'id' => $rec->id,
                 'path' => $path,
-                'url'  => $fullUrl,
-                'filename' => basename($path),
-                'meta' => $meta,
+                'url' => $fullUrl,
+                'filename' => $rec->filename,
+                'meta' => $rec->meta ?? [],
+                'approver_id' => $rec->approver_id,
+                'approved_total' => (float) ($rec->approved_total ?? 0),
+                'approved_section' => $rec->approved_section,
+                'created_at' => $rec->created_at?->toDateTimeString() ?? ($rec->meta['created_at'] ?? null),
+                'person_name' => $rec->person_name,
+                'person_code' => $rec->person_code,
             ];
         })->values();
 
-        // Resolve approver names where possible and compute a display name for each item
+        // Resolve approver names and compute display name
         $items = $items->map(function($it){
             $approverName = $it['meta']['approver_name'] ?? null;
-            // If approver_name is not present or looks like an ID, try resolving via models
-            if (empty($approverName) && !empty($it['meta']['approver_id'])){
-                $approver = \App\Models\Admin::find($it['meta']['approver_id']) ?? \App\Models\User::find($it['meta']['approver_id']);
+            if (empty($approverName) && !empty($it['approver_id'])){
+                $approver = \App\Models\Admin::find($it['approver_id']) ?? \App\Models\User::find($it['approver_id']);
                 $approverName = $approver?->name ?? null;
             }
-            // If approver_name exists but it's numeric (accidentally an id), try to resolve it too
-            if (empty($approverName) && !empty($it['meta']['approver_name']) && is_numeric($it['meta']['approver_name'])){
-                $ap = \App\Models\Admin::find($it['meta']['approver_name']) ?? \App\Models\User::find($it['meta']['approver_name']);
-                $approverName = $ap?->name ?? $it['meta']['approver_name'];
-            }
-
             $meta = $it['meta'] ?? [];
             $personNames = $meta['person_names'] ?? [];
-            // Determine display name: if export was marked hide_from_personal, or contains multiple person names,
-            // or filename indicates Global Expense, show a neutral label so it isn't attributed to a single person.
             $displayName = null;
             if (!empty($meta['hide_from_personal']) || (is_array($personNames) && count($personNames) > 1) || stripos($it['filename'] ?? '', 'Global Expense') !== false) {
                 $displayName = 'Global Expense';
             } else {
-                $displayName = $meta['person_name'] ?? (is_array($personNames) && !empty($personNames[0]) ? $personNames[0] : null);
+                $displayName = $meta['person_name'] ?? $it['person_name'] ?? (is_array($personNames) && !empty($personNames[0]) ? $personNames[0] : null);
             }
 
             return array_merge($it, [
                 'approver_name' => $approverName,
-                'approved_total' => $it['meta']['approved_total'] ?? ($it['meta']['total_expenses'] ?? 0),
-                'approved_section' => $it['meta']['approved_section'] ?? null,
-                'created_at' => $it['meta']['created_at'] ?? null,
+                'approved_total' => $it['approved_total'] ?? ($meta['approved_total'] ?? ($meta['total_expenses'] ?? 0)),
+                'approved_section' => $it['approved_section'] ?? ($meta['approved_section'] ?? null),
+                'created_at' => $it['created_at'] ?? ($meta['created_at'] ?? null),
                 'display_name' => $displayName,
             ]);
         });
 
-        // Apply filters from request. Metadata stores 'filters' with keys such as marketing_person_code, month, year.
+        // Apply filters similar to previous implementation
         $filterPerson = $request->input('marketing_person_code');
         $filterMonth = $request->input('month');
         $filterYear  = $request->input('year');
@@ -789,11 +796,10 @@ class MarketingExpenseController extends Controller
             $meta = $it['meta'] ?? [];
             $metaFilters = $meta['filters'] ?? [];
 
-            // Person filter: allow matching against saved filter code, stored person_code, or person_name (substring)
             if ($filterPerson) {
                 $mp = $metaFilters['marketing_person_code'] ?? null;
-                $personCode = $meta['person_code'] ?? null;
-                $personName = $meta['person_name'] ?? null;
+                $personCode = $it['person_code'] ?? ($meta['person_code'] ?? null);
+                $personName = $it['person_name'] ?? ($meta['person_name'] ?? null);
                 $matched = false;
                 foreach ([$mp, $personCode, $personName] as $candidate) {
                     if (empty($candidate)) continue;
@@ -803,51 +809,32 @@ class MarketingExpenseController extends Controller
                 if (!$matched) return false;
             }
 
-            // Month/year filter: prefer explicit saved filters, fallback to created_at metadata
             $metaMonth = $metaFilters['month'] ?? null;
             $metaYear  = $metaFilters['year'] ?? null;
-            $createdAt = $meta['created_at'] ?? null;
+            $createdAt = $meta['created_at'] ?? $it['created_at'] ?? null;
 
             if ($filterMonth) {
                 if ($metaMonth !== null) {
                     if ((int)$metaMonth !== (int)$filterMonth) return false;
                 } elseif ($createdAt) {
-                    try {
-                        $dt = \Carbon\Carbon::parse($createdAt);
-                        if ($dt->month !== (int)$filterMonth) return false;
-                    } catch (\Throwable $e) {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
+                    try { $dt = \Carbon\Carbon::parse($createdAt); if ($dt->month !== (int)$filterMonth) return false; } catch (\Throwable $e) { return false; }
+                } else { return false; }
             }
-
             if ($filterYear) {
                 if ($metaYear !== null) {
                     if ((int)$metaYear !== (int)$filterYear) return false;
                 } elseif ($createdAt) {
-                    try {
-                        $dt = \Carbon\Carbon::parse($createdAt);
-                        if ($dt->year !== (int)$filterYear) return false;
-                    } catch (\Throwable $e) {
-                        return false;
-                    }
-                } else {
-                    return false;
-                }
+                    try { $dt = \Carbon\Carbon::parse($createdAt); if ($dt->year !== (int)$filterYear) return false; } catch (\Throwable $e) { return false; }
+                } else { return false; }
             }
-
             return true;
         })->values();
 
-        // Sort filtered items by most recent generated time (created_at in metadata) desc
         $filtered = $filtered->sortByDesc(function($it){
             $dt = $it['created_at'] ?? ($it['meta']['created_at'] ?? null);
             try { return $dt ? \Carbon\Carbon::parse($dt)->timestamp : 0; } catch (\Throwable $e) { return 0; }
         })->values();
 
-        // Paginate cleared items
         $clearedPerPage = (int) ($request->input('cleared_per_page') ?? 15);
         $clearedPage = (int) ($request->input('page') ?? 1);
         $clearedPaginator = new LengthAwarePaginator(
@@ -858,7 +845,6 @@ class MarketingExpenseController extends Controller
             ['path' => request()->url(), 'query' => request()->query()]
         );
 
-        // Prepare list of marketing persons for the filter dropdown
         $persons = User::orderBy('name')->get(['name','user_code']);
 
         return view('superadmin.accounts.cleared_expenses', [
@@ -923,7 +909,6 @@ class MarketingExpenseController extends Controller
                 'approved_by' => null,
                 'approved_at' => null,
                 'approval_note' => null,
-                'submitted_for_approval' => true,
                 'created_at' => now()->toDateTimeString(),
             ]);
         }
@@ -994,7 +979,7 @@ class MarketingExpenseController extends Controller
         $amount   = (float) $expense->amount;
         $approved = (float) $expense->approved_amount;
         $due      = max(0, $amount - $approved);
-        $wasSubmitted = (bool) $expense->submitted_for_approval;
+        // previously tracked submitted_for_approval; removed in schema
 
         if($expense->file_path){
             Storage::disk('public')->delete($expense->file_path);
@@ -1007,7 +992,6 @@ class MarketingExpenseController extends Controller
             'amount'           => $amount,
             'approved_amount'  => $approved,
             'due_amount'       => $due,
-            'submitted_for_approval' => $wasSubmitted,
             'status'           => $expense->status,
         ]);
     }
@@ -1101,26 +1085,23 @@ class MarketingExpenseController extends Controller
             'file_path'             => $path,
             'description'           => $data['description'] ?? null,
             'status'                => 'pending',
-            // Auto-submit when uploading personal expenses so they appear in Approvals
-            'submitted_for_approval'=> $section === 'personal',
+            // Note: Previously this used 'submitted_for_approval' boolean.
+            // We no longer store that flag; personal uploads remain 'pending' and
+            // will appear in approvals as pending personal items.
         ]);
 
         $expense->load('marketingPerson');
         $rowHtml = null;
         $dailyRowHtml = null;
 
-        if($section === 'personal'){
+            if($section === 'personal'){
             $dailyRowHtml = view('superadmin.personal.expenses._daily_row', ['expense' => $expense])->render();
-
-            // If auto-submitted, render the individual expense row so it appears
-            // in Approvals as a separate item (do not create/refresh grouped summary).
-            if($expense->submitted_for_approval){
-                $rowHtml = view('superadmin.marketing.expenses._row', [
-                    'expense' => $expense,
-                    'isApprovalPage' => false,
-                    'showPerson' => false,
-                ])->render();
-            }
+            // For personal uploads, also render the approval-row so it appears in Approvals
+            $rowHtml = view('superadmin.marketing.expenses._row', [
+                'expense' => $expense,
+                'isApprovalPage' => false,
+                'showPerson' => false,
+            ])->render();
         } else {
             $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $expense])->render();
         }
@@ -1132,7 +1113,6 @@ class MarketingExpenseController extends Controller
             'amount'  => (float) $expense->amount,
             'approved_amount' => 0.0,
             'due_amount' => (float) $expense->amount,
-            'submitted_for_approval' => (bool) $expense->submitted_for_approval,
             'status' => $expense->status,
         ]);
     }
@@ -1173,7 +1153,6 @@ class MarketingExpenseController extends Controller
             'approval_note' => 'Submitted for approval - '.$period->format('F Y'),
             'approved_by'   => null,
             'approved_at'   => null,
-            'submitted_for_approval' => true,
             'approval_summary_path'  => $summaryPath,
         ]);
 
