@@ -228,6 +228,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::middleware(['permission:account.edit'])->group(function () {
 
         Route::resource('blank-invoices', BlankInvoiceController::class);
+        
+        
         Route::get('/blank-invoice/get-clients', [BlankInvoiceController::class, 'getClients'])->name('get.clients');
 
         Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
@@ -249,6 +251,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::PUT('invoices/generate-invoice/{invoices}', [InvoiceController::class, 'generateInvoice'])
               ->name('invoices.generateInvoice');
+
+        Route::put('invoices/bulk-update/{invoice}',[InvoiceController::class, 'updateBulk'])->name('invoices.bulkUpdate');
 
         Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
         Route::patch('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');

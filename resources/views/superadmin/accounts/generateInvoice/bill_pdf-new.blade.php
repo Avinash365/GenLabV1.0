@@ -150,6 +150,10 @@
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 4px;
         }
+        .bank-table {
+            page-break-inside: avoid;
+        }
+
 
     </style>
 </head>

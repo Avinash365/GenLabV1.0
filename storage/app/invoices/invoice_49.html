@@ -1,0 +1,222 @@
+<form id="previewInvoiceForm" method="POST" action="__ACTION_URL__">
+
+                <input type="hidden" name="_token" value="__CSRF_TOKEN__">
+                <input type="hidden" id="td_booking_ids" name="booking_ids" value="[1,2]">
+
+                <input type="hidden" name="invoice_data" id="preview_invoice_data">
+                <input type="hidden" name="invoice_type" id="invoice_type" value="proforma_invoice">
+                <input type="hidden" name="invoice_html" id="invoice_html">
+                <!-- <input type="hidden" name="_method" value="__METHOD__">  -->
+
+                <div class="invoice-preview">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-left text-uppercase">
+                                    GSTIN: 9113464642541
+                                </th>
+
+                                <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
+                                                                                            Tax Invoice
+                                                                                        </th>   -->
+                                <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader">proforma_invoice</th>
+
+                                <th class="text-centre">Scan to Pay</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            
+                            <tr>
+                                <th class="col-left text-start">Bill Issue To:</th>
+
+                                <td class="col-wide text-start text-uppercase" colspan="2" contenteditable="true" id="td_bill_block">
+
+                                    //45<br>54<br>Rohan kumar Jha<br>
+
+                                    <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>&nbsp;9113464628</td>
+
+                                <td class="text-centre">
+
+                                    <img src="__QR_CODE_IMAGE__" width="100">
+
+                                </td>
+                            </tr>
+
+                            
+                            <tr>
+                                <th class="text-start">Invoice No:</th>
+                                <td colspan="3" class="text-uppercase" contenteditable="true" id="td_invoice_no">
+                                    ITL/25-26/1064561
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Invoice Date:</th>
+                                <td colspan="3" contenteditable="true" id="td_invoice_date">
+                                    18-12-2025
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Ref. No &amp; Date:</th>
+                                <td colspan="3" contenteditable="false" id="td_reference_block">
+                                    78454, 784545
+                                    &nbsp;&amp;&nbsp;
+                                    30-11-2025, 30-11-2025
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Name of Work:</th>
+                                <td colspan="3" contenteditable="true" id="td_name_of_work">are you fine or not ??&nbsp;</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    
+                    <table>
+                        <thead>
+                            <tr class="item-row">
+                                <!-- <th style="width:9%;">#</th> -->
+                                <th style="width:35%;">Sample Description</th>
+                                <th style="width:27%;">Job Order No</th>
+                                <th style="width:11%;">SAC Code</th>
+                                <th style="width:9%;">Qty</th>
+                                <th style="width:14%;">Rate</th>
+                                <th style="width:20%;">Amount</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                                                                                                                                                                    <tr class="item-row">
+                                            <!-- <td contenteditable="true">1</td> -->
+                                            <td contenteditable="true" class="editable description ">
+                                                Hii
+                                            </td>
+                                            <td>7845487</td>
+                                            <td>998346</td>
+                                            <td contenteditable="true" class="editable qty ">
+                                                1
+                                            </td>
+                                            <td contenteditable="true" class="editable rate ">
+                                                7,874,578.00
+                                            </td>
+                                            <td class="amount">7874578.00</td>
+                                        </tr>
+                                                                                                                                                                                                            <tr class="item-row">
+                                            <!-- <td contenteditable="true">1</td> -->
+                                            <td contenteditable="true" class="editable description ">
+                                                Hih
+                                            </td>
+                                            <td>78454</td>
+                                            <td>998346</td>
+                                            <td contenteditable="true" class="editable qty ">
+                                                1
+                                            </td>
+                                            <td contenteditable="true" class="editable rate ">
+                                                4,545.00
+                                            </td>
+                                            <td class="amount">4545.00</td>
+                                        </tr>
+                                                                                                
+
+                            
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">Total Amount</td>
+                                <td id="totalAmount">7879123.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="discountRow">
+                                <td colspan="5" class="text-right">
+                                    Discount (
+                                    <span contenteditable="true" id="discountPercent" class="editable-percent">10</span> %)
+                                </td>
+                                <td id="discountAmount">787912.30</td>
+                            </tr>
+
+                            <tr class="total-row" id="afterDiscountRow">
+                                <td colspan="5" class="text-right">After Discount</td>
+                                <td id="afterDiscount">7091210.70</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    CGST (
+                                    <span contenteditable="true" id="cgstPercent" class="editable-percent">10</span> %)
+                                </td>
+                                <td id="cgstAmount">709121.07</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    SGST (
+                                    <span contenteditable="true" id="sgstPercent" class="editable-percent">10</span> %)
+                                </td>
+                                <td id="sgstAmount">709121.07</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    IGST (
+                                    <span contenteditable="true" id="igstPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="igstAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="roundOffRow">
+                                <td colspan="5" class="text-right">Round Off</td>
+                                <td id="roundOff">0.16</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">Payable Amount</td>
+                                <td id="payableAmount">8509453.00</td>
+                            </tr>
+
+                            <tr>
+                                <th colspan="6" id="amountInWords" class="text-centre"><strong>Amount in Words:</strong> Eighty Five Lakh Nine Thousand Four Hundred Fifty Three Rupees Only</th>
+                            </tr>
+                        </tbody>
+                    </table>
+                    
+                    <!-- Bank Details -->
+                    <table class="bank-table">
+                        <tbody>
+                            <tr>
+                                <th class="text-start">INSTRUCTIONS:</th>
+                                <td colspan="2" id="td_bank_instructions">
+                                    ABCSVHGVGHVSVGHSVD
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">BANK NAME:</th>
+                                <td id="td_bank_name">SBI</td>
+                                <td class="text-centre text-uppercase">For </td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">ACCOUNT NO:</th>
+                                <td id="td_account_no"></td>
+                                <td rowspan="5" class="text-bottom">Authorised Signatory</td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">BRANCH:</th>
+                                <td class="text-uppercase" id="td_branch_name"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">IFSC CODE:</th>
+                                <td class="text-uppercase" id="td_ifsc_code"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">PAN NO:</th>
+                                <td class="text-uppercase" id="td_pan_no"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">GSTIN:</th>
+                                <td class="text-uppercase" id="td_gstin"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </form>
