@@ -1,0 +1,260 @@
+<form id="previewInvoiceForm" method="POST" action="__ACTION_URL__">
+
+                <input type="hidden" name="_token" value="__CSRF_TOKEN__"><input type="hidden" name="_method" value="PUT"><input type="hidden" name="_method" value="PUT"><input type="hidden" name="_method" value="PUT">
+                <input type="hidden" id="td_booking_id" name="booking_id" value="17">
+
+                <input type="hidden" name="invoice_data" id="preview_invoice_data">
+                <input type="hidden" name="invoice_type" id="invoice_type" value="proforma_invoice">
+                <input type="hidden" name="invoice_html" id="invoice_html">
+                <!-- <input type="hidden" name="_method" value="__METHOD__">  -->
+
+                <div class="invoice-preview">
+
+                    
+                    <table>
+                        <thead>
+                            <tr>
+                                <th class="col-left text-uppercase">
+                                    GSTIN: 9113464642541
+                                </th>
+
+                                <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
+                                                                                    Tax Invoice
+                                                                                </th>   -->
+                                <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader">proforma_invoice</th>
+
+                                <th class="text-centre">Scan to Pay</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                            
+                            <tr>
+                                <th class="col-left text-start">Bill Issue To:</th>
+
+                                <td class="col-wide text-start text-uppercase" colspan="2" contenteditable="true" id="td_bill_block">
+
+                                    Avinash Kumar Jha<br><br>
+
+                                    <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
+                                    
+                                </td>
+
+                                <td class="text-centre">
+                        
+                                    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2ZmZmZmZiIvPjxnIHRyYW5zZm9ybT0ic2NhbGUoNS40MDUpIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik05IDBMOSAxTDggMUw4IDJMOSAyTDkgM0w4IDNMOCA0TDEwIDRMMTAgMUwxMiAxTDEyIDJMMTEgMkwxMSAzTDEyIDNMMTIgMkwxMyAyTDEzIDFMMTQgMUwxNCAyTDE1IDJMMTUgNUwxNCA1TDE0IDhMMTMgOEwxMyA5TDExIDlMMTEgOEw2IDhMNiA5TDcgOUw3IDEwTDQgMTBMNCA5TDUgOUw1IDhMMCA4TDAgMTBMMSAxMEwxIDExTDAgMTFMMCAxM0wyIDEzTDIgMTBMMSAxMEwxIDlMMyA5TDMgMTJMNCAxMkw0IDEzTDMgMTNMMyAxNEw0IDE0TDQgMTNMNyAxM0w3IDE0TDYgMTRMNiAxNUw1IDE1TDUgMTZMNiAxNkw2IDE3TDkgMTdMOSAxNkwxMCAxNkwxMCAxN0wxMSAxN0wxMSAxOEwxMCAxOEwxMCAxOUw5IDE5TDkgMThMOCAxOEw4IDE5TDcgMTlMNyAxOEw1IDE4TDUgMTlMNyAxOUw3IDIwTDYgMjBMNiAyMUw1IDIxTDUgMjJMNCAyMkw0IDE5TDMgMTlMMyAxNkw0IDE2TDQgMTVMMyAxNUwzIDE2TDIgMTZMMiAxNUwxIDE1TDEgMTZMMCAxNkwwIDE4TDIgMThMMiAxOUwxIDE5TDEgMjFMMCAyMUwwIDIyTDEgMjJMMSAyMUwyIDIxTDIgMTlMMyAxOUwzIDIzTDIgMjNMMiAyNEw2IDI0TDYgMjVMNCAyNUw0IDI3TDUgMjdMNSAyOEwzIDI4TDMgMjdMMiAyN0wyIDI5TDcgMjlMNyAyOEw2IDI4TDYgMjdMNyAyN0w3IDI2TDggMjZMOCAyOEw5IDI4TDkgMjZMOCAyNkw4IDI0TDYgMjRMNiAyM0w3IDIzTDcgMjJMNiAyMkw2IDIxTDEwIDIxTDEwIDIzTDExIDIzTDExIDIyTDEzIDIyTDEzIDIxTDE0IDIxTDE0IDI0TDEzIDI0TDEzIDIzTDEyIDIzTDEyIDI0TDEzIDI0TDEzIDI1TDExIDI1TDExIDI0TDEwIDI0TDEwIDI5TDExIDI5TDExIDI4TDEyIDI4TDEyIDI5TDE0IDI5TDE0IDMwTDEyIDMwTDEyIDMxTDExIDMxTDExIDMwTDEwIDMwTDEwIDMxTDkgMzFMOSAyOUw4IDI5TDggMzFMOSAzMUw5IDMyTDggMzJMOCAzN0w5IDM3TDkgMzZMMTAgMzZMMTAgMzdMMTEgMzdMMTEgMzRMMTMgMzRMMTMgMzVMMTUgMzVMMTUgMzZMMTYgMzZMMTYgMzVMMTggMzVMMTggMzRMMjAgMzRMMjAgMzNMMjEgMzNMMjEgMzZMMjAgMzZMMjAgMzdMMjEgMzdMMjEgMzZMMjMgMzZMMjMgMzVMMjIgMzVMMjIgMzRMMjQgMzRMMjQgMzNMMjEgMzNMMjEgMzJMMjUgMzJMMjUgMzVMMjQgMzVMMjQgMzdMMjcgMzdMMjcgMzZMMzAgMzZMMzAgMzVMMjcgMzVMMjcgMzRMMjYgMzRMMjYgMzNMMzAgMzNMMzAgMzRMMzQgMzRMMzQgMzNMMzUgMzNMMzUgMzJMMzcgMzJMMzcgMzBMMzYgMzBMMzYgMjlMMzcgMjlMMzcgMjZMMzYgMjZMMzYgMjVMMzcgMjVMMzcgMjJMMzUgMjJMMzUgMjBMMzcgMjBMMzcgMThMMzYgMThMMzYgMTdMMzUgMTdMMzUgMTZMMzMgMTZMMzMgMTVMMzQgMTVMMzQgMTNMMzYgMTNMMzYgMTFMMzcgMTFMMzcgMTBMMzYgMTBMMzYgMTFMMzUgMTFMMzUgOUwzNiA5TDM2IDhMMzUgOEwzNSA5TDM0IDlMMzQgOEwzMyA4TDMzIDlMMzQgOUwzNCAxMUwzNSAxMUwzNSAxMkwzNCAxMkwzNCAxM0wzMyAxM0wzMyAxMkwzMCAxMkwzMCAxMUwzMiAxMUwzMiAxMEwzMCAxMEwzMCA4TDI5IDhMMjkgOUwyOCA5TDI4IDEwTDI3IDEwTDI3IDhMMjggOEwyOCA3TDI5IDdMMjkgNEwyOCA0TDI4IDNMMjcgM0wyNyAyTDI5IDJMMjkgMEwyOCAwTDI4IDFMMjcgMUwyNyAyTDI2IDJMMjYgM0wyNSAzTDI1IDFMMjYgMUwyNiAwTDIzIDBMMjMgMUwyNCAxTDI0IDJMMTkgMkwxOSAxTDE3IDFMMTcgMEwxNSAwTDE1IDFMMTQgMUwxNCAwWk0yMCAwTDIwIDFMMjEgMUwyMSAwWk0xNiAxTDE2IDJMMTcgMkwxNyAzTDE4IDNMMTggMkwxNyAyTDE3IDFaTTEzIDNMMTMgNEwxMSA0TDExIDVMMTAgNUwxMCA3TDExIDdMMTEgNUwxMyA1TDEzIDRMMTQgNEwxNCAzWk0yMCAzTDIwIDRMMTkgNEwxOSA1TDE4IDVMMTggNEwxNyA0TDE3IDVMMTggNUwxOCA2TDE3IDZMMTcgN0wxNiA3TDE2IDZMMTUgNkwxNSA3TDE2IDdMMTYgOEwxNCA4TDE0IDlMMTMgOUwxMyAxMEwxNCAxMEwxNCAxMUwxMiAxMUwxMiAxMEwxMSAxMEwxMSA5TDEwIDlMMTAgMTBMOSAxMEw5IDlMOCA5TDggMTFMNiAxMUw2IDEyTDggMTJMOCAxNEw5IDE0TDkgMTNMMTAgMTNMMTAgMTJMMTEgMTJMMTEgMTNMMTMgMTNMMTMgMTRMMTYgMTRMMTYgMTVMMTIgMTVMMTIgMTRMMTAgMTRMMTAgMTVMMTIgMTVMMTIgMTZMMTEgMTZMMTEgMTdMMTMgMTdMMTMgMThMMTQgMThMMTQgMTlMMTMgMTlMMTMgMjBMMTIgMjBMMTIgMThMMTEgMThMMTEgMjBMMTAgMjBMMTAgMjFMMTMgMjFMMTMgMjBMMTQgMjBMMTQgMjFMMTUgMjFMMTUgMjJMMTcgMjJMMTcgMjNMMTUgMjNMMTUgMjRMMTQgMjRMMTQgMjZMMTMgMjZMMTMgMjdMMTIgMjdMMTIgMjZMMTEgMjZMMTEgMjdMMTIgMjdMMTIgMjhMMTQgMjhMMTQgMjlMMTUgMjlMMTUgMzBMMTQgMzBMMTQgMzFMMTMgMzFMMTMgMzJMMTEgMzJMMTEgMzFMMTAgMzFMMTAgMzJMMTEgMzJMMTEgMzNMOSAzM0w5IDM0TDExIDM0TDExIDMzTDEzIDMzTDEzIDM0TDE0IDM0TDE0IDMzTDE1IDMzTDE1IDM0TDE2IDM0TDE2IDMzTDE3IDMzTDE3IDMyTDE4IDMyTDE4IDMzTDIwIDMzTDIwIDMyTDIxIDMyTDIxIDMxTDIwIDMxTDIwIDMwTDIyIDMwTDIyIDI5TDIzIDI5TDIzIDI4TDI0IDI4TDI0IDI2TDIzIDI2TDIzIDI1TDIyIDI1TDIyIDI0TDE5IDI0TDE5IDIzTDIxIDIzTDIxIDIyTDE5IDIyTDE5IDIzTDE4IDIzTDE4IDIyTDE3IDIyTDE3IDIxTDIyIDIxTDIyIDIzTDI1IDIzTDI1IDI0TDI2IDI0TDI2IDIzTDI3IDIzTDI3IDI0TDI4IDI0TDI4IDI1TDI3IDI1TDI3IDI2TDI4IDI2TDI4IDI3TDI5IDI3TDI5IDI4TDMwIDI4TDMwIDI3TDMxIDI3TDMxIDI2TDMzIDI2TDMzIDI3TDMyIDI3TDMyIDI4TDMzIDI4TDMzIDI5TDM0IDI5TDM0IDMxTDMzIDMxTDMzIDMyTDM1IDMyTDM1IDI5TDM0IDI5TDM0IDI4TDM1IDI4TDM1IDI3TDM0IDI3TDM0IDI0TDM1IDI0TDM1IDI1TDM2IDI1TDM2IDIzTDM1IDIzTDM1IDIyTDMzIDIyTDMzIDIxTDM0IDIxTDM0IDIwTDM1IDIwTDM1IDE5TDM2IDE5TDM2IDE4TDM1IDE4TDM1IDE3TDM0IDE3TDM0IDE4TDMzIDE4TDMzIDE3TDMwIDE3TDMwIDE2TDMyIDE2TDMyIDE1TDMzIDE1TDMzIDEzTDMwIDEzTDMwIDEyTDI5IDEyTDI5IDExTDMwIDExTDMwIDEwTDI5IDEwTDI5IDExTDI3IDExTDI3IDEwTDI2IDEwTDI2IDlMMjQgOUwyNCA2TDI1IDZMMjUgOEwyNyA4TDI3IDdMMjggN0wyOCA2TDI3IDZMMjcgN0wyNiA3TDI2IDZMMjUgNkwyNSA1TDI4IDVMMjggNEwyNyA0TDI3IDNMMjYgM0wyNiA0TDI1IDRMMjUgM0wyMyAzTDIzIDRMMjEgNEwyMSAzWk0yMCA0TDIwIDdMMjEgN0wyMSA4TDIyIDhMMjIgOUwyMyA5TDIzIDEwTDI0IDEwTDI0IDlMMjMgOUwyMyA4TDIyIDhMMjIgN0wyMyA3TDIzIDZMMjIgNkwyMiA3TDIxIDdMMjEgNFpNMjMgNEwyMyA1TDI0IDVMMjQgNFpNOCA1TDggN0w5IDdMOSA1Wk0xMiA2TDEyIDdMMTMgN0wxMyA2Wk0xOCA2TDE4IDhMMTcgOEwxNyA5TDE0IDlMMTQgMTBMMTUgMTBMMTUgMTFMMTcgMTFMMTcgOUwxOCA5TDE4IDhMMTkgOEwxOSA5TDIwIDlMMjAgMTJMMTkgMTJMMTkgMTFMMTggMTFMMTggMTJMMTQgMTJMMTQgMTNMMTcgMTNMMTcgMTVMMTggMTVMMTggMTZMMTUgMTZMMTUgMTdMMTQgMTdMMTQgMTZMMTMgMTZMMTMgMTdMMTQgMTdMMTQgMThMMTUgMThMMTUgMjFMMTYgMjFMMTYgMjBMMTcgMjBMMTcgMThMMTggMThMMTggMTdMMTkgMTdMMTkgMThMMjAgMThMMjAgMTlMMTkgMTlMMTkgMjBMMjAgMjBMMjAgMTlMMjEgMTlMMjEgMjBMMjIgMjBMMjIgMjFMMjUgMjFMMjUgMTlMMjMgMTlMMjMgMThMMjQgMThMMjQgMTdMMjMgMTdMMjMgMThMMjIgMThMMjIgMTdMMjEgMTdMMjEgMTZMMjMgMTZMMjMgMTVMMjIgMTVMMjIgMTNMMjMgMTNMMjMgMTRMMjQgMTRMMjQgMTNMMjUgMTNMMjUgMTVMMjcgMTVMMjcgMTZMMjggMTZMMjggMTVMMzIgMTVMMzIgMTRMMzAgMTRMMzAgMTNMMjggMTNMMjggMTJMMjIgMTJMMjIgMTBMMjEgMTBMMjEgOUwyMCA5TDIwIDhMMTkgOEwxOSA2Wk0zMSA4TDMxIDlMMzIgOUwzMiA4Wk00IDExTDQgMTJMNSAxMkw1IDExWk0xOCAxMkwxOCAxM0wxOSAxM0wxOSAxMlpNMjEgMTJMMjEgMTNMMjAgMTNMMjAgMTRMMTggMTRMMTggMTVMMTkgMTVMMTkgMTdMMjAgMTdMMjAgMTRMMjEgMTRMMjEgMTNMMjIgMTNMMjIgMTJaTTI2IDEzTDI2IDE0TDI4IDE0TDI4IDEzWk0zNiAxNEwzNiAxNUwzNyAxNUwzNyAxNFpNNiAxNUw2IDE2TDcgMTZMNyAxNVpNMjUgMTZMMjUgMThMMjYgMThMMjYgMjFMMjcgMjFMMjcgMjNMMjggMjNMMjggMjJMMzAgMjJMMzAgMjVMMjggMjVMMjggMjZMMzAgMjZMMzAgMjVMMzMgMjVMMzMgMjRMMzQgMjRMMzQgMjNMMzMgMjNMMzMgMjJMMzAgMjJMMzAgMjFMMzMgMjFMMzMgMjBMMzAgMjBMMzAgMjFMMjggMjFMMjggMThMMzAgMThMMzAgMTlMMzMgMTlMMzMgMThMMzAgMThMMzAgMTdMMjggMTdMMjggMThMMjcgMThMMjcgMTdMMjYgMTdMMjYgMTZaTTE1IDE3TDE1IDE4TDE3IDE4TDE3IDE3Wk0yMSAxOEwyMSAxOUwyMiAxOUwyMiAyMEwyMyAyMEwyMyAxOUwyMiAxOUwyMiAxOFpNOCAxOUw4IDIwTDkgMjBMOSAxOVpNMCAyM0wwIDI5TDEgMjlMMSAyNkwzIDI2TDMgMjVMMSAyNUwxIDIzWk0zMiAyM0wzMiAyNEwzMyAyNEwzMyAyM1pNMTcgMjRMMTcgMjZMMTQgMjZMMTQgMjhMMTUgMjhMMTUgMjlMMTYgMjlMMTYgMzBMMTUgMzBMMTUgMzFMMTggMzFMMTggMzJMMTkgMzJMMTkgMzFMMTggMzFMMTggMzBMMTcgMzBMMTcgMjlMMTggMjlMMTggMjhMMTkgMjhMMTkgMjdMMTggMjdMMTggMjZMMjAgMjZMMjAgMjVMMTggMjVMMTggMjRaTTYgMjVMNiAyNkw3IDI2TDcgMjVaTTI1IDI1TDI1IDI2TDI2IDI2TDI2IDI1Wk0yMSAyNkwyMSAyOEwyMCAyOEwyMCAyOUwxOSAyOUwxOSAzMEwyMCAzMEwyMCAyOUwyMSAyOUwyMSAyOEwyMyAyOEwyMyAyNlpNMTcgMjdMMTcgMjhMMTYgMjhMMTYgMjlMMTcgMjlMMTcgMjhMMTggMjhMMTggMjdaTTI1IDI3TDI1IDI4TDI3IDI4TDI3IDI3Wk0yNCAyOUwyNCAzMEwyMyAzMEwyMyAzMUwyNSAzMUwyNSAzMkwyNiAzMkwyNiAzMUwyNyAzMUwyNyAzMkwyOCAzMkwyOCAyOUwyNiAyOUwyNiAzMEwyNSAzMEwyNSAyOVpNMjkgMjlMMjkgMzJMMzIgMzJMMzIgMjlaTTMwIDMwTDMwIDMxTDMxIDMxTDMxIDMwWk0xMyAzMkwxMyAzM0wxNCAzM0wxNCAzMlpNMTUgMzJMMTUgMzNMMTYgMzNMMTYgMzJaTTM1IDM0TDM1IDM1TDM2IDM1TDM2IDM2TDM0IDM2TDM0IDM1TDMzIDM1TDMzIDM2TDMyIDM2TDMyIDM1TDMxIDM1TDMxIDM3TDMzIDM3TDMzIDM2TDM0IDM2TDM0IDM3TDM3IDM3TDM3IDM0Wk0yNSAzNUwyNSAzNkwyNyAzNkwyNyAzNVpNMTIgMzZMMTIgMzdMMTQgMzdMMTQgMzZaTTE3IDM2TDE3IDM3TDE4IDM3TDE4IDM2Wk0wIDBMMCA3TDcgN0w3IDBaTTEgMUwxIDZMNiA2TDYgMVpNMiAyTDIgNUw1IDVMNSAyWk0zMCAwTDMwIDdMMzcgN0wzNyAwWk0zMSAxTDMxIDZMMzYgNkwzNiAxWk0zMiAyTDMyIDVMMzUgNUwzNSAyWk0wIDMwTDAgMzdMNyAzN0w3IDMwWk0xIDMxTDEgMzZMNiAzNkw2IDMxWk0yIDMyTDIgMzVMNSAzNUw1IDMyWiIgZmlsbD0iIzAwMDAwMCIvPjwvZz48L2c+PC9zdmc+Cg==" width="100">
+                                 
+                                </td>
+                            </tr>
+
+                            
+                            <tr>
+                                <th class="text-start">Invoice No:</th>
+                                <td colspan="3" class="text-uppercase" contenteditable="true" id="td_invoice_no">
+                                    ITL/25-26/1064560
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Invoice Date:</th>
+                                <td colspan="3" contenteditable="true" id="td_invoice_date">
+                                    18-12-2025
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Ref. No &amp; Date:</th>
+                                <td colspan="3" contenteditable="false" id="td_reference_block">
+                                    1010145
+                                    &nbsp;&amp;&nbsp;
+                                    04-12-2025
+                                </td>
+                            </tr>
+
+                            <tr>
+                                <th class="text-start">Name of Work:</th>
+                                <td colspan="3" contenteditable="true" id="td_name_of_work">
+                                    Avinash Kumar Jha
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    
+                    <table>
+                        <thead>
+                            <tr class="item-row">
+                                <!-- <th style="width:9%;">#</th> -->
+                                <th style="width:35%;">Description</th>
+                                <th style="width:27%;">Job Order No</th>
+                                <th style="width:11%;">SAC Code</th>
+                                <th style="width:9%;">Qty</th>
+                                <th style="width:14%;">Rate</th>
+                                <th style="width:20%;">Amount</th>
+                            </tr>
+                        </thead>
+
+                        <tbody>
+                                                                                                <tr class="item-row">
+                                        <!-- <td contenteditable="true">1</td> -->
+                                        <td contenteditable="true" class="editable description ">
+                                            Hiiii
+                                        </td>
+                                        <td>120121</td>
+                                        <td>998346</td>
+                                        <td contenteditable="true" class="editable qty ">
+                                            1
+                                        </td>
+                                        <td contenteditable="true" class="editable rate ">
+                                            1,010.00
+                                        </td>
+                                        <td class="amount">1010.00</td>
+                                    </tr><tr class="item-row">
+                                                                    <td contenteditable="true" class="editable description"></td>
+                                                                    <td contenteditable="true">10101</td>
+                                                                    <td contenteditable="true"></td>
+                                                                    <td contenteditable="true" class="editable qty">1</td>
+                                                                    <td contenteditable="true" class="editable rate">0.00</td>
+                                                                    <td contenteditable="true" class="amount">0.00</td>
+                                                                </tr><tr class="item-row" data-original="
+                                                                    &lt;td contenteditable=&quot;true&quot; class=&quot;editable description&quot;&gt;Headding&lt;/td&gt;
+                                                                    &lt;td contenteditable=&quot;true&quot;&gt;&lt;br&gt;&lt;/td&gt;
+                                                                    &lt;td contenteditable=&quot;true&quot;&gt;&lt;/td&gt;
+                                                                    &lt;td contenteditable=&quot;true&quot; class=&quot;editable qty&quot;&gt;0&lt;/td&gt;
+                                                                    &lt;td contenteditable=&quot;true&quot; class=&quot;editable rate&quot;&gt;0.00&lt;/td&gt;
+                                                                    &lt;td contenteditable=&quot;true&quot; class=&quot;amount&quot;&gt;0.00&lt;/td&gt;
+                                                                " data-merged="1">
+                                                                    <td contenteditable="true" colspan="3" class="editable description">Headding</td>
+                                                                    <td contenteditable="true" class="editable qty ">0</td>
+                                                                    <td contenteditable="true" class="editable rate ">0.00</td>
+                                                                    <td contenteditable="true" class="amount">0.00</td>
+                                                                </tr><tr class="item-row">
+                            <td contenteditable="true" class="editable description"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true" class="editable qty">1</td>
+                            <td contenteditable="true" class="editable rate">0.00</td>
+                            <td contenteditable="true" class="amount">0.00</td>
+                        </tr><tr class="item-row">
+                            <td contenteditable="true" class="editable description"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true" class="editable qty">1</td>
+                            <td contenteditable="true" class="editable rate">0.00</td>
+                            <td contenteditable="true" class="amount">0.00</td>
+                        </tr><tr class="item-row">
+                            <td contenteditable="true" class="editable description"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true" class="editable qty">1</td>
+                            <td contenteditable="true" class="editable rate">0.00</td>
+                            <td contenteditable="true" class="amount">0.00</td>
+                        </tr><tr class="item-row">
+                            <td contenteditable="true" class="editable description"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true"></td>
+                            <td contenteditable="true" class="editable qty">1</td>
+                            <td contenteditable="true" class="editable rate">0.00</td>
+                            <td contenteditable="true" class="amount">0.00</td>
+                        </tr>
+                                                            
+                            
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">Total Amount</td>
+                                <td id="totalAmount">1010.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="discountRow">
+                                <td colspan="5" class="text-right">
+                                    Discount (
+                                    <span contenteditable="true" id="discountPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="discountAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="afterDiscountRow">
+                                <td colspan="5" class="text-right">After Discount</td>
+                                <td id="afterDiscount">1010.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    CGST (
+                                    <span contenteditable="true" id="cgstPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="cgstAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    SGST (
+                                    <span contenteditable="true" id="sgstPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="sgstAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">
+                                    IGST (
+                                    <span contenteditable="true" id="igstPercent" class="editable-percent">0</span> %)
+                                </td>
+                                <td id="igstAmount">0.00</td>
+                            </tr>
+
+                            <tr class="total-row" id="roundOffRow">
+                                <td colspan="5" class="text-right">Round Off</td>
+                                <td id="roundOff">0.00</td>
+                            </tr>
+
+                            <tr class="total-row">
+                                <td colspan="5" class="text-right">Payable Amount</td>
+                                <td id="payableAmount">1010.00</td>
+                            </tr>
+
+                            <tr>
+                                <th colspan="6" id="amountInWords" class="text-centre"><strong>Amount in Words:</strong> One Thousand Ten Rupees Only</th>
+                            </tr>
+
+                        </tbody>
+                    </table>
+                    
+                    <!-- Bank Details -->
+                    <table class="bank-table">
+                        <tbody>
+                            <tr>
+                                <th class="text-start">INSTRUCTIONS:</th>
+                                <td colspan="2" id="td_bank_instructions">
+                                    ABCSVHGVGHVSVGHSVD
+                                </td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">BANK NAME:</th>
+                                <td id="td_bank_name">SBI</td>
+                                <td class="text-centre text-uppercase">For </td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">ACCOUNT NO:</th>
+                                <td id="td_account_no"></td>
+                                <td rowspan="5" class="text-bottom">Authorised Signatory</td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">BRANCH:</th>
+                                <td class="text-uppercase" id="td_branch_name"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">IFSC CODE:</th>
+                                <td class="text-uppercase" id="td_ifsc_code"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">PAN NO:</th>
+                                <td class="text-uppercase" id="td_pan_no"></td>
+                            </tr>
+                            <tr>
+                                <th class="text-start">GSTIN:</th>
+                                <td class="text-uppercase" id="td_gstin"></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                </div>
+            </form>

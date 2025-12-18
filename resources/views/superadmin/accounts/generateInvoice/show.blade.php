@@ -167,9 +167,7 @@
         .invoice-settings-body::-webkit-scrollbar-thumb {
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 4px;
-        }
-
-
+        }   
         /* ================= PRINT ================= */
         @media print {
             body * {
@@ -197,9 +195,7 @@
         {{-- ===================== INVOICE PAGE ===================== --}}
 
         <div class="a4-page">
-            <div class="print-page-header">
-                <span class="page-number"></span>
-            </div>
+          
             <form id="previewInvoiceForm" method="POST" action="{{$ACTION_URL}}">
 
                 @csrf
@@ -218,7 +214,7 @@
                         <thead>
                             <tr>
                                 <th class="col-left text-uppercase" >
-                                    GSTIN: {{ $booking->gstin ?? '9113464642541' }}
+                                    GSTIN: {{ $bankInfo->gstin ?? '9113464642541' }}
                                 </th>
 
                                 <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
@@ -244,7 +240,7 @@
                                     {{ $booking->name_of_work ?? '' }}<br><br>
 
                                     <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
-                                    {{ $booking->gstin ?? '' }}
+                                    {{ $booking->client->gstin ?? '' }}
                                 </td>
 
                                 <td class="text-centre">
@@ -634,7 +630,8 @@
     {{-- ===================== PREVIEW FORM SUBMISSION ===================== --}}
     <script>
     document.getElementById('previewInvoiceForm')
-        .addEventListener('submit', function () {
+        .addEventListener('submit', function (e) { 
+            e.preventDefault();
 
             /* ================= FORCE CLEAN STATE ================= */
             const enableDiscount =
@@ -738,8 +735,10 @@
 
             document.getElementById('invoice_html').value = html;
             document.getElementById('preview_invoice_data').value =
-                JSON.stringify(invoiceData);
-        });
+                JSON.stringify(invoiceData); 
+
+            this.submit();
+        }); 
     </script>
 
 
