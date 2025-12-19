@@ -896,3 +896,5 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
     Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
     Route::get('invoices/{invoice}/download',[GenerateInvoiceStatusController::class, 'downloadInvoice'])->name('invoices.download'); 
+
+    Route::get('/invoices/missing', [InvoiceController::class, 'missingInvoices'])->name('invoices.missing');

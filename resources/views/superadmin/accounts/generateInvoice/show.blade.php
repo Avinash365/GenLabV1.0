@@ -167,7 +167,8 @@
         .invoice-settings-body::-webkit-scrollbar-thumb {
             background-color: rgba(0, 0, 0, 0.2);
             border-radius: 4px;
-        }   
+        }
+
         /* ================= PRINT ================= */
         @media print {
             body * {
@@ -195,7 +196,7 @@
         {{-- ===================== INVOICE PAGE ===================== --}}
 
         <div class="a4-page">
-          
+
             <form id="previewInvoiceForm" method="POST" action="{{$ACTION_URL}}">
 
                 @csrf
@@ -213,16 +214,15 @@
                     <table>
                         <thead>
                             <tr>
-                                <th class="col-left text-uppercase" >
+                                <th class="col-left text-uppercase">
                                     GSTIN: {{ $bankInfo->gstin ?? '9113464642541' }}
                                 </th>
 
                                 <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
-                                                                                    {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice' }}
-                                                                                </th>   -->
-                                <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader"
-                                    >
-                                    {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice' }}
+                                                                                            {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice' }}
+                                                                                        </th>   -->
+                                <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader">
+                                    {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax_Invoice' }}
                                 </th>
 
                                 <th class="text-centre">Scan to Pay</th>
@@ -244,9 +244,9 @@
                                 </td>
 
                                 <td class="text-centre">
-                        
+
                                     <img src="__QR_CODE_IMAGE__" width="100">
-                                 
+
                                 </td>
                             </tr>
 
@@ -442,7 +442,37 @@
                 </div>
                 <!--  Make body scrollable -->
                 <div class="card-body invoice-settings-body">
+                    <div class="card p-3">
+                        <div class="row g-2 mb-3">
+                            <div class="col">
+                                <input type="date" id="from_date" class="form-control">
+                            </div>
+                            <div class="col">
+                                <input type="date" id="to_date" class="form-control">
+                            </div>
+                            <div class="col">
+                                <button class="btn btn-primary w-100" onclick="loadMissing(1)">
+                                    Search
+                                </button>
+                            </div>
+                        </div>
 
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>#</th>
+                                    <th>Blank Invoice No</th>
+            
+                            </thead>
+                            <tbody id="missingTable"></tbody>
+                        </table>
+
+                        <div class="d-flex justify-content-between">
+                            <button class="btn btn-secondary btn-sm mt-3" onclick="prevPage()">Prev</button>
+                            <span id="pageInfo"></span>
+                            <button class="btn btn-secondary btn-sm mt-3" onclick="nextPage()">Next</button>
+                        </div>
+                    </div>
                     {{-- ================= INVOICE TYPE ================= --}}
                     <div class="mb-3">
                         <label class="fw-semibold mb-1 d-block">
@@ -559,7 +589,7 @@
                                             <a href="{{ $booking->generatedInvoice?->invoice_letter_path
         ? url($booking->generatedInvoice->invoice_letter_path)
         : '#' }}" target="_blank" class="btn btn-outline-secondary btn-sm
-                                                                                                {{ empty($booking->generatedInvoice?->invoice_letter_path) ? 'disabled' : '' }}">
+                                                                                                        {{ empty($booking->generatedInvoice?->invoice_letter_path) ? 'disabled' : '' }}">
                                                 <i class="bi bi-eye">View</i>
                                             </a>
 
@@ -629,116 +659,116 @@
 
     {{-- ===================== PREVIEW FORM SUBMISSION ===================== --}}
     <script>
-    document.getElementById('previewInvoiceForm')
-        .addEventListener('submit', function (e) { 
-            e.preventDefault();
+        document.getElementById('previewInvoiceForm')
+            .addEventListener('submit', function (e) {
+                e.preventDefault();
 
-            /* ================= FORCE CLEAN STATE ================= */
-            const enableDiscount =
-                document.getElementById('enableDiscount')?.checked ?? true;
+                /* ================= FORCE CLEAN STATE ================= */
+                const enableDiscount =
+                    document.getElementById('enableDiscount')?.checked ?? true;
 
-            const enableRoundOff =
-                document.getElementById('enableRoundOff')?.checked ?? true;
+                const enableRoundOff =
+                    document.getElementById('enableRoundOff')?.checked ?? true;
 
-            // Reset values if disabled
-            if (!enableDiscount) {
-                document.getElementById('discountPercent').innerText = '0';
-                document.getElementById('discountAmount').innerText = '0.00';
-                document.getElementById('afterDiscount').innerText =
-                    document.getElementById('totalAmount').innerText;
-            }
-
-            if (!enableRoundOff) {
-                document.getElementById('roundOff').innerText = '0.00';
-            }
-
-            recalculateAll(); // FINAL clean calculation
-
-            /* ================= EXISTING CODE ================= */
-
-            document.getElementById('invoice_type').value =
-                document.getElementById('invoiceTypeHeader').innerText.trim().toLowerCase();
-
-            const billing = extractBillingInfo();
-            const reference = extractReferenceInfo();
-
-            let invoiceData = {
-
-                booking_info: {
-                    booking_id: "{{ $booking->id }}",
-                    client_name: "{{ $booking->client->name ?? '' }}",
-                    marketing_person: "{{ $booking->marketingPerson->name ?? '' }}",
-                    invoice_no: document.getElementById('td_invoice_no').innerText,
-
-                    reference_no: reference.reference_no,
-                    letter_date: reference.letter_date,
-
-                    invoice_date: document.getElementById('td_invoice_date').innerText,
-                    name_of_work: document.getElementById('td_name_of_work').innerText,
-
-                    bill_issue_to: billing.bill_issue_to,
-                    client_gstin: billing.client_gstin || "{{ $booking->gstin ?? '' }}",
-                    address: billing.address
-                },
-
-                items: [],
-
-                totals: {
-                    total_amount: document.getElementById('totalAmount').innerText,
-                    discount_percent: document.getElementById('discountPercent').innerText,
-                    discount_amount: document.getElementById('discountAmount').innerText,
-                    after_discount: document.getElementById('afterDiscount').innerText,
-                    cgst_percent: document.getElementById('cgstPercent').innerText,
-                    cgst_amount: document.getElementById('cgstAmount').innerText,
-                    sgst_percent: document.getElementById('sgstPercent').innerText,
-                    sgst_amount: document.getElementById('sgstAmount').innerText,
-                    igst_percent: document.getElementById('igstPercent').innerText,
-                    igst_amount: document.getElementById('igstAmount').innerText,
-                    round_off: document.getElementById('roundOff').innerText,
-                    payable_amount: document.getElementById('payableAmount').innerText
-                },
-
-                bank_info: {
-                    instructions: "{{ $bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD' }}",
-                    name: "{{ $bankInfo->name ?? 'SBI' }}",
-                    branch_name: "{{ $bankInfo->branch ?? 'Harauli' }}",
-                    account_no: "{{ $bankInfo->account_no ?? '000121210' }}",
-                    ifsc_code: "{{ $bankInfo->ifsc_code ?? 'SB00001' }}",
-                    pan_no: "{{ $bankInfo->pan_no ?? 'AHTPJ45454' }}",
-                    gstin: "{{ $bankInfo->gstin ?? '87457187441417644' }}"
-                }
-            };
-
-            // ITEMS
-            document.querySelectorAll('.item-row').forEach(row => {
-                let jobOrderNo = '';
-                if (!row.dataset.merged) {
-                    jobOrderNo = row.children[1]?.innerText || '';
+                // Reset values if disabled
+                if (!enableDiscount) {
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
                 }
 
-                invoiceData.items.push({
-                    description: row.querySelector('.description')?.innerText || '',
-                    job_order_no: jobOrderNo,
-                    qty: row.querySelector('.qty')?.innerText || '0',
-                    rate: row.querySelector('.rate')?.innerText || '0',
-                    amount: row.querySelector('.amount')?.innerText || '0'
+                if (!enableRoundOff) {
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
+
+                recalculateAll(); // FINAL clean calculation
+
+                /* ================= EXISTING CODE ================= */
+
+                document.getElementById('invoice_type').value =
+                    document.getElementById('invoiceTypeHeader').innerText.trim().toLowerCase();
+
+                const billing = extractBillingInfo();
+                const reference = extractReferenceInfo();
+
+                let invoiceData = {
+
+                    booking_info: {
+                        booking_id: "{{ $booking->id }}",
+                        client_name: "{{ $booking->client->name ?? '' }}",
+                        marketing_person: "{{ $booking->marketingPerson->name ?? '' }}",
+                        invoice_no: document.getElementById('td_invoice_no').innerText,
+
+                        reference_no: reference.reference_no,
+                        letter_date: reference.letter_date,
+
+                        invoice_date: document.getElementById('td_invoice_date').innerText,
+                        name_of_work: document.getElementById('td_name_of_work').innerText,
+
+                        bill_issue_to: billing.bill_issue_to,
+                        client_gstin: billing.client_gstin || "{{ $booking->gstin ?? '' }}",
+                        address: billing.address
+                    },
+
+                    items: [],
+
+                    totals: {
+                        total_amount: document.getElementById('totalAmount').innerText,
+                        discount_percent: document.getElementById('discountPercent').innerText,
+                        discount_amount: document.getElementById('discountAmount').innerText,
+                        after_discount: document.getElementById('afterDiscount').innerText,
+                        cgst_percent: document.getElementById('cgstPercent').innerText,
+                        cgst_amount: document.getElementById('cgstAmount').innerText,
+                        sgst_percent: document.getElementById('sgstPercent').innerText,
+                        sgst_amount: document.getElementById('sgstAmount').innerText,
+                        igst_percent: document.getElementById('igstPercent').innerText,
+                        igst_amount: document.getElementById('igstAmount').innerText,
+                        round_off: document.getElementById('roundOff').innerText,
+                        payable_amount: document.getElementById('payableAmount').innerText
+                    },
+
+                    bank_info: {
+                        instructions: "{{ $bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD' }}",
+                        name: "{{ $bankInfo->name ?? 'SBI' }}",
+                        branch_name: "{{ $bankInfo->branch ?? 'Harauli' }}",
+                        account_no: "{{ $bankInfo->account_no ?? '000121210' }}",
+                        ifsc_code: "{{ $bankInfo->ifsc_code ?? 'SB00001' }}",
+                        pan_no: "{{ $bankInfo->pan_no ?? 'AHTPJ45454' }}",
+                        gstin: "{{ $bankInfo->gstin ?? '87457187441417644' }}"
+                    }
+                };
+
+                // ITEMS
+                document.querySelectorAll('.item-row').forEach(row => {
+                    let jobOrderNo = '';
+                    if (!row.dataset.merged) {
+                        jobOrderNo = row.children[1]?.innerText || '';
+                    }
+
+                    invoiceData.items.push({
+                        description: row.querySelector('.description')?.innerText || '',
+                        job_order_no: jobOrderNo,
+                        qty: row.querySelector('.qty')?.innerText || '0',
+                        rate: row.querySelector('.rate')?.innerText || '0',
+                        amount: row.querySelector('.amount')?.innerText || '0'
+                    });
                 });
-            });
 
-            let html = document.getElementById('previewInvoiceForm').outerHTML;
+                let html = document.getElementById('previewInvoiceForm').outerHTML;
 
-            html = html.replace(/action="[^"]*"/i, 'action="__ACTION_URL__"');
-            html = html.replace(
-                /<input[^>]*name="_token"[^>]*value="[^"]*"[^>]*>/gi,
-                '<input type="hidden" name="_token" value="__CSRF_TOKEN__">'
-            );
+                html = html.replace(/action="[^"]*"/i, 'action="__ACTION_URL__"');
+                html = html.replace(
+                    /<input[^>]*name="_token"[^>]*value="[^"]*"[^>]*>/gi,
+                    '<input type="hidden" name="_token" value="__CSRF_TOKEN__">'
+                );
 
-            document.getElementById('invoice_html').value = html;
-            document.getElementById('preview_invoice_data').value =
-                JSON.stringify(invoiceData); 
+                document.getElementById('invoice_html').value = html;
+                document.getElementById('preview_invoice_data').value =
+                    JSON.stringify(invoiceData);
 
-            this.submit();
-        }); 
+                this.submit();
+            }); 
     </script>
 
 
@@ -981,7 +1011,7 @@
     </script>
 
     {{-- ===================== ROW SELECT HIGHLIGHT ===================== --}}
-     <script>
+    <script>
         document.addEventListener('click', function (e) {
             const row = e.target.closest('.item-row');
             if (!row) return;
@@ -1012,13 +1042,13 @@
             newRow.className = 'item-row';
 
             newRow.innerHTML = `
-                                                                    <td contenteditable="true" class="editable description"></td>
-                                                                    <td contenteditable="true">10101</td>
-                                                                    <td contenteditable="true"></td>
-                                                                    <td contenteditable="true" class="editable qty">1</td>
-                                                                    <td contenteditable="true" class="editable rate">0.00</td>
-                                                                    <td contenteditable="true" class="amount">0.00</td>
-                                                                `;
+                                                                            <td contenteditable="true" class="editable description"></td>
+                                                                            <td contenteditable="true">10101</td>
+                                                                            <td contenteditable="true"></td>
+                                                                            <td contenteditable="true" class="editable qty">1</td>
+                                                                            <td contenteditable="true" class="editable rate">0.00</td>
+                                                                            <td contenteditable="true" class="amount">0.00</td>
+                                                                        `;
 
             selected.after(newRow);
 
@@ -1102,10 +1132,10 @@
 
             // Build combined text from current columns
             const combinedText = `
-                                                            ${cells[0].innerText}
-                                                            Job: ${cells[1].innerText}
-                                                            SAC: ${cells[2].innerText}
-                                                            `.trim();
+                                                                    ${cells[0].innerText}
+                                                                    Job: ${cells[1].innerText}
+                                                                    SAC: ${cells[2].innerText}
+                                                                    `.trim();
 
             // Save original row (for future undo)
             row.dataset.original = row.innerHTML;
@@ -1115,15 +1145,15 @@
             // - 1 combined column (Desc + Job + SAC + Qty + Rate)
             // - Amount column preserved
             row.innerHTML = `
-                                                                    <td contenteditable="true"
-                                                                        colspan="3"
-                                                                        class="editable description">
-                                                                        ${combinedText}
-                                                                    </td>
-                                                                    <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
-                                                                    <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
-                                                                    <td contenteditable="true" class="amount">${cells[5].innerText}</td>
-                                                                `;
+                                                                            <td contenteditable="true"
+                                                                                colspan="3"
+                                                                                class="editable description">
+                                                                                ${combinedText}
+                                                                            </td>
+                                                                            <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
+                                                                            <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
+                                                                            <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                                                                        `;
 
             recalculateAll();
         }
@@ -1146,6 +1176,66 @@
     </script>
 
     {{-- ===================== PRINT PAGE SUBTOTALS ===================== --}}
+
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+
+    <script>
+        let currentPage = 1;
+        let totalRecords = 0;
+        let perPage = 10;
+
+        function loadMissing(page = 1) {
+            currentPage = page;
+
+            $.ajax({
+                url: "{{ route('invoices.missing') }}",
+                data: {
+                    from_date: $('#from_date').val(),
+                    to_date: $('#to_date').val(),
+                    page: page
+                },
+                success: function (res) {
+                    let rows = '';
+                    let start = (page - 1) * perPage;
+
+                    if (res.data.length === 0) {
+                        rows = `<tr><td colspan="2" class="text-center">No missing invoices</td></tr>`;
+                    }
+
+                    res.data.forEach((inv, i) => {
+                        rows += `
+                            <tr>
+                                <td>${start + i + 1}</td>
+                                <td>${inv}</td>
+                            </tr>
+                        `;
+                    });
+
+                    $('#missingTable').html(rows);
+
+                    totalRecords = res.total;
+                    $('#pageInfo').text(
+                        `Page ${res.page} of ${Math.ceil(res.total / perPage)}`
+                    );
+                }
+            });
+        }
+
+        function nextPage() {
+            if (currentPage * perPage < totalRecords) {
+                loadMissing(currentPage + 1);
+            }
+        }
+
+        function prevPage() {
+            if (currentPage > 1) {
+                loadMissing(currentPage - 1);
+            }
+        }
+
+        // Initial load
+        loadMissing();
+    </script>
 
 
 @endsection

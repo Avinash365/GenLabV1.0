@@ -231,10 +231,10 @@
                                         <i data-feather="file-text"></i>
                                     </a>
 
-                                    <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
+                                    <!-- <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
                                        class="btn btn-outline-primary d-flex align-items-center p-2">
                                         <i data-feather="edit"></i>
-                                    </a>
+                                    </a> -->
 
                                     <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2" 
                                             data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">

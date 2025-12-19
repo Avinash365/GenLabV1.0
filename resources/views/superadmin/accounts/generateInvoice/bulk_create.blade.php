@@ -201,6 +201,16 @@
             ->implode(', ');
     @endphp
 
+    @php
+        $refDateLines = $bookings
+            ->filter(fn($b) => $b->reference_no && $b->job_order_date)
+            ->map(function ($b) {
+                return $b->reference_no . ' & ' .
+                    \Carbon\Carbon::parse($b->job_order_date)->format('d-m-Y');
+            })
+            ->implode('<br>');
+    @endphp
+
     <div class="row">
         {{-- ===================== INVOICE PAGE ===================== --}}
 
@@ -275,11 +285,15 @@
                             </tr>
 
                             <tr>
-                                <th class="text-start">Ref. No & Date:</th>
+                                <!-- <th class="text-start">Ref. No & Date:</th>
                                 <td colspan="3" contenteditable="false" id="td_reference_block">
                                     {{  $allReferences ?? ''}}
                                     &nbsp;&&nbsp;
                                     {{ $allLetterDates ?? ''}}
+                                </td> -->
+                                <th class="text-start">Ref. No & Date:</th>
+                                <td colspan="3"  contenteditable="false" id="td_reference_block">
+                                    {!! $refDateLines !!}
                                 </td>
                             </tr>
 

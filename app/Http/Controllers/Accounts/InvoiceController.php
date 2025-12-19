@@ -620,6 +620,62 @@ class InvoiceController extends Controller
         }
     }
 
+    public function missingInvoices(Request $request)
+    {
+        $prefix = $request->get('prefix', 'ITL');
+        $fy = $request->get('fy', '25-26');
+        $fromDate = $request->get('from_date');
+        $toDate = $request->get('to_date');
+        $page = max((int) $request->get('page', 1), 1);
+        $perPage = 10;
 
+        $query = DB::table('invoices')
+            ->select('invoice_no')
+            ->where('invoice_no', 'like', "$prefix/$fy/%");
+
+        if ($fromDate) {
+            $query->whereDate('invoice_date', '>=', $fromDate);
+        }
+
+        if ($toDate) {
+            $query->whereDate('invoice_date', '<=', $toDate);
+        }
+
+        $numbers = $query
+            ->pluck('invoice_no')
+            ->map(fn ($inv) => (int) last(explode('/', $inv)))
+            ->sort()
+            ->values();
+
+        if ($numbers->isEmpty()) {
+            return response()->json([
+                'data' => [],
+                'total' => 0
+            ]);
+        }
+
+        $min = $numbers->first();
+        $max = $numbers->last();
+
+        $missing = [];
+        for ($i = $min; $i <= $max; $i++) {
+            if (!$numbers->contains($i)) {
+                $missing[] = "$prefix/$fy/$i";
+            }
+        }
+
+        $total = count($missing);
+
+        $data = collect($missing)
+            ->slice(($page - 1) * $perPage, $perPage)
+            ->values();
+
+        return response()->json([
+            'data' => $data,
+            'total' => $total,
+            'page' => $page,
+            'per_page' => $perPage
+        ]);
+    }
 
 }
