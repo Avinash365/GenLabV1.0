@@ -219,8 +219,8 @@
                                 </th>
 
                                 <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
-                                                                                            {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice' }}
-                                                                                        </th>   -->
+                                                                                                {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice' }}
+                                                                                            </th>   -->
                                 <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader">
                                     {{ $invoiceData['invoice']['invoiceType'] ?? 'Tax_Invoice' }}
                                 </th>
@@ -442,37 +442,7 @@
                 </div>
                 <!--  Make body scrollable -->
                 <div class="card-body invoice-settings-body">
-                    <div class="card p-3">
-                        <div class="row g-2 mb-3">
-                            <div class="col">
-                                <input type="date" id="from_date" class="form-control">
-                            </div>
-                            <div class="col">
-                                <input type="date" id="to_date" class="form-control">
-                            </div>
-                            <div class="col">
-                                <button class="btn btn-primary w-100" onclick="loadMissing(1)">
-                                    Search
-                                </button>
-                            </div>
-                        </div>
-
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>#</th>
-                                    <th>Blank Invoice No</th>
-            
-                            </thead>
-                            <tbody id="missingTable"></tbody>
-                        </table>
-
-                        <div class="d-flex justify-content-between">
-                            <button class="btn btn-secondary btn-sm mt-3" onclick="prevPage()">Prev</button>
-                            <span id="pageInfo"></span>
-                            <button class="btn btn-secondary btn-sm mt-3" onclick="nextPage()">Next</button>
-                        </div>
-                    </div>
+                   
                     {{-- ================= INVOICE TYPE ================= --}}
                     <div class="mb-3">
                         <label class="fw-semibold mb-1 d-block">
@@ -589,7 +559,7 @@
                                             <a href="{{ $booking->generatedInvoice?->invoice_letter_path
         ? url($booking->generatedInvoice->invoice_letter_path)
         : '#' }}" target="_blank" class="btn btn-outline-secondary btn-sm
-                                                                                                        {{ empty($booking->generatedInvoice?->invoice_letter_path) ? 'disabled' : '' }}">
+                                                                                                            {{ empty($booking->generatedInvoice?->invoice_letter_path) ? 'disabled' : '' }}">
                                                 <i class="bi bi-eye">View</i>
                                             </a>
 
@@ -1042,13 +1012,13 @@
             newRow.className = 'item-row';
 
             newRow.innerHTML = `
-                                                                            <td contenteditable="true" class="editable description"></td>
-                                                                            <td contenteditable="true">10101</td>
-                                                                            <td contenteditable="true"></td>
-                                                                            <td contenteditable="true" class="editable qty">1</td>
-                                                                            <td contenteditable="true" class="editable rate">0.00</td>
-                                                                            <td contenteditable="true" class="amount">0.00</td>
-                                                                        `;
+                                                                                <td contenteditable="true" class="editable description"></td>
+                                                                                <td contenteditable="true">10101</td>
+                                                                                <td contenteditable="true"></td>
+                                                                                <td contenteditable="true" class="editable qty">1</td>
+                                                                                <td contenteditable="true" class="editable rate">0.00</td>
+                                                                                <td contenteditable="true" class="amount">0.00</td>
+                                                                            `;
 
             selected.after(newRow);
 
@@ -1132,10 +1102,10 @@
 
             // Build combined text from current columns
             const combinedText = `
-                                                                    ${cells[0].innerText}
-                                                                    Job: ${cells[1].innerText}
-                                                                    SAC: ${cells[2].innerText}
-                                                                    `.trim();
+                                                                        ${cells[0].innerText}
+                                                                        Job: ${cells[1].innerText}
+                                                                        SAC: ${cells[2].innerText}
+                                                                        `.trim();
 
             // Save original row (for future undo)
             row.dataset.original = row.innerHTML;
@@ -1145,15 +1115,15 @@
             // - 1 combined column (Desc + Job + SAC + Qty + Rate)
             // - Amount column preserved
             row.innerHTML = `
-                                                                            <td contenteditable="true"
-                                                                                colspan="3"
-                                                                                class="editable description">
-                                                                                ${combinedText}
-                                                                            </td>
-                                                                            <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
-                                                                            <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
-                                                                            <td contenteditable="true" class="amount">${cells[5].innerText}</td>
-                                                                        `;
+                                                                                <td contenteditable="true"
+                                                                                    colspan="3"
+                                                                                    class="editable description">
+                                                                                    ${combinedText}
+                                                                                </td>
+                                                                                <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
+                                                                                <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
+                                                                                <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                                                                            `;
 
             recalculateAll();
         }
@@ -1176,66 +1146,6 @@
     </script>
 
     {{-- ===================== PRINT PAGE SUBTOTALS ===================== --}}
-
-    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
-
-    <script>
-        let currentPage = 1;
-        let totalRecords = 0;
-        let perPage = 10;
-
-        function loadMissing(page = 1) {
-            currentPage = page;
-
-            $.ajax({
-                url: "{{ route('invoices.missing') }}",
-                data: {
-                    from_date: $('#from_date').val(),
-                    to_date: $('#to_date').val(),
-                    page: page
-                },
-                success: function (res) {
-                    let rows = '';
-                    let start = (page - 1) * perPage;
-
-                    if (res.data.length === 0) {
-                        rows = `<tr><td colspan="2" class="text-center">No missing invoices</td></tr>`;
-                    }
-
-                    res.data.forEach((inv, i) => {
-                        rows += `
-                            <tr>
-                                <td>${start + i + 1}</td>
-                                <td>${inv}</td>
-                            </tr>
-                        `;
-                    });
-
-                    $('#missingTable').html(rows);
-
-                    totalRecords = res.total;
-                    $('#pageInfo').text(
-                        `Page ${res.page} of ${Math.ceil(res.total / perPage)}`
-                    );
-                }
-            });
-        }
-
-        function nextPage() {
-            if (currentPage * perPage < totalRecords) {
-                loadMissing(currentPage + 1);
-            }
-        }
-
-        function prevPage() {
-            if (currentPage > 1) {
-                loadMissing(currentPage - 1);
-            }
-        }
-
-        // Initial load
-        loadMissing();
-    </script>
 
 
 @endsection
