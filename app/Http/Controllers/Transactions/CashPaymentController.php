@@ -104,12 +104,16 @@ class CashPaymentController extends Controller
     public function store(StorePaymentRequest $request)
     {
         $validated = $request->validated();
-
         try {
             DB::beginTransaction();
 
             $invoice = Invoice::findOrFail($validated['invoice_id']);
-
+            
+            $createdBy = null; 
+            if (Auth::guard('web')->check()) {
+                $createdBy = Auth::guard('web')->id();   
+            }
+            
             // TDS entry
             $tds = InvoiceTds::firstOrCreate(
                 ['invoice_id' => $invoice->id],
@@ -119,7 +123,7 @@ class CashPaymentController extends Controller
                     'tds_percentage'      => $validated['tds_percentage'],
                     'amount_after_tds'    => $validated['amount_after_tds'],
                     'tds_amount'          => $validated['subtotal_amount'] * $validated['tds_percentage'] / 100,
-                    'created_by'          => Auth::id(),
+                    'created_by'          => $createdBy,
                 ]
             );
 
@@ -133,7 +137,7 @@ class CashPaymentController extends Controller
                 'amount_received'     => $validated['amount_received'],
                 'transaction_reference' => $validated['transaction_reference'] ?? null,
                 'notes'               => $validated['notes'] ?? null,
-                'created_by'          => Auth::id(),
+                'created_by'          => $createdBy,
             ]);
 
             // Update invoice status
@@ -223,6 +227,11 @@ class CashPaymentController extends Controller
             DB::beginTransaction();
 
             $invoice = Invoice::with('tdsTransaction')->findOrFail($invoice_id);
+            $createdBy = null; 
+            
+            if (Auth::guard('web')->check()) {
+                $createdBy = Auth::guard('web')->id();   
+            }
 
             // Create payment transaction
             InvoiceTransaction::create([
@@ -234,7 +243,7 @@ class CashPaymentController extends Controller
                 'amount_received'       => $validated['amount_received'],
                 'transaction_reference' => $validated['transaction_reference'] ?? null,
                 'notes'                 => $validated['notes'] ?? null,
-                'created_by'            => Auth::id(),
+                'created_by'            => $createdBy,
             ]);
 
             // Update invoice status

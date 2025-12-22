@@ -62,7 +62,7 @@
         /* Remove all borders inside the row */
         tr.item-row td {
             border-top: none !important;
-            border-bottom: none !important;
+            /* border-bottom: none !important; */
             /* border-left: none !important; */
             border-right: none !important;
         }
@@ -194,12 +194,17 @@
     </style>
 
 
+
+
     <div class="row">
         
+        <div class="a4-page">
+            <div class="print-page-header">
+                <span class="page-number"></span>
+            </div>
+            <?php echo $html; ?>
 
-        <?php echo $html; ?>
-
-
+        </div>
 
         
         <div class="col-lg-3">
@@ -231,7 +236,7 @@
                         </label>
 
                         <div class="btn btn-sm btn-outline-primary w-100 text-start">
-                            👤 <?php echo e($booking->marketingPerson->name ?? '-'); ?>
+                            👤 <?php echo e($invoice->relatedBooking->marketingPerson->name ?? '-'); ?>
 
                         </div>
                     </div>
@@ -279,6 +284,11 @@
                             <i class="fa fa-file-pdf me-2"></i> Save Invoice
                         </button>
                     </div>
+                    <div class="d-flex">
+                        <a href="<?php echo e(route('invoices.download', $invoice->id)); ?>" class="btn btn-sm mt-3 btn-outline-danger">
+                            <i class="fa fa-file-pdf me-2"></i> ⬇ Download Invoice
+                        </a>
+                    </div>
 
                     <hr>
                     
@@ -299,7 +309,7 @@
 
                                     <?php echo csrf_field(); ?>
                                     <input type="hidden" name="invoice_id"
-                                        value="<?php echo e($booking->generatedInvoice?->id ?? '0'); ?>">
+                                        value="<?php echo e($invoice->relatedBooking->generatedInvoice?->id ?? '0'); ?>">
 
                                     <!-- Hidden File Input -->
                                     <input type="file" id="gstinFile" name="gstin_file" class="d-none"
@@ -326,10 +336,20 @@
                                             <!-- View Button -->
                                             <a href="<?php echo e($invoice->invoice_letter_path
         ? url($invoice->invoice_letter_path)
-        : '#'); ?>" target="_blank" class="btn btn-outline-secondary btn-sm
-                                                <?php echo e(empty($invoice->invoice_letter_path) ? 'disabled' : ''); ?>">
+        : '#'); ?>" target="_blank"
+                                                class="btn btn-outline-secondary btn-sm
+                                                                    <?php echo e(empty($invoice->invoice_letter_path) ? 'disabled' : ''); ?>">
                                                 <i class="bi bi-eye">View</i>
+
                                             </a>
+                                            <?php if($invoice->invoice_letter_path): ?>
+                                                                    <span class="position-absolute top-40 start-20 translate-middle
+                                                 badge rounded-circle bg-success"
+                                                                        style="font-size: 0.6rem;  p-2">
+                                                                        1
+                                                                    </span>
+                                            <?php endif; ?>
+
 
                                             <!-- Save Button -->
                                             <button type="submit" class="btn btn-success btn-sm px-3">
@@ -350,34 +370,100 @@
 
     
     <script>
+        function extractBillingInfo() {
+            const td = document.getElementById('td_bill_block');
+            if (!td) return { bill_issue_to: '', address: '', client_gstin: '' };
+
+            const lines = td.innerText
+                .split('\n')
+                .map(l => l.trim())
+                .filter(Boolean);
+
+            let bill_issue_to = '';
+            let address = '';
+            let client_gstin = '';
+
+            lines.forEach(line => {
+                if (/^GSTIN/i.test(line)) {
+                    client_gstin = line.replace(/GSTIN\s*:?\s*/i, '').trim();
+                } else if (!bill_issue_to) {
+                    bill_issue_to = line;
+                } else {
+                    address += (address ? ', ' : '') + line;
+                }
+            });
+
+            return { bill_issue_to, address, client_gstin };
+        }
+    </script>
+
+    <script>
+        function extractReferenceInfo() {
+            const td = document.getElementById('td_reference_block');
+            if (!td) return { reference_no: '', letter_date: '' };
+
+            const text = td.innerText.replace(/\s+/g, ' ').trim();
+
+            // split by && (with or without spaces)
+            const parts = text.split(/\s*&\s*/);
+
+            return {
+                reference_no: parts[0] || '',
+                letter_date: parts[1] || ''
+            };
+        }
+    </script>
+
+    
+    <script>
         document.getElementById('previewInvoiceForm')
-            .addEventListener('submit', function () {
+            .addEventListener('submit', function (e) {
+                e.preventDefault();
+                /* ================= FORCE CLEAN STATE ================= */
+                const enableDiscount =
+                    document.getElementById('enableDiscount')?.checked ?? true;
+
+                const enableRoundOff =
+                    document.getElementById('enableRoundOff')?.checked ?? true;
+
+                // Reset values if disabled
+                if (!enableDiscount) {
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
+                }
+
+                if (!enableRoundOff) {
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
 
                 recalculateAll(); // ensure totals are correct
 
-                // invoice type
-                // document.getElementById('invoice_type').value =
-                //     document.getElementById('invoiceTypeHeader').innerText.trim().toLowerCase();
+                document.getElementById('invoice_type').value =
+                    document.getElementById('invoiceTypeHeader').innerText.trim().toLowerCase();
+
+
+                const billing = extractBillingInfo();
+                const reference = extractReferenceInfo();
 
                 let invoiceData = {
 
                     booking_info: {
                         booking_id: "<?php echo e($invoice->relatedBooking->id); ?>",
                         client_name: "<?php echo e($invoice->relatedBooking->client->name ?? ''); ?>",
-                        marketing_person: "<?php echo e($invoice->relatedBooking->name ?? ''); ?>",
-                        invoice_no: document.querySelector('[contenteditable][data-invoice-no]')?.innerText
-                            || "<?php echo e($booking->invoice_no ?? ''); ?>",
-                        reference_no: "<?php echo e($invoice->relatedBooking->reference_no ?? ''); ?>",
-                        invoice_date: "<?php echo e(date('d-m-Y')); ?>",
-                        letter_date: "<?php echo e($invoice->relatedBooking->job_order_date
-        ? \Carbon\Carbon::parse($invoice->relatedBooking->job_order_date)->format('d-m-Y')
-        : ''); ?>",
-                        name_of_work: document.querySelector('[contenteditable][data-name-of-work]')?.innerText
-                            || "<?php echo e($invoice->relatedBooking->name_of_work ?? ''); ?>",
-                        bill_issue_to: document.querySelector('[contenteditable][data-bill-issue]')?.innerText
-                            || "",
-                        client_gstin: "<?php echo e($invoice->relatedBooking->gstin ?? ''); ?>",
-                        address: ""
+                        marketing_person: "<?php echo e($invoice->relatedBooking->marketingPerson->name ?? ''); ?>",
+                        invoice_no: document.getElementById('td_invoice_no').innerText,
+
+                        reference_no: reference.reference_no,
+                        letter_date: reference.letter_date,
+
+                        invoice_date: document.getElementById('td_invoice_date').innerText,
+                        name_of_work: document.getElementById('td_name_of_work').innerText,
+
+                        bill_issue_to: billing.bill_issue_to,
+                        client_gstin: billing.client_gstin || "<?php echo e($invoice->relatedBooking->gstin ?? ''); ?>",
+                        address: billing.address
                     },
 
                     items: [],
@@ -410,27 +496,36 @@
 
                 // ITEMS (match OLD controller exactly)
                 document.querySelectorAll('.item-row').forEach(row => {
+                    let jobOrderNo = '';
+                    if (!row.dataset.merged) {
+                        jobOrderNo = row.children[1]?.innerText || '';
+                    }
                     invoiceData.items.push({
                         description: row.querySelector('.description')?.innerText || '',
-                        job_order_no: row.children[1]?.innerText || '',
-                        qty: row.querySelector('.qty')?.innerText || 0,
-                        rate: row.querySelector('.rate')?.innerText || 0,
-                        amount: row.querySelector('.amount')?.innerText || 0
+                        job_order_no: jobOrderNo,
+                        qty: row.querySelector('.qty')?.innerText || '0',
+                        rate: row.querySelector('.rate')?.innerText || '0',
+                        amount: row.querySelector('.amount')?.innerText || '0'
                     });
                 });
 
+
                 let html = document.getElementById('previewInvoiceForm').outerHTML;
-                html = html.replace('method="POST"', 'method="PUT"');
-                // Add _method hidden input for Laravel PUT
-                html = html.replace('<input type="hidden" name="invoice_type"', '<input type="hidden" name="_method" value="PUT"><input type="hidden" name="invoice_type"');
+
+                html = html.replace(/action="[^"]*"/i, 'action="__ACTION_URL__"');
+                html = html.replace(
+                    /<input[^>]*name="_token"[^>]*value="[^"]*"[^>]*>/gi,
+                    '<input type="hidden" name="_token" value="__CSRF_TOKEN__">'
+                );
+                // $html = str_replace('__METHOD__', 'PUT', $html);  
+
                 document.getElementById('invoice_html').value = html;
 
                 document.getElementById('preview_invoice_data').value =
                     JSON.stringify(invoiceData);
+                this.submit();
             });
     </script>
-
-
 
 
 
@@ -644,13 +739,32 @@
     
     <script>
         document.getElementById('enableRoundOff')
-            .addEventListener('change', recalculateAll);
+            .addEventListener('change', function () {
+
+                if (!this.checked) {
+                    // Reset round off
+                    document.getElementById('roundOff').innerText = '0.00';
+                }
+
+                recalculateAll();
+            });
     </script>
 
     
     <script>
         document.getElementById('enableDiscount')
-            .addEventListener('change', recalculateAll);
+            .addEventListener('change', function () {
+
+                if (!this.checked) {
+                    // Reset discount values
+                    document.getElementById('discountPercent').innerText = '0';
+                    document.getElementById('discountAmount').innerText = '0.00';
+                    document.getElementById('afterDiscount').innerText =
+                        document.getElementById('totalAmount').innerText;
+                }
+
+                recalculateAll();
+            });
     </script>
 
     
@@ -659,11 +773,15 @@
             const row = e.target.closest('.item-row');
             if (!row) return;
 
+            const isSelected = row.classList.contains('selected');
+
             document
                 .querySelectorAll('.item-row')
                 .forEach(r => r.classList.remove('selected'));
 
-            row.classList.add('selected');
+            if (!isSelected) {
+                row.classList.add('selected');
+            }
         });
     </script>
 
@@ -681,13 +799,13 @@
             newRow.className = 'item-row';
 
             newRow.innerHTML = `
-                    <td contenteditable="true" class="editable description"></td>
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true"></td>
-                    <td contenteditable="true" class="editable qty">1</td>
-                    <td contenteditable="true" class="editable rate">0.00</td>
-                    <td contenteditable="true" class="amount">0.00</td>
-                `;
+                                        <td contenteditable="true" class="editable description"></td>
+                                        <td contenteditable="true"></td>
+                                        <td contenteditable="true"></td>
+                                        <td contenteditable="true" class="editable qty">1</td>
+                                        <td contenteditable="true" class="editable rate">0.00</td>
+                                        <td contenteditable="true" class="amount">0.00</td>
+                                    `;
 
             selected.after(newRow);
 
@@ -771,10 +889,10 @@
 
             // Build combined text from current columns
             const combinedText = `
-            ${cells[0].innerText}
-            Job: ${cells[1].innerText}
-            SAC: ${cells[2].innerText}
-            `.trim();
+                                ${cells[0].innerText}
+                                Job: ${cells[1].innerText}
+                                SAC: ${cells[2].innerText}
+                                `.trim();
 
             // Save original row (for future undo)
             row.dataset.original = row.innerHTML;
@@ -784,15 +902,15 @@
             // - 1 combined column (Desc + Job + SAC + Qty + Rate)
             // - Amount column preserved
             row.innerHTML = `
-                    <td contenteditable="true"
-                        colspan="3"
-                        class="editable description">
-                        ${combinedText}
-                    </td>
-                    <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
-                    <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
-                    <td contenteditable="true" class="amount">${cells[5].innerText}</td>
-                `;
+                                        <td contenteditable="true"
+                                            colspan="3"
+                                            class="editable description">
+                                            ${combinedText}
+                                        </td>
+                                        <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
+                                        <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
+                                        <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                                    `;
 
             recalculateAll();
         }
@@ -862,17 +980,19 @@
             const tr = document.createElement('tr');
             tr.className = 'page-subtotal-row';
             tr.innerHTML = `
-                    <td colspan="5" class="text-right">
-                        Sub Total (This Page)
-                    </td>
-                    <td>${total.toFixed(2)}</td>
-                `;
+                                        <td colspan="5" class="text-right">
+                                            Sub Total (This Page)
+                                        </td>
+                                        <td>${total.toFixed(2)}</td>
+                                    `;
             afterRow.after(tr);
         }
 
         // Hook into print
         window.addEventListener('beforeprint', addPageSubtotalsForPrint);
     </script>
-
+    <script>
+        window.open(`/invoices/${invoiceId}/download`, '_blank');
+    </script>
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/generateInvoice/edit-Invoice.blade.php ENDPATH**/ ?>

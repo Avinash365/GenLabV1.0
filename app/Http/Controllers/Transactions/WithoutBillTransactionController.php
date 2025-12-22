@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\WithoutBillTransaction;
 use App\Models\NewBooking;
 use App\Models\{Client, CashLetterPayment, CashLetterPartialPaymentEntry, Department}; 
+use Illuminate\Support\Facades\Auth; 
 
 use Carbon\Carbon;
 
@@ -130,7 +131,10 @@ class WithoutBillTransactionController extends Controller
                         ]
                     );
             }
-            
+            $createdBy = null; 
+            if (Auth::guard('web')->check()) {
+                $createdBy = Auth::guard('web')->id();   
+            }
             // Create entry in partial payment table
             CashLetterPartialPaymentEntry::create([
                 'client_id'             => $validated['client_id'],
@@ -140,7 +144,7 @@ class WithoutBillTransactionController extends Controller
                 'transaction_date'      => $validated['transaction_date'],
                 'amount_received'       => $validated['amount_received'],
                 'note'                  => $validated['notes'] ?? null,
-                'created_by'            => auth()->id(),
+                'created_by'            => $createdBy,
             ]);
 
             \DB::commit();
@@ -175,7 +179,10 @@ class WithoutBillTransactionController extends Controller
 
             // Find the original Cash Letter Payment
             $cashLetterPayment = CashLetterPayment::findOrFail($id);
-
+            $createdBy = null; 
+            if (Auth::guard('web')->check()) {
+                $createdBy = Auth::guard('web')->id();   
+            }
             // Create partial payment entry
             $partialPayment = \DB::table('cash_letter_partial_payment_entry')->insertGetId([
                 'client_id' => $cashLetterPayment->client_id,
@@ -185,7 +192,7 @@ class WithoutBillTransactionController extends Controller
                 'transaction_date' => $request->transaction_date,
                 'amount_received' => $request->amount_received,
                 'note' => $request->notes,
-                'created_by' => auth()->id(),
+                'created_by' => $createdBy,
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);

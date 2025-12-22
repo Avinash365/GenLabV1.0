@@ -70,6 +70,7 @@ use App\Http\Controllers\ReportEditorController;
 use App\Http\Controllers\OnlyOfficeController;
 
 use App\Http\Controllers\Email\EmailController;
+use App\Http\Controllers\Accounts\ManualInvoicePaymentController;
 
 
 
@@ -102,7 +103,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::patch('/expenses/{expense}/approve', [MarketingExpenseController::class, 'approve'])->name('expenses.approve');
         Route::patch('/expenses/{expense}/reject', [MarketingExpenseController::class, 'reject'])->name('expenses.reject');
     });
-    
+
     // Office Expenses (view only for now)
     Route::prefix('office')->name('office.')->group(function () {
         Route::get('/expenses', [MarketingExpenseController::class, 'office'])->name('expenses.view');
@@ -136,7 +137,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::put('{role}', [RoleAndPermissionController::class, 'update'])->name('update');
             Route::delete('{role}', [RoleAndPermissionController::class, 'destroy'])->name('destroy');
             Route::get('{role}', [RoleAndPermissionController::class, 'show'])->name('show');
-    });
+        });
 
     // User Management
     Route::prefix('users')
@@ -150,17 +151,17 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::put('{user}', [UserController::class, 'update'])->name('update');
             Route::put('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('updatePermissions');
 
-            Route::delete('{user}', [UserController::class, 'destroy'])->name('destroy'); 
-            Route::post('{id}/send-notification',[UserController::class, 'sendNotification'])->name('sendNotification');
+            Route::delete('{user}', [UserController::class, 'destroy'])->name('destroy');
+            Route::post('{id}/send-notification', [UserController::class, 'sendNotification'])->name('sendNotification');
 
-    });
+        });
 
     // Booking Management
     Route::prefix('bookings')
         ->name('bookings.')
         ->group(function () {
 
-            Route::get('/',[BookingController::class,'create'])->name('newbooking');
+            Route::get('/', [BookingController::class, 'create'])->name('newbooking');
             Route::post('/', [BookingController::class, 'store'])->name('newbooking.store');
             Route::delete('{new_booking}', [BookingController::class, 'destroy'])->name('destroy');
 
@@ -186,14 +187,14 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::post('/superadmin/bookings/item/save', [BookingController::class, 'saveItem'])->name('item.save');
 
-            Route::get('/get-ref-no', [BookingController::class, 'getReferenceNo'])->name('get.ref_no'); 
+            Route::get('/get-ref-no', [BookingController::class, 'getReferenceNo'])->name('get.ref_no');
 
             Route::get('/booking/{bookingId}/cards', [BookingController::class, 'showBookingCards'])->name('cards.all');
             Route::get('/booking/{bookingId}/cards/{itemId}', [BookingController::class, 'showBookingCards'])->name('cards.single');
-    });
+        });
 
     //Product
-     Route::prefix('products')
+    Route::prefix('products')
         ->name('products.')
         ->group(function () {
 
@@ -205,54 +206,54 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             // Delete product
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
-    });
+        });
 
     //Product
-     Route::prefix('viewproduct')->name('viewproduct.')->group(function () {
+    Route::prefix('viewproduct')->name('viewproduct.')->group(function () {
         Route::get('/{categoryId?}', [ProductViewController::class, 'index'])->name('viewProduct');
     });
 
-        // Categories
-        Route::resource('categories', ProductCategoryController::class);
-        Route::resource('productStockEntry', ProductStockEntryController::class);
-        Route::resource('departments', DeptController::class);
-        Route::resource('profiles', ProfileController::class);
-        Route::resource('approvals', ApprovalController::class);
-        Route::resource('importantLetter', ImportantLetterController::class);
-        Route::resource('documents', DocumentController::class);
-        Route::resource('employees', EmployeeController::class);
-        Route::resource('calibrations', CalibrationController::class);
-        Route::resource('iscodes', ISCodeController::class);
+    // Categories
+    Route::resource('categories', ProductCategoryController::class);
+    Route::resource('productStockEntry', ProductStockEntryController::class);
+    Route::resource('departments', DeptController::class);
+    Route::resource('profiles', ProfileController::class);
+    Route::resource('approvals', ApprovalController::class);
+    Route::resource('importantLetter', ImportantLetterController::class);
+    Route::resource('documents', DocumentController::class);
+    Route::resource('employees', EmployeeController::class);
+    Route::resource('calibrations', CalibrationController::class);
+    Route::resource('iscodes', ISCodeController::class);
 
 
     Route::middleware(['permission:account.edit'])->group(function () {
 
         Route::resource('blank-invoices', BlankInvoiceController::class);
-        
-        
+
+
         Route::get('/blank-invoice/get-clients', [BlankInvoiceController::class, 'getClients'])->name('get.clients');
 
         Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
 
         Route::post('bookingInvoiceStatuses/generate-invoice/{booking}', [GenerateInvoiceStatusController::class, 'generateInvoice'])
-              ->name('bookingInvoiceStatuses.generateInvoice');
+            ->name('bookingInvoiceStatuses.generateInvoice');
 
         Route::get('booking-invoice-statuses/bulk-generate', [GenerateInvoiceStatusController::class, 'bulkGenerate'])
-                ->name('bookingInvoiceStatuses.bulkGenerate');
+            ->name('bookingInvoiceStatuses.bulkGenerate');
 
         Route::post('/booking-invoice-statuses/store-bulk', [GenerateInvoiceStatusController::class, 'storeBulk'])
-             ->name('bookingInvoiceStatuses.storeBulk');
-        
+            ->name('bookingInvoiceStatuses.storeBulk');
+
         // ===================== EDIT GENERATE INVOICE =====================
         // Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
 
         Route::resource('invoices', InvoiceController::class);
-        
+
 
         Route::PUT('invoices/generate-invoice/{invoices}', [InvoiceController::class, 'generateInvoice'])
-              ->name('invoices.generateInvoice');
+            ->name('invoices.generateInvoice');
 
-        Route::put('invoices/bulk-update/{invoice}',[InvoiceController::class, 'updateBulk'])->name('invoices.bulkUpdate');
+        Route::put('invoices/bulk-update/{invoice}', [InvoiceController::class, 'updateBulk'])->name('invoices.bulkUpdate');
 
         Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
         Route::patch('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
@@ -261,13 +262,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::resource('quotations', QuotationController::class);
         Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])
-              ->name('quotations.generateQuotations');
+            ->name('quotations.generateQuotations');
 
 
         Route::get('payment-settings/call-function/{id}', [PaymentSettingController::class, 'callFunction'])->name('payment-settings.callFunction');
 
 
-        Route::resource('marketing-person-ledger', MarketingPersonLedger::class)->only(['index','show']);
+        Route::resource('marketing-person-ledger', MarketingPersonLedger::class)->only(['index', 'show']);
 
 
         // AJAX routes
@@ -279,7 +280,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/{user_code}/cash-all-transactions', [MarketingPersonLedger::class, 'fetchClientAllBookings'])->name('marketing.cashAllTransactions');
         Route::get('/{user_code}/all-clients', [MarketingPersonLedger::class, 'fetchGroupedBookings'])->name('marketing.allClients');
 
-        Route::resource('clients', ClientController::class)->only(['index','store','destroy']);
+        Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
         Route::post('clients/{client}/assign-booking', [ClientController::class, 'assignBooking'])->name('clients.assignBooking');
 
         Route::get('client-ledger', [ClientLedgerController::class, 'index'])->name('client-ledger.index');
@@ -409,19 +410,25 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
                         // If financial year is provided, use it (April 1 - Mar 31)
                         if (!empty($fy)) {
                             $startYear = (int) preg_replace('/[^0-9].*/', '', $fy);
-                            if ($startYear <= 0) return false;
+                            if ($startYear <= 0)
+                                return false;
                             $startTs = strtotime($startYear . '-04-01');
                             $endTs = strtotime(($startYear + 1) . '-03-31 23:59:59');
                             $d = empty($item['bill_date']) ? null : strtotime($item['bill_date']);
-                            if (!$d) return false;
+                            if (!$d)
+                                return false;
                             return $d >= $startTs && $d <= $endTs;
                         }
 
-                        if (empty($item['bill_date'])) return false;
+                        if (empty($item['bill_date']))
+                            return false;
                         $ts = strtotime($item['bill_date']);
-                        if ($ts === false) return false;
-                        if ($m && (int)date('n', $ts) !== (int)$m) return false;
-                        if ($y && (int)date('Y', $ts) !== (int)$y) return false;
+                        if ($ts === false)
+                            return false;
+                        if ($m && (int) date('n', $ts) !== (int) $m)
+                            return false;
+                        if ($y && (int) date('Y', $ts) !== (int) $y)
+                            return false;
                         return true;
                     }));
                 }
@@ -479,19 +486,25 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
                     $collection = array_values(array_filter($collection, function ($item) use ($m, $y, $fy) {
                         if (!empty($fy)) {
                             $startYear = (int) preg_replace('/[^0-9].*/', '', $fy);
-                            if ($startYear <= 0) return false;
+                            if ($startYear <= 0)
+                                return false;
                             $startTs = strtotime($startYear . '-04-01');
                             $endTs = strtotime(($startYear + 1) . '-03-31 23:59:59');
                             $d = empty($item['bill_date']) ? null : strtotime($item['bill_date']);
-                            if (!$d) return false;
+                            if (!$d)
+                                return false;
                             return $d >= $startTs && $d <= $endTs;
                         }
 
-                        if (empty($item['bill_date'])) return false;
+                        if (empty($item['bill_date']))
+                            return false;
                         $ts = strtotime($item['bill_date']);
-                        if ($ts === false) return false;
-                        if ($m && (int)date('n', $ts) !== (int)$m) return false;
-                        if ($y && (int)date('Y', $ts) !== (int)$y) return false;
+                        if ($ts === false)
+                            return false;
+                        if ($m && (int) date('n', $ts) !== (int) $m)
+                            return false;
+                        if ($y && (int) date('Y', $ts) !== (int) $y)
+                            return false;
                         return true;
                     }));
                 }
@@ -503,13 +516,13 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
                     'Content-Disposition' => 'attachment; filename="' . $filename . '"',
                 ];
 
-                $callback = function() use ($collection) {
+                $callback = function () use ($collection) {
                     $out = fopen('php://output', 'w');
-                    fputcsv($out, ['User','Amount','Bill Date','Description','Uploaded At','File URL']);
+                    fputcsv($out, ['User', 'Amount', 'Bill Date', 'Description', 'Uploaded At', 'File URL']);
                     foreach ($collection as $row) {
                         fputcsv($out, [
                             $row['user_name'] ?? '',
-                            isset($row['amount']) ? number_format((float)$row['amount'], 2) : '',
+                            isset($row['amount']) ? number_format((float) $row['amount'], 2) : '',
                             $row['bill_date'] ?? '',
                             $row['description'] ?? '',
                             $row['uploaded_at'] ?? '',
@@ -577,19 +590,25 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
                     $collection = array_values(array_filter($collection, function ($item) use ($m, $y, $fy) {
                         if (!empty($fy)) {
                             $startYear = (int) preg_replace('/[^0-9].*/', '', $fy);
-                            if ($startYear <= 0) return false;
+                            if ($startYear <= 0)
+                                return false;
                             $startTs = strtotime($startYear . '-04-01');
                             $endTs = strtotime(($startYear + 1) . '-03-31 23:59:59');
                             $d = empty($item['bill_date']) ? null : strtotime($item['bill_date']);
-                            if (!$d) return false;
+                            if (!$d)
+                                return false;
                             return $d >= $startTs && $d <= $endTs;
                         }
 
-                        if (empty($item['bill_date'])) return false;
+                        if (empty($item['bill_date']))
+                            return false;
                         $ts = strtotime($item['bill_date']);
-                        if ($ts === false) return false;
-                        if ($m && (int)date('n', $ts) !== (int)$m) return false;
-                        if ($y && (int)date('Y', $ts) !== (int)$y) return false;
+                        if ($ts === false)
+                            return false;
+                        if ($m && (int) date('n', $ts) !== (int) $m)
+                            return false;
+                        if ($y && (int) date('Y', $ts) !== (int) $y)
+                            return false;
                         return true;
                     }));
                 }
@@ -685,216 +704,226 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::patch('/bank/soft-delete/{id}', [BankTransactionController::class, 'softDeleteOrUndo'])->name('bank.softDeleteOrUndo');
 
     });
-    
-
-        // Store
-        Route::prefix('store')->name('store.')->group(function () {
-            Route::get('/', [StoreController::class, 'index'])->name('Store');
-        });
-
-        // Supplier
-        Route::prefix('supplier')->name('supplier.')->group(function () {
-            Route::get('/', [SupplierController::class, 'index'])->name('Supplier');
-        });
-
-        // Supplier
-        Route::prefix('unit')->name('unit.')->group(function () {
-            Route::get('/', [UnitController::class, 'index'])->name('Unit');
-        });
-
-        // Supplier
-        Route::prefix('issue')->name('issue.')->group(function () {
-            Route::get('/', [IssueController::class, 'index'])->name('Issue');
-        });
-
-        // Supplier
-        Route::prefix('issueview')->name('issueview.')->group(function () {
-            Route::get('/', [IssueViewController::class, 'index'])->name('issueView');
-        });
-
-         // Purchase List
-        Route::prefix('purchaselist')->name('purchaselist.')->group(function () {
-            Route::get('/', [PurchaseListController::class, 'index'])->name('purchaseList');
-        });
-
-         // Purchase List
-        Route::prefix('purchaseadd')->name('purchaseadd.')->group(function () {
-            Route::get('/', [PurchaseAddController::class, 'index'])->name('purchaseAdd');
-        });
-
-            // ShowBooking List
-            Route::prefix('showbooking')->name('showbooking.')->group(function () {
-                Route::get('/marketing/{department?}', [ShowBookingController::class, 'marketing'])->name('marketing.showBooking');
-                Route::get('/{department?}', [ShowBookingController::class, 'index'])->name('showBooking');
-                Route::get('/export/pdf/{department?}', [ShowBookingController::class, 'exportPdf'])->name('exportPdf');
-                Route::get('/export/excel/{department?}', [ShowBookingController::class, 'exportExcel'])->name('exportExcel');
-            });
-
-            // ShowBooking List
-            Route::prefix('department')->name('department.')->group(function () {
-                Route::get('/', [DeptController::class, 'index'])->name('Department');
-            });
-        
-            // Caqlibration List / Leaves
-            Route::prefix('leaves')->name('leave.')->group(function () {
-                Route::get('/', [LeaveController::class, 'index'])->name('Leave');
-            });
-        // Leave Management
-        Route::prefix('leaves')->name('leave.')->group(function () {
-            Route::get('/', [LeaveController::class, 'index'])->name('Leave');
-            Route::get('/export/pdf', [LeaveController::class, 'exportPdf'])->name('export.pdf');
-            Route::get('/export/excel', [LeaveController::class, 'exportExcel'])->name('export.excel');
-            Route::post('/', [LeaveController::class, 'store'])->name('store');
-            Route::put('/{leave}', [LeaveController::class, 'update'])->name('update');
-            Route::put('/{leave}/approve', [LeaveController::class, 'approve'])->name('approve');
-            Route::delete('/{leave}', [LeaveController::class, 'destroy'])->name('destroy');
-            Route::post('/calculate-days', [LeaveController::class, 'calculateDays'])->name('calculate-days');
-        });
-
-        Route::prefix('hr')->name('hr.')->group(function () {
-            Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
-            Route::post('/payroll/cycle', [PayrollController::class, 'store'])->name('payroll.store');
-            Route::post('/payroll/cycle/{cycle}/refresh', [PayrollController::class, 'refresh'])->name('payroll.refresh');
-            Route::patch('/payroll/cycle/{cycle}', [PayrollController::class, 'updateStatus'])->name('payroll.update-status');
-            Route::patch('/payroll/entries/{entry}', [PayrollController::class, 'updateEntry'])->name('payroll.entries.update');
-            Route::post('/payroll/entries/bulk-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.entries.bulk-status');
-            Route::get('/payroll/{cycle}/download-bank', [PayrollController::class, 'downloadBankCsv'])->name('payroll.download-bank');
-            Route::get('/payroll/{cycle}/download', [PayrollController::class, 'download'])->name('payroll.download');
-            Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
-            Route::post('/attendance/manual', [AttendanceController::class, 'storeManual'])->name('attendance.store-manual');
-            Route::post('/attendance/import-biometric', [AttendanceController::class, 'importBiometric'])->name('attendance.import-biometric');
-        });
-
-            // Lab Analysts - reports dropdown and viewer
-            Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
-                Route::get('/', [LabAnalystController::class, 'index'])
-                    ->middleware('permission:lab-analysts.view')->name('index');
-
-                Route::get('/view', [LabAnalystController::class, 'view'])
-                    ->middleware('permission:lab-analysts.view')->name('view');
-
-                Route::get('/render', [LabAnalystController::class, 'render'])
-                    ->middleware('permission:lab-analysts.view')->name('render');
-
-                Route::get('/preview', [LabAnalystController::class, 'preview'])
-                    ->middleware('permission:lab-analysts.view')->name('preview');
-
-                Route::get('/pdf', [LabAnalystController::class, 'pdf'])
-                    ->middleware('permission:lab-analysts.view')->name('pdf');
-
-                Route::post('/save', [LabAnalystController::class, 'save'])
-                    ->middleware('permission:lab-analysts.create')->name('save');
-            });
 
 
+    // Store
+    Route::prefix('store')->name('store.')->group(function () {
+        Route::get('/', [StoreController::class, 'index'])->name('Store');
+    });
 
-            // Reporting
-            Route::prefix('reporting')->middleware('permission:reporting.edit')->name('reporting.')->group(function () {
-                Route::get('/received', [ReportingController::class, 'received'])->name('received');
-                Route::get('/pendings', [ReportingController::class, 'pendings'])->name('pendings');
-                Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
-                Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
-                Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
-                Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
-                Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
-                Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
-                Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
-                Route::post('/account-receive/{item}', [ReportingController::class, 'accountReceiveOne'])->name('accountReceiveOne');
-                Route::post('/account-receive-bulk', [ReportingController::class, 'accountReceiveBulk'])->name('accountReceiveBulk');
-                Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
-                Route::get('/generate', [ReportingController::class, 'generate'])->name('generate');
-                Route::get('/view-by-letter', [ReportingController::class, 'viewByLetter'])->name('viewByLetter');
-                Route::get('/view-by-job-order', [ReportingController::class, 'viewByJobOrder'])->name('viewByJobOrder');
+    // Supplier
+    Route::prefix('supplier')->name('supplier.')->group(function () {
+        Route::get('/', [SupplierController::class, 'index'])->name('Supplier');
+    });
 
-                Route::patch('/header/{booking}', [ReportingController::class, 'updateHeader'])->name('header.update');
+    // Supplier
+    Route::prefix('unit')->name('unit.')->group(function () {
+        Route::get('/', [UnitController::class, 'index'])->name('Unit');
+    });
 
-                Route::post('/reporting/assign/{item}', [ReportingController::class, 'assignReport'])->name('assignReport');
+    // Supplier
+    Route::prefix('issue')->name('issue.')->group(function () {
+        Route::get('/', [IssueController::class, 'index'])->name('Issue');
+    });
 
-            });
+    // Supplier
+    Route::prefix('issueview')->name('issueview.')->group(function () {
+        Route::get('/', [IssueViewController::class, 'index'])->name('issueView');
+    });
 
-            // Report Format Upload & Listing
-            Route::get('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'index'])->name('reporting.report-formats.index');
-            Route::post('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'store'])->name('reporting.report-formats.store');
-            Route::get('/report-formats/{reportFormat}', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'show'])->name('report-formats.show');
-            Route::get('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'edit'])->name('report-formats.content.edit');
-            Route::put('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'update'])->name('report-formats.content.update');
-            Route::get('/report-formats/{reportFormat}/export-pdf', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'exportPdf'])->name('report-formats.content.exportPdf');
+    // Purchase List
+    Route::prefix('purchaselist')->name('purchaselist.')->group(function () {
+        Route::get('/', [PurchaseListController::class, 'index'])->name('purchaseList');
+    });
 
+    // Purchase List
+    Route::prefix('purchaseadd')->name('purchaseadd.')->group(function () {
+        Route::get('/', [PurchaseAddController::class, 'index'])->name('purchaseAdd');
+    });
 
-            // bank details
-            Route::resource('payment-settings', PaymentSettingController::class)
-                ->middleware('permission:bank-details.view')->only(['index','store', 'update']);
+    // ShowBooking List
+    Route::prefix('showbooking')->name('showbooking.')->group(function () {
+        Route::get('/marketing/{department?}', [ShowBookingController::class, 'marketing'])->name('marketing.showBooking');
+        Route::get('/{department?}', [ShowBookingController::class, 'index'])->name('showBooking');
+        Route::get('/export/pdf/{department?}', [ShowBookingController::class, 'exportPdf'])->name('exportPdf');
+        Route::get('/export/excel/{department?}', [ShowBookingController::class, 'exportExcel'])->name('exportExcel');
+    });
+
+    // ShowBooking List
+    Route::prefix('department')->name('department.')->group(function () {
+        Route::get('/', [DeptController::class, 'index'])->name('Department');
+    });
+
+    // Caqlibration List / Leaves
+    Route::prefix('leaves')->name('leave.')->group(function () {
+        Route::get('/', [LeaveController::class, 'index'])->name('Leave');
+    });
+    // Leave Management
+    Route::prefix('leaves')->name('leave.')->group(function () {
+        Route::get('/', [LeaveController::class, 'index'])->name('Leave');
+        Route::get('/export/pdf', [LeaveController::class, 'exportPdf'])->name('export.pdf');
+        Route::get('/export/excel', [LeaveController::class, 'exportExcel'])->name('export.excel');
+        Route::post('/', [LeaveController::class, 'store'])->name('store');
+        Route::put('/{leave}', [LeaveController::class, 'update'])->name('update');
+        Route::put('/{leave}/approve', [LeaveController::class, 'approve'])->name('approve');
+        Route::delete('/{leave}', [LeaveController::class, 'destroy'])->name('destroy');
+        Route::post('/calculate-days', [LeaveController::class, 'calculateDays'])->name('calculate-days');
+    });
+
+    Route::prefix('hr')->name('hr.')->group(function () {
+        Route::get('/payroll', [PayrollController::class, 'index'])->name('payroll.index');
+        Route::post('/payroll/cycle', [PayrollController::class, 'store'])->name('payroll.store');
+        Route::post('/payroll/cycle/{cycle}/refresh', [PayrollController::class, 'refresh'])->name('payroll.refresh');
+        Route::patch('/payroll/cycle/{cycle}', [PayrollController::class, 'updateStatus'])->name('payroll.update-status');
+        Route::patch('/payroll/entries/{entry}', [PayrollController::class, 'updateEntry'])->name('payroll.entries.update');
+        Route::post('/payroll/entries/bulk-status', [PayrollController::class, 'bulkUpdateStatus'])->name('payroll.entries.bulk-status');
+        Route::get('/payroll/{cycle}/download-bank', [PayrollController::class, 'downloadBankCsv'])->name('payroll.download-bank');
+        Route::get('/payroll/{cycle}/download', [PayrollController::class, 'download'])->name('payroll.download');
+        Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
+        Route::post('/attendance/manual', [AttendanceController::class, 'storeManual'])->name('attendance.store-manual');
+        Route::post('/attendance/import-biometric', [AttendanceController::class, 'importBiometric'])->name('attendance.import-biometric');
+    });
+
+    // Lab Analysts - reports dropdown and viewer
+    Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
+        Route::get('/', [LabAnalystController::class, 'index'])
+            ->middleware('permission:lab-analysts.view')->name('index');
+
+        Route::get('/view', [LabAnalystController::class, 'view'])
+            ->middleware('permission:lab-analysts.view')->name('view');
+
+        Route::get('/render', [LabAnalystController::class, 'render'])
+            ->middleware('permission:lab-analysts.view')->name('render');
+
+        Route::get('/preview', [LabAnalystController::class, 'preview'])
+            ->middleware('permission:lab-analysts.view')->name('preview');
+
+        Route::get('/pdf', [LabAnalystController::class, 'pdf'])
+            ->middleware('permission:lab-analysts.view')->name('pdf');
+
+        Route::post('/save', [LabAnalystController::class, 'save'])
+            ->middleware('permission:lab-analysts.create')->name('save');
     });
 
 
-        // list of clients
-        Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');
-        Route::get('/invoices/list', [ListController::class, 'invoices'])->name('api.invoices.list');
-        Route::get('/refnos/list', [ListController::class, 'refNos'])->name('api.refnos.list');
 
-        Route::get('/test/list', [ListController::class, 'view'])->name('test.list');
+    // Reporting
+    Route::prefix('reporting')->middleware('permission:reporting.edit')->name('reporting.')->group(function () {
+        Route::get('/received', [ReportingController::class, 'received'])->name('received');
+        Route::get('/pendings', [ReportingController::class, 'pendings'])->name('pendings');
+        Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
+        Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
+        Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
+        Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
+        Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
+        Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
+        Route::post('/receive-all', [ReportingController::class, 'receiveAll'])->name('receiveAll');
+        Route::post('/account-receive/{item}', [ReportingController::class, 'accountReceiveOne'])->name('accountReceiveOne');
+        Route::post('/account-receive-bulk', [ReportingController::class, 'accountReceiveBulk'])->name('accountReceiveBulk');
+        Route::post('/submit-all', [ReportingController::class, 'submitAll'])->name('submitAll');
+        Route::get('/generate', [ReportingController::class, 'generate'])->name('generate');
+        Route::get('/view-by-letter', [ReportingController::class, 'viewByLetter'])->name('viewByLetter');
+        Route::get('/view-by-job-order', [ReportingController::class, 'viewByJobOrder'])->name('viewByJobOrder');
 
+        Route::patch('/header/{booking}', [ReportingController::class, 'updateHeader'])->name('header.update');
 
+        Route::post('/reporting/assign/{item}', [ReportingController::class, 'assignReport'])->name('assignReport');
 
-        //report editor
-        Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index')->middleware('permission:report-format.create');
-        Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save')->middleware('permission:report-format.create');
-        Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete')->middleware('permission:report-format.delete');
+    });
 
-        // report genration
-        Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])
-            ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf');
-
-        Route::post('generateReportPDF/editor/28days', [ReportEditorController::class, 'generatePdf28Days'])
-            ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf28Days');
-
-        Route::post('generateReportPDF/word/', [ReportEditorController::class, 'generateReportWord'])
-            ->middleware('permission:report-generate.create')->name('generateReportPDF.generateReportWord');
-
-        Route::get('generateReportPDF/generate/{item}/{type?}', [ReportEditorController::class, 'generate'])
-            ->middleware('permission:report-generate.view')->name('generateReportPDF.generate');
-
-
-        Route::get('generateReportPDF/edit/{pivotId}/{type?}', [ReportEditorController::class, 'editReport'])
-            ->middleware('permission:report-generate.edit')->name('generateReportPDF.editReport');
-
-        Route::get('/view-pdf/{filename}', [ReportEditorController::class, 'viewPdf'])->name('viewPdf');
-
-
-        Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
-        Route::get('/report/varification/{no}', [ReportEditorController::class, 'varify'])->name('varification.view');
-
-        Route::post('/reports/live-preview', [ReportEditorController::class, 'livePreview'])
-                ->name('reports.livePreview');
-        Route::post('/download-qr', [ReportEditorController::class, 'downloadQR'])->name('download.qr');
+    // Report Format Upload & Listing
+    Route::get('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'index'])->name('reporting.report-formats.index');
+    Route::post('/report-formats', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'store'])->name('reporting.report-formats.store');
+    Route::get('/report-formats/{reportFormat}', [\App\Http\Controllers\SuperAdmin\ReportFormatController::class, 'show'])->name('report-formats.show');
+    Route::get('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'edit'])->name('report-formats.content.edit');
+    Route::put('/report-formats/{reportFormat}/content', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'update'])->name('report-formats.content.update');
+    Route::get('/report-formats/{reportFormat}/export-pdf', [\App\Http\Controllers\SuperAdmin\ReportFormatContentController::class, 'exportPdf'])->name('report-formats.content.exportPdf');
 
 
+    // bank details
+    Route::resource('payment-settings', PaymentSettingController::class)
+        ->middleware('permission:bank-details.view')->only(['index', 'store', 'update']);
+});
 
-        Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
-        Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');
+
+// list of clients
+Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');
+Route::get('/invoices/list', [ListController::class, 'invoices'])->name('api.invoices.list');
+Route::get('/refnos/list', [ListController::class, 'refNos'])->name('api.refnos.list');
+
+Route::get('/test/list', [ListController::class, 'view'])->name('test.list');
 
 
 
-    // email route
-    Route::get('/email/{id?}', [EmailController::class, 'index'])->name('email.index');
-    Route::post('/email/store', [EmailController::class, 'store'])->name('email.store');
-    Route::get('/emails/fetch/{id}', [EmailController::class, 'fetchInbox'])->name('emails.fetch');
-    Route::get('/emails/{id}/reply/{uid}/{type?}', [EmailController::class, 'reply'])->name('emails.reply');
-    Route::get('/ajax-switch/{id}', [EmailController::class, 'ajaxSwitch'])->name('email.ajaxSwitch');
-    Route::post('/emails/reply', [EmailController::class, 'sendReply'])->name('emails.sendReply');
-    Route::post('/emails/send', [EmailController::class, 'send'])->name('emails.send');
+//report editor
+Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index')->middleware('permission:report-format.create');
+Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save')->middleware('permission:report-format.create');
+Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete')->middleware('permission:report-format.delete');
 
-    // Route::get('/emails/sendEmail/{id}', [EmailController::class, 'getSentEmails'])->name('emails.allSendEmail');
-    // Route::get('/emails/sentEmail/{id}/{uid}/{type?}', [EmailController::class, 'getSentEmailByUid'])->name('emails.sent.show');
+// report genration
+Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])
+    ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf');
 
-    Route::get('/email/sentEmail/{id?}', [EmailController::class, 'sentIndex'])->name('email.allSentEmail');
+Route::post('generateReportPDF/editor/28days', [ReportEditorController::class, 'generatePdf28Days'])
+    ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf28Days');
 
-    Route::post('/emails/{id}/reply', [EmailController::class, 'replyOnEmail'])->name('emails.replyOnEmail');
+Route::post('generateReportPDF/word/', [ReportEditorController::class, 'generateReportWord'])
+    ->middleware('permission:report-generate.create')->name('generateReportPDF.generateReportWord');
 
-    // delete email from list route
-    Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
+Route::get('generateReportPDF/generate/{item}/{type?}', [ReportEditorController::class, 'generate'])
+    ->middleware('permission:report-generate.view')->name('generateReportPDF.generate');
 
-    Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
-    Route::get('invoices/{invoice}/download',[GenerateInvoiceStatusController::class, 'downloadInvoice'])->name('invoices.download'); 
 
-    Route::get('/invoices/missing', [InvoiceController::class, 'missingInvoices'])->name('invoices.missing');
+Route::get('generateReportPDF/edit/{pivotId}/{type?}', [ReportEditorController::class, 'editReport'])
+    ->middleware('permission:report-generate.edit')->name('generateReportPDF.editReport');
+
+Route::get('/view-pdf/{filename}', [ReportEditorController::class, 'viewPdf'])->name('viewPdf');
+
+
+Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
+Route::get('/report/varification/{no}', [ReportEditorController::class, 'varify'])->name('varification.view');
+
+Route::post('/reports/live-preview', [ReportEditorController::class, 'livePreview'])
+    ->name('reports.livePreview');
+Route::post('/download-qr', [ReportEditorController::class, 'downloadQR'])->name('download.qr');
+
+
+
+Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
+Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');
+
+
+
+// email route
+Route::get('/email/{id?}', [EmailController::class, 'index'])->name('email.index');
+Route::post('/email/store', [EmailController::class, 'store'])->name('email.store');
+Route::get('/emails/fetch/{id}', [EmailController::class, 'fetchInbox'])->name('emails.fetch');
+Route::get('/emails/{id}/reply/{uid}/{type?}', [EmailController::class, 'reply'])->name('emails.reply');
+Route::get('/ajax-switch/{id}', [EmailController::class, 'ajaxSwitch'])->name('email.ajaxSwitch');
+Route::post('/emails/reply', [EmailController::class, 'sendReply'])->name('emails.sendReply');
+Route::post('/emails/send', [EmailController::class, 'send'])->name('emails.send');
+
+// Route::get('/emails/sendEmail/{id}', [EmailController::class, 'getSentEmails'])->name('emails.allSendEmail');
+// Route::get('/emails/sentEmail/{id}/{uid}/{type?}', [EmailController::class, 'getSentEmailByUid'])->name('emails.sent.show');
+
+Route::get('/email/sentEmail/{id?}', [EmailController::class, 'sentIndex'])->name('email.allSentEmail');
+
+Route::post('/emails/{id}/reply', [EmailController::class, 'replyOnEmail'])->name('emails.replyOnEmail');
+
+// delete email from list route
+Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
+
+Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
+Route::get('invoices/{invoice}/download', [GenerateInvoiceStatusController::class, 'downloadInvoice'])->name('invoices.download');
+
+Route::get('/invoices/missing', [InvoiceController::class, 'missingInvoices'])->name('invoices.missing');
+
+
+Route::prefix('manual-invoice-payment')
+    ->name('manual-invoice-payment.')
+    ->group(function () {
+
+        Route::post('/', [ManualInvoicePaymentController::class, 'store'])->name('store');
+        Route::put('{id}', [ManualInvoicePaymentController::class, 'update'])->name('update');
+        Route::delete('{id}', [ManualInvoicePaymentController::class, 'destroy'])->name('destroy');
+    });
