@@ -1,6 +1,6 @@
-@extends('superadmin.layouts.app')
 
-@section('title', 'Chat')
+
+<?php $__env->startSection('title', 'Chat'); ?>
 
 <?php
     $page = 'chat';
@@ -9,7 +9,7 @@
     $currentUserType = $currentUserType ?? ($authUser instanceof \App\Models\Admin ? 'admin' : ($authUser instanceof \App\Models\User ? 'user' : ($authUser instanceof \App\Models\Employee ? 'employee' : null)));
 ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     /* Chat layout adjustments to ensure scrolling works with the new theme */
     .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height: calc(100vh - 180px); }
@@ -173,9 +173,9 @@
     .reply-preview .reply-cancel { border:0; background:transparent; cursor:pointer; color:#6b7280 }
     .reply-highlight { box-shadow: 0 0 0 4px rgba(11,120,209,0.14); border-radius:10px; transform: translateY(-2px); transition: box-shadow .18s ease, transform .18s ease; }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="content">
     <div class="page-header">
         <div class="add-item d-flex">
@@ -208,16 +208,16 @@
 
                 <div class="sidebar-body chat-body" id="chatsidebar">
                     <div class="chat-users-wrap" id="contactsList">
-                        @foreach($users as $u)
+                        <?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <?php $contactAvatar = $u->avatar ?? ('https://ui-avatars.com/api/?name=' . urlencode($u->name) . '&background=ffffff&color=0D8ABC&size=128'); ?>
-                            <div class="chat-list contact-item" data-user-id="{{ $u->id }}" data-avatar="{{ $contactAvatar }}" data-last-message-sender-id="{{ $u->last_message_sender_id ?? '' }}" data-last-message-sender-type="{{ $u->last_message_sender_type ?? '' }}" data-last-message-read-at="{{ $u->last_message_read_at ?? '' }}">
+                            <div class="chat-list contact-item" data-user-id="<?php echo e($u->id); ?>" data-avatar="<?php echo e($contactAvatar); ?>" data-last-message-sender-id="<?php echo e($u->last_message_sender_id ?? ''); ?>" data-last-message-sender-type="<?php echo e($u->last_message_sender_type ?? ''); ?>" data-last-message-read-at="<?php echo e($u->last_message_read_at ?? ''); ?>">
                                 <a href="javascript:void(0);" class="chat-user-list">
                                     <div class="avatar avatar-lg online me-2">
-                                        <img src="{{ $contactAvatar }}" class="rounded-circle" alt="image">
+                                        <img src="<?php echo e($contactAvatar); ?>" class="rounded-circle" alt="image">
                                     </div>
                                     <div class="chat-user-info">
                                         <div class="chat-user-msg">
-                                            <h6>{{ $u->name }}</h6>
+                                            <h6><?php echo e($u->name); ?></h6>
                                             <?php
                                                 $lastMsg = $u->last_message ?? null;
                                                 $displayLast = 'Click to open chat';
@@ -276,7 +276,7 @@
                                                 $unreadHtml = (isset($u->unread_count) && $u->unread_count > 0) ? '<span class="count-message fs-12 fw-semibold">' . $u->unread_count . '</span>' : '';
                                                 $pinHtml = '<div class="chat-pin">' . $pinIcons . $unreadHtml . '</div>';
                                             ?>
-                                            <p class="small text-truncate">{{ $displayLast }}</p>
+                                            <p class="small text-truncate"><?php echo e($displayLast); ?></p>
                                         </div>
                                         <div class="chat-user-time">
                                             <?php
@@ -291,8 +291,9 @@
                                                     }
                                                 }
                                             ?>
-                                            <span class="time" data-last-message-at="{{ $u->last_message_at ? $u->last_message_at->toRfc3339String() : '' }}">{{ $timeLabel }}</span>
-                                            {!! $pinHtml !!}
+                                            <span class="time" data-last-message-at="<?php echo e($u->last_message_at ? $u->last_message_at->toRfc3339String() : ''); ?>"><?php echo e($timeLabel); ?></span>
+                                            <?php echo $pinHtml; ?>
+
                                         </div>
                                     </div>
                                 </a>
@@ -307,7 +308,7 @@
                                     </ul>
                                 </div>
                             </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
                 </div>
             </div>
@@ -401,7 +402,7 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <!-- Pusher + Echo (CDN) -->
     <script src="https://js.pusher.com/8.0/pusher.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.11.3/echo.iife.min.js"></script>
@@ -484,9 +485,9 @@
                 window.Pusher = window.Pusher || Pusher;
                 window.Echo = new window.Echo({
                     broadcaster: 'pusher',
-                    key: '{{ env("PUSHER_APP_KEY") }}',
-                    cluster: '{{ env("PUSHER_APP_CLUSTER") }}',
-                    forceTLS: {{ env('PUSHER_SCHEME', 'https') === 'https' ? 'true' : 'false' }},
+                    key: '<?php echo e(env("PUSHER_APP_KEY")); ?>',
+                    cluster: '<?php echo e(env("PUSHER_APP_CLUSTER")); ?>',
+                    forceTLS: <?php echo e(env('PUSHER_SCHEME', 'https') === 'https' ? 'true' : 'false'); ?>,
                     authEndpoint: '/broadcasting/auth',
                     auth: {
                         headers: {
@@ -499,8 +500,8 @@
     </script>
 <script>
     let currentChatUser = null;
-    const currentUserId = {{ $currentUserId ?? 'null' }};
-    const currentUserType = '{{ $currentUserType ?? '' }}';
+    const currentUserId = <?php echo e($currentUserId ?? 'null'); ?>;
+    const currentUserType = '<?php echo e($currentUserType ?? ''); ?>';
     // in-memory cache of reactions so client-added reactions persist across polling reloads
     window.CHAT_REACTIONS = window.CHAT_REACTIONS || {};
     const CHAT_REACTIONS = window.CHAT_REACTIONS;
@@ -2277,5 +2278,6 @@
         });
     })();
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/chat.blade.php ENDPATH**/ ?>

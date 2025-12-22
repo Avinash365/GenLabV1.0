@@ -2,744 +2,955 @@
 
 namespace App\Http\Controllers;
 
-use App\Events\ChatMessageBroadcast;
-use App\Events\MessageSent;
-use App\Models\ChatGroup;
-use App\Models\ChatGroupMember;
-use App\Models\ChatMessage;
-use App\Models\ChatReaction;
-use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Auth;
+use App\Models\Admin;
+use App\Models\Employee;
+use App\Models\Message;
+use Carbon\Carbon;
+use App\Models\User;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\Log;
-use Illuminate\Support\Str;
+use App\Events\ChatMessageSent;
+use App\Events\ChatMessageReacted;
 
 class ChatController extends Controller
 {
-    protected function user()
+    public function index()
     {
-        // Prefer superadmin if guard exists, then admin, then web
-        $super = config('auth.guards.superadmin') ? auth('superadmin')->user() : null;
-        $admin = auth('admin')->user();
-        $apiAdmin = config('auth.guards.api_admin') ? auth('api_admin')->user() : null;
-        $api = config('auth.guards.api') ? auth('api')->user() : null;
-        $web = auth('web')->user();
+        $authUser = auth('web')->user() ?: auth('admin')->user();
+        $myId = $authUser ? $authUser->id : null;
+        $myType = null;
+        if ($authUser instanceof Admin) $myType = 'admin';
+        elseif ($authUser instanceof User) $myType = 'user';
+        elseif ($authUser instanceof Employee) $myType = 'employee';
 
-        return $super ?: ($admin ?: ($apiAdmin ?: ($api ?: $web)));
-    }
-    protected function guardName()
-    {
-        if (config('auth.guards.superadmin') && auth('superadmin')->check()) return 'superadmin';
-        if (auth('admin')->check()) return 'admin';
-        if (config('auth.guards.api_admin') && auth('api_admin')->check()) return 'api_admin';
-        if (config('auth.guards.api') && auth('api')->check()) return 'api';
-        if (auth('web')->check()) return 'web';
-        return null;
-    }
+        // Collect admins and employees as chat contacts
+        $admins = Admin::when(true, function($q) use ($myId, $myType) {
+            if ($myType === 'admin') $q->where('id', '!=', $myId);
+        })->get()->map(function($a){
+            return (object)['id' => 'admin:'.$a->id, 'orig_id' => $a->id, 'name' => $a->name, 'type' => 'admin'];
+        });
+        $employees = Employee::when(true, function($q) use ($myId, $myType) {
+            if ($myType === 'employee') $q->where('id', '!=', $myId);
+        })->get()->map(function($e){
+            return (object)['id' => 'employee:'.$e->id, 'orig_id' => $e->id, 'name' => $e->name, 'type' => 'employee'];
+        });
+        // include regular users from users table
+        $usersList = \App\Models\User::when(true, function($q) use ($myId, $myType) {
+            // if the current user is a regular user we'll exclude them
+            if ($myType === 'user') $q->where('id', '!=', $myId);
+        })->get()->map(function($u){
+            return (object)['id' => 'user:'.$u->id, 'orig_id' => $u->id, 'name' => $u->name, 'type' => 'user'];
+        });
 
-    protected function isAdminUser($user = null): bool
-    {
-        $u = $user ?: $this->user();
-        if ($u && ($u->is_chat_admin ?? false)) return true;
-        $g = $this->guardName();
-        return in_array($g, ['admin','superadmin','super_admin','api_admin'], true);
-    }
+        $users = $admins->concat($employees)->concat($usersList)->values();
 
-    protected function isBookingsGroup(ChatGroup $group = null): bool
-    {
-        if (!$group) return false;
-        $slug = Str::slug($group->slug ?: $group->name ?: '');
-        return $slug === 'bookings';
-    }
+        // Add a global Booking Group contact visible to all users/admins
+        // Note: orig_id uses numeric group id (0) to remain compatible with integer DB columns
+        $bookingGroup = (object)[
+            'id' => 'group:booking',
+            'orig_id' => 0,
+            'name' => 'Booking Group',
+            'type' => 'group',
+        ];
+        $users = $users->prepend($bookingGroup)->values();
 
-    protected function isDmGroup(ChatGroup $group = null): bool
-    {
-        if (!$group || !$group->slug) return false;
-        return str_starts_with((string)$group->slug, 'dm-');
-    }
-
-    protected function dmParticipants(ChatGroup $group): array
-    {
-        if (!$this->isDmGroup($group)) return [];
-        $parts = explode('-', (string)$group->slug);
-        if (count($parts) !== 3) return [];
-        return [ (int)$parts[1], (int)$parts[2] ];
-    }
-
-    protected function groupHasMembers(ChatGroup $group): bool
-    {
-        static $cache = [];
-        if (array_key_exists($group->id, $cache)) return $cache[$group->id];
-        return $cache[$group->id] = ChatGroupMember::where('group_id', $group->id)->exists();
-    }
-
-    protected function memberSetForUser(int $userId): array
-    {
-        static $cache = [];
-        if (array_key_exists($userId, $cache)) return $cache[$userId];
-        $ids = ChatGroupMember::where('user_id', $userId)->pluck('group_id')->all();
-        return $cache[$userId] = array_flip($ids);
-    }
-
-    protected function userInGroup(ChatGroup $group = null, $user = null): bool
-    {
-        if (!$group || !$user) return false;
-        if ($this->isDmGroup($group)) {
-            $ids = $this->dmParticipants($group);
-            return in_array($user->id, $ids, true);
-        }
-        // Open groups (Bookings/Reports/etc.) should remain visible to everyone even
-        // after last_seen rows get created, so only gate access if the group is truly
-        // member-restricted and the viewer is not an admin.
-        $slug = Str::slug($group->slug ?: $group->name ?: '');
-        $defaultPublic = ['bookings','reports','invoices','management','amendment-reports'];
-
-        // Admin-like roles always see the group
-        if ($this->isAdminUser($user)) return true;
-
-        // If membership rows exist, allow access when the user is listed OR when the
-        // group is one of the public defaults (avoid hiding groups after one user
-        // marks them seen).
-        if ($this->groupHasMembers($group)) {
-            $memberSet = $this->memberSetForUser($user->id);
-            if (array_key_exists($group->id, $memberSet)) return true;
-            if (in_array($slug, $defaultPublic, true)) return true;
-            return false;
-        }
-
-        // No membership defined: treat as public
-        return true;
-    }
-
-    protected function filterVisibleMessages($messages, $group, $viewer)
-    {
-        if (!$group || !$this->isBookingsGroup($group)) return $messages;
-        if ($this->isAdminUser($viewer)) return $messages;
-        $viewerId = $viewer?->id;
-        return $messages->filter(function($m) use ($viewerId){
-            $guard = Str::slug($m->sender_guard ?? '');
-            $isAdminMsg = in_array($guard, ['admin','super-admin','superadmin'], true);
-            $isMine = $viewerId && $m->user_id === $viewerId;
-            return $isAdminMsg || $isMine;
+        // remove contacts with empty or null names
+        $users = $users->filter(function($c){
+            return isset($c->name) && trim($c->name) !== '';
         })->values();
+
+        // For each contact, compute last message and unread count relative to current user
+        $users = $users->map(function($contact) use ($myId, $myType) {
+            // build other descriptor
+            $other = ['id' => $contact->orig_id, 'type' => $contact->type];
+
+            $last = Message::where(function($q) use ($myId, $myType, $other) {
+                $q->where('sender_id', $myId)->where('sender_type', $myType)->where('receiver_id', $other['id'])->where('receiver_type', $other['type']);
+            })->orWhere(function($q) use ($myId, $myType, $other) {
+                $q->where('sender_id', $other['id'])->where('sender_type', $other['type'])->where('receiver_id', $myId)->where('receiver_type', $myType);
+            })->orderBy('created_at', 'desc')->first();
+
+            // compute unread differently for group contacts
+            $unread = 0;
+            if (isset($contact->type) && $contact->type === 'group') {
+                $groupKey = $contact->orig_id;
+                if ($myType === 'admin') {
+                    // admins see and count all unread group messages
+                    $unread = Message::where('receiver_type', 'group')
+                        ->where('receiver_id', $groupKey)
+                        ->whereNull('read_at')
+                        ->count();
+                } else {
+                    // regular users only see messages they sent and replies targeted at them.
+                    // unread for them should count only replies targeted at them that are unread.
+                    $all = Message::where('receiver_type', 'group')
+                        ->where('receiver_id', $groupKey)
+                        ->whereNull('read_at')
+                        ->get();
+                    $cnt = 0;
+                    foreach ($all as $m) {
+                        // skip messages authored by the user
+                        if ($m->sender_id == $myId && ($m->sender_type == $myType || $m->sender_type === null)) continue;
+                        $content = is_string($m->content) ? $m->content : '';
+                        if (str_starts_with($content, 'REPLY::')) {
+                            $rest = substr($content, strlen('REPLY::'));
+                            $parts = explode('::', $rest, 2);
+                            $jsonb64 = $parts[0] ?? null;
+                            if ($jsonb64) {
+                                try {
+                                    $decoded = json_decode(base64_decode($jsonb64), true);
+                                    if (is_array($decoded) && isset($decoded['visible_to'])) {
+                                        if (intval($decoded['visible_to']) === intval($myId)) $cnt++;
+                                    }
+                                } catch (\Exception $e) { /* ignore parse errors */ }
+                            }
+                        }
+                    }
+                    $unread = $cnt;
+                }
+            } else {
+                $unread = Message::where('sender_id', $other['id'])
+                    ->where('sender_type', $other['type'])
+                    ->where('receiver_id', $myId)
+                    ->where('receiver_type', $myType)
+                    ->whereNull('read_at')
+                    ->count();
+            }
+
+            $contact->last_message = $last ? $last->content : null;
+            $contact->last_message_at = $last ? $last->created_at : null;
+            $contact->last_message_sender_id = $last ? ($last->sender_id ?? null) : null;
+            $contact->last_message_sender_type = $last ? ($last->sender_type ?? null) : null;
+            try {
+                $contact->last_message_read_at = $last && $last->read_at ? ( $last->read_at instanceof \Carbon\Carbon ? $last->read_at->toRfc3339String() : (is_string($last->read_at) ? $last->read_at : null) ) : null;
+            } catch (\Exception $e) { $contact->last_message_read_at = null; }
+            $contact->unread_count = $unread;
+
+            // compute avatar URL (prefer stored avatar or model fields, fallback to ui-avatars)
+            $contact->avatar = $this->resolveAvatar($contact->type, $contact->orig_id, $contact->name ?? null);
+
+            return $contact;
+        });
+
+        // sort contacts by most recent activity (last_message_at desc). Nulls appear last.
+        $users = $users->sortByDesc(function($c){
+            if (isset($c->last_message_at) && $c->last_message_at) return $c->last_message_at->getTimestamp();
+            return 0;
+        })->values();
+
+        return view('chat', ['users' => $users, 'myId' => $myId, 'authUser' => $authUser, 'currentUserType' => $myType]);
     }
 
-    protected function buildGroupPayload(ChatGroup $group, $viewerId = null)
+    // Return JSON messages between auth user and $user
+    public function messages(Request $request, $user)
     {
-        // Pick last message visible to this viewer (important for Bookings filtering)
-        $viewer = $viewerId ? User::find($viewerId) : null;
-        $all = $group->messages()->latest('id')->take(50)->get();
-        $visible = $this->filterVisibleMessages($all, $group, $viewer);
-        $last = $visible->sortByDesc('id')->first();
-        // For deterministic DM slugs dm-{a}-{b}, show the peer's name to the viewer
-        $displayName = $group->name;
-        if ($viewerId && str_starts_with((string)$group->slug, 'dm-')) {
-            $parts = explode('-', $group->slug);
-            if (count($parts) === 3) {
-                $a = (int)$parts[1]; $b = (int)$parts[2];
-                $peerId = $viewerId === $a ? $b : $a;
-                if ($peerId > 0) {
-                    $peer = User::select('id','name')->find($peerId);
-                    if ($peer && $peer->name) { $displayName = $peer->name; }
+        $authUser = auth('admin')->user() ?: auth('web')->user();
+        $me = $authUser ? $authUser->id : null;
+        $meType = null;
+        if ($authUser instanceof Admin) $meType = 'admin';
+        elseif ($authUser instanceof User) $meType = 'user';
+        elseif ($authUser instanceof Employee) $meType = 'employee';
+
+        $other = $this->parsePrefixedUser($user);
+
+        // Special handling for group conversations
+        if (isset($other['type']) && $other['type'] === 'group') {
+            $groupKey = $other['id'];
+            if ($meType === 'admin') {
+                // Admins see all messages in the group
+                $messages = Message::where('receiver_type', 'group')
+                    ->where('receiver_id', $groupKey)
+                    ->orderBy('created_at')
+                    ->get();
+            } else {
+                // Regular users: fetch group messages then filter to include
+                // - messages they sent, or
+                // - messages that include a reply meta targeting them (visible_to)
+                $all = Message::where('receiver_type', 'group')
+                    ->where('receiver_id', $groupKey)
+                    ->orderBy('created_at')
+                    ->get();
+
+                $messages = $all->filter(function($m) use ($me, $meType) {
+                    if (!$m) return false;
+                    if ($m->sender_id == $me && ($m->sender_type == $meType || $m->sender_type === null)) return true;
+                    $content = is_string($m->content) ? $m->content : '';
+                    if (str_starts_with($content, 'REPLY::')) {
+                        $rest = substr($content, strlen('REPLY::'));
+                        $parts = explode('::', $rest, 2);
+                        $jsonb64 = $parts[0] ?? null;
+                        if ($jsonb64) {
+                            try {
+                                $decoded = json_decode(base64_decode($jsonb64), true);
+                                if (is_array($decoded) && isset($decoded['visible_to'])) {
+                                    if (intval($decoded['visible_to']) === intval($me)) return true;
+                                }
+                            } catch (\Exception $e) { /* ignore parse errors */ }
+                        }
+                    }
+                    return false;
+                })->values();
+            }
+        } else {
+            $messages = Message::where(function($q) use ($me, $meType, $other) {
+                $q->where('sender_id', $me)
+                  ->where('receiver_id', $other['id']);
+                if ($meType) {
+                    $q->where('sender_type', $meType);
+                }
+                if ($other['type']) {
+                    $q->where('receiver_type', $other['type']);
+                }
+            })->orWhere(function($q) use ($me, $meType, $other) {
+                $q->where('sender_id', $other['id'])
+                  ->where('receiver_id', $me);
+                if ($other['type']) {
+                    $q->where('sender_type', $other['type']);
+                }
+                if ($meType) {
+                    $q->where('receiver_type', $meType);
+                }
+            })->orderBy('created_at')->get();
+        }
+
+        // mark unread messages as read when the current user opens this conversation
+        // Only mark as read when the client explicitly requests it via `?mark_read=1` to avoid
+        // poll-based reads from clearing unread counts unintentionally.
+        // For regular 1:1 chats we mark messages from the other participant as read.
+        // For group chats: admins should mark all group messages as read; users mark only messages visible to them.
+        $updatedIds = [];
+        try {
+            $shouldMark = false;
+            try { $shouldMark = (bool) ($request->query('mark_read') || $request->input('mark_read')); } catch (\Exception $_) { $shouldMark = false; }
+            if ($shouldMark) {
+                if (!isset($other['type']) || $other['type'] !== 'group') {
+                    $q = Message::where('sender_id', $other['id'])
+                        ->where('sender_type', $other['type'])
+                        ->where('receiver_id', $me)
+                        ->where('receiver_type', $meType)
+                        ->whereNull('read_at');
+                    $updatedIds = $q->pluck('id')->toArray();
+                    $q->update(['read_at' => Carbon::now()]);
+                } else {
+                    // group conversation
+                    $groupKey = $other['id'];
+                    if ($meType === 'admin') {
+                        $q = Message::where('receiver_type', 'group')
+                            ->where('receiver_id', $groupKey)
+                            ->whereNull('read_at');
+                        $updatedIds = $q->pluck('id')->toArray();
+                        $q->update(['read_at' => Carbon::now()]);
+                    } else {
+                        // regular user: mark only messages that are visible to them (their own or replies targeted at them)
+                        $all = Message::where('receiver_type', 'group')
+                            ->where('receiver_id', $groupKey)
+                            ->whereNull('read_at')
+                            ->get();
+                        $toMark = [];
+                        foreach ($all as $m) {
+                            if ($m->sender_id == $me && ($m->sender_type == $meType || $m->sender_type === null)) {
+                                $toMark[] = $m->id;
+                                continue;
+                            }
+                            $content = is_string($m->content) ? $m->content : '';
+                            if (str_starts_with($content, 'REPLY::')) {
+                                $rest = substr($content, strlen('REPLY::'));
+                                $parts = explode('::', $rest, 2);
+                                $jsonb64 = $parts[0] ?? null;
+                                if ($jsonb64) {
+                                    try {
+                                        $decoded = json_decode(base64_decode($jsonb64), true);
+                                        if (is_array($decoded) && isset($decoded['visible_to'])) {
+                                            if (intval($decoded['visible_to']) === intval($me)) $toMark[] = $m->id;
+                                        }
+                                    } catch (\Exception $e) { /* ignore parse errors */ }
+                                }
+                            }
+                        }
+                        if (!empty($toMark)) {
+                            Message::whereIn('id', $toMark)->update(['read_at' => Carbon::now()]);
+                            $updatedIds = $toMark;
+                        }
+                    }
+                }
+            } else {
+                // client didn't request marking messages as read — do nothing
+                $updatedIds = [];
+            }
+        } catch (\Exception $e) {
+            // ignore
+        }
+
+        // append sender/receiver display names and resolved avatars to each message for easier rendering
+        $payload = $messages->map(function($m){
+            $sender = $m->senderModel();
+            $receiver = $m->receiverModel();
+            $arr = array_merge($m->toArray(), [
+                'sender_name' => $sender ? $sender->name : null,
+                'receiver_name' => $receiver ? $receiver->name : null,
+                'sender_avatar' => $this->resolveAvatar($m->sender_type ?? null, $m->sender_id ?? null, $sender?->name ?? null),
+                'receiver_avatar' => $this->resolveAvatar($m->receiver_type ?? null, $m->receiver_id ?? null, $receiver?->name ?? null),
+            ]);
+
+            // standardize created_at to RFC3339 so clients parse times reliably with timezone
+            try {
+                if ($m->created_at instanceof \Carbon\Carbon) {
+                    $arr['created_at'] = $m->created_at->toRfc3339String();
+                } elseif (is_string($m->created_at) && trim($m->created_at) !== '') {
+                    try { $arr['created_at'] = Carbon::parse($m->created_at)->toRfc3339String(); } catch (\Exception $ex) { $arr['created_at'] = $m->created_at; }
+                } else {
+                    $arr['created_at'] = null;
+                }
+            } catch (\Exception $e) {
+                // fallback: leave as-is
+            }
+            // include read_at as RFC3339 so clients can show read receipts
+            try {
+                if ($m->read_at instanceof \Carbon\Carbon) {
+                    $arr['read_at'] = $m->read_at->toRfc3339String();
+                } elseif (is_string($m->read_at) && trim($m->read_at) !== '') {
+                    try { $arr['read_at'] = Carbon::parse($m->read_at)->toRfc3339String(); } catch (\Exception $ex) { $arr['read_at'] = $m->read_at; }
+                } else {
+                    $arr['read_at'] = null;
+                }
+            } catch (\Exception $e) { /* ignore */ }
+
+            // support reply marker: REPLY::base64(json)::rest
+            $contentRaw = is_string($m->content) ? $m->content : '';
+            $contentToProcess = $contentRaw;
+            if (is_string($contentRaw) && str_starts_with($contentRaw, 'REPLY::')) {
+                $rest = substr($contentRaw, strlen('REPLY::'));
+                $parts = explode('::', $rest, 2);
+                $jsonb64 = $parts[0] ?? null;
+                $inner = $parts[1] ?? '';
+                try {
+                    $decoded = json_decode(base64_decode($jsonb64), true);
+                    if (is_array($decoded)) $arr['reply_to'] = $decoded;
+                } catch (\Exception $e) { /* ignore */ }
+                $contentToProcess = $inner;
+            }
+
+            // detect audio marker stored in content
+            if (is_string($contentToProcess) && str_starts_with($contentToProcess, 'AUDIO::')) {
+                $path = substr($contentToProcess, strlen('AUDIO::'));
+                try {
+                    $arr['audio_url'] = Storage::url($path);
+                } catch (\Exception $e) {
+                    $arr['audio_url'] = null;
+                }
+                $arr['content'] = '[Audio]';
+            }
+            // detect file/attachment markers stored in content
+            if (is_string($contentToProcess) && str_starts_with($contentToProcess, 'FILE::')) {
+                // support markers saved as FILE::{path} or FILE::{path}::{urlencoded-original-name}
+                $rest = substr($contentToProcess, strlen('FILE::'));
+                $parts = explode('::', $rest, 2);
+                $path = $parts[0] ?? null;
+                $origName = null;
+                if (isset($parts[1])) {
+                    // if the stored marker included the encoded original name
+                    $origName = rawurldecode($parts[1]);
+                }
+                try {
+                    $arr['file_url'] = $path ? Storage::url($path) : null;
+                } catch (\Exception $e) {
+                    $arr['file_url'] = null;
+                }
+                // try to include size if file exists in storage
+                $size = null;
+                try {
+                    if ($path && Storage::disk('public')->exists($path)) {
+                        $size = Storage::disk('public')->size($path);
+                    }
+                } catch (\Exception $e) { /* ignore */ }
+
+                $att = ['url' => $arr['file_url'], 'path' => $path];
+                if ($origName) $att['name'] = $origName;
+                if (!is_null($size)) $att['size'] = $size;
+                $arr['attachments'] = [$att];
+                $arr['content'] = '[Attachment]';
+            }
+
+            // If no special marker matched, expose the cleaned content (without REPLY:: prefix)
+            if (!isset($arr['audio_url']) && !isset($arr['file_url'])) {
+                // prefer processed contentToProcess (plain text)
+                $cleanContent = is_string($contentToProcess) ? $contentToProcess : ($arr['content'] ?? '');
+                try {
+                    // remove legacy client-side reply prefixes like "↪ Name: " or "↪ Someone 9:55 PM: "
+                    $cleanContent = preg_replace('/^↪.*?:\s*/u', '', $cleanContent);
+                    // remove leading time-like prefixes such as "9:55 PM: " or "14 AM: " or "You 9:55 PM: "
+                    $cleanContent = preg_replace('/^\s*(?:You\s*)?\d{1,2}:\d{2}\s*(?:AM|PM)?\s*[:\-–]?\s*/i', '', $cleanContent);
+                    // remove patterns like "Name 9:55 PM: " (name followed by time)
+                    $cleanContent = preg_replace('/^\s*[A-Za-z0-9\s]{1,60}\d{1,2}:\d{2}\s*(?:AM|PM)?\s*[:\-–]?\s*/i', '', $cleanContent);
+                    // fallback: if still begins with something like "14 AM: " (hour + AM/PM + colon)
+                    $cleanContent = preg_replace('/^\s*\d{1,2}\s*(?:AM|PM)\s*[:\-–]?\s*/i', '', $cleanContent);
+                } catch (\Exception $e) { /* ignore */ }
+                $arr['content'] = $cleanContent;
+            }
+
+            return $arr;
+        });
+
+        // If we updated any messages to mark them as read, broadcast a read receipt to the sender (other user)
+        try {
+            if (!empty($updatedIds)) {
+                // notify the other participant that their messages were read
+                event(new \App\Events\ChatMessageRead([
+                    'reader_id' => $me,
+                    'reader_type' => $meType,
+                    'message_ids' => $updatedIds,
+                    'read_at' => Carbon::now()->toRfc3339String()
+                ], $other['type'] ?? null, $other['id'] ?? null));
+            }
+        } catch (\Exception $e) {
+            // ignore broadcasting errors
+        }
+
+        return response()->json($payload);
+    }
+
+    // Search contacts (admins, employees, users) by name
+    public function search(Request $request)
+    {
+        $q = trim($request->query('q', ''));
+        $authUser = auth('web')->user() ?: auth('admin')->user();
+        $myId = $authUser ? $authUser->id : null;
+        $myType = null;
+        if ($authUser instanceof Admin) $myType = 'admin';
+        elseif ($authUser instanceof User) $myType = 'user';
+        elseif ($authUser instanceof Employee) $myType = 'employee';
+
+        if ($q === '') {
+            return response()->json([]);
+        }
+
+        $admins = Admin::where('name', 'like', "%{$q}%")
+            ->when($myType === 'admin', fn($query) => $query->where('id', '!=', $myId))
+            ->limit(30)
+            ->get()
+            ->map(fn($a) => ['id' => 'admin:'.$a->id, 'orig_id' => $a->id, 'name' => $a->name, 'type' => 'admin']);
+
+        $employees = Employee::where('name', 'like', "%{$q}%")
+            ->when($myType === 'employee', fn($query) => $query->where('id', '!=', $myId))
+            ->limit(30)
+            ->get()
+            ->map(fn($e) => ['id' => 'employee:'.$e->id, 'orig_id' => $e->id, 'name' => $e->name, 'type' => 'employee']);
+
+        $users = User::whereNotNull('name')->where('name', '<>', '')->where('name', 'like', "%{$q}%")
+            ->when($myType === 'user', fn($query) => $query->where('id', '!=', $myId))
+            ->limit(30)
+            ->get()
+            ->map(fn($u) => ['id' => 'user:'.$u->id, 'orig_id' => $u->id, 'name' => $u->name, 'type' => 'user']);
+
+        $results = $admins->concat($employees)->concat($users)->values();
+
+        // attach avatar for each result
+        $results = $results->map(function($r){
+            $r['avatar'] = $this->resolveAvatar($r['type'] ?? null, $r['orig_id'] ?? null, $r['name'] ?? null);
+            return $r;
+        });
+
+        return response()->json($results);
+    }
+
+    // Return contacts summary as JSON for client polling
+    public function contacts(Request $request)
+    {
+        $authUser = auth('web')->user() ?: auth('admin')->user();
+        $myId = $authUser ? $authUser->id : null;
+        $myType = null;
+        if ($authUser instanceof Admin) $myType = 'admin';
+        elseif ($authUser instanceof User) $myType = 'user';
+        elseif ($authUser instanceof Employee) $myType = 'employee';
+
+        $admins = Admin::when(true, function($q) use ($myId, $myType) {
+            if ($myType === 'admin') $q->where('id', '!=', $myId);
+        })->get()->map(function($a){
+            return (object)['id' => 'admin:'.$a->id, 'orig_id' => $a->id, 'name' => $a->name, 'type' => 'admin'];
+        });
+        $employees = Employee::when(true, function($q) use ($myId, $myType) {
+            if ($myType === 'employee') $q->where('id', '!=', $myId);
+        })->get()->map(function($e){
+            return (object)['id' => 'employee:'.$e->id, 'orig_id' => $e->id, 'name' => $e->name, 'type' => 'employee'];
+        });
+        $usersList = User::when(true, function($q) use ($myId, $myType) {
+            if ($myType === 'user') $q->where('id', '!=', $myId);
+        })->get()->map(function($u){
+            return (object)['id' => 'user:'.$u->id, 'orig_id' => $u->id, 'name' => $u->name, 'type' => 'user'];
+        });
+
+        $users = $admins->concat($employees)->concat($usersList)->values();
+        // Prepend Booking Group so it appears in contacts for everyone
+        // Use numeric orig_id (0) so contacts/messages queries remain compatible with integer columns
+        $bookingGroup = (object)[
+            'id' => 'group:booking',
+            'orig_id' => 0,
+            'name' => 'Booking Group',
+            'type' => 'group',
+        ];
+        $users = $users->prepend($bookingGroup)->values();
+        $users = $users->filter(function($c){ return isset($c->name) && trim($c->name) !== ''; })->values();
+
+        $users = $users->map(function($contact) use ($myId, $myType) {
+            $other = ['id' => $contact->orig_id, 'type' => $contact->type];
+
+            // Special handling for Booking Group contacts
+            if (isset($other['type']) && $other['type'] === 'group') {
+                $groupKey = $other['id'];
+                if ($myType === 'admin') {
+                    $last = Message::where('receiver_type', 'group')
+                        ->where('receiver_id', $groupKey)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+                    $unread = Message::where('receiver_type', 'group')
+                        ->where('receiver_id', $groupKey)
+                        ->whereNull('read_at')
+                        ->count();
+                } else {
+                    // regular user: only consider messages they sent to the group
+                    $last = Message::where('receiver_type', 'group')
+                        ->where('receiver_id', $groupKey)
+                        ->where('sender_id', $myId)
+                        ->where('sender_type', $myType)
+                        ->orderBy('created_at', 'desc')
+                        ->first();
+                    $unread = 0;
+                }
+            } else {
+                $last = Message::where(function($q) use ($myId, $myType, $other) {
+                    $q->where('sender_id', $myId)->where('sender_type', $myType)->where('receiver_id', $other['id'])->where('receiver_type', $other['type']);
+                })->orWhere(function($q) use ($myId, $myType, $other) {
+                    $q->where('sender_id', $other['id'])->where('sender_type', $other['type'])->where('receiver_id', $myId)->where('receiver_type', $myType);
+                })->orderBy('created_at', 'desc')->first();
+
+                $unread = Message::where('sender_id', $other['id'])
+                    ->where('sender_type', $other['type'])
+                    ->where('receiver_id', $myId)
+                    ->where('receiver_type', $myType)
+                    ->whereNull('read_at')
+                    ->count();
+            }
+
+            $contact->last_message = $last ? $last->content : null;
+            $contact->last_message_at = $last ? $last->created_at : null;
+            $contact->unread_count = $unread;
+            $contact->avatar = $this->resolveAvatar($contact->type, $contact->orig_id, $contact->name ?? null);
+            return $contact;
+        })->sortByDesc(function($c){
+            if (isset($c->last_message_at) && $c->last_message_at) return $c->last_message_at->getTimestamp();
+            return 0;
+        })->values();
+
+        $payload = $users->map(function($c){
+            $lm = $c->last_message;
+            if (is_string($lm)) {
+                if (str_starts_with($lm, 'AUDIO::')) $lm = 'Audio';
+                elseif (str_starts_with($lm, 'FILE::')) $lm = 'Attachment';
+            }
+            return [
+                'id' => $c->id,
+                'orig_id' => $c->orig_id,
+                'name' => $c->name,
+                'type' => $c->type,
+                'avatar' => $c->avatar,
+                'last_message' => $lm,
+                // use RFC3339 so client interprets timezone correctly
+                'last_message_at' => $c->last_message_at ? $c->last_message_at->toRfc3339String() : null,
+                'last_message_sender_orig_id' => $c->last_message_sender_id ?? null,
+                'last_message_sender_type' => $c->last_message_sender_type ?? null,
+                'last_message_read_at' => $c->last_message_read_at ?? null,
+                'unread_count' => $c->unread_count ?? 0,
+            ];
+        });
+
+        return response()->json($payload);
+    }
+
+    // Resolve avatar URL for a given contact type/id
+    protected function resolveAvatar($type, $id, $name = null)
+    {
+        $name = $name ?: 'User';
+        // try stored avatars in public storage: avatars/{id}.{ext}
+        if ($id) {
+            foreach (['png','jpg','jpeg','webp'] as $ext) {
+                if (Storage::disk('public')->exists("avatars/{$id}.{$ext}")) {
+                    return Storage::url("avatars/{$id}.{$ext}");
                 }
             }
         }
-        // Determine avatar: for DM groups prefer the peer user's avatar
-        $avatar = null;
-        if ($viewerId && str_starts_with((string)$group->slug, 'dm-')) {
-            $parts = explode('-', $group->slug);
-            if (count($parts) === 3) {
-                $a = (int)$parts[1]; $b = (int)$parts[2];
-                $peerId = $viewerId === $a ? $b : $a;
-                if ($peerId > 0) {
-                    // Use a plain find() to avoid selecting columns that may not exist
-                    // (some deployments don't have `profile_picture`/`avatar` columns).
-                    $peer = User::find($peerId);
-                    if ($peer) {
-                        $avatar = $this->userAvatarUrl($peer);
+
+        // try to pull from model fields if available
+        try {
+            if ($type === 'admin' && $id) {
+                $m = Admin::find($id);
+            } elseif ($type === 'employee' && $id) {
+                $m = Employee::find($id);
+            } elseif ($type === 'user' && $id) {
+                $m = User::find($id);
+            } else {
+                $m = null;
+            }
+            if ($m) {
+                $avatarField = $m->profile_photo_url ?? $m->avatar ?? $m->photo ?? null;
+                if (is_string($avatarField) && $avatarField) {
+                    if (str_starts_with($avatarField, 'data:') || str_starts_with($avatarField, 'http')) {
+                        return $avatarField;
+                    }
+                    if (Storage::disk('public')->exists($avatarField)) {
+                        return Storage::url($avatarField);
+                    } elseif (Storage::disk('public')->exists('avatars/'.$avatarField)) {
+                        return Storage::url('avatars/'.$avatarField);
+                    } elseif (file_exists(public_path($avatarField))) {
+                        return asset($avatarField);
+                    } elseif (file_exists(public_path('storage/'.ltrim($avatarField, '/')))) {
+                        return asset('storage/'.ltrim($avatarField, '/'));
                     }
                 }
             }
+        } catch (\Exception $e) {
+            // ignore
         }
 
-        return [
-            'id' => $group->id,
-            'slug' => $group->slug,
-            'name' => $displayName,
-            'avatar' => $avatar,
-            'last_msg_id' => $last?->id,
-            'last_msg_at' => $last?->created_at?->toISOString(),
-            'latest' => $last ? [
-                'id' => $last->id,
-                'type' => $last->type,
-                'content' => $last->content,
-                'original_name' => $last->original_name,
-                'sender_guard' => $last->sender_guard,
-                'sender_name' => $last->sender_name,
-                'user' => $last->user ? ['id'=>$last->user->id, 'name'=>$last->user->name, 'avatar' => $this->userAvatarUrl($last->user)] : null,
-                'created_at' => $last->created_at?->toISOString(),
-            ] : null,
-            'unread' => 0,
-        ];
-    }
-
-    public function markSeen(Request $request)
-    {
-        $request->validate(['group_id' => 'required|integer|exists:chat_groups,id', 'last_id' => 'nullable|integer']);
-        $user = $this->user();
-        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-        $group = ChatGroup::find($request->integer('group_id'));
-        if (!$this->userInGroup($group, $user)) return response()->json(['message' => 'Forbidden'], 403);
-
-        $lastId = $request->integer('last_id') ?: ChatMessage::where('group_id', $group->id)->max('id');
-        if ($lastId === null) $lastId = 0;
-
-        ChatGroupMember::updateOrCreate(
-            ['group_id' => $group->id, 'user_id' => $user->id],
-            ['last_seen_id' => $lastId]
-        );
-
-        return response()->json(['status' => 'ok']);
-    }
-
-    public function unreadCounts(Request $request)
-    {
-        $user = $this->user();
-        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-
-        $groups = ChatGroup::orderBy('id')->get()->filter(function($g) use ($user){
-            return $this->userInGroup($g, $user);
-        });
-
-        $result = [];
-        foreach ($groups as $g){
-            $lastSeen = ChatGroupMember::where('group_id', $g->id)->where('user_id', $user->id)->value('last_seen_id') ?? 0;
-            $msgs = ChatMessage::with('user:id,name,is_chat_admin')
-                ->where('group_id', $g->id)
-                // Do not count the viewer's own messages as unread
-                ->where('user_id', '!=', $user->id)
-                ->where('id', '>', $lastSeen)
-                ->orderBy('id')
-                ->limit(200)
-                ->get();
-            $visible = $this->filterVisibleMessages($msgs, $g, $user);
-            $count = $visible->count();
-            $result[] = ['group_id' => $g->id, 'count' => $count];
-        }
-
-        $total = array_sum(array_map(fn($x)=> $x['count'], $result));
-        return response()->json(['total' => $total, 'groups' => $result]);
-    }
-
-    protected function ensureDmGroup($aId, $bId, $displayName)
-    {
-        [$lo, $hi] = [$aId, $bId];
-        if ($lo > $hi) { [$lo, $hi] = [$hi, $lo]; }
-        $slug = 'dm-'.$lo.'-'.$hi;
-        $group = ChatGroup::firstOrCreate(
-            ['slug' => $slug],
-            ['name' => $displayName, 'created_by' => $aId]
-        );
-        return $group;
-    }
-
-    public function groups()
-    {
-        try {
-            // Ensure default groups exist
-            $defaults = ['Bookings','Reports','Invoices','Management','Amendment Reports'];
-            foreach ($defaults as $name) {
-                ChatGroup::firstOrCreate(['slug' => Str::slug($name)], ['name' => $name]);
-            }
-            $user = $this->user();
-            $groups = ChatGroup::orderBy('id')->get();
-            // Show only groups the viewer belongs to (DMs and member-guarded groups)
-            $filtered = $groups->filter(function($g) use ($user){
-                return $user && $this->userInGroup($g, $user);
-            });
-            $payload = $filtered->map(fn($g)=> $this->buildGroupPayload($g, $user?->id))->values();
-            return response()->json($payload);
-        } catch (\Throwable $e) {
-            Log::error('ChatController::groups failed: '.$e->getMessage(), ['exception' => $e]);
-            return response()->json(['error' => 'Failed to load chat groups', 'detail' => $e->getMessage()], 500);
-        }
-    }
-
-    public function clearGroup(ChatGroup $group)
-    {
-        $user = $this->user();
-        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-        if (!$this->isDmGroup($group)) return response()->json(['message' => 'Only personal chats can be cleared'], 403);
-        if (!$this->userInGroup($group, $user)) return response()->json(['message' => 'Forbidden'], 403);
-
-        $messages = ChatMessage::where('group_id', $group->id)->get();
-        foreach ($messages as $msg) {
-            if ($msg->file_path) { try { Storage::delete($msg->file_path); } catch (_) {} }
-        }
-        ChatMessage::where('group_id', $group->id)->delete();
-
-        return response()->json(['status' => 'cleared']);
-    }
-
-    public function destroyGroup(ChatGroup $group)
-    {
-        $user = $this->user();
-        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-        if (!$this->isDmGroup($group)) return response()->json(['message' => 'Only personal chats can be deleted'], 403);
-        if (!$this->userInGroup($group, $user)) return response()->json(['message' => 'Forbidden'], 403);
-
-        $messages = ChatMessage::where('group_id', $group->id)->get();
-        foreach ($messages as $msg) {
-            if ($msg->file_path) { try { Storage::delete($msg->file_path); } catch (_) {} }
-        }
-        ChatMessage::where('group_id', $group->id)->delete();
-        ChatGroupMember::where('group_id', $group->id)->delete();
-        $group->delete();
-
-        return response()->json(['status' => 'deleted']);
-    }
-
-    public function messages(Request $request)
-    {
-        $request->validate(['group_id' => 'required|integer|exists:chat_groups,id']);
-        $user = $this->user();
-        $group = ChatGroup::find($request->integer('group_id'));
-        if (!$this->userInGroup($group, $user)) return response()->json([], 403);
-        $list = ChatMessage::with(['user:id,name,is_chat_admin', 'reactions.user:id,name'])
-            ->where('group_id', $request->integer('group_id'))
-            ->orderBy('id')
-            ->limit(200)
-            ->get();
-        $list = $this->filterVisibleMessages($list, $group, $user)
-            ->map(function(ChatMessage $m) use ($user) { return $this->serializeMessage($m, $user); });
-        return response()->json($list);
-    }
-
-    public function searchUsers(Request $request)
-    {
-        $viewer = $this->user();
-        if (!$viewer) return response()->json([], 401);
-        $q = trim((string) $request->get('q', ''));
-        if ($q === '') return response()->json([]);
-        $users = User::query()
-            ->select('id','name','email')
-            ->where(function($w) use ($q){
-                $w->where('name','like',"%{$q}%")
-                  ->orWhere('email','like',"%{$q}%");
-            })
-            ->orderBy('name')
-            ->limit(20)
-            ->get();
-        return response()->json($users);
-    }
-
-    public function direct($userId)
-    {
-        $viewer = $this->user();
-        if (!$viewer) return response()->json(['message'=>'Unauthorized'], 401);
-        $other = User::findOrFail($userId);
-        if ($viewer->id === $other->id) return response()->json(['message'=>'Cannot chat with yourself'], 422);
-        $group = $this->ensureDmGroup($viewer->id, $other->id, $other->name ?? 'Chat');
-        return response()->json($this->buildGroupPayload($group, $viewer->id));
-    }
-
-    public function directWith($userId)
-    {
-        // Symmetric user-to-user DM for all roles
-        return $this->direct($userId);
-    }
-
-    public function destroy($id)
-    {
-        $viewer = $this->user();
-        if (!$viewer) return response()->json(['message'=>'Unauthorized'], 401);
-
-        $msg = ChatMessage::find($id);
-        if (!$msg) return response()->json(['message'=>'Not found'], 404);
-
-        $group = ChatGroup::find($msg->group_id);
-        if (!$this->userInGroup($group, $viewer)) return response()->json(['message'=>'Forbidden'], 403);
-
-        $isAdmin = $this->isAdminUser($viewer);
-        $isOwner = (int)$msg->user_id === (int)$viewer->id;
-        if (!$isAdmin && !$isOwner) return response()->json(['message'=>'Forbidden'], 403);
-
-        // Delete attached file if exists
-        if ($msg->file_path) { try { Storage::delete($msg->file_path); } catch(_) {} }
-
-        $msg->delete();
-        return response()->json(['status'=>'deleted']);
-    }
-
-    public function messagesSince(Request $request)
-    {
-        $request->validate(['group_id' => 'required|integer|exists:chat_groups,id', 'after_id' => 'required|integer']);
-        $user = $this->user();
-        $group = ChatGroup::find($request->integer('group_id'));
-        if (!$this->userInGroup($group, $user)) return response()->json([], 403);
-        $list = ChatMessage::with(['user:id,name,is_chat_admin', 'reactions.user:id,name'])
-            ->where('group_id', $request->integer('group_id'))
-            ->where('id', '>', $request->integer('after_id'))
-            ->orderBy('id')
-            ->limit(200)
-            ->get();
-        $list = $this->filterVisibleMessages($list, $group, $user)
-            ->map(function(ChatMessage $m) use ($user) { return $this->serializeMessage($m, $user); });
-        return response()->json($list);
+        // fallback to ui-avatars
+        return 'https://ui-avatars.com/api/?name=' . urlencode($name) . '&background=ffffff&color=0D8ABC&size=128';
     }
 
     public function send(Request $request)
     {
-        $user = $this->user();
-        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-
         $request->validate([
-            'group_id' => 'required|integer|exists:chat_groups,id',
-            'type' => 'required|string|in:text,image,pdf,voice',
-            'content' => 'nullable|string|max:5000',
-            'message' => 'nullable|string|max:5000',
-            'body' => 'nullable|string|max:5000',
-            'text' => 'nullable|string|max:5000',
-            'description' => 'nullable|string|max:5000',
-            'file' => 'nullable|file|max:10240', // 10MB
-            'reply_to_message_id' => 'nullable|integer|exists:chat_messages,id',
+            'receiver_id' => 'required',
+            'content' => 'nullable|string',
+            // Accept audio or generic file uploads up to 10MB
+            'audio' => 'nullable|file|max:10240',
+            'files' => 'nullable|file|max:10240',
         ]);
 
-        $group = ChatGroup::find($request->integer('group_id'));
-        if (!$this->userInGroup($group, $user)) return response()->json(['message' => 'Forbidden'], 403);
+        $authUser = auth('admin')->user() ?: auth('web')->user();
+        $senderId = $authUser ? $authUser->id : null;
+        $senderType = null;
+        if ($authUser instanceof Admin) $senderType = 'admin';
+        elseif ($authUser instanceof User) $senderType = 'user';
+        elseif ($authUser instanceof Employee) $senderType = 'employee';
 
-        $type = (string) $request->string('type');
-        // Gather text from any alias
-        $contentAliases = [
-            $request->input('content'),
-            $request->input('message'),
-            $request->input('body'),
-            $request->input('text'),
-            $request->input('description'),
-        ];
-        $firstNonEmpty = null;
-        foreach ($contentAliases as $v){ if (is_string($v) && trim($v) !== '') { $firstNonEmpty = trim($v); break; } }
+        $other = $this->parsePrefixedUser($request->receiver_id);
 
-        $filePath = null; $original = null;
+        // If an audio file was uploaded, store it and save a marker in content so it can
+        // be rendered as an audio message on the client.
+        $storedContent = $request->input('content', null);
+        $audioUrl = null;
+        $fileUrl = null;
+        $attachments = [];
 
-        if (in_array($type, ['image','pdf','voice'])) {
-            $request->validate([
-                'file' => [
-                    'required','file','max:20480',
-                    function ($attr, $value, $fail) use ($type) {
-                        $mime = $value->getMimeType();
-                        if ($type === 'image' && !str_starts_with($mime, 'image/')) $fail('Invalid image file');
-                        if ($type === 'pdf' && $mime !== 'application/pdf') $fail('Invalid PDF file');
-                        if ($type === 'voice') {
-                            $ok = str_starts_with($mime, 'audio/')
-                                || $mime === 'video/webm'
-                                || $mime === 'application/octet-stream'; // safari/edge sometimes send octet-stream
-                            if (!$ok) $fail('Invalid audio file');
-                        }
-                    }
-                ]
-            ]);
-            $original = $request->file('file')->getClientOriginalName();
-            $filePath = $request->file('file')->store('public/chat/'.$group->id);
-        } else if ($type === 'text') {
-            if ($firstNonEmpty === null) {
-                return response()->json(['message' => 'Text content is required'], 422);
-            }
-        }
-
-        $replyId = $request->input('reply_to_message_id');
-        if ($replyId) {
-            $parent = ChatMessage::find($replyId);
-            if (!$parent || (int)$parent->group_id !== (int)$group->id) {
-                return response()->json(['message' => 'Invalid reply target'], 422);
-            }
-        }
-
-        // Normalize sender guard/name so admin/superadmin messages are labeled correctly
-        $senderGuard = $this->guardName();
-        if (!$senderGuard && $this->isAdminUser($user)) {
-            $senderGuard = 'admin';
-        }
-        $senderName = $user->name ?? ($senderGuard === 'superadmin' ? 'Super Admin' : ($senderGuard === 'admin' ? 'Admin' : null));
-
-        $msg = ChatMessage::create([
-            'group_id' => $group->id,
-            'user_id' => $user->id,
-            'type' => $type,
-            'content' => $type === 'text' ? $firstNonEmpty : null,
-            'file_path' => $filePath,
-            'original_name' => $original,
-            'sender_guard' => $senderGuard,
-            'sender_name' => $senderName,
-            'reply_to_message_id' => $replyId,
-        ]);
-
-        $msg->load('user:id,name,is_chat_admin');
-        // Recompute group payload for sidebar ordering
-        $payload = $this->serializeMessage($msg, $user);
-        $groupPayload = $this->buildGroupPayload(ChatGroup::find($msg->group_id), $user->id ?? null);
-
-        // Broadcast in real-time
-        try {
-            $payload['socket_id'] = request()->header('X-Socket-Id');
-            broadcast(new ChatMessageBroadcast($payload));
-            broadcast(new MessageSent($payload));
-        } catch (\Throwable $e) {
-            // swallow broadcast errors to not block send
-        }
-
-        return response()->json(['message' => $payload, 'group' => $groupPayload], 201);
-    }
-
-    public function react(Request $request, ChatMessage $message)
-    {
-        $user = $this->user();
-        if (!$user) return response()->json(['message' => 'Unauthorized'], 401);
-        $request->validate(['type' => 'required|string|max:32']);
-        ChatReaction::updateOrCreate([
-            'message_id' => $message->id,
-            'user_id' => $user->id,
-        ], [
-            'type' => $request->string('type')
-        ]);
-        return response()->json(['status' => 'ok']);
-    }
-
-    public function setChatAdmin(Request $request, User $user)
-    {
-        $viewer = $this->user();
-        if (!$viewer) return response()->json(['message' => 'Unauthorized'], 401);
-        if (!$this->isAdminUser($viewer)) return response()->json(['message' => 'Forbidden'], 403);
-
-        $data = $request->validate([
-            'is_admin' => 'required|boolean',
-        ]);
-
-        $user->is_chat_admin = (bool) $data['is_admin'];
-        $user->save();
-
-        return response()->json([
-            'status' => 'ok',
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'is_chat_admin' => (bool) $user->is_chat_admin,
-            ],
-        ]);
-    }
-
-    protected function fileUrl(?string $path): ?string
-    {
-        if (!$path) return null;
-        // Primary: Storage::url
-        try {
-            $u = Storage::url($path);
-            if ($u) return $u;
-        } catch (\Throwable $e) {}
-
-        // Fallbacks for common stored shapes
-        $trim = ltrim($path, '/');
-        // Normalize absolute storage/app/public/... to storage/...
-        if (str_starts_with($trim, 'storage/app/public/')) {
-            $trim = substr($trim, strlen('storage/app/public/'));
-            try { return Storage::disk('public')->url($trim); } catch (\Throwable $e) {}
-            return '/storage/'.$trim;
-        }
-        if (str_starts_with($trim, 'app/public/')) {
-            $trim = substr($trim, strlen('app/public/'));
-            try { return Storage::disk('public')->url($trim); } catch (\Throwable $e) {}
-            return '/storage/'.$trim;
-        }
-        if (str_starts_with($trim, 'public/')) {
-            $rel = substr($trim, strlen('public/'));
-            try { return Storage::disk('public')->url($rel); } catch (\Throwable $e) {}
-            return '/storage/'.$rel;
-        }
-        if (str_starts_with($trim, 'storage/')) {
-            return '/'. $trim;
-        }
-        try { return Storage::disk('public')->url($trim); } catch (\Throwable $e) {}
-        return '/storage/'.$trim;
-    }
-
-    protected function serializeMessage(ChatMessage $m, $viewer)
-    {
-        // Prefer stored file_path, fallback to legacy file_url column if present
-        $rawPath = $m->file_path ?: ($m->file_url ?? null);
-        $fileUrl = $this->fileUrl($rawPath);
-        $viewerId = $viewer?->id;
-        $senderName = $m->sender_name ?: ($m->relationLoaded('user') && $m->user ? $m->user->name : null);
-        $data = [
-            'id' => $m->id,
-            'group_id' => $m->group_id,
-            'user_id' => $m->user_id,
-            'user' => $m->relationLoaded('user') && $m->user ? [
-                'id' => $m->user->id,
-                'name' => $m->user->name,
-                'is_chat_admin' => (bool) ($m->user->is_chat_admin ?? false),
-                'avatar' => null,
-            ] : null,
-            'sender_guard' => $m->sender_guard,
-            'sender_name' => $senderName,
-            'type' => $m->type,
-            'content' => $m->content,
-            'file_url' => $fileUrl,
-            'file_path' => $m->file_path,
-            'original_name' => $m->original_name,
-            'created_at' => $m->created_at?->toISOString(),
-            'mine' => $viewerId !== null && $viewerId === $m->user_id,
-            'reply_to_message_id' => $m->reply_to_message_id,
-        ];
-        // Reactions visible only to the message sender (owner)
-        if ($viewer && $viewer->id === $m->user_id) {
-            $data['reactions'] = $m->relationLoaded('reactions') ? $m->reactions->map(function(ChatReaction $r){
-                return [ 'type' => $r->type, 'user_id' => $r->user_id, 'user' => $r->relationLoaded('user') && $r->user ? [ 'id'=>$r->user->id, 'name'=>$r->user->name ] : null ];
-            })->values() : [];
-        } else {
-            $data['reactions'] = [];
-        }
-        // Ensure sender_name exists for admin/superadmin messages even if DB missing
-        if (!$data['sender_name']) {
-            if ($this->isAdminUser($m->user)) {
-                $data['sender_name'] = 'Admin';
-                $data['sender_guard'] = $data['sender_guard'] ?: 'admin';
-            } else if ($m->sender_guard && in_array($m->sender_guard, ['admin','superadmin','super_admin'])) {
-                $data['sender_name'] = ucfirst(str_replace('_',' ', $m->sender_guard));
-            }
-        }
-        // If user is present, attempt to include avatar URL from common fields.
-        // Use a full User record lookup to ensure we have all avatar-related columns
-        // even when the relation was eager-loaded with limited columns.
-        try {
-            $fullUser = null;
-            if ($m->relationLoaded('user') && $m->user) {
-                $uid = $m->user->id ?? null;
-                if ($uid) {
-                    $fullUser = User::find($uid);
-                }
-            } elseif ($m->user_id) {
-                $fullUser = User::find($m->user_id);
-            }
-
-            if ($fullUser) {
-                $data['user'] = [
-                    'id' => $fullUser->id,
-                    'name' => $fullUser->name,
-                    'is_chat_admin' => (bool) ($fullUser->is_chat_admin ?? false),
-                    'avatar' => $this->userAvatarUrl($fullUser),
-                ];
-                // Top-level avatar: helpful for front-end lookup (avatar on message object)
-                $data['avatar'] = $data['user']['avatar'];
-            } else {
-                $data['avatar'] = null;
-            }
-        } catch (\Throwable $e) {
-            $data['avatar'] = null;
-            if (!empty($data['user'])) $data['user']['avatar'] = null;
-        }
-
-        return $data;
-    }
-
-    protected function userAvatarUrl($user): ?string
-    {
-        if (!$user) return null;
-        // Helper to ensure we return an absolute URL
-        $makeAbsolute = function(?string $u) {
-            if (!$u) return null;
-            $u = (string) $u;
-            // If it's already an absolute external URL, keep it
-            if (preg_match('/^https?:\/\//i', $u)) {
-                // If the absolute URL points to this app's host, convert to root-relative
-                try {
-                    $appHost = parse_url(rtrim(url('/'), '/'), PHP_URL_HOST);
-                    $host = parse_url($u, PHP_URL_HOST);
-                    if ($host && $appHost && $host === $appHost) {
-                        $path = parse_url($u, PHP_URL_PATH) ?: '/';
-                        $query = parse_url($u, PHP_URL_QUERY);
-                        return $path . ($query ? ('?' . $query) : '');
-                    }
-                } catch (\Throwable $_) {
-                    // ignore and return as-is
-                }
-                return $u;
-            }
-            // If it's a root-relative path, return it unchanged (so clients resolve to current host)
-            if (str_starts_with($u, '/')) {
-                return $u;
-            }
-            // If it's a relative storage path, try fileUrl to normalize
-            $fromFile = $this->fileUrl($u);
-            if ($fromFile && preg_match('/^https?:\/\//i', $fromFile)) return $fromFile;
-            if ($fromFile && str_starts_with($fromFile, '/')) return rtrim(url('/'), '/') . $fromFile;
-            return $u;
-        };
-
-        // Prefer direct profile_photo_url if present (Jetstream/etc.)
-        if (!empty($user->profile_photo_url)) {
-            return $makeAbsolute((string) $user->profile_photo_url);
-        }
-
-        // Common DB-backed candidate fields (cover more possible column names)
-        $cand = $user->profile_picture ?? $user->avatar ?? $user->photo ?? $user->profile_photo ?? $user->profile_photo_path ?? $user->image ?? null;
-
-        // If user has an employee relation with a profile photo, prefer that
-        try {
-            if (empty($cand) && isset($user->employee) && $user->employee) {
-                if (!empty($user->employee->profile_photo_path)) {
-                    return $makeAbsolute(Storage::disk('public')->url($user->employee->profile_photo_path));
-                }
-                if (!empty($user->employee->profile_photo_url)) {
-                    return $makeAbsolute((string) $user->employee->profile_photo_url);
-                }
-            }
-        } catch (\Throwable $e) {
-            // ignore and continue to other fallbacks
-        }
-
-        // If a DB column contains a candidate value, try to normalize it (handles absolute and storage paths)
-        if ($cand) {
+        // handle audio file (voice messages)
+        if ($request->hasFile('audio')) {
             try {
-                $resolved = $this->fileUrl((string)$cand);
-                if ($resolved) return $makeAbsolute($resolved);
-            } catch (\Throwable $_) {}
+                $path = $request->file('audio')->store('chat_audio', 'public');
+                $storedContent = 'AUDIO::' . $path; // marker so we can detect audio messages
+                $audioUrl = Storage::url($path);
+            } catch (\Exception $e) {
+                // continue without audio
+            }
         }
 
-        // Additional filename patterns to try under public storage
-        $exts = ['png','jpg','jpeg','webp','gif','bmp','svg'];
-        $prefixes = ['', 'avatars/', 'profile_pictures/', 'uploads/avatars/', 'uploads/profile_photos/', 'profiles/', 'users/avatars/', 'public/avatars/', 'storage/avatars/'];
-        $tried = [];
+        // handle generic file upload (single file input named 'files')
+        if ($request->hasFile('files')) {
+            try {
+                $f = $request->file('files');
+                $path = $f->store('chat_files', 'public');
+                // store marker so client can detect attachments; include original filename (url-encoded)
+                $origName = rawurlencode($f->getClientOriginalName());
+                $storedContent = 'FILE::' . $path . '::' . $origName;
+                $fileUrl = Storage::url($path);
+                $attachments[] = ['url' => $fileUrl, 'path' => $path, 'name' => $f->getClientOriginalName(), 'size' => $f->getSize()];
+            } catch (\Exception $e) {
+                // ignore
+            }
+        }
+
+        // If this is a reply to an existing message, embed reply metadata at the start of the stored content
+        $replyMeta = null;
         try {
-            foreach ($prefixes as $pref) {
-                foreach ($exts as $ext) {
-                    $rel = ltrim($pref . $user->id . '.' . $ext, '/');
-                    $tried[] = $rel;
+            $replyTo = $request->input('reply_to', null);
+            if ($replyTo) {
+                $orig = Message::find($replyTo);
+                if ($orig) {
+                    // Build a clean snippet: strip any REPLY:: markers and any client-inserted reply prefixes like "↪ Name: "
+                    $rawSnippet = is_string($orig->content) ? $orig->content : '';
                     try {
-                        if (Storage::disk('public')->exists($rel)) {
-                            return $makeAbsolute(Storage::disk('public')->url($rel));
+                        if (is_string($rawSnippet) && str_starts_with($rawSnippet, 'REPLY::')) {
+                            $r = substr($rawSnippet, strlen('REPLY::'));
+                            $parts = explode('::', $r, 2);
+                            $inner = $parts[1] ?? $parts[0] ?? '';
+                            $rawSnippet = $inner;
                         }
-                    } catch (\Throwable $_) {
-                        // ignore storage issues for this candidate
-                    }
+                        // Remove leading client-side reply prefixes like "↪ Someone: " (up to 200 chars)
+                        $rawSnippet = preg_replace('/^↪[^:]{0,200}:\s*/u', '', $rawSnippet);
+                        $clean = strip_tags($rawSnippet);
+                        $clean = trim($clean);
+                        $clean = mb_substr($clean, 0, 160);
+                    } catch (\Exception $e) { $clean = is_string($orig->content) ? mb_substr(strip_tags($orig->content), 0, 160) : null; }
+
+                    $meta = [
+                        'id' => $orig->id,
+                        'sender_name' => $orig->senderModel()?->name ?? null,
+                        'snippet' => $clean,
+                    ];
+                    // attach visibility so admin replies in group can be targeted to the original user
+                    $meta['visible_to'] = $orig->sender_id;
+                    $meta['visible_to_type'] = $orig->sender_type;
+                    $replyMeta = $meta;
+                    $storedContent = 'REPLY::' . base64_encode(json_encode($meta)) . '::' . ($storedContent ?? '');
                 }
             }
-        } catch (\Throwable $_) {}
+        } catch (\Exception $e) { /* ignore reply packing errors */ }
 
-        // As a last resort, attempt to find any file under avatars/ matching the id with any extension
+        $msg = Message::create([
+            'sender_id' => $senderId,
+            'sender_type' => $senderType,
+            'receiver_id' => $other['id'],
+            'receiver_type' => $other['type'],
+            'content' => $storedContent,
+        ]);
+
+        // resolve friendly names for response
+        $senderModel = $msg->senderModel();
+        $receiverModel = $msg->receiverModel();
+        $payload = array_merge($msg->toArray(), [
+            'sender_name' => $senderModel ? $senderModel->name : null,
+            'receiver_name' => $receiverModel ? $receiverModel->name : null,
+            'sender_avatar' => $this->resolveAvatar($senderType, $senderId, $senderModel?->name ?? null),
+            'receiver_avatar' => $this->resolveAvatar($other['type'] ?? null, $other['id'] ?? null, $receiverModel?->name ?? null),
+        ]);
+
+        // If we stored an audio file, include its public URL in the response payload and
+        // replace the content for preview purposes.
+        if ($audioUrl) {
+            $payload['audio_url'] = $audioUrl;
+            $payload['content'] = '[Audio]';
+        }
+        // If we stored a generic file, include its public URL and attachments info
+        if ($fileUrl) {
+            $payload['file_url'] = $fileUrl;
+            $payload['attachments'] = $attachments;
+            $payload['content'] = '[Attachment]';
+        }
+
+        // ensure created_at in response uses RFC3339 so clients parse it reliably
         try {
-            foreach ($exts as $ext) {
-                $rel = 'avatars/' . $user->id . '.' . $ext;
-                $tried[] = $rel;
-                if (Storage::disk('public')->exists($rel)) {
-                    return $makeAbsolute(Storage::disk('public')->url($rel));
+            $payload['created_at'] = $msg->created_at ? $msg->created_at->toRfc3339String() : null;
+        } catch (\Exception $e) { /* ignore */ }
+
+        // log for debugging
+        try {
+            \Log::info('Chat message created', $payload);
+        } catch (\Exception $e) {
+            // ignore logging errors
+        }
+
+        // include reply metadata in payload when available so clients can render quoted-replies immediately
+        if (isset($replyMeta) && $replyMeta) {
+            $payload['reply_to'] = $replyMeta;
+        }
+
+        // include original client receiver pref if available so clients can match group views
+        try {
+            $payload['receiver_pref'] = $request->input('receiver_id') ?? (($other['type'] ?? '') . ':' . ($other['id'] ?? ''));
+        } catch (\Exception $e) { /* ignore */ }
+
+        // broadcast to recipient so their sidebar updates instantly if using Echo/Pusher
+        try {
+            event(new ChatMessageSent($payload, $other['type'] ?? null, $other['id'] ?? null));
+
+            // If this was an admin reply inside a group directed at a user's original message,
+            // also create and broadcast a personal copy to the original message sender so they
+            // receive the reply directly in their inbox.
+            if (isset($other['type']) && $other['type'] === 'group' && $senderType === 'admin' && isset($replyMeta) && isset($replyMeta['id'])) {
+                try {
+                    $orig = Message::find($replyMeta['id']);
+                    if ($orig && $orig->sender_id) {
+                        // Broadcast the same group-stored payload to the original user's private channel
+                        // so they see the admin's reply in real-time while the message remains stored as a group message.
+                        event(new ChatMessageSent($payload, $orig->sender_type, $orig->sender_id));
+                    }
+                } catch (\Exception $ex) {
+                    // ignore personal broadcast errors
                 }
             }
-        } catch (\Throwable $_) {}
+        } catch (\Exception $e) {
+            // ignore broadcast errors (fallback to polling)
+        }
 
-        // Optionally, if debugging needed, we could log $tried patterns
-        return null;
+        return response()->json($payload, 201);
     }
 
-}
+    // Receive typing notifications from client and broadcast to recipient
+    public function typing(Request $request)
+    {
+        $request->validate([
+            'receiver_id' => 'required',
+            'typing' => 'nullable|boolean',
+        ]);
 
+        $authUser = auth('admin')->user() ?: auth('web')->user();
+        $senderId = $authUser ? $authUser->id : null;
+        $senderType = null;
+        if ($authUser instanceof Admin) $senderType = 'admin';
+        elseif ($authUser instanceof User) $senderType = 'user';
+        elseif ($authUser instanceof Employee) $senderType = 'employee';
+
+        $other = $this->parsePrefixedUser($request->receiver_id);
+
+        $payload = [
+            'sender_id' => $senderId,
+            'sender_type' => $senderType,
+            'typing' => (bool) ($request->input('typing') ?: false),
+            'timestamp' => now()->toRfc3339String(),
+        ];
+
+        try {
+            event(new \App\Events\ChatTyping($payload, $other['type'] ?? null, $other['id'] ?? null));
+        } catch (\Exception $e) {
+            // ignore broadcast failures
+        }
+
+        return response()->json(['ok' => true]);
+    }
+
+    // Handle reactions to messages (emoji reactions)
+    public function reaction(Request $request)
+    {
+        $request->validate([
+            'message_id' => 'required',
+            'emoji' => 'required|string|max:8',
+        ]);
+
+        $authUser = auth('admin')->user() ?: auth('web')->user();
+        $reactorId = $authUser ? $authUser->id : null;
+        $reactorType = null;
+        if ($authUser instanceof Admin) $reactorType = 'admin';
+        elseif ($authUser instanceof User) $reactorType = 'user';
+        elseif ($authUser instanceof Employee) $reactorType = 'employee';
+
+        $message = Message::find($request->input('message_id'));
+        if (!$message) return response()->json(['error' => 'Message not found'], 404);
+
+        // determine the other participant so we can notify them
+        if ($message->sender_id == $reactorId && ($message->sender_type == $reactorType || $message->sender_type === null)) {
+            $otherId = $message->receiver_id;
+            $otherType = $message->receiver_type;
+        } else {
+            $otherId = $message->sender_id;
+            $otherType = $message->sender_type;
+        }
+
+        $reactorModel = $authUser;
+        $payload = [
+            'message_id' => $message->id,
+            'emoji' => $request->input('emoji'),
+            'reactor_id' => $reactorId,
+            'reactor_type' => $reactorType,
+            'reactor_name' => $reactorModel ? ($reactorModel->name ?? null) : null,
+            'reactor_avatar' => $this->resolveAvatar($reactorType, $reactorId, $reactorModel?->name ?? null),
+            'timestamp' => now()->toRfc3339String(),
+        ];
+
+        try {
+            // broadcast the reaction to both participants (reactor and other)
+            $targets = [];
+            if ($otherType && $otherId) $targets[] = ['type' => $otherType, 'id' => $otherId];
+            if ($reactorType && $reactorId) $targets[] = ['type' => $reactorType, 'id' => $reactorId];
+            // persist reaction users on the message record so we can toggle per-user reactions
+            try {
+                $emoji = $request->input('emoji');
+                $userKey = ($reactorType ? $reactorType : 'user') . ':' . $reactorId;
+                $current = $message->reactions ?? [];
+                if (!is_array($current)) {
+                    $current = json_decode($current, true) ?: [];
+                }
+
+                // ensure arrays for each emoji
+                foreach ($current as $k => $v) {
+                    if (!is_array($current[$k])) {
+                        $current[$k] = is_null($v) ? [] : (is_numeric($v) ? [] : (array)$v);
+                    }
+                }
+
+                $acted = false;
+                $selectedEmoji = null;
+
+                // If user is already present under this emoji, remove (toggle off)
+                if (isset($current[$emoji]) && in_array($userKey, $current[$emoji])) {
+                    $current[$emoji] = array_values(array_filter($current[$emoji], function($x) use ($userKey) { return $x !== $userKey; }));
+                    $acted = false;
+                } else {
+                    // Add user to this emoji and remove them from any other emoji lists
+                    // First remove from any other emoji arrays
+                    foreach ($current as $k => $arr) {
+                        if (!is_array($arr)) continue;
+                        $current[$k] = array_values(array_filter($arr, function($x) use ($userKey) { return $x !== $userKey; }));
+                    }
+                    // Then add to requested emoji
+                    if (!isset($current[$emoji]) || !is_array($current[$emoji])) $current[$emoji] = [];
+                    $current[$emoji][] = $userKey;
+                    // dedupe
+                    $current[$emoji] = array_values(array_unique($current[$emoji]));
+                    $acted = true;
+                    $selectedEmoji = $emoji;
+                }
+
+                // remove empty emoji lists to avoid storing zero-count keys
+                foreach ($current as $k => $arr) {
+                    if (is_array($arr) && count($arr) === 0) unset($current[$k]);
+                }
+                // save updated map
+                $message->reactions = $current;
+                $message->save();
+
+                // prepare counts mapping for clients
+                $counts = [];
+                foreach ($current as $k => $arr) {
+                    $counts[$k] = is_array($arr) ? count($arr) : (int)$arr;
+                }
+                $payload['reactions'] = $counts;
+                $payload['reaction_users'] = $current;
+                $payload['acted'] = $acted;
+                $payload['selected_emoji'] = $selectedEmoji;
+            } catch (\Exception $e) {
+                // ignore persistence errors but continue to broadcast
+            }
+            event(new ChatMessageReacted($payload, $targets));
+        } catch (\Exception $e) {
+            // ignore broadcast errors
+        }
+
+        return response()->json($payload);
+    }
+
+    protected function parsePrefixedUser($val)
+    {
+        if (is_string($val) && strpos($val, ':') !== false) {
+            [$prefix, $id] = explode(':', $val, 2);
+            // map group keys to numeric ids for DB compatibility (e.g., 'booking' -> 0)
+            if ($prefix === 'group') {
+                $map = [
+                    'booking' => 0,
+                ];
+                $gid = $map[strval($id)] ?? ($this->isNumericString($id) ? (int)$id : 0);
+                return ['type' => $prefix, 'id' => $gid];
+            }
+            if (is_numeric($id)) {
+                return ['type' => $prefix, 'id' => (int)$id];
+            }
+            return ['type' => $prefix, 'id' => $id];
+        }
+        if (is_numeric($val)) return ['type' => null, 'id' => (int)$val];
+        if (is_string($val) && $val !== '') return ['type' => null, 'id' => $val];
+        return ['type' => null, 'id' => null];
+    }
+
+    protected function isNumericString($v)
+    {
+        return is_string($v) && preg_match('/^\d+$/', $v);
+    }
+}
