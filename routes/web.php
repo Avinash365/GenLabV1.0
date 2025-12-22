@@ -10,14 +10,14 @@ use App\Http\Controllers\SuperAdmin\WebSettingController;
 use App\Http\Controllers\SuperAdmin\ReportingLettersController;
 use App\Http\Controllers\SuperAdmin\HoldCancelController;
 use App\Http\Controllers\Superadmin\LabAnalystsController;
-use App\Http\Controllers\ChatController;
-use App\Http\Controllers\Superadmin\ProfileController;
+ use App\Http\Controllers\Superadmin\ProfileController;
 use App\Http\Controllers\Accounts\MarketingExpenseController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\Api\Attendance\EsslAdmsController;
-use App\Http\Controllers\Accounts\ManualInvoicePaymentController; 
-use App\Events\MessageSent;
 use Illuminate\Http\Request;
+use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Accounts\ManualInvoicePaymentController; 
+ 
 
 
 /*
@@ -90,31 +90,9 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->gr
 });
 
 
-// Chat
-Route::prefix('chat')->group(function(){
-    Route::get('/groups', [ChatController::class, 'groups'])->name('chat.groups');
-    Route::post('/groups', [ChatController::class, 'createGroup'])->name('chat.groups.create');
-    Route::delete('/groups/{group}', [ChatController::class, 'destroyGroup'])->name('chat.groups.destroy');
-    Route::post('/groups/{group}/clear', [ChatController::class, 'clearGroup'])->name('chat.groups.clear');
+ 
 
-    Route::get('/messages', [ChatController::class, 'messages'])->name('chat.messages');
-    Route::get('/messages/since', [ChatController::class, 'messagesSince'])->name('chat.messages.since');
-    Route::post('/messages', [ChatController::class, 'send'])->name('chat.messages.send');
-    Route::delete('/messages/{id}', [ChatController::class, 'destroy'])->name('chat.messages.delete');
-
-    Route::post('/messages/{message}/reactions', [ChatController::class, 'react'])->name('chat.messages.react');
-
-    // New: ensure/get direct chat with user (admin->user legacy DM)
-    Route::get('/direct/{user}', [ChatController::class, 'direct'])->name('chat.direct');
-    // New: search users and symmetric DM between users
-    Route::get('/users/search', [ChatController::class, 'searchUsers'])->name('chat.users.search');
-    Route::get('/direct-with/{user}', [ChatController::class, 'directWith'])->name('chat.directWith');
-});
-
-// Chat unread counts + seen marker
-Route::get('/chat/unread-counts', [ChatController::class, 'unreadCounts'])->name('chat.unread-counts');
-Route::post('/chat/mark-seen', [ChatController::class, 'markSeen'])->name('chat.mark-seen');
-
+ 
 
 // Superadmin Profile (protected)
 Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadmin.')->group(function(){
@@ -129,9 +107,7 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
         ->middleware('permission:account.view');
 });
 
-// Delete chat message
-Route::delete('/chat/messages/{id}', [\App\Http\Controllers\ChatController::class, 'destroy'])->name('chat.messages.destroy');
-
+ 
 // Chatbot query
 Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 
@@ -152,6 +128,18 @@ Route::middleware('auth:admin,superadmin')->group(function () {
         ->name('chat.setChatAdmin');
 });
 
+// Basic chat routes (respect multi-auth guards so clicking doesn't redirect/log out)
+Route::middleware(['web','multi_auth:web,admin'])->group(function () {
+    Route::get('/chat', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+    Route::get('/chat/messages/{user}', [App\Http\Controllers\ChatController::class, 'messages'])->name('chat.messages');
+    Route::get('/chat/search', [App\Http\Controllers\ChatController::class, 'search'])->name('chat.search');
+    Route::get('/chat/contacts', [App\Http\Controllers\ChatController::class, 'contacts'])->name('chat.contacts');
+    Route::post('/chat/messages', [App\Http\Controllers\ChatController::class, 'send'])->name('chat.send');
+    Route::post('/chat/typing', [App\Http\Controllers\ChatController::class, 'typing'])->name('chat.typing');
+    Route::post('/chat/messages/reaction', [App\Http\Controllers\ChatController::class, 'reaction'])->name('chat.reaction');
+});
+
+use Spatie\Browsershot\Browsershot; 
 
 
 

@@ -11794,7 +11794,7 @@ table.dataTable {
   }
 }
 .page-wrapper .content {
-  padding: 24px;
+  padding: 10px;
   padding-bottom: 0;
   min-height: calc(100vh - 105px);
 }
@@ -12186,7 +12186,7 @@ table.dataTable {
   justify-content: space-between;
   -webkit-justify-content: space-between;
   -ms-flex-pack: space-between;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
 }
 .page-header .breadcrumb {
   margin-bottom: 0;
@@ -32422,7 +32422,7 @@ body.layout-mode-rtl .user-info {
 }
 .chat-wrapper .chat.chat-messages {
   border-radius: 10px;
-  margin-left: 20px;
+
   border: 1px solid #E6EAED;
 }
 @media (max-width: 991.98px) {

@@ -1,3 +1,4 @@
+
 <?php
     $authUser = auth('web')->user() ?: auth('admin')->user();
     $roleName = null;
@@ -103,11 +104,11 @@
             <form id="logout-form-mobile" action="<?php echo e(route('superadmin.logout')); ?>" method="POST" style="display:none;">
                 <?php echo csrf_field(); ?>
             </form>
-            <button class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative chat-toggle-btn" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
+            <a href="<?php echo e(route('chat.index')); ?>" class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative chat-toggle-btn" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class=""></i>
                 <span style="font-size:13px; margin-left:15px; margin-bottom: 20px;">Chat</span>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger chat-notif-badge" style="font-size:11px; min-width:16px; height:16px; display:none; align-items:center; justify-content:center;">1</span>
-            </button>
+            </a>
         </div>
     </div>
 
@@ -145,10 +146,10 @@
         <div class="d-flex align-items-center flex-shrink-0" style="gap:10px; margin-left:18px;">
             <button class="btn btn-light d-flex align-items-center justify-content-center p-0" style="border-radius:6px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;"><img src="<?php echo e(url('assets/img/icons/flag.jpg')); ?>" alt="EN" style="height:18px;"></button>
             <button id="expandToggle" class="btn btn-light d-flex align-items-center justify-content-center p-0" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;" type="button"><i class="fa fa-expand"></i></button>
-            <button class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative chat-toggle-btn" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
+            <a href="<?php echo e(route('chat.index')); ?>" class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative chat-toggle-btn" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <i class="fa fa-comments"></i>
                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger chat-notif-badge" style="font-size:11px; min-width:16px; height:16px; display:none; align-items:center; justify-content:center;">1</span>
-            </button>
+            </a>
 
             <li id="emailTogia" class="btn btn-light d-flex align-items-center justify-content-center p-0 position-relative" style="border-radius:8px; width:30px; height:30px; border:1px solid #e5e7eb; background:#fff;">
                 <a href="<?php echo e(url('email')); ?>">
@@ -205,7 +206,7 @@
     </div>
 </div>
 
-<?php echo $__env->make('superadmin.layouts.include.chat', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+
 
 <script>
 // Toggle fullscreen on expand icon
