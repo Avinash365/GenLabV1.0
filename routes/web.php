@@ -14,8 +14,10 @@ use App\Http\Controllers\Superadmin\LabAnalystsController;
 use App\Http\Controllers\Accounts\MarketingExpenseController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\Api\Attendance\EsslAdmsController;
- use Illuminate\Http\Request;
+use Illuminate\Http\Request;
 use App\Http\Controllers\ChatController;
+use App\Http\Controllers\Accounts\ManualInvoicePaymentController; 
+ 
 
 
 /*
@@ -139,12 +141,7 @@ Route::middleware(['web','multi_auth:web,admin'])->group(function () {
 
 use Spatie\Browsershot\Browsershot; 
 
-Route::get('/html-to-pdf', function () {
-    $html = '<h1>Hello, PDF!</h1><p>This is a sample PDF generated from HTML using Browsershot.</p>';
-    Browsershot::html($html)
-        ->setChromePath('C:\Program Files\Google\Chrome\Application\chrome.exe')
-        ->format('A4')
-        ->save(storage_path('app/html.pdf'));
 
-    return 'PDF Generated';
-});
+
+
+

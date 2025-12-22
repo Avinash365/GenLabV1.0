@@ -11,14 +11,81 @@
     $paidInv = $stats['totalPaidInvoiceAmount'] ?? 0;
     $unpaidInv = $stats['totalUnpaidInvoiceAmount'] ?? 0;
     $partialInv = $stats['totalPartialTaxInvoiceAmount'] ?? 0;
-    
-    // 3. Avatar Logic
-    $avatar = $marketingPerson->profile_picture ?? null;
-    $avatarUrl = asset('assets/img/profiles/avator1.jpg');
-    // ... (Your existing avatar logic can remain here or be simplified) ...
-    if(is_string($avatar) && $avatar) {
-        $avatarUrl = str_starts_with($avatar, 'http') ? $avatar : asset('storage/'.ltrim($avatar, '/'));
+    // 2.b Personal Expenses (for small chart)
+    $personal_total_amount = $stats['totalPersonalExpensesAmount'] ?? $stats['totalExpensesAmount'] ?? ($stats['totalTransactionsAmount'] ?? 0);
+    $personal_approved_amount = $stats['totalApprovedPersonalExpensesAmount'] ?? $stats['totalApprovedExpensesAmount'] ?? 0;
+    // If controller didn't supply personal expense totals, compute from MarketingExpense table (safe fallback)
+    if(empty($personal_total_amount) && !empty($marketingPerson->user_code)){
+        try{
+            $personal_total_amount = (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)
+                ->where('section', 'personal')
+                ->sum('amount');
+        }catch(\Throwable $e){
+            $personal_total_amount = $personal_total_amount ?? 0;
+        }
     }
+    if(empty($personal_approved_amount) && !empty($marketingPerson->user_code)){
+        try{
+            $personal_approved_amount = (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)
+                ->where('section', 'personal')
+                ->sum('approved_amount');
+        }catch(\Throwable $e){
+            $personal_approved_amount = $personal_approved_amount ?? 0;
+        }
+    }
+    
+    // 3. Avatar Logic — align with `superadmin.profile.index` fallback behavior
+    $avatarUrl = asset('assets/img/profiles/avator1.jpg');
+    // Prefer a public-stored avatar in `storage/app/public/avatars/{id|user_code}.{ext}`
+    $tryExt = ['jpg','jpeg','png','webp'];
+    $found = null;
+    $candidates = [];
+    if(!empty($marketingPerson->id)) $candidates[] = $marketingPerson->id;
+    if(!empty($marketingPerson->user_code)) $candidates[] = $marketingPerson->user_code;
+    if(!empty($marketingPerson->code)) $candidates[] = $marketingPerson->code;
+
+    foreach($candidates as $cid) {
+        foreach($tryExt as $ext) {
+            if(\Illuminate\Support\Facades\Storage::disk('public')->exists("avatars/{$cid}.{$ext}")){
+                $found = \Illuminate\Support\Facades\Storage::url("avatars/{$cid}.{$ext}");
+                break 2;
+            }
+        }
+    }
+
+    // Fallback to any stored profile field or a direct URL
+    if(!$found){
+        $avatar = $marketingPerson->profile_picture ?? $marketingPerson->profile_photo_url ?? $marketingPerson->avatar ?? $marketingPerson->photo ?? null;
+        if(is_string($avatar) && $avatar){
+            // Data URL or absolute HTTP URL
+            if (str_starts_with($avatar, 'data:') || str_starts_with($avatar, 'http')) {
+                $found = $avatar;
+            } else {
+                // Prefer Storage disk url if path exists as stored on disk
+                try {
+                    if (\Illuminate\Support\Facades\Storage::disk('public')->exists($avatar)) {
+                        $found = \Illuminate\Support\Facades\Storage::url($avatar);
+                    } elseif (\Illuminate\Support\Facades\Storage::disk('public')->exists('avatars/'.$avatar)) {
+                        $found = \Illuminate\Support\Facades\Storage::url('avatars/'.$avatar);
+                    } else {
+                        // Check public path directly (maybe already under public/)
+                        if (file_exists(public_path($avatar))) {
+                            $found = asset($avatar);
+                        } elseif (file_exists(public_path('storage/'.ltrim($avatar, '/')))) {
+                            $found = asset('storage/'.ltrim($avatar, '/'));
+                        } else {
+                            // Last resort: assume it's a storage-relative path
+                            $found = asset('storage/'.ltrim($avatar, '/'));
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    $found = asset('storage/'.ltrim($avatar, '/'));
+                }
+            }
+        }
+    }
+
+    if($found) { $avatarUrl = $found; }
 ?>
 
 <div class="container-fluid p-4 dashboard-container">
@@ -78,6 +145,7 @@
                                     </div>
                                 </div>
                             </div>
+                            
                         </div>
 
                         <!-- Key Actions -->
@@ -160,7 +228,33 @@
 
     
     <div class="row g-3 mb-4 animate-up delay-2">
-        <div class="col-lg-7">
+        <div class="col-lg-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body d-flex flex-column">
+                    <div class="d-flex align-items-start justify-content-between mb-2">
+                        <div>
+                            <h6 class="text-muted mb-1">Expenses</h6>
+                            <small class="text-muted">Approved vs Pending</small>
+                        </div>
+                        <div class="text-end">
+                            <div class="fw-bold">₹<?php echo e(number_format($personal_total_amount, 2)); ?></div>
+                            <small class="text-muted">Total</small>
+                        </div>
+                    </div>
+
+                    <div class="d-flex align-items-center justify-content-center flex-grow-1 position-relative">
+                        <div id="personalExpenseChart" style="width:100%; max-width:320px; min-height:360px;"></div>
+                        <div id="personalExpenseCenter" class="personal-expense-center text-center">
+                            <div class="fs-6" style="font-size: 2.1rem">Approved</div>
+                            <div id="personalCenterAmount" class="fw-bold fs-5">₹<?php echo e(number_format($personal_approved_amount, 2)); ?></div>
+                        </div>
+                    </div>
+
+                    <div id="personalExpenseLegend" class="mt-3 d-flex gap-3 justify-content-center small"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-transparent border-0 d-flex justify-content-between align-items-center mt-2">
                     <h5 class="mb-0 fw-bold text-dark">Invoice Performance</h5>
@@ -171,7 +265,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-lg-5">
+        <div class="col-lg-3 col-md-6">
             <div class="card border-0 shadow-sm h-100">
                 <div class="card-header bg-transparent border-0 mt-2">
                     <h5 class="mb-0 fw-bold text-dark">Revenue Source</h5>
@@ -390,7 +484,32 @@
     #dynamic-section { position: relative; z-index: 2; pointer-events: auto; }
     /* Ensure dropdowns inside the profile hero are visible above background layers */
     .profile-card .dropdown-menu { z-index: 3000; }
-</style>
+    /* Personal Expense Chart styling */
+    .personal-expense-center {
+        position: absolute;
+        left: 50%; top: 50%; transform: translate(-50%, -50%);
+        pointer-events: none;
+        width: 200px; /* increased center container for larger text */
+        text-align: center;
+        z-index: 9999;
+    }
+    .personal-expense-center .fs-6 {
+        font-size: .8rem !important; /* larger label */
+        color: #374151 !important;
+        font-weight: 600;
+        letter-spacing: 0.2px;
+        margin-bottom: 2px;
+    }
+    .personal-expense-center .fs-5 { font-size: 1rem; }
+    #personalCenterAmount { font-size: 1.9rem !important; line-height: 1; font-weight: 700; }
+    #personalExpenseLegend .legend-item { display:flex; gap:8px; align-items:center; }
+    #personalExpenseLegend .swatch { width:12px; height:12px; border-radius:3px; display:inline-block; }
+    @media (max-width: 992px){ .personal-expense-center { width:180px; } }
+    @media (max-width: 768px){ .personal-expense-center { width:150px; } }
+    @media (max-width: 576px){ .personal-expense-center { width:180px; } 
+        #personalCenterAmount { font-size: 2.1rem !important; }
+    }
+</style
 <?php $__env->stopPush(); ?>
 
 <?php $__env->startPush('scripts'); ?>
@@ -447,6 +566,72 @@ document.addEventListener("DOMContentLoaded", function() {
         }
     };
     new ApexCharts(document.querySelector("#sourceChart"), sourceOptions).render();
+
+    // --- 3. Personal Expenses Donut (Approved vs Pending) ---
+    try{
+        const approvedVal = Number(<?php echo e((float)$personal_approved_amount); ?> || 0);
+        const totalVal = Number(<?php echo e((float)$personal_total_amount); ?> || 0);
+        const pendingVal = Math.max(0, totalVal - approvedVal);
+        const percentApproved = totalVal > 0 ? Math.round((approvedVal / totalVal) * 100) : 0;
+
+        const personalSeries = [approvedVal, pendingVal];
+        const personalOptions = {
+            series: personalSeries,
+            chart: { type: 'donut', height: 260, fontFamily: 'Inter, sans-serif' },
+            labels: ['Approved','Pending'],
+            colors: ['#10b981', '#f59e0b'],
+            legend: { show: false },
+            dataLabels: { enabled: false },
+            stroke: { colors: ['#fff'] },
+            fill: { type: 'gradient', gradient: { shade: 'light', type: 'horizontal', shadeIntensity: 0.25, gradientToColors: ['#34d399','#f59e0b'], inverseColors: false, opacityFrom: 0.95, opacityTo: 0.9, stops: [0, 50, 100] } },
+            plotOptions: {
+                pie: {
+                    donut: {
+                        size: '68%',
+                        labels: {
+                            show: true,
+                            name: { show: false },
+                            value: { show: false },
+                            total: { show: false }
+                        }
+                    }
+                }
+            },
+            tooltip: {
+                y: { formatter: function (val) { return '₹' + Number(val).toLocaleString(); } }
+            },
+            responsive: [{
+                breakpoint: 600,
+                options: { chart: { height: 200 }, plotOptions: { pie: { donut: { size: '66%' } } } }
+            }, {
+                breakpoint: 420,
+                options: { chart: { height: 160 }, plotOptions: { pie: { donut: { size: '60%' } } } }
+            }]
+        };
+
+        const personalChartEl = document.querySelector('#personalExpenseChart');
+        const personalChart = new ApexCharts(personalChartEl, personalOptions);
+        personalChart.render();
+
+        // Update center and legend
+        const centerAmt = document.getElementById('personalCenterAmount');
+        if(centerAmt) centerAmt.innerText = '₹' + approvedVal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+        const legendEl = document.getElementById('personalExpenseLegend');
+        if(legendEl){
+            const items = [
+                { label: 'Approved', value: approvedVal, color: '#10b981', pct: percentApproved },
+                { label: 'Pending', value: pendingVal, color: '#f59e0b', pct: 100 - percentApproved }
+            ];
+            legendEl.innerHTML = items.map(it => `
+                <div class="legend-item">
+                    <div class="swatch" style="background:${it.color}"></div>
+                    <div>${it.label}: <strong>₹${Number(it.value).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2})}</strong> <small class="text-muted">(${it.pct}%)</small></div>
+                </div>
+            `).join('');
+        }
+
+    }catch(e){ console.debug('Personal expense chart init failed', e); }
 
     // --- 2. Tab & Grid Filtering Logic ---
     const tabs = document.querySelectorAll("#profileTabs button");

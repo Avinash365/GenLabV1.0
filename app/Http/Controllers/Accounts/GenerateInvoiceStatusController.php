@@ -651,7 +651,7 @@ class GenerateInvoiceStatusController extends Controller
             }
 
             $html = str_replace('__ACTION_URL__', route('superadmin.invoices.update', $invoice->id), $html); 
-            return view('superadmin.accounts.generateInvoice.edit-invoice', compact('invoice', 'gstinApiUrl', 'gstinApiKey', 'html'));
+            return view('superadmin.accounts.generateInvoice.edit-Invoice', compact('invoice', 'gstinApiUrl', 'gstinApiKey', 'html'));
 
         } catch (\Throwable $e) {
             Log::error('Invoice edit error: ' . $e->getMessage(), [

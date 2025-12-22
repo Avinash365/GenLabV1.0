@@ -1,66 +1,66 @@
-@extends('superadmin.layouts.app')
+<?php $__env->startSection('title', 'Client Profile'); ?>
 
-@section('title', 'Client Profile')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="container mt-4">
-        {{-- Profile Header --}}
+        
         <div class="card p-4 shadow-sm">
             <div class="row align-items-center">
                 <!-- Left Column: Profile Picture -->
                 <div class="col-md-3 text-center">
-                    <img src="{{ $client->profile_picture ?? asset('images/default-avatar.png') }}"
+                    <img src="<?php echo e($client->profile_picture ?? asset('images/default-avatar.png')); ?>"
                         class="rounded-circle img-fluid" width="120" height="120" alt="Profile Picture">
                 </div>
 
                 <!-- Right Column: Details -->
                 <div class="col-md-9">
-                    <h3 class="mb-2">{{ $client->name }}</h3>
+                    <h3 class="mb-2"><?php echo e($client->name); ?></h3>
                     <div class="row">
                         <!-- Column 1 -->
                         <div class="col-md-6">
-                            <p class="mb-1 text-muted"><i class="fa fa-envelope me-2"></i>{{ $client->email }}</p>
-                            <p class="mb-1 text-muted"><i class="fa fa-phone me-2"></i>{{ $client->phone ?? 'N/A' }}</p>
-                            <p class="mb-1 text-muted"><i class="fa fa-id-card me-2"></i>Address: {{ $client->address }}</p>
+                            <p class="mb-1 text-muted"><i class="fa fa-envelope me-2"></i><?php echo e($client->email); ?></p>
+                            <p class="mb-1 text-muted"><i class="fa fa-phone me-2"></i><?php echo e($client->phone ?? 'N/A'); ?></p>
+                            <p class="mb-1 text-muted"><i class="fa fa-id-card me-2"></i>Address: <?php echo e($client->address); ?></p>
                         </div>
 
                         <!-- Column 2 -->
                         <div class="col-md-6">
                             <p class="mb-1 text-muted"><i class="fa fa-exchange-alt me-2"></i>Total Transactions:
-                                {{ number_format($stats['transactions'] ?? 0, 0) }}
+                                <?php echo e(number_format($stats['transactions'] ?? 0, 0)); ?>
+
                             </p>
                             <p class="mb-1 text-muted"><i class="fa fa-money-bill-wave me-2"></i>Total Amount Received:
-                                ₹{{ number_format($stats['totalTransactionsAmount'] ?? 0, 2) }}</p>
+                                ₹<?php echo e(number_format($stats['totalTransactionsAmount'] ?? 0, 2)); ?></p>
                             <p class="mb-1 text-muted"><i class="fa fa-file-invoice-dollar me-2"></i>TDS Amount:
-                                ₹{{ number_format($stats['tdsAmount'] ?? 0, 2) }}</p>
+                                ₹<?php echo e(number_format($stats['tdsAmount'] ?? 0, 2)); ?></p>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-        {{-- Manual Invoice Payment model --}}
+        
         <div class="modal fade" id="manualPaymentModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-scrollable">
                 <div class="modal-content">
-                    {{-- SUCCESS MESSAGE --}}
-                    @if(session('success'))
+                    
+                    <?php if(session('success')): ?>
                         <div class="alert alert-success alert-dismissible fade show">
-                            {{ session('success') }}
+                            <?php echo e(session('success')); ?>
+
                         </div>
-                    @endif
+                    <?php endif; ?>
                     <div class="modal-header">
                         <h5 class="modal-title">Manual Invoice Payment</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                     </div>
 
                     <div class="modal-body">
-                        <form action="{{ route('manual-invoice-payment.store') }}" method="POST">
-                            @csrf
+                        <form action="<?php echo e(route('manual-invoice-payment.store')); ?>" method="POST">
+                            <?php echo csrf_field(); ?>
 
-                            {{-- client id --}}
-                            <input type="hidden" name="client_id" value="{{ $client->id }}">
+                            
+                            <input type="hidden" name="client_id" value="<?php echo e($client->id); ?>">
 
-                            {{-- Row 1 --}}
+                            
                             <div class="row">
                                 <div class="col-md-4 mb-3">
                                     <label class="form-label fw-bold">Invoice Number</label>
@@ -83,10 +83,10 @@
                                 </div>
                             </div>
 
-                            {{-- Row 2 --}}
+                            
                             <div class="row">
 
-                                {{-- Marketing Person --}}
+                                
                                 <div class="col-lg-4 col-sm-6 col-12 position-relative mb-3">
                                     <label class="form-label fw-bold">
                                         Marketing Person <span class="text-danger">*</span>
@@ -132,7 +132,7 @@
             </div>
         </div>
 
-        {{-- Tabs + Month-Year Filter --}}
+        
         <div class="d-flex justify-content-between align-items-center mt-3 mb-3 flex-wrap">
             <ul class="nav nav-tabs" id="profileTabs">
 
@@ -150,26 +150,28 @@
                 </button>
             </ul>
 
-            {{-- Month-Year Filter --}}
+            
             <form id="monthYearForm" class="row g-2" method="GET">
                 <div class="col-auto">
                     <select name="month" class="form-select">
                         <option value="">All Months</option>
-                        @for ($m = 1; $m <= 12; $m++)
-                            <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
-                                {{ \Carbon\Carbon::create()->month($m)->format('F') }}
+                        <?php for($m = 1; $m <= 12; $m++): ?>
+                            <option value="<?php echo e($m); ?>" <?php echo e(request('month') == $m ? 'selected' : ''); ?>>
+                                <?php echo e(\Carbon\Carbon::create()->month($m)->format('F')); ?>
+
                             </option>
-                        @endfor
+                        <?php endfor; ?>
                     </select>
                 </div>
                 <div class="col-auto">
                     <select name="year" class="form-select">
                         <option value="">All Years</option>
-                        @for ($y = now()->year; $y >= now()->year - 5; $y--)
-                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
-                                {{ $y }}
+                        <?php for($y = now()->year; $y >= now()->year - 5; $y--): ?>
+                            <option value="<?php echo e($y); ?>" <?php echo e(request('year') == $y ? 'selected' : ''); ?>>
+                                <?php echo e($y); ?>
+
                             </option>
-                        @endfor
+                        <?php endfor; ?>
                     </select>
                 </div>
                 <div class="col-auto">
@@ -179,9 +181,9 @@
             </form>
         </div>
 
-        {{-- Stats Section --}}
+        
         <div class="row mt-4" id="stats-cards">
-            @php
+            <?php
                 $yearParam = request('year') ? '&year=' . request('year') : '';
                 $monthParam = request('month') ? '&month=' . request('month') : '';
                 $filterParams = $yearParam . $monthParam;
@@ -342,27 +344,27 @@
                         'route' => route('superadmin.client.withoutBill', $client->id) . "?transaction_status=3&with_payment=1" . $filterParams
                     ],
                 ];
-            @endphp
+            ?>
 
-            @foreach($allCards as $c)
-                <div class="col-md-3 col-sm-6 mb-3 stats-card-wrapper" data-type="{{ $c['type'] }}">
-                    <div class="card shadow-sm stats-card text-center clickable" id="{{ $c['id'] }}"
-                        data-target="#{{ $c['id'] }}" data-url="{{ $c['route'] ?? '' }}">
+            <?php $__currentLoopData = $allCards; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $c): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <div class="col-md-3 col-sm-6 mb-3 stats-card-wrapper" data-type="<?php echo e($c['type']); ?>">
+                    <div class="card shadow-sm stats-card text-center clickable" id="<?php echo e($c['id']); ?>"
+                        data-target="#<?php echo e($c['id']); ?>" data-url="<?php echo e($c['route'] ?? ''); ?>">
                         <div class="card-body">
-                            <h6>{{ $c['title'] }}</h6>
-                            <h4 class="text-{{ $c['class'] }}">{{ $c['count'] }}</h4>
-                            <p class="text-muted mb-0">{{ $c['amount'] }}</p>
+                            <h6><?php echo e($c['title']); ?></h6>
+                            <h4 class="text-<?php echo e($c['class']); ?>"><?php echo e($c['count']); ?></h4>
+                            <p class="text-muted mb-0"><?php echo e($c['amount']); ?></p>
                         </div>
                     </div>
                 </div>
-            @endforeach
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </div>
 
-        {{-- Dynamic Content Section --}}
+        
         <div id="dynamic-section" class="mt-4"></div>
     </div>
-@endsection
-@push('scripts')
+<?php $__env->stopSection(); ?>
+<?php $__env->startPush('scripts'); ?>
     <script>
         document.addEventListener("DOMContentLoaded", function () {
             const tabs = document.querySelectorAll("#profileTabs button");
@@ -434,9 +436,9 @@
             }
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <script>
         /* ----------------------------------------------------
          | GLOBAL HELPERS (REQUIRED)
@@ -485,7 +487,7 @@
                 abortOldRequest('marketing');
 
                 ajaxRequests.marketing = $.ajax({
-                    url: "{{ route('superadmin.bookings.autocomplete') }}",
+                    url: "<?php echo e(route('superadmin.bookings.autocomplete')); ?>",
                     method: "GET",
                     dataType: "json",
                     data: {
@@ -547,10 +549,10 @@
 
         });
     </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('scripts')
-@if(session('success'))
+<?php $__env->startPush('scripts'); ?>
+<?php if(session('success')): ?>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const modal = new bootstrap.Modal(
@@ -559,5 +561,6 @@
         modal.show();
     });
 </script>
-@endif
-@endpush
+<?php endif; ?>
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/client/profile.blade.php ENDPATH**/ ?>
