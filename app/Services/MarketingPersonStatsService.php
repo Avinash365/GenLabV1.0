@@ -3,7 +3,7 @@
 namespace App\Services;
 
 use App\Models\NewBooking;
-use App\Models\{Invoice,InvoiceTds, InvoiceTransaction} ;
+use App\Models\{Invoice,InvoiceTds, InvoiceTransaction, ManualInvoicePayment} ;
 use App\Models\CashLetterPayment;
 use Illuminate\Support\Facades\DB;
 
@@ -113,6 +113,30 @@ class MarketingPersonStatsService
             ->groupBy('type')
             ->get()
             ->keyBy('type');
+        
+        $manualBaseQuery = ManualInvoicePayment::where('marketing_person', $userCode)
+            ->when($month, fn($q) => $q->whereMonth('invoice_generated_date', $month))
+            ->when($year, fn($q) => $q->whereYear('invoice_generated_date', $year));
+
+        // Paid
+        $manualPaidAmount = (float) (clone $manualBaseQuery)
+            ->where('status', 1)
+            ->sum('total_amount');
+
+        $manualPaidCount = (int) (clone $manualBaseQuery)
+            ->where('status', 1)
+            ->count();
+
+        // Unpaid
+        $manualUnpaidAmount = (float) (clone $manualBaseQuery)
+            ->where('status', 0)
+            ->sum('total_amount');
+
+        $manualUnpaidCount = (int) (clone $manualBaseQuery)
+            ->where('status', 0)
+            ->count();
+
+        
 
         
         /** -------------------------
@@ -203,8 +227,8 @@ class MarketingPersonStatsService
             'totalInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_amount ?? 0),
             'totalPIAmount' => (float) ($invoiceStats['proforma_invoice']->total_amount ?? 0),
 
-            'paidInvoices' => (int) ($invoiceStats['tax_invoice']->paid_invoice_count ?? 0),
-            'totalPaidInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_paid_amount ?? 0),
+            'paidInvoices' => (int) ($invoiceStats['tax_invoice']->paid_invoice_count + $manualPaidCount ?? 0),
+            'totalPaidInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_paid_amount + $manualPaidAmount ?? 0),
 
             'partialTaxInvoices' => (int) ($invoiceStats['tax_invoice']->partial_invoice_count ?? 0), 
             'totalPartialTaxInvoiceAmount' => (float) (($invoiceStats['tax_invoice']->partial_amount_after_tds ?? 0)-($invoiceStats['tax_invoice']->partial_received_amount ?? 0)), 
@@ -215,8 +239,8 @@ class MarketingPersonStatsService
             'paidPiInvoices' => (int) ($invoiceStats['proforma_invoice']->paid_invoice_count ?? 0),
             'totalPaidPIAmount' => (float) ($invoiceStats['proforma_invoice']->total_paid_amount ?? 0),
 
-            'unpaidInvoices' => (int) ($invoiceStats['tax_invoice']->unpaid_invoice_count ?? 0),
-            'totalUnpaidInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_unpaid_amount ?? 0),
+            'unpaidInvoices' => (int) ($invoiceStats['tax_invoice']->unpaid_invoice_count + $manualUnpaidCount?? 0),
+            'totalUnpaidInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_unpaid_amount + $manualUnpaidAmount ?? 0),
 
             'canceledGeneratedInvoices' => (int) ($invoiceStats['tax_invoice']->canceled_invoice_count ?? 0),
             'totalcanceledGeneratedInvoicesAmount' => (float) ($invoiceStats['tax_invoice']->canceled_amount ?? 0), 
