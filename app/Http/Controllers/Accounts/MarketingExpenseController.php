@@ -14,13 +14,22 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\MarketingExpensesExport;
+use App\Jobs\SendMarketingNotificationJob; 
+use App\Services\FCMService; 
 use Mpdf\Mpdf;
 use App\Models\ClearedExpense;
 use Illuminate\Support\Facades\DB;
 
+
 class MarketingExpenseController extends Controller
 {
     use HandlesMarketingExpenses;
+
+    protected FCMService $fcmService; 
+
+    public function __construct(FCMService $fcmService){
+        $this->fcmService  = $fcmService; 
+    }
 
     public function index(Request $request)
     {

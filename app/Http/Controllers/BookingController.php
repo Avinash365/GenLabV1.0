@@ -280,7 +280,7 @@ class BookingController extends Controller
             SendMarketingNotificationJob::dispatch(
                     $marketingUser,
                     "Booking Deleted",
-                    "Booking Ref_No :{$request->reference_no} has been deleted.",
+                    "Booking Ref_No :{$Ref_No} has been deleted.",
                     [
                         "booking_id" => $booking_id,
                         "updated_by" => auth()->user()->name ?? "System",

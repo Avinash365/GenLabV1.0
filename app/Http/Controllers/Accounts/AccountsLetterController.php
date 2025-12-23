@@ -29,8 +29,9 @@ class AccountsLetterController extends Controller
         $month  = $request->input('month');
         $year   = $request->input('year');
         $departmentId = $request->input('department_id');
-        $paymentOption = $request->input('payment_option');
+        $paymentOption = $request->input('payment_option') ?? "bill";
         $clientId     = $request->input('client_id');
+        $marketingPerson = $request->input('marketing_person') ??'';
 
 
         $query = NewBooking::with(['items', 'department', 'marketingPerson']);
@@ -77,6 +78,10 @@ class AccountsLetterController extends Controller
             $query->where('payment_option', $paymentOption); 
         }
 
+        // marketing person filter 
+        if(!empty($marketingPerson)) {
+            $query->where('marketing_id', $marketingPerson); 
+        }
 
         $bookings = $query->latest()->paginate(10);
         $clients = Client::latest()->get(); 
