@@ -124,12 +124,25 @@ class GenerateInvoiceStatusController extends Controller
 
         $departments = $this->departmentService->getDepartment();
 
-        $view = ($request->payment_option ?? 'bill') === 'bill'
-            ? ($isMarketing || $request->context === 'marketing'
-                ? 'superadmin.accounts.generateInvoice.marketing.index'
-                : 'superadmin.accounts.generateInvoice.index')
-            : 'superadmin.accounts.cashLetter.index';
+#################################################################################
+        // $view = ($request->payment_option ?? 'bill') === 'bill'
+        //     ? ($isMarketing || $request->context === 'marketing'
+        //         ? 'superadmin.accounts.generateInvoice.marketing.index'
+        //         : 'superadmin.accounts.generateInvoice.index')
+        //     : 'superadmin.accounts.cashLetter.index';
+#######################################################################################
 
+        $paymentOption = $request->payment_option ?? 'bill';
+
+        if ($paymentOption === 'old_bill') {
+            $view = 'superadmin.accounts.generateInvoice.index';
+        } elseif ($paymentOption === 'bill') {
+            $view = ($isMarketing || $request->context === 'marketing')
+                ? 'superadmin.accounts.generateInvoice.marketing.index'
+                : 'superadmin.accounts.generateInvoice.index';
+        } else { // without_bill
+            $view = 'superadmin.accounts.cashLetter.index';
+        }
 
 
         $marketingPersons = User::whereHas('role', function ($q) {
