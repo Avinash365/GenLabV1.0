@@ -12,7 +12,7 @@
 @push('styles')
 <style>
     /* Chat layout adjustments to ensure scrolling works with the new theme */
-    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height: calc(100vh - 180px); }
+    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height: calc(100vh - 90px); }
     .sidebar-group { flex: 0 0 360px; max-width: 360px; display: flex; flex-direction: column; }
     .sidebar-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sidebar-body { flex: 1; overflow-y: auto; }
@@ -21,7 +21,7 @@
     .chat-footer { flex-shrink: 0; }
      /* center placeholder reliably using flexbox so it remains visible
          even when slimscroll or container heights change */
-     .messages { display:flex; align-items:center; justify-content:center; min-height: 360px; padding: 25px; box-sizing: border-box; }
+     .messages { display:flex; align-items:center; justify-content:center; min-height: 360px; padding: 5px; box-sizing: border-box; }
     .messages .centered-placeholder { position: static; transform: translateX(100px); width: 100%; max-width: 520px; }
     
     /* Ensure the search bar stays at top */
@@ -172,23 +172,17 @@
     .reply-preview .reply-snippet { color:#6b7280; font-size:13px; }
     .reply-preview .reply-cancel { border:0; background:transparent; cursor:pointer; color:#6b7280 }
     .reply-highlight { box-shadow: 0 0 0 4px rgba(11,120,209,0.14); border-radius:10px; transform: translateY(-2px); transition: box-shadow .18s ease, transform .18s ease; }
+    /* Booking group file filters */
+    .booking-actions { display:flex; gap:8px; align-items:center; margin-left:12px; }
+    .booking-actions .btn { padding:6px 10px; border-radius:8px; font-size:13px; border:1px solid rgba(11,120,209,0.08); background:#fff; color:#0b3b66; cursor:pointer; }
+    .booking-actions .btn.active { background:linear-gradient(90deg,#e6f3ff,#d9efff); border-color:rgba(11,120,209,0.14); }
+    .booking-actions .count-badge { background:rgba(11,120,209,0.08); padding:2px 6px; border-radius:999px; margin-left:6px; font-weight:700; font-size:12px; }
 </style>
 @endpush
 
 @section('content')
 <div class="content">
-    <div class="page-header">
-        <div class="add-item d-flex">
-            <div class="page-title">
-                <h4 class="fw-bold">Chat</h4>
-                <h6>Manage your chats</h6>
-            </div>
-        </div>
-        <ul class="table-top-head">
-            <li><a data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a></li>
-            <li><a data-bs-toggle="tooltip" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a></li>
-        </ul>
-    </div>
+    
 
     <div class="chat-wrapper">
         <!-- Chats sidebar -->
@@ -324,19 +318,19 @@
                     <div class="avatar avatar-lg online flex-shrink-0">
                         <img id="chatHeaderAvatar" src="https://ui-avatars.com/api/?name=User&background=ffffff&color=0D8ABC&size=128" class="rounded-circle" alt="image">
                     </div>
-                    <div class="ms-2 overflow-hidden d-flex align-items-center" style="gap:22px;">
-                        <div>
-                            <h6 id="chatWith">Select a contact</h6>
-                            <span class="last-seen" id="chatStatus">Select user to chat</span>
-                        </div>
-                        <div id="groupFileFilters" style="display:none; margin-left:750px;">
-                            <button id="btnHold" class="btn btn-sm btn-outline-secondary me-2" title="Show Hold files">Hold <span id="holdCount" class="badge bg-secondary ms-1">0</span></button>
-                            <button id="btnUnbooked" class="btn btn-sm btn-outline-secondary" title="Show Unbooked files">Unbooked <span id="unbookedCount" class="badge bg-secondary ms-1">0</span></button>
-                        </div>
+                    <div class="ms-2 overflow-hidden">
+                        <h6 id="chatWith">Select a contact</h6>
+                        <span class="last-seen" id="chatStatus">Select user to chat</span>
                     </div>
                 </div>
                 <div class="chat-options">
                     <ul>
+                        <li>
+                            <div class="booking-actions" id="bookingActions" style="display:none;">
+                                <button type="button" id="btnHold" class="btn">Hold <span class="count-badge" id="holdCount">0</span></button>
+                                <button type="button" id="btnUnbooked" class="btn">Unbooked <span class="count-badge" id="unbookedCount">0</span></button>
+                            </div>
+                        </li>
                         <li><a href="javascript:void(0)" class="btn chat-search-btn" data-bs-toggle="tooltip" title="Search"><i class="ti ti-search"></i></a></li>
                         <li>
                             <a class="btn no-bg" href="#" data-bs-toggle="dropdown"><i class="ti ti-dots-vertical"></i></a>
@@ -406,78 +400,6 @@
     <script src="https://js.pusher.com/8.0/pusher.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.11.3/echo.iife.min.js"></script>
     <script>
-    // Booking Group file filter state
-    let bookingFilterMode = null; // null | 'hold' | 'unbooked'
-
-    function isFileMessageEl(el){
-        if(!el) return false;
-        return !!(el.querySelector('.message-file-bubble') || el.querySelector('.message-file-link') || el.querySelector('.file-title'));
-    }
-
-    function hasAnyReaction(el){
-        try {
-            const bar = el.querySelector('.reaction-bar');
-            if (!bar) return false;
-            return bar.querySelectorAll('.reaction-btn').length > 0;
-        } catch (e) { return false; }
-    }
-
-    function hasCrossReaction(el){
-        try {
-            const bar = el.querySelector('.reaction-bar');
-            if (!bar) return false;
-            const items = Array.from(bar.querySelectorAll('.reaction-btn'));
-            return items.some(b => { const t = (b.querySelector('.emoji')||b).innerText || ''; return /[❌✖✖️✖️✖︎]/.test(t.trim()); });
-        } catch(e){ return false; }
-    }
-
-    function updateBookingFileFilterCounts(){
-        try {
-            const container = document.getElementById('messagesContainer');
-            if (!container) return;
-            const rows = Array.from(container.querySelectorAll('.chats'));
-            let hold = 0, unbooked = 0;
-            rows.forEach(r => {
-                if (!isFileMessageEl(r)) return;
-                if (hasAnyReaction(r)) {
-                    if (hasCrossReaction(r)) hold++; // cross reaction => hold
-                } else {
-                    unbooked++; // no reactions => unbooked
-                }
-            });
-            const h = document.getElementById('holdCount'); if (h) h.innerText = String(hold);
-            const u = document.getElementById('unbookedCount'); if (u) u.innerText = String(unbooked);
-        } catch(e){ console.warn('updateBookingFileFilterCounts', e); }
-    }
-
-    function applyBookingFileFilter(mode){
-        try {
-            bookingFilterMode = mode || null;
-            const container = document.getElementById('messagesContainer');
-            if (!container) return;
-            const rows = Array.from(container.querySelectorAll('.chats'));
-            rows.forEach(r => {
-                // by default show everything
-                r.style.display = '';
-            });
-            if (!mode) return;
-            rows.forEach(r => {
-                if (!isFileMessageEl(r)) {
-                    // hide non-file messages when filtering
-                    r.style.display = 'none';
-                    return;
-                }
-                if (mode === 'hold') {
-                    // show only files with cross reaction
-                    if (!hasCrossReaction(r)) r.style.display = 'none';
-                } else if (mode === 'unbooked') {
-                    // show only files with no reactions
-                    if (hasAnyReaction(r)) r.style.display = 'none';
-                }
-            });
-        } catch(e){ console.warn('applyBookingFileFilter', e); }
-    }
-
         // Initialize Echo with Pusher using env values
         try {
             if (!window.Echo) {
@@ -501,12 +423,8 @@
     let currentChatUser = null;
     const currentUserId = {{ $currentUserId ?? 'null' }};
     const currentUserType = '{{ $currentUserType ?? '' }}';
-    // in-memory cache of reactions so client-added reactions persist across polling reloads
-    window.CHAT_REACTIONS = window.CHAT_REACTIONS || {};
-    const CHAT_REACTIONS = window.CHAT_REACTIONS;
-    // track pending local reactions to ignore duplicate Echo events
-    window._PENDING_REACTION_ECHO = window._PENDING_REACTION_ECHO || {};
-    const PENDING_REACTION_ECHO = window._PENDING_REACTION_ECHO;
+    // persist current user's reaction state across full page reloads by using a global map
+    window.chatLocalReactions = window.chatLocalReactions || {};
     let pendingReplyTo = null; // message id we are replying to (client-side)
     let pendingJumpTo = null; // message id to jump to after reload
 
@@ -611,12 +529,30 @@
             mediaUrl = msg.attachments[0].url || null;
         }
         if (!mediaUrl && typeof msg.content === 'string') {
-            const m = msg.content.match(/^FILE::(.+)$/i);
-            if (m) {
-                mediaUrl = m[1];
+            const contentStr = msg.content || '';
+            const idx = contentStr.indexOf('FILE::');
+            if (idx !== -1) {
+                // Extract everything after FILE:: and try to determine stored path and original name
+                const after = contentStr.substring(idx + 6).trim();
+                let path = '';
+                let origName = null;
+                // If marker uses ::encodedName (server-side canonical form)
+                const dd = after.indexOf('::');
+                if (dd !== -1) {
+                    path = after.substring(0, dd);
+                    origName = after.substring(dd + 2).trim();
+                    try { origName = decodeURIComponent(origName); } catch(e) { /* keep as-is */ }
+                } else {
+                    // Otherwise assume path is first token and the rest (if any) is a plain filename
+                    const parts = after.split(/\s+/);
+                    path = parts[0] || '';
+                    const rest = parts.slice(1).join(' ').trim();
+                    if (rest) origName = rest;
+                }
+                if (path) mediaUrl = path;
+                try { if (origName) msg._originalFilename = msg._originalFilename || origName; } catch(e){}
             } else {
                 const t = msg.content.trim();
-                // treat raw URLs or storage paths as attachment URLs
                 if (/^(https?:\/\/|\/|www\.)/i.test(t) && t.length > 10) {
                     mediaUrl = t;
                 }
@@ -651,14 +587,18 @@
                         }
                     }
                 }
+                // if controller or client parsed an original filename from the FILE:: marker, use it
+                if (!fname && msg._originalFilename) {
+                    fname = msg._originalFilename;
+                }
                 // if original filename not available, fall back to friendly label using extension
                 const storageName = decodeURIComponent((mediaUrl.split('?')[0].split('/').pop() || ''));
                 const extLabel = ext ? ext.toUpperCase() : '';
                 let fullName = fname || '';
                 let displayName = '';
                 if (fullName) {
-                    // show only first 12 characters, keep full name in tooltip
-                    displayName = fullName.length > 18 ? (fullName.slice(0, 18) + '') : fullName;
+                    // show truncated label (with ellipsis) and keep full name in tooltip
+                    displayName = fullName.length > 30 ? (fullName.slice(0, 30) + '...') : fullName;
                 } else {
                     // show a friendly placeholder like "PDF file" or "Document" instead of the raw storage filename
                     if (extLabel) displayName = extLabel + ' file';
@@ -671,7 +611,7 @@
                     <div class="message-file-bubble ${compactClass}">
                         <div class="file-icon" aria-hidden="true"><i class="ti ti-file-text"></i></div>
                         <div class="file-meta">
-                            <div class="file-title" title="${fullName || storageName}">${displayName}${fullName && extLabel ? '<span class="file-ext">' + extLabel + '</span>' : (fullName ? '' : (extLabel ? '<span class="file-ext">' + extLabel + '</span>' : ''))}</div>
+                            <div class="file-title" title="${(fullName || msg._originalFilename || displayName)}">${escapeHtml(displayName)}${fullName && extLabel ? '<span class="file-ext">' + extLabel + '</span>' : (fullName ? '' : (extLabel ? '<span class="file-ext">' + extLabel + '</span>' : ''))}</div>
                             ${fileSubHtml}
                         </div>
                         <div class="message-file-actions">
@@ -684,6 +624,25 @@
         const rawContent = (msg.content || '').toString();
         // strip legacy client-inserted reply prefixes like "↪ Name: " that may have been saved into content
         let trimmed = rawContent.trim();
+        // If content contains FILE:: marker but we failed to build mediaHtml earlier, try to extract an original filename
+        try {
+            if ((rawContent || '').indexOf('FILE::') !== -1 && !msg._originalFilename) {
+                // match FILE::path::encodedName OR FILE::path <space> originalName OR FILE::path::encodedName <space> originalName
+                const fileMatch = rawContent.match(/FILE::([^\s:]+)(?:::(\S+))?(?:\s+(.+))?/i);
+                if (fileMatch) {
+                    const encoded = fileMatch[2] || null;
+                    const trailing = fileMatch[3] || null;
+                    let candidate = null;
+                    if (encoded) {
+                        try { candidate = decodeURIComponent(encoded); } catch(e) { candidate = encoded; }
+                    }
+                    if (!candidate && trailing) candidate = trailing.trim();
+                    if (candidate) {
+                        try { msg._originalFilename = msg._originalFilename || candidate; } catch(e){}
+                    }
+                }
+            }
+        } catch(e){}
         try {
             // remove legacy reply marker
             trimmed = trimmed.replace(/^↪.*?:\s*/,'');
@@ -707,113 +666,37 @@
                 replyHtml = `<div class="message-reply" data-reply-to="${rid}">↪ <div class="reply-snippet">${rs}</div></div>`;
             }
         } catch(e) { replyHtml = ''; }
-        // Render reactions (merge server-provided with client-side cache) so they persist after refresh
-        let reactionHtml = '';
+        // Render reactions if server provided them (array or object map)
+        let reactionsHtml = '';
         try {
-            const messageId = msg.id || msg.message_id || msg.messageId || null;
-            // collect counts into a map: emoji -> count
-            const counts = {};
-            const reactSrc = msg.reactions || msg.reaction_summary || msg.reaction_counts || null;
-            if (Array.isArray(reactSrc)) {
-                reactSrc.forEach(r => {
-                    try {
-                        const em = String(r.emoji || r.key || r.e || r.name || '');
-                        const ct = Number(r.count || r.c || r.value || 0) || 0;
-                        if (em) counts[em] = (counts[em] || 0) + ct;
-                    } catch(e){}
+            const build = (arr) => {
+                if (!Array.isArray(arr) || !arr.length) return '';
+                const parts = arr.map(r => {
+                    const emoji = r.emoji || r.char || r.key || '';
+                    const count = (typeof r.count === 'number') ? r.count : (r.c || r.total || 0);
+                    const you = !!(r.you || r.you_reacted || r.current_user || r.me);
+                    const countHtml = (Number(count) > 1) ? `<span class="count">${Number(count)}</span>` : '';
+                    return `<button type="button" class="reaction-btn${you? ' you-reacted':''}" data-emoji="${escapeHtml(emoji)}" ${you? 'data-you="1"':''}><span class="emoji">${escapeHtml(emoji)}</span>${countHtml}</button>`;
                 });
-            } else if (reactSrc && typeof reactSrc === 'object') {
-                Object.keys(reactSrc).forEach(k => {
-                    try {
-                        const raw = reactSrc[k];
-                        let ct = 0;
-                        if (Array.isArray(raw)) ct = raw.length;
-                        else ct = Number(raw || 0) || 0;
-                        counts[k] = (counts[k] || 0) + ct;
-                    } catch(e){}
-                });
-            }
-            // If server provided reaction lists/counts, prefer server values and sync client cache to it.
-            let serverProvided = false;
-            try {
-                if (reactSrc || (msg && msg.reaction_users)) serverProvided = true;
-                if (serverProvided) {
-                    // normalize reactSrc into users mapping when available
-                    if (!CHAT_REACTIONS[messageId]) CHAT_REACTIONS[messageId] = { counts: {}, users: {} };
-                    const cache = CHAT_REACTIONS[messageId];
-                    // if msg.reaction_users present, use it
-                    if (msg && msg.reaction_users && typeof msg.reaction_users === 'object') {
-                        Object.keys(msg.reaction_users).forEach(k => {
-                            try {
-                                const arr = Array.isArray(msg.reaction_users[k]) ? msg.reaction_users[k] : [];
-                                cache.users[k] = arr;
-                                cache.counts[k] = arr.length;
-                                counts[k] = arr.length;
-                            } catch(e){}
-                        });
-                    } else if (reactSrc && typeof reactSrc === 'object') {
-                        Object.keys(reactSrc).forEach(k => {
-                            try {
-                                const raw = reactSrc[k];
-                                if (Array.isArray(raw)) {
-                                    cache.users[k] = raw; cache.counts[k] = raw.length; counts[k] = raw.length;
-                                } else {
-                                    const ct = Number(raw || 0) || 0; cache.counts[k] = ct; counts[k] = ct;
-                                }
-                            } catch(e){}
-                        });
-                    }
-                } else {
-                    // no server data; fallback to client cache if present
-                    if (messageId && CHAT_REACTIONS && CHAT_REACTIONS[messageId]) {
-                        const local = CHAT_REACTIONS[messageId];
-                        const localCounts = local.counts || {};
-                        Object.keys(localCounts).forEach(em => { counts[em] = (counts[em] || 0) + (Number(localCounts[em]) || 0); });
-                    }
-                }
-            } catch(e){}
-            // if server provided per-emoji reactor lists, mark which emoji the current user reacted with
-            const userKey = (currentUserType ? currentUserType : 'user') + ':' + (currentUserId || '0');
-            try {
-                if (messageId && msg.reaction_users && typeof msg.reaction_users === 'object') {
-                    // populate client cache users/counts from server
-                    if (!CHAT_REACTIONS[messageId]) CHAT_REACTIONS[messageId] = { counts: {}, users: {} };
-                    Object.keys(msg.reaction_users).forEach(k => {
-                        try {
-                            const arr = Array.isArray(msg.reaction_users[k]) ? msg.reaction_users[k] : [];
-                            CHAT_REACTIONS[messageId].users[k] = arr;
-                            CHAT_REACTIONS[messageId].counts[k] = arr.length;
-                        } catch(e){}
-                    });
-                }
-                // also accept reactSrc in the form of emoji -> [userKey,...]
-                try {
-                    if (messageId && reactSrc && typeof reactSrc === 'object') {
-                        Object.keys(reactSrc).forEach(k => {
-                            try {
-                                const raw = reactSrc[k];
-                                if (Array.isArray(raw)) {
-                                    if (!CHAT_REACTIONS[messageId]) CHAT_REACTIONS[messageId] = { counts: {}, users: {} };
-                                    CHAT_REACTIONS[messageId].users[k] = raw;
-                                    CHAT_REACTIONS[messageId].counts[k] = raw.length;
-                                }
-                            } catch(e){}
-                        });
-                    }
-                } catch(e){}
-            } catch(e){}
+                return `<div class="reaction-bar">${parts.join('')}</div>`;
+            };
 
-            const items = Object.keys(counts).map(em => {
-                try {
-                    const ct = Number(counts[em] || 0);
-                    if (!(ct > 0)) return ''; // skip zero-count emojis
-                    const reacted = (CHAT_REACTIONS[messageId] && Array.isArray(CHAT_REACTIONS[messageId].users && CHAT_REACTIONS[messageId].users[em]) && CHAT_REACTIONS[messageId].users[em].indexOf(userKey) !== -1) || (msg.reaction_users && Array.isArray(msg.reaction_users[em]) && msg.reaction_users[em].indexOf(userKey) !== -1);
-                    const cls = reacted ? ' reacted' : '';
-                    return `<button type="button" class="reaction-btn${cls}" data-emoji="${escapeHtml(em)}"><span class="emoji">${escapeHtml(em)}</span> <span class="count">${ct}</span></button>`;
-                } catch(e){ return ''; }
-            }).filter(Boolean);
-            if (items.length) reactionHtml = `<div class="reaction-bar">${items.join('')}</div>`;
-        } catch(e) { reactionHtml = ''; }
+            if (msg.reactions && Array.isArray(msg.reactions)) {
+                reactionsHtml = build(msg.reactions);
+            } else if (msg.reactions && typeof msg.reactions === 'object') {
+                const arr = [];
+                Object.keys(msg.reactions).forEach(k => {
+                    const v = msg.reactions[k];
+                    if (v && typeof v === 'object') arr.push({ emoji: k, count: Number(v.count || v.total || 0), you: !!v.you });
+                    else arr.push({ emoji: k, count: Number(v || 0), you: false });
+                });
+                reactionsHtml = build(arr);
+            } else if (msg.reaction_counts && typeof msg.reaction_counts === 'object') {
+                const arr = [];
+                Object.keys(msg.reaction_counts).forEach(k => arr.push({ emoji: k, count: Number(msg.reaction_counts[k] || 0), you: false }));
+                reactionsHtml = build(arr);
+            }
+        } catch(e) { reactionsHtml = ''; }
         const isAudioOnly = !!(msg.audio_url && !textHtml && !mediaHtml);
         const isMediaOnly = !!(mediaHtml && !textHtml && !msg.audio_url);
         const messageContentClass = isAudioOnly ? 'message-content audio-only' : (isMediaOnly ? (mediaHtml.indexOf('message-file-link') !== -1 ? 'message-content file-only' : 'message-content media-only') : 'message-content');
@@ -825,6 +708,7 @@
                         ${audioHtml}
                         ${mediaHtml}
                         ${textHtml}
+                        ${reactionsHtml}
                         <div class="emoj-group">
                             <ul>
                                 <li class="emoj-action"><a href="javascript:void(0);"><i class="ti ti-mood-smile"></i></a></li>
@@ -833,7 +717,6 @@
                         </div>
                     </div>
                 </div>
-                ${reactionHtml}
                 <div class="chat-profile-name ${isMine ? 'text-end' : ''}">
                     <h6>${senderName}<i class="ti ti-circle-filled fs-7 mx-2"></i><span class="chat-time">${time}</span>
                     ${isMine ? ( (msg.read_at) ? '<span class="msg-read success read"><i class="ti ti-checks"></i></span>' : '<span class="msg-read"><i class="ti ti-check"></i></span>') : ''}
@@ -865,6 +748,18 @@
             const distanceFromBottom = prevScrollHeight - clientHeight - prevScrollTop;
             const nearBottom = distanceFromBottom <= 100; // treat as near-bottom if within 100px
 
+            // Preserve any client-side reaction UI so periodic reloads don't remove them
+            const existingReactions = {};
+            try {
+                container.querySelectorAll('.chats[data-message-id]').forEach(e => {
+                    try {
+                        const id = e.getAttribute('data-message-id');
+                        const bar = e.querySelector('.reaction-bar');
+                        if (id && bar) existingReactions[String(id)] = bar.outerHTML;
+                    } catch (inner) {}
+                });
+            } catch (er) {}
+
             container.innerHTML = '';
             let lastDateKey = null;
             data.forEach(m => {
@@ -878,7 +773,27 @@
                     container.appendChild(sep);
                     lastDateKey = dateKey;
                 }
-                container.appendChild(renderMessage(m));
+                const newEl = renderMessage(m);
+                container.appendChild(newEl);
+                // reapply preserved reaction UI if present (helps keep client-side reactions visible across reloads)
+                try {
+                    const mid = m.id || m.message_id || null;
+                    if (mid && existingReactions[String(mid)]) {
+                        const content = newEl.querySelector('.message-content') || newEl.querySelector('.chat-content') || newEl;
+                        if (content) {
+                            // avoid duplicating if server already provided reactions
+                            if (!content.querySelector('.reaction-bar')) {
+                                const temp = document.createElement('div');
+                                temp.innerHTML = existingReactions[String(mid)];
+                                const bar = temp.firstElementChild;
+                                if (bar) {
+                                    content.appendChild(bar);
+                                    try { content.classList.add('has-reactions'); } catch(e){}
+                                }
+                            }
+                        }
+                    }
+                } catch (re) { /* ignore reapply errors */ }
             });
 
             // If user was near bottom, auto-scroll to bottom. Otherwise preserve their scroll position.
@@ -893,8 +808,14 @@
                 }
             } catch (err) { /* ignore scroll errors */ }
 
-            // initialize audio controls for newly appended messages
-            try { initAudioControls(container); } catch (e) { console.error('initAudioControls error', e); }
+                // initialize audio controls for newly appended messages
+            try { 
+                // hydrate local reaction map from server-rendered reaction buttons
+                try { hydrateChatLocalReactions(); } catch(e){}
+                initAudioControls(container); 
+                    try { if (window.updateBookingFileCounts) window.updateBookingFileCounts(); } catch(e){}
+                    try { sanitizeFileTitles(); } catch(e){}
+            } catch (e) { console.error('initAudioControls error', e); }
 
             // if there's a pending jump request (user clicked a reply that referenced a message not currently in view), try to scroll
             try {
@@ -910,8 +831,7 @@
                     }
                 }
             } catch(e){}
-            // Update booking file filter counts then refresh sidebar contacts so unread counts update immediately after loading messages
-            try { updateBookingFileFilterCounts(); } catch(e) {}
+            // Refresh sidebar contacts so unread counts update immediately after loading messages
             try { if (typeof refreshContacts === 'function') refreshContacts(); } catch(e) {}
         } catch (e) { console.error("Error loading messages", e); }
     }
@@ -958,20 +878,16 @@
             document.getElementById('chatStatus').innerText = 'Online';
 
             loadMessages(userId, true);
-
-            // Show/hide Booking Group file filter buttons
+            try { if (window.updateBookingFileCounts) setTimeout(window.updateBookingFileCounts, 250); } catch(e){}
+            // show booking actions only for booking group: detect by data attribute or name contains 'booking'
             try {
-                const filterWrap = document.getElementById('groupFileFilters');
-                if (filterWrap) {
-                    if (String(userId) === 'group:booking') {
-                        filterWrap.style.display = '';
-                    } else {
-                        filterWrap.style.display = 'none';
-                        applyBookingFileFilter(null);
-                    }
+                const actions = document.getElementById('bookingActions');
+                if (actions) {
+                    const isBooking = (el.getAttribute('data-is-booking') === '1') || /booking/i.test(String(name || ''));
+                    actions.style.display = isBooking ? '' : 'none';
                 }
-            } catch(e) {}
-
+            } catch(e){}
+            
             // Clear unread count UI
             const badge = el.querySelector('.count-message');
             if (badge) badge.remove();
@@ -1287,6 +1203,14 @@
                     if (avatar) document.getElementById('chatHeaderAvatar').src = avatar;
                     document.getElementById('chatStatus').innerText = 'Online';
                     loadMessages(saved, true);
+                    try { if (window.updateBookingFileCounts) setTimeout(window.updateBookingFileCounts, 250); } catch(e){}
+                    try {
+                        const actions = document.getElementById('bookingActions');
+                        if (actions) {
+                            const isBooking = (el.getAttribute('data-is-booking') === '1') || /booking/i.test(String(name || ''));
+                            actions.style.display = isBooking ? '' : 'none';
+                        }
+                    } catch(e){}
                 }
             }
         } catch (e) {}
@@ -1400,6 +1324,119 @@
                     });
             }
         } catch (er) { }
+    })();
+
+    // Booking filters: count and filter file messages by reaction state
+    (function(){
+        const crossEmojis = ['❌','✖️','❎','✖','✕','x'];
+
+        function isFileMessage(chatEl){
+            if (!chatEl) return false;
+            return !!chatEl.querySelector('.message-file-bubble, .message-file-link');
+        }
+
+        function hasReactionBar(chatEl){
+            return !!chatEl.querySelector('.reaction-bar');
+        }
+
+        function hasCrossReaction(chatEl){
+            try {
+                const bar = chatEl.querySelector('.reaction-bar');
+                if (!bar) return false;
+                const btn = bar.querySelector('.reaction-btn');
+                if (!btn) return false;
+                // find any reaction button with a cross emoji
+                const items = Array.from(bar.querySelectorAll('.reaction-btn'));
+                return items.some(b => {
+                    const e = (b.getAttribute('data-emoji') || b.querySelector('.emoji')?.innerText || '').trim();
+                    return crossEmojis.indexOf(e) !== -1;
+                });
+            } catch (e) { return false; }
+        }
+
+        function updateFileCounts(){
+            try {
+                const container = document.getElementById('messagesContainer');
+                if (!container) return;
+                let hold = 0, unbooked = 0;
+                container.querySelectorAll('.chats').forEach(ch => {
+                    if (!isFileMessage(ch)) return;
+                    if (hasReactionBar(ch)) {
+                        if (hasCrossReaction(ch)) hold++; else { /* other reactions count as booked */ }
+                    } else {
+                        unbooked++;
+                    }
+                });
+                const holdEl = document.getElementById('holdCount');
+                const unEl = document.getElementById('unbookedCount');
+                if (holdEl) holdEl.innerText = String(hold);
+                if (unEl) unEl.innerText = String(unbooked);
+                // show action area only for booking chats and if there are any files
+                const anyFiles = (hold + unbooked) > 0;
+                const actions = document.getElementById('bookingActions');
+                try {
+                    const isBooking = (function(){
+                        try {
+                            const active = document.querySelector('.contact-item.active') || document.querySelector(`[data-user-id="${currentChatUser}"]`);
+                            if (active) {
+                                if (active.getAttribute('data-is-booking') === '1' || active.getAttribute('data-group') === 'booking') return true;
+                                const h = (active.querySelector('h6') && active.querySelector('h6').innerText) || '';
+                                if (/booking/i.test(h)) return true;
+                            }
+                        } catch(e){}
+                        const headerName = (document.getElementById('chatWith') && document.getElementById('chatWith').innerText) || '';
+                        return /booking/i.test(headerName);
+                    })();
+                    if (actions) actions.style.display = (anyFiles && isBooking) ? '' : 'none';
+                } catch(e) { if (actions) actions.style.display = anyFiles ? '' : 'none'; }
+            } catch (e) { /* ignore */ }
+        }
+
+        function applyFileFilter(mode){
+            try {
+                const container = document.getElementById('messagesContainer');
+                if (!container) return;
+                container.querySelectorAll('.chats').forEach(ch => {
+                    const isFile = isFileMessage(ch);
+                    let show = true;
+                    if (mode === 'hold') {
+                        show = isFile && hasCrossReaction(ch);
+                    } else if (mode === 'unbooked') {
+                        show = isFile && !hasReactionBar(ch);
+                    }
+                    ch.style.display = show ? '' : 'none';
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        // wire buttons
+        document.addEventListener('click', function(ev){
+            try {
+                const bHold = document.getElementById('btnHold');
+                const bUn = document.getElementById('btnUnbooked');
+                if (!bHold || !bUn) return;
+                const t = ev.target.closest && ev.target.closest('#btnHold, #btnUnbooked');
+                if (!t) return;
+                if (t.id === 'btnHold') {
+                    const active = t.classList.contains('active');
+                    // toggle
+                    document.getElementById('btnHold').classList.toggle('active', !active);
+                    document.getElementById('btnUnbooked').classList.remove('active');
+                    if (!active) applyFileFilter('hold'); else applyFileFilter('all');
+                } else if (t.id === 'btnUnbooked') {
+                    const active = t.classList.contains('active');
+                    document.getElementById('btnUnbooked').classList.toggle('active', !active);
+                    document.getElementById('btnHold').classList.remove('active');
+                    if (!active) applyFileFilter('unbooked'); else applyFileFilter('all');
+                }
+            } catch(e){}
+        });
+
+        // expose for use after messages reload
+        window.updateBookingFileCounts = updateFileCounts;
+        window.applyBookingFileFilter = applyFileFilter;
+        // update counts when DOM ready
+        document.addEventListener('DOMContentLoaded', function(){ try { updateFileCounts(); } catch(e){} });
     })();
 
     // Helper: return true if any audio element is currently playing
@@ -1657,8 +1694,6 @@
                                 if (container) {
                                     container.appendChild(renderMessage(data));
                                     container.parentElement.scrollTop = container.parentElement.scrollHeight;
-                                    try { updateBookingFileFilterCounts(); } catch(e) {}
-                                    try { if (bookingFilterMode) applyBookingFileFilter(bookingFilterMode); } catch(e) {}
                                 }
                             } else {
                                 loadMessages(currentChatUser);
@@ -1758,7 +1793,7 @@
     }
 
     // initialize any audio controls already present
-    document.addEventListener('DOMContentLoaded', () => initAudioControls());
+    document.addEventListener('DOMContentLoaded', () => { try { hydrateChatLocalReactions(); } catch(e){}; initAudioControls(); try { if (window.updateBookingFileCounts) window.updateBookingFileCounts(); } catch(e){} });
 
     // Simple lightbox for media previews (images/videos)
     (function(){
@@ -1807,9 +1842,34 @@
         });
     })();
 
-    // Reaction & reply handlers: open a small emoji palette to react and support quick-reply
+        // Ensure we can hydrate local reaction state from server-rendered DOM
+        function hydrateChatLocalReactions(root) {
+            try {
+                root = root || document;
+                const container = root.getElementById ? root.getElementById('messagesContainer') : document;
+                if (!container) return;
+                container.querySelectorAll('.chats[data-message-id]').forEach(el => {
+                    try {
+                        const mid = el.getAttribute('data-message-id');
+                        if (!mid) return;
+                        const bar = el.querySelector('.reaction-bar');
+                        if (!bar) return;
+                        // find any button marked as 'you-reacted' or having data-you
+                        const youBtn = bar.querySelector('.reaction-btn.you-reacted, .reaction-btn[data-you]');
+                        if (youBtn) {
+                            const emoji = youBtn.getAttribute('data-emoji');
+                            if (emoji) window.chatLocalReactions[String(mid)] = emoji;
+                        }
+                        // ensure padding so reaction bar doesn't overlap text
+                        try { if (bar && bar.parentElement && bar.parentElement.classList) bar.parentElement.classList.add('has-reactions'); } catch(e){}
+                    } catch (e) { /* ignore */ }
+                });
+            } catch (e) { /* ignore */ }
+        }
+
+        // Reaction & reply handlers: open a small emoji palette to react and support quick-reply
     (function(){
-        const REACTIONS = ['👍','❤️','😂','😮','😢','👏'];
+        const REACTIONS = ['✅','👍','❤️','😂','😮','😢','👏','❌'];
         // inject minimal styles for reaction UI once
         (function ensureReactionStyles(){
             if (document.getElementById('reaction-styles')) return;
@@ -1819,19 +1879,61 @@
                 .reaction-popover{position:absolute;z-index:99999;background:#fff;border:1px solid rgba(0,0,0,0.08);box-shadow:0 6px 18px rgba(0,0,0,0.08);padding:6px;border-radius:8px}
                 .reaction-list{display:flex;gap:6px}
                 .reaction-item{background:transparent;border:0;padding:6px 8px;font-size:18px;cursor:pointer}
-                /* place reaction badges at the top corner of the message bubble */
-                .reaction-bar{position:absolute;top:8px;display:flex;gap:6px;flex-wrap:nowrap;z-index:50}
-                .chats .chat-content{position:relative}
-                .chats.chats-right .reaction-bar{right:10px;left:auto}
-                .chats:not(.chats-right) .reaction-bar{left:10px;right:auto}
-                .reaction-btn{display:inline-flex;align-items:center;gap:6px;border-radius:14px;padding:4px 6px;border:1px solid rgba(0,0,0,0.06);background:rgba(255,255,255,0.9);cursor:pointer;min-width:30px;box-shadow:0 2px 6px rgba(0,0,0,0.04)}
+                /* Position reaction buttons at the top-right of the message bubble so they're visible */
+                     /* place the reaction bar slightly above the bubble so it doesn't overlap text
+                         and style it as a compact pill group */
+                     .reaction-bar{position:absolute;top:-10px;display:flex;gap:6px;flex-wrap:nowrap;z-index:50;align-items:center}
+                     .chats .message-content{position:relative}
+                     .chats.chats-right .reaction-bar{right:8px;left:auto}
+                     .chats:not(.chats-right) .reaction-bar{left:8px;right:auto}
+                     .reaction-bar{background:rgba(255,255,255,0.95);border:1px solid rgba(11,120,209,0.08);padding:6px;border-radius:20px;box-shadow:0 6px 18px rgba(8,24,48,0.06)}
+                     .message-content.has-reactions{padding-top:26px}
+                .reaction-btn{display:inline-flex;align-items:center;gap:6px;border-radius:16px;padding:4px 8px;border:1px solid rgba(0,0,0,0.06);background:rgba(255,255,255,0.9);cursor:pointer;min-width:34px}
                 .reaction-btn .emoji{font-size:14px}
-                .reaction-btn .count{font-size:11px;color:#333}
-                .reaction-btn.reacted{background:linear-gradient(90deg,#e6f3ff,#d9efff);border-color:rgba(11,120,209,0.12)}
+                .reaction-btn .count{font-size:12px;color:#333}
             `;
             document.head.appendChild(s);
         })();
         let popover = null;
+        // track this user's reactions per-message to prevent multiple reacts on same bubble
+        const _currentUserKey = (currentUserType || '') + ':' + (currentUserId || '');
+
+        function removeReactionFromUI(messageId, emoji){
+            try {
+                const sel = document.querySelector(`[data-message-id="${messageId}"]`);
+                if (!sel) return;
+                const bar = sel.querySelector('.reaction-bar');
+                if (!bar) return;
+                const btn = bar.querySelector(`.reaction-btn[data-emoji="${emoji}"]`);
+                if (!btn) return;
+                const cnt = btn.querySelector('.count');
+                if (cnt) {
+                    const cur = Number(cnt.innerText || '0') - 1;
+                    if (cur <= 0) {
+                        btn.remove();
+                    } else if (cur === 1) {
+                        // for single reaction don't show numeric count
+                        cnt.remove();
+                    } else {
+                        cnt.innerText = String(cur);
+                    }
+                } else {
+                    // no numeric count shown - removing user's reaction likely makes it zero
+                    btn.remove();
+                }
+                // if bar empty remove it
+                if (bar.children.length === 0) {
+                    // remove bar and clear has-reactions padding
+                    try {
+                        const parent = bar.parentElement;
+                        bar.remove();
+                        if (parent && parent.classList) parent.classList.remove('has-reactions');
+                    } catch(e) { try { bar.remove(); } catch(_){} }
+                }
+                // clear local mapping
+                try { delete window.chatLocalReactions[String(messageId)]; } catch(e){}
+            } catch (e) { /* ignore */ }
+        }
 
         function closePopover(){ if (popover) { popover.remove(); popover = null; } }
 
@@ -1868,44 +1970,41 @@
         }
 
         function sendReaction(messageId, emoji){
-            const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
             try {
-                // optimistic local toggle using cache so UI feels instant
-                const userKey = (currentUserType ? currentUserType : 'user') + ':' + (currentUserId || '0');
-                if (!CHAT_REACTIONS[messageId]) CHAT_REACTIONS[messageId] = { counts: {}, users: {} };
-                const cache = CHAT_REACTIONS[messageId];
-                // ensure arrays exist
-                Object.keys(cache.users || {}).forEach(k => { if (!Array.isArray(cache.users[k])) cache.users[k] = []; });
-                // if user already reacted to this emoji -> remove (optimistic unreact), else add and remove from other emojis
-                const arr = cache.users[emoji] || [];
-                const has = arr.indexOf(userKey) !== -1;
-                if (has) {
-                    cache.users[emoji] = arr.filter(x => x !== userKey);
-                } else {
-                    // remove user from other emoji arrays
-                    Object.keys(cache.users).forEach(k => { cache.users[k] = (cache.users[k] || []).filter(x => x !== userKey); });
-                    cache.users[emoji] = cache.users[emoji] || [];
-                    cache.users[emoji].push(userKey);
-                    cache.users[emoji] = Array.from(new Set(cache.users[emoji]));
+                if (!messageId) return;
+                // if user already reacted with same emoji on this message, do nothing
+                if ((window.chatLocalReactions[String(messageId)] || null) && window.chatLocalReactions[String(messageId)] === emoji) return;
+                const prev = (window.chatLocalReactions[String(messageId)] || null);
+                // if user has reacted with a different emoji, remove previous one from UI optimistically
+                if (prev && prev !== emoji) {
+                    try { removeReactionFromUI(messageId, prev); } catch(e){}
                 }
-                // rebuild counts
-                cache.counts = {};
-                Object.keys(cache.users).forEach(k => { cache.counts[k] = (cache.users[k] || []).length; if (cache.counts[k] === 0) { delete cache.counts[k]; delete cache.users[k]; } });
-                // mark pending to ignore the immediate Echo event from server for this action
-                const pendingKey = messageId + '::' + emoji + '::' + userKey;
-                PENDING_REACTION_ECHO[pendingKey] = Date.now();
-                setTimeout(() => { try { delete PENDING_REACTION_ECHO[pendingKey]; } catch(e){} }, 5000);
-                // update UI from cache
-                try { upsertReactionUI(messageId, emoji, null); } catch(e){}
-                try { updateBookingFileFilterCounts(); } catch(e) {}
-            } catch(e) {}
+                // mark desired emoji locally (prevents duplicate clicks)
+                try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
 
-            // send to server (do not apply server response directly; Echo will reconcile)
-            fetch('/chat/messages/reaction', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
-                body: JSON.stringify({ message_id: messageId, emoji: emoji })
-            }).catch(err => { console.warn('Reaction failed', err); });
+                const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+                fetch('/chat/messages/reaction', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
+                    body: JSON.stringify({ message_id: messageId, emoji: emoji })
+                }).then(r => r.json()).then(json => {
+                    try {
+                        // server acknowledged - update UI using server payload when available
+                        upsertReactionUI(messageId, emoji, json || {});
+                        // ensure local map reflects acknowledged emoji
+                        try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
+                    } catch(e){
+                        console.warn('upsert after send error', e);
+                    }
+                }).catch(err => {
+                    console.warn('Reaction failed', err);
+                    // restore previous reaction on error
+                    try {
+                        if (prev) upsertReactionUI(messageId, prev, {});
+                        else try { delete window.chatLocalReactions[String(messageId)]; } catch(e){}
+                    } catch(e){}
+                });
+            } catch (e) { console.warn('sendReaction error', e); }
         }
 
         function upsertReactionUI(messageId, emoji, payload){
@@ -1916,73 +2015,59 @@
                 if (!bar) {
                     bar = document.createElement('div');
                     bar.className = 'reaction-bar';
-                    const contentContainer = sel.querySelector('.chat-content') || sel;
+                    // place bar inside the actual message bubble (.message-content) so it appears on the corner
+                    const contentContainer = sel.querySelector('.message-content') || sel.querySelector('.chat-content') || sel;
                     try { contentContainer.style.position = contentContainer.style.position || 'relative'; } catch(e){}
                     contentContainer.appendChild(bar);
+                    try { contentContainer.classList.add('has-reactions'); } catch(e){}
                 }
-
-                // ensure cache shape
-                if (!CHAT_REACTIONS[messageId]) CHAT_REACTIONS[messageId] = { counts: {}, users: {} };
-                const cache = CHAT_REACTIONS[messageId];
-
-                // interpret payload if provided
-                try {
-                    if (payload) {
-                        // payload.reaction_users => emoji -> [userKey,...]
-                        if (payload.reaction_users && typeof payload.reaction_users === 'object') {
-                            Object.keys(payload.reaction_users).forEach(em => {
-                                const arr = Array.isArray(payload.reaction_users[em]) ? payload.reaction_users[em] : [];
-                                cache.users[em] = arr;
-                                cache.counts[em] = arr.length;
-                            });
-                        } else if (payload.reactions && typeof payload.reactions === 'object') {
-                            // numeric counts
-                            Object.keys(payload.reactions).forEach(em => {
-                                const raw = payload.reactions[em];
-                                const ct = Array.isArray(raw) ? raw.length : (Number(raw) || 0);
-                                cache.counts[em] = ct;
-                                if (Array.isArray(raw)) cache.users[em] = raw; // store user list when available
-                            });
-                        } else if (typeof payload.count === 'number' || payload.count) {
-                            // single-emoji update (legacy), use payload.count
-                            cache.counts[emoji] = Number(payload.count) || (Number(cache.counts[emoji] || 0) + 1);
+                // find existing reaction button for this emoji
+                let btn = bar.querySelector(`.reaction-btn[data-emoji="${emoji}"]`);
+                if (btn) {
+                    const cnt = btn.querySelector('.count');
+                    // determine new count (prefer server-provided count)
+                    let newCount = null;
+                    if (payload && typeof payload.count === 'number') newCount = Number(payload.count);
+                    else {
+                        // if numeric span exists use it, otherwise assume 1 and increment
+                        const cur = cnt ? Number(cnt.innerText || '0') : 1;
+                        newCount = cur + 1;
+                    }
+                    if (newCount <= 0) {
+                        btn.remove();
+                    } else if (newCount === 1) {
+                        // ensure no numeric span for single reaction
+                        if (cnt) cnt.remove();
+                    } else {
+                        // show numeric span
+                        if (cnt) cnt.innerText = String(newCount);
+                        else {
+                            const span = document.createElement('span');
+                            span.className = 'count';
+                            span.innerText = String(newCount);
+                            btn.appendChild(span);
                         }
                     }
-                } catch(e) { /* ignore payload parse errors */ }
-
-                // if no payload, fall back to incrementing local cache for this emoji
-                if (!payload && emoji) {
-                    cache.counts[emoji] = (Number(cache.counts[emoji] || 0) + 1);
+                } else {
+                    const b = document.createElement('button');
+                    b.type = 'button';
+                    b.className = 'reaction-btn';
+                    b.setAttribute('data-emoji', emoji);
+                    const initialCount = (payload && typeof payload.count === 'number') ? Number(payload.count) : 1;
+                    const countHtml = initialCount > 1 ? ` <span class="count">${initialCount}</span>` : '';
+                    b.innerHTML = `<span class="emoji">${emoji}</span>${countHtml}`;
+                    b.addEventListener('click', () => {
+                        // allow user to click the reaction to quickly add again (client-side only)
+                        sendReaction(messageId, emoji);
+                    });
+                    bar.appendChild(b);
                 }
-
-                // cleanup zero-count entries then rebuild reaction bar from cache
-                Object.keys(cache.counts).forEach(k => {
-                    try {
-                        if (!(Number(cache.counts[k] || 0) > 0)) {
-                            delete cache.counts[k];
-                            if (cache.users) delete cache.users[k];
-                        }
-                    } catch (e) {}
-                });
-                bar.innerHTML = '';
-                const userKey = (currentUserType ? currentUserType : 'user') + ':' + (currentUserId || '0');
-                Object.keys(cache.counts).forEach(em => {
-                    try {
-                        const ct = Number(cache.counts[em] || 0);
-                        const usersArr = Array.isArray(cache.users[em]) ? cache.users[em] : [];
-                        const b = document.createElement('button');
-                        b.type = 'button';
-                        b.className = 'reaction-btn';
-                        if (usersArr.indexOf(userKey) !== -1) b.classList.add('reacted');
-                        b.setAttribute('data-emoji', em);
-                        b.innerHTML = `<span class="emoji">${escapeHtml(em)}</span> <span class="count">${ct}</span>`;
-                        b.addEventListener('click', (ev) => {
-                            ev.preventDefault(); ev.stopPropagation();
-                            sendReaction(messageId, em);
-                        });
-                        bar.appendChild(b);
-                    } catch(e) { /* ignore per-item errors */ }
-                });
+                // If payload indicates which user reacted and it's this user, store locally
+                try {
+                    if (payload && (payload.you_reacted === true || payload.user_reacted === true)) {
+                        try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
+                    }
+                } catch(e){}
             } catch (e) { console.warn('upsertReactionUI error', e); }
         }
 
@@ -2009,11 +2094,39 @@
                                 sender = (nameEl.textContent || '').trim();
                             }
                         }
-                        const snippet = (messageEl.querySelector('.message-text') && messageEl.querySelector('.message-text').innerText) || (messageEl.querySelector('.file-title') && messageEl.querySelector('.file-title').innerText) || '';
+                        const textEl = messageEl.querySelector('.message-text');
+                        const fileTitleEl = messageEl.querySelector('.file-title');
+                        const snippet = (textEl && textEl.innerText) || (fileTitleEl && (fileTitleEl.getAttribute('title') || fileTitleEl.innerText)) || '';
                         showReplyPreview({ sender_name: sender, snippet: snippet });
                     }
                 } catch(e){}
             } catch (e) { }
+        }
+
+        // Replace hash-like storage filenames with friendly labels for legacy messages
+        function sanitizeFileTitles(){
+            try {
+                document.querySelectorAll('.message-file-link .file-title').forEach(el => {
+                    try {
+                        const rawTitle = String(el.getAttribute('title') || '').trim();
+                        const text = String(el.innerText || '').trim();
+                        // detect storage-hash like names (long, no spaces, mostly alnum and punctuation)
+                        const looksLikeHash = rawTitle && (/^[A-Za-z0-9_-]{12,}\.[A-Za-z0-9]{1,6}$/.test(rawTitle) || (rawTitle.length > 20 && rawTitle.indexOf(' ') === -1));
+                        if (!looksLikeHash) return;
+                        // derive extension label
+                        const m = rawTitle.match(/\.([A-Za-z0-9]{1,6})$/);
+                        const extLabel = m ? m[1].toUpperCase() : '';
+                        const friendly = extLabel ? (extLabel + ' file') : 'Attachment';
+                        // update title to friendly label so hover doesn't show storage name
+                        el.setAttribute('title', friendly);
+                        // if visible text is the raw storage name, replace with friendly text and keep ext
+                        if (text === rawTitle || /^[A-Za-z0-9_-]{8,}/.test(text)){
+                            if (extLabel) el.innerHTML = escapeHtml(friendly) + '<span class="file-ext">' + extLabel + '</span>';
+                            else el.innerText = friendly;
+                        }
+                    } catch(e) { /* ignore per-element errors */ }
+                });
+            } catch(e){}
         }
 
         // global click handler for emoj action and reply icon
@@ -2067,20 +2180,6 @@
             } catch(e) { /* ignore */ }
         });
 
-        // delegated handler for clicking existing reaction buttons (server-rendered or pre-rendered)
-        document.addEventListener('click', function(ev){
-            try {
-                const btn = ev.target.closest && ev.target.closest('.reaction-btn');
-                if (!btn) return;
-                const msg = btn.closest && btn.closest('.chats');
-                const mid = msg && msg.getAttribute('data-message-id');
-                const emoji = btn.getAttribute('data-emoji');
-                if (!mid || !emoji) return;
-                ev.preventDefault(); ev.stopPropagation();
-                sendReaction(mid, emoji);
-            } catch(e) { /* ignore */ }
-        });
-
         // Listen for reaction events via Echo and update UI
         try {
             if (window.Echo && currentUserId) {
@@ -2088,22 +2187,7 @@
                     .listen('.ChatMessageReacted', (e) => {
                         try {
                             if (!e || !e.message_id || !e.emoji) return;
-                            // if this event originates from the current user and we have a pending optimistic update,
-                            // skip processing the echoed event to avoid double-applying counts
-                            try {
-                                const reactorId = e.reactor_id || e.reactorId || null;
-                                const reactorType = e.reactor_type || e.reactorType || null;
-                                const userKey = (reactorType ? reactorType : 'user') + ':' + (reactorId || '0');
-                                const pkey = e.message_id + '::' + e.emoji + '::' + userKey;
-                                if (PENDING_REACTION_ECHO && PENDING_REACTION_ECHO[pkey]) {
-                                    // consume the pending marker and don't re-apply UI change
-                                    try { delete PENDING_REACTION_ECHO[pkey]; } catch(er) {}
-                                    return;
-                                }
-                            } catch(ignoreErr) {}
                             upsertReactionUI(e.message_id, e.emoji, e);
-                            try { updateBookingFileFilterCounts(); } catch(e) {}
-                            try { if (typeof refreshContacts === 'function') refreshContacts(); } catch(_rc) { }
                         } catch (ex) { console.warn('Echo reaction update error', ex); }
                     });
             }
@@ -2132,32 +2216,6 @@
                 if (formatted) el.innerText = formatted;
             });
         } catch (e) { /* ignore */ }
-    });
-
-    // Wire Booking Group filter buttons
-    document.addEventListener('DOMContentLoaded', () => {
-        try {
-            const btnH = document.getElementById('btnHold');
-            const btnU = document.getElementById('btnUnbooked');
-            const wrap = document.getElementById('groupFileFilters');
-            if (btnH) btnH.addEventListener('click', () => {
-                const active = bookingFilterMode === 'hold';
-                if (active) { applyBookingFileFilter(null); btnH.classList.remove('active'); }
-                else { applyBookingFileFilter('hold'); btnH.classList.add('active'); if (btnU) btnU.classList.remove('active'); }
-            });
-            if (btnU) btnU.addEventListener('click', () => {
-                const active = bookingFilterMode === 'unbooked';
-                if (active) { applyBookingFileFilter(null); btnU.classList.remove('active'); }
-                else { applyBookingFileFilter('unbooked'); btnU.classList.add('active'); if (btnH) btnH.classList.remove('active'); }
-            });
-            // initial counts if messages loaded
-            try { updateBookingFileFilterCounts(); } catch(e) {}
-            // ensure visibility matches current selection
-            try {
-                const cur = String(currentChatUser || '');
-                if (wrap) wrap.style.display = (cur === 'group:booking') ? '' : 'none';
-            } catch(e){}
-        } catch(e) { /* ignore */ }
     });
 
     // Microphone recording + send

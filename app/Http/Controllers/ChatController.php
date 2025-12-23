@@ -686,6 +686,31 @@ class ChatController extends Controller
                         }
                         // Remove leading client-side reply prefixes like "↪ Someone: " (up to 200 chars)
                         $rawSnippet = preg_replace('/^↪[^:]{0,200}:\s*/u', '', $rawSnippet);
+
+                        // If the original content is a FILE:: marker, try to extract a friendly filename
+                        if (is_string($rawSnippet) && strpos($rawSnippet, 'FILE::') !== false) {
+                            try {
+                                $after = substr($rawSnippet, strpos($rawSnippet, 'FILE::') + 6);
+                                // support FILE::path::encodedName or FILE::path <space> name
+                                $parts = explode('::', $after, 2);
+                                $path = $parts[0] ?? null;
+                                $origName = null;
+                                if (isset($parts[1]) && trim($parts[1]) !== '') {
+                                    $origName = rawurldecode($parts[1]);
+                                } else {
+                                    // check for trailing plain filename after the path
+                                    $tokens = preg_split('/\s+/', $after, 2);
+                                    if (isset($tokens[1]) && trim($tokens[1]) !== '') $origName = trim($tokens[1]);
+                                }
+                                if ($origName) {
+                                    $rawSnippet = $origName;
+                                } else {
+                                    // fallback to basename of the storage path
+                                    if ($path) $rawSnippet = basename($path);
+                                }
+                            } catch (\Exception $__e) { /* ignore parsing errors */ }
+                        }
+
                         $clean = strip_tags($rawSnippet);
                         $clean = trim($clean);
                         $clean = mb_substr($clean, 0, 160);
