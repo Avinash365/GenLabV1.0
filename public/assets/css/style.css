@@ -32431,7 +32431,7 @@ body.layout-mode-rtl .user-info {
   }
 }
 .chat-wrapper .chat.chat-messages .slimScrollDiv {
-  height: calc(100vh - 150px) !important;
+  height: calc(100vh - 160) !important;
 }
 @media (max-width: 991.98px) {
   .chat-wrapper .chat.chat-messages .slimScrollDiv {
@@ -32439,7 +32439,7 @@ body.layout-mode-rtl .user-info {
   }
 }
 .chat-wrapper .chat.chat-messages .slimscroll {
-  height: calc(100vh - 230px) !important;
+  height: calc(100vh - 240px) !important;
 }
 @media (max-width: 991.98px) {
   .chat-wrapper .chat.chat-messages .slimscroll {
