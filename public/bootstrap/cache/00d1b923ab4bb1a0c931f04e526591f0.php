@@ -144,6 +144,13 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
 
+                            <!-- 🔹 Payment Option Filter -->
+                            <select name="payment_option" class="form-control">
+                                <option value="">Payment Option</option>
+                                <option value="bill" <?php echo e(request('payment_option') == 'bill' ? 'selected' : ''); ?>>Bill</option>
+                                <option value="old_bill" <?php echo e(request('payment_option') == 'old_bill' ? 'selected' : ''); ?>>Old Bill</option>
+                            </select> 
+
                             <!-- Client Filter -->
                             <select name="client_id" class="form-control">
                                 <option value="">Select Client</option>
