@@ -1,23 +1,21 @@
-@extends('superadmin.layouts.app')
+<?php $__env->startSection('title', 'Hold & Cancel'); ?>
 
-@section('title', 'Hold & Cancel')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="content">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
         <h4 class="mb-0">Hold & Cancel</h4>
     </div>
 
-    @if(session('status'))
-        <div class="alert alert-success">{{ session('status') }}</div>
-    @endif
+    <?php if(session('status')): ?>
+        <div class="alert alert-success"><?php echo e(session('status')); ?></div>
+    <?php endif; ?>
 
     <div class="card mb-3">
         <div class="card-body">
-            <form method="GET" action="{{ route('superadmin.reporting.holdcancel.index') }}" class="row g-2 align-items-end">
+            <form method="GET" action="<?php echo e(route('superadmin.reporting.holdcancel.index')); ?>" class="row g-2 align-items-end">
                 <div class="col-sm-4">
                     <label class="form-label">Job Order No</label>
-                    <input type="text" name="job" value="{{ $job }}" class="form-control" placeholder="Enter Job Order No">
+                    <input type="text" name="job" value="<?php echo e($job); ?>" class="form-control" placeholder="Enter Job Order No">
                 </div>
                 <div class="col-sm-2">
                     <button type="submit" class="btn btn-primary w-100">Search</button>
@@ -26,50 +24,50 @@
         </div>
     </div>
 
-    @if(!empty($header))
+    <?php if(!empty($header)): ?>
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Job Card No.</label>
-                    <input type="text" class="form-control" value="{{ $header['job_card_no'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['job_card_no']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Client Name</label>
-                    <input type="text" class="form-control" value="{{ $header['client_name'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['client_name']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Job Order Date</label>
-                    <input type="date" class="form-control" value="{{ $header['job_order_date'] }}" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['job_order_date']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
-                    <input type="date" class="form-control" value="{{ $header['issue_date'] }}" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Reference No.</label>
-                    <input type="text" class="form-control" value="{{ $header['reference_no'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['reference_no']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Sample Description</label>
-                    <input type="text" class="form-control" value="{{ $header['sample_description'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['sample_description']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Name of Work</label>
-                    <input type="text" class="form-control" value="{{ $header['name_of_work'] ?: '-' }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['name_of_work'] ?: '-'); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issued To</label>
-                    <input type="text" class="form-control" value="{{ $header['issued_to'] ?: '-' }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['issued_to'] ?: '-'); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="{{ $header['ms'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['ms']); ?>" readonly>
                 </div>
             </div>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 
     <div class="card">
         <div class="card-body">
@@ -84,65 +82,67 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($items as $item)
-                            @php
+                        <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                            <?php
                                 $hr = $item->hold_reason;
                                 $isCancelMarker = is_string($hr) && \Illuminate\Support\Str::startsWith($hr, 'CANCELED:');
                                 $cancelMarkerReason = $isCancelMarker ? trim(\Illuminate\Support\Str::after($hr, 'CANCELED:')) : null;
-                            @endphp
+                            ?>
                             <tr>
-                                <td>{{ $item->job_order_no }}</td>
-                                <td>{{ $item->sample_description }}</td>
-                                <td class="status-cell" data-id="{{ $item->id }}">
-                                    @if(!empty($item->cancel_reason))
-                                        Canceled "{{ $item->cancel_reason }}"
-                                    @elseif($isCancelMarker)
-                                        Canceled "{{ $cancelMarkerReason }}"
-                                    @elseif(!empty($item->hold_reason))
-                                        Held "{{ $item->hold_reason }}"
-                                    @else
-                                        @if($item->received_at)
-                                            Received by {{ $item->received_by_name ?? ($item->receivedBy->name ?? '-') }} on {{ $item->received_at->format('d M Y, h:i A') }}
-                                        @elseif($item->analyst)
-                                            With Analyst: {{ $item->analyst->name }} ({{ $item->analyst->user_code }})
-                                        @else
+                                <td><?php echo e($item->job_order_no); ?></td>
+                                <td><?php echo e($item->sample_description); ?></td>
+                                <td class="status-cell" data-id="<?php echo e($item->id); ?>">
+                                    <?php if(!empty($item->cancel_reason)): ?>
+                                        Canceled "<?php echo e($item->cancel_reason); ?>"
+                                    <?php elseif($isCancelMarker): ?>
+                                        Canceled "<?php echo e($cancelMarkerReason); ?>"
+                                    <?php elseif(!empty($item->hold_reason)): ?>
+                                        Held "<?php echo e($item->hold_reason); ?>"
+                                    <?php else: ?>
+                                        <?php if($item->received_at): ?>
+                                            Received by <?php echo e($item->received_by_name ?? ($item->receivedBy->name ?? '-')); ?> on <?php echo e($item->received_at->format('d M Y, h:i A')); ?>
+
+                                        <?php elseif($item->analyst): ?>
+                                            With Analyst: <?php echo e($item->analyst->name); ?> (<?php echo e($item->analyst->user_code); ?>)
+                                        <?php else: ?>
                                             In Lab / Analyst TBD
-                                        @endif
-                                    @endif
+                                        <?php endif; ?>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <div class="d-flex gap-2">
-                                        <form method="POST" action="{{ route('superadmin.reporting.hold', $item->id) }}" class="hold-form {{ ($item->cancel_reason || $isCancelMarker) ? 'd-none' : '' }}" data-id="{{ $item->id }}">@csrf <button type="button" class="btn btn-sm {{ $item->hold_reason ? 'btn-secondary' : 'btn-warning' }} hold-btn" data-id="{{ $item->id }}" data-state="{{ $item->hold_reason ? 'unhold' : 'hold' }}">{{ $item->hold_reason ? 'Unhold' : 'Hold' }}</button></form>
-                                        <form method="POST" action="{{ route('superadmin.reporting.unhold', $item->id) }}" class="unhold-form d-none" data-id="{{ $item->id }}">@csrf</form>
-                                        <form method="POST" action="{{ route('superadmin.reporting.cancel', $item->id) }}" class="cancel-form" data-id="{{ $item->id }}">@csrf <button type="button" class="btn btn-sm btn-danger cancel-btn" data-id="{{ $item->id }}">Cancel</button></form>
+                                        <form method="POST" action="<?php echo e(route('superadmin.reporting.hold', $item->id)); ?>" class="hold-form <?php echo e(($item->cancel_reason || $isCancelMarker) ? 'd-none' : ''); ?>" data-id="<?php echo e($item->id); ?>"><?php echo csrf_field(); ?> <button type="button" class="btn btn-sm <?php echo e($item->hold_reason ? 'btn-secondary' : 'btn-warning'); ?> hold-btn" data-id="<?php echo e($item->id); ?>" data-state="<?php echo e($item->hold_reason ? 'unhold' : 'hold'); ?>"><?php echo e($item->hold_reason ? 'Unhold' : 'Hold'); ?></button></form>
+                                        <form method="POST" action="<?php echo e(route('superadmin.reporting.unhold', $item->id)); ?>" class="unhold-form d-none" data-id="<?php echo e($item->id); ?>"><?php echo csrf_field(); ?></form>
+                                        <form method="POST" action="<?php echo e(route('superadmin.reporting.cancel', $item->id)); ?>" class="cancel-form" data-id="<?php echo e($item->id); ?>"><?php echo csrf_field(); ?> <button type="button" class="btn btn-sm btn-danger cancel-btn" data-id="<?php echo e($item->id); ?>">Cancel</button></form>
                                     </div>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="4" class="text-center">No items found</td>
                             </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-3">
                 <div>
-                    @if(method_exists($items, 'links'))
-                        {!! $items->appends(request()->query())->links('pagination::bootstrap-4') !!}
-                    @endif
+                    <?php if(method_exists($items, 'links')): ?>
+                        <?php echo $items->appends(request()->query())->links('pagination::bootstrap-4'); ?>
+
+                    <?php endif; ?>
                 </div>
                 <div class="d-flex gap-2">
-                    <form method="POST" action="{{ route('superadmin.reporting.cancelAll') }}" id="cancel-all-form" class="d-inline">@csrf<input type="hidden" name="job" value="{{ $job }}"><button class="btn btn-danger" type="submit" id="cancel-all-btn">Cancel All</button></form>
-                    <form method="POST" action="{{ route('superadmin.reporting.holdAll') }}" id="hold-all-form" class="d-inline">@csrf<input type="hidden" name="job" value="{{ $job }}"><button class="btn btn-warning" type="submit" id="hold-all-btn">Hold All</button></form>
+                    <form method="POST" action="<?php echo e(route('superadmin.reporting.cancelAll')); ?>" id="cancel-all-form" class="d-inline"><?php echo csrf_field(); ?><input type="hidden" name="job" value="<?php echo e($job); ?>"><button class="btn btn-danger" type="submit" id="cancel-all-btn">Cancel All</button></form>
+                    <form method="POST" action="<?php echo e(route('superadmin.reporting.holdAll')); ?>" id="hold-all-form" class="d-inline"><?php echo csrf_field(); ?><input type="hidden" name="job" value="<?php echo e($job); ?>"><button class="btn btn-warning" type="submit" id="hold-all-btn">Hold All</button></form>
                 </div>
             </div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 (function initHoldCancelPage(){
     const init = async function(){
@@ -330,4 +330,6 @@
     if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/reporting/hold_cancel.blade.php ENDPATH**/ ?>

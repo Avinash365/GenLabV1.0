@@ -344,7 +344,18 @@ class MarketingPersonInfo extends Controller
      */
     public function personalExpensesStoreApi(Request $request, $user_code)
     {
-        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+        // Prefer explicit marketing person code/name from request (web form passes these),
+        // otherwise fall back to route param lookup.
+        $mpFromRequest = $request->input('marketing_person_code');
+        if ($mpFromRequest) {
+            $marketingPersonCode = $mpFromRequest;
+            $marketingPersonName = $request->input('marketing_person_name') ?? null;
+            $marketingPerson = null;
+        } else {
+            $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+            $marketingPersonCode = $marketingPerson->user_code;
+            $marketingPersonName = $marketingPerson->name ?? $marketingPerson->person_name ?? ($marketingPerson->first_name ?? null);
+        }
         $validated = $request->validate([
             'section' => 'nullable|string|max:191',
             'expense_date' => 'nullable|date',
@@ -352,6 +363,8 @@ class MarketingPersonInfo extends Controller
             'to_date' => 'nullable|date',
             'amount' => 'required|numeric',
             'description' => 'nullable|string',
+            'marketing_person_code' => 'nullable|string',
+            'marketing_person_name' => 'nullable|string',
             // Accept both `file` and `pdf` keys (web uses `pdf`)
             'file' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf',
             'pdf' => 'nullable|file|max:10240|mimes:jpg,jpeg,png,pdf',
@@ -368,8 +381,8 @@ class MarketingPersonInfo extends Controller
 
         // Map incoming fields to MarketingExpense model
         $expenseData = [
-            'marketing_person_code' => $marketingPerson->user_code,
-            'person_name' => $marketingPerson->name ?? $marketingPerson->person_name ?? ($marketingPerson->first_name ?? null),
+            'marketing_person_code' => $marketingPersonCode,
+            'person_name' => $marketingPersonName,
             'section' => $validated['section'] ?? null,
             'from_date' => $validated['from_date'] ?? $validated['expense_date'] ?? now()->toDateString(),
             // Ensure to_date is not null in DB: fallback to from_date when not provided

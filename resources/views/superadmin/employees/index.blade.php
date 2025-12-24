@@ -115,7 +115,9 @@
     </div>
 
     <div class="mt-4">
-        {{ $employees->links() }}
+        @if(method_exists($employees, 'links'))
+            {!! $employees->withQueryString()->links('pagination::bootstrap-5') !!}
+        @endif
     </div>
 
     @if($systemUsers->isNotEmpty())

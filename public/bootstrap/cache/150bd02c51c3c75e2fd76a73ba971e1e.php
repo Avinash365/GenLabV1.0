@@ -816,6 +816,8 @@
                 initAudioControls(container); 
                     try { if (window.updateBookingFileCounts) window.updateBookingFileCounts(); } catch(e){}
                     try { sanitizeFileTitles(); } catch(e){}
+                    // Reapply any active booking file filter after messages reload so filtered view persists
+                    try { if (window.applyBookingFileFilter) window.applyBookingFileFilter(window.currentFileFilterMode || null); } catch(e){}
             } catch (e) { console.error('initAudioControls error', e); }
 
             // if there's a pending jump request (user clicked a reply that referenced a message not currently in view), try to scroll
@@ -1393,8 +1395,15 @@
             } catch (e) { /* ignore */ }
         }
 
+        // Persist and apply a file filter mode ('hold'|'unbooked'|'all')
+        window.currentFileFilterMode = window.currentFileFilterMode || null;
         function applyFileFilter(mode){
             try {
+                // normalize mode
+                if (!mode || mode === 'all') mode = null;
+                // persist selection so periodic reloads can reapply
+                window.currentFileFilterMode = mode;
+
                 const container = document.getElementById('messagesContainer');
                 if (!container) return;
                 container.querySelectorAll('.chats').forEach(ch => {
@@ -1407,6 +1416,8 @@
                     }
                     ch.style.display = show ? '' : 'none';
                 });
+                // keep buttons in sync
+                try { updateFilterButtons(); } catch(e){}
             } catch (e) { /* ignore */ }
         }
 
@@ -1432,6 +1443,17 @@
                 }
             } catch(e){}
         });
+
+        // helper to sync button active state with the persisted filter
+        function updateFilterButtons(){
+            try {
+                const bHold = document.getElementById('btnHold');
+                const bUn = document.getElementById('btnUnbooked');
+                const mode = window.currentFileFilterMode || null;
+                if (bHold) bHold.classList.toggle('active', mode === 'hold');
+                if (bUn) bUn.classList.toggle('active', mode === 'unbooked');
+            } catch(e){}
+        }
 
         // expose for use after messages reload
         window.updateBookingFileCounts = updateFileCounts;
