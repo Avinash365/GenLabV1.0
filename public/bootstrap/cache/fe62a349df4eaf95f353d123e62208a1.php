@@ -1,6 +1,4 @@
-@extends('superadmin.layouts.app')
-
-@section('title', 'Chat')
+<?php $__env->startSection('title', 'Chat'); ?>
 
 <?php
     $page = 'chat';
@@ -9,10 +7,10 @@
     $currentUserType = $currentUserType ?? ($authUser instanceof \App\Models\Admin ? 'admin' : ($authUser instanceof \App\Models\User ? 'user' : ($authUser instanceof \App\Models\Employee ? 'employee' : null)));
 ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     /* Chat layout adjustments to ensure scrolling works with the new theme */
-    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height:87vh;}
+    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height: calc(100vh - 160px); }
     .sidebar-group { flex: 0 0 360px; max-width: 360px; display: flex; flex-direction: column; }
     .sidebar-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sidebar-body { flex: 1; overflow-y: auto; }
@@ -178,9 +176,9 @@
     .booking-actions .btn.active { background:linear-gradient(90deg,#e6f3ff,#d9efff); border-color:rgba(11,120,209,0.14); }
     .booking-actions .count-badge { background:rgba(11,120,209,0.08); padding:2px 6px; border-radius:999px; margin-left:6px; font-weight:700; font-size:12px; }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="content">
     
 
@@ -202,16 +200,16 @@
 
                 <div class="sidebar-body chat-body" id="chatsidebar">
                     <div class="chat-users-wrap" id="contactsList">
-                        @foreach($users as $u)
+                        <?php $__currentLoopData = $users; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $u): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <?php $contactAvatar = $u->avatar ?? ('https://ui-avatars.com/api/?name=' . urlencode($u->name) . '&background=ffffff&color=0D8ABC&size=128'); ?>
-                            <div class="chat-list contact-item" data-user-id="{{ $u->id }}" data-avatar="{{ $contactAvatar }}" data-last-message-sender-id="{{ $u->last_message_sender_id ?? '' }}" data-last-message-sender-type="{{ $u->last_message_sender_type ?? '' }}" data-last-message-read-at="{{ $u->last_message_read_at ?? '' }}">
+                            <div class="chat-list contact-item" data-user-id="<?php echo e($u->id); ?>" data-avatar="<?php echo e($contactAvatar); ?>" data-last-message-sender-id="<?php echo e($u->last_message_sender_id ?? ''); ?>" data-last-message-sender-type="<?php echo e($u->last_message_sender_type ?? ''); ?>" data-last-message-read-at="<?php echo e($u->last_message_read_at ?? ''); ?>">
                                 <a href="javascript:void(0);" class="chat-user-list">
                                     <div class="avatar avatar-lg online me-2">
-                                        <img src="{{ $contactAvatar }}" class="rounded-circle" alt="image">
+                                        <img src="<?php echo e($contactAvatar); ?>" class="rounded-circle" alt="image">
                                     </div>
                                     <div class="chat-user-info">
                                         <div class="chat-user-msg">
-                                            <h6>{{ $u->name }}</h6>
+                                            <h6><?php echo e($u->name); ?></h6>
                                             <?php
                                                 $lastMsg = $u->last_message ?? null;
                                                 $displayLast = 'Click to open chat';
@@ -270,7 +268,7 @@
                                                 $unreadHtml = (isset($u->unread_count) && $u->unread_count > 0) ? '<span class="count-message fs-12 fw-semibold">' . $u->unread_count . '</span>' : '';
                                                 $pinHtml = '<div class="chat-pin">' . $pinIcons . $unreadHtml . '</div>';
                                             ?>
-                                            <p class="small text-truncate">{{ $displayLast }}</p>
+                                            <p class="small text-truncate"><?php echo e($displayLast); ?></p>
                                         </div>
                                         <div class="chat-user-time">
                                             <?php
@@ -285,8 +283,9 @@
                                                     }
                                                 }
                                             ?>
-                                            <span class="time" data-last-message-at="{{ $u->last_message_at ? $u->last_message_at->toRfc3339String() : '' }}">{{ $timeLabel }}</span>
-                                            {!! $pinHtml !!}
+                                            <span class="time" data-last-message-at="<?php echo e($u->last_message_at ? $u->last_message_at->toRfc3339String() : ''); ?>"><?php echo e($timeLabel); ?></span>
+                                            <?php echo $pinHtml; ?>
+
                                         </div>
                                     </div>
                                 </a>
@@ -301,7 +300,7 @@
                                     </ul>
                                 </div>
                             </div>
-                        @endforeach
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </div>
                 </div>
             </div>
@@ -395,7 +394,7 @@
     </div>
 </div>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
     <!-- Pusher + Echo (CDN) -->
     <script src="https://js.pusher.com/8.0/pusher.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/laravel-echo/1.11.3/echo.iife.min.js"></script>
@@ -406,9 +405,9 @@
                 window.Pusher = window.Pusher || Pusher;
                 window.Echo = new window.Echo({
                     broadcaster: 'pusher',
-                    key: '{{ env("PUSHER_APP_KEY") }}',
-                    cluster: '{{ env("PUSHER_APP_CLUSTER") }}',
-                    forceTLS: {{ env('PUSHER_SCHEME', 'https') === 'https' ? 'true' : 'false' }},
+                    key: '<?php echo e(env("PUSHER_APP_KEY")); ?>',
+                    cluster: '<?php echo e(env("PUSHER_APP_CLUSTER")); ?>',
+                    forceTLS: <?php echo e(env('PUSHER_SCHEME', 'https') === 'https' ? 'true' : 'false'); ?>,
                     authEndpoint: '/broadcasting/auth',
                     auth: {
                         headers: {
@@ -421,8 +420,8 @@
     </script>
 <script>
     let currentChatUser = null;
-    const currentUserId = {{ $currentUserId ?? 'null' }};
-    const currentUserType = '{{ $currentUserType ?? '' }}';
+    const currentUserId = <?php echo e($currentUserId ?? 'null'); ?>;
+    const currentUserType = '<?php echo e($currentUserType ?? ''); ?>';
     // persist current user's reaction state across full page reloads by using a global map
     window.chatLocalReactions = window.chatLocalReactions || {};
     let pendingReplyTo = null; // message id we are replying to (client-side)
@@ -734,23 +733,6 @@
 
     async function loadMessages(userId, markRead = false) {
         if (!userId) return;
-        // If user has scrolled up (viewing earlier messages), skip polling reloads
-        try {
-            const containerCheck = document.getElementById('messagesContainer');
-            const wrapCheck = containerCheck && containerCheck.parentElement ? containerCheck.parentElement : null;
-            const clientH = wrapCheck ? wrapCheck.clientHeight : 0;
-            const prevH = wrapCheck ? wrapCheck.scrollHeight : 0;
-            const prevTop = wrapCheck ? wrapCheck.scrollTop : 0;
-            const distFromBottom = prevH - clientH - prevTop;
-            const nearB = distFromBottom <= 100;
-            const forced = !!(window._forceScrollToBottom);
-            if (!markRead && !nearB && !forced) return; // user is reading history; avoid auto-reload
-        } catch(e){}
-        // prevent concurrent loads which can race and cause scroll jumps
-        try {
-            if (window._loadingMessages) return;
-            window._loadingMessages = true;
-        } catch(e){}
         try {
             let url = '/chat/messages/' + encodeURIComponent(userId);
             if (markRead) url += '?mark_read=1';
@@ -813,10 +795,9 @@
                 } catch (re) { /* ignore reapply errors */ }
             });
 
-            // If user was near bottom, auto-scroll to bottom. Also honor a one-time force flag when user opened a contact.
+            // If user was near bottom, auto-scroll to bottom. Otherwise preserve their scroll position.
             try {
-                const forceScroll = !!(window._forceScrollToBottom);
-                if (nearBottom || forceScroll) {
+                if (nearBottom) {
                     containerWrap.scrollTop = containerWrap.scrollHeight;
                 } else {
                     // preserve approximate viewport position by shifting by the change in height
@@ -824,27 +805,6 @@
                     const delta = newScrollHeight - prevScrollHeight;
                     containerWrap.scrollTop = Math.max(0, prevScrollTop + delta);
                 }
-                try { if (window._forceScrollToBottom) window._forceScrollToBottom = false; } catch(e){}
-                // If we forced a scroll when opening a contact, re-apply after layout settles
-                try {
-                    if (forceScroll) {
-                        setTimeout(() => {
-                            try { containerWrap.scrollTop = containerWrap.scrollHeight; } catch(e){}
-                        }, 220);
-                        // also re-scroll when media finishes loading to avoid image/video layout jumps
-                        try {
-                            const media = container.querySelectorAll('img, video');
-                            media.forEach(m => {
-                                try {
-                                    const ev = m.tagName.toLowerCase() === 'video' ? 'loadedmetadata' : 'load';
-                                    m.addEventListener(ev, () => {
-                                        try { containerWrap.scrollTop = containerWrap.scrollHeight; } catch(e){}
-                                    });
-                                } catch(e){}
-                            });
-                        } catch(e){}
-                    }
-                } catch(e){}
             } catch (err) { /* ignore scroll errors */ }
 
                 // initialize audio controls for newly appended messages
@@ -875,9 +835,6 @@
             // Refresh sidebar contacts so unread counts update immediately after loading messages
             try { if (typeof refreshContacts === 'function') refreshContacts(); } catch(e) {}
         } catch (e) { console.error("Error loading messages", e); }
-        finally {
-            try { window._loadingMessages = false; } catch(e){}
-        }
     }
 
     document.addEventListener('DOMContentLoaded', function(){
@@ -921,8 +878,6 @@
             document.getElementById('chatHeaderAvatar').src = avatar;
             document.getElementById('chatStatus').innerText = 'Online';
 
-            // ensure we scroll to bottom when user explicitly opens a contact
-            try { window._forceScrollToBottom = true; } catch(e){}
             loadMessages(userId, true);
             try { if (window.updateBookingFileCounts) setTimeout(window.updateBookingFileCounts, 250); } catch(e){}
             // show booking actions only for booking group: detect by data attribute or name contains 'booking'
@@ -1787,56 +1742,6 @@
                         });
                     } catch (ex) { console.error('ChatMessageRead handler error', ex); }
                 });
-            // Reaction updates: listen for server broadcasts and update UI live
-            Echo.private(`chat.user.${currentUserType}.${currentUserId}`)
-                .listen('.ChatMessageReacted', (payload) => {
-                    try {
-                        // payload contains: message_id, reactions (map emoji=>count), reaction_users (map emoji=>[userKey])
-                        const mid = payload && (payload.message_id || payload.messageId || payload.id) ? (payload.message_id || payload.messageId || payload.id) : null;
-                        if (!mid) return;
-
-                        const counts = payload.reactions || {};
-                        const usersMap = payload.reaction_users || {};
-                        const currentKey = (currentUserType || '') + ':' + (currentUserId || '');
-
-                        // Remove any existing reaction buttons that are no longer present
-                        try {
-                            const sel = document.querySelector(`[data-message-id="${mid}"]`);
-                            if (sel) {
-                                const bar = sel.querySelector('.reaction-bar');
-                                if (bar) {
-                                    // remove buttons for emojis not present in counts
-                                    Array.from(bar.querySelectorAll('.reaction-btn')).forEach(b => {
-                                        try {
-                                            const em = b.getAttribute('data-emoji');
-                                            if (!(em in counts)) b.remove();
-                                        } catch(e){}
-                                    });
-                                }
-                            }
-                        } catch(e){}
-
-                        // Upsert buttons from counts map
-                        Object.keys(counts).forEach(emoji => {
-                            try {
-                                const c = counts[emoji];
-                                const users = usersMap[emoji] || [];
-                                const youReacted = Array.isArray(users) ? users.indexOf(currentKey) !== -1 : false;
-                                upsertReactionUI(mid, emoji, { count: Number(c), you_reacted: !!youReacted });
-                            } catch(e){}
-                        });
-
-                        // If server indicates that selected_emoji was removed for this user, ensure local state cleared
-                        try {
-                            if (payload.selected_emoji === null || payload.acted === false) {
-                                // If acted === false and userKey not present anywhere, clear local map
-                                let found = false;
-                                Object.keys(usersMap).forEach(k => { if (Array.isArray(usersMap[k]) && usersMap[k].indexOf(currentKey) !== -1) found = true; });
-                                if (!found) try { delete window.chatLocalReactions[String(mid)]; } catch(e){}
-                            }
-                        } catch(e){}
-                    } catch (ex) { console.error('ChatMessageReacted handler error', ex); }
-                });
         }
     } catch (er) { /* ignore */ }
 
@@ -2088,66 +1993,36 @@
         function sendReaction(messageId, emoji){
             try {
                 if (!messageId) return;
-                const key = String(messageId);
-                const current = (window.chatLocalReactions[key] || null);
-                const isUnreact = current === emoji; // clicking same emoji should remove
-
-                // optimistic UI update
-                if (isUnreact) {
-                    try { removeReactionFromUI(messageId, emoji); } catch(e){}
-                    try { delete window.chatLocalReactions[key]; } catch(e){}
-                } else {
-                    // if previously reacted with different emoji, remove that first
-                    if (current && current !== emoji) {
-                        try { removeReactionFromUI(messageId, current); } catch(e){}
-                    }
-                    // mark desired emoji locally so UI reflects choice immediately
-                    try { window.chatLocalReactions[key] = emoji; } catch(e){}
-                    // optimistically add UI
-                    try { upsertReactionUI(messageId, emoji, { you_reacted: true }); } catch(e){}
+                // if user already reacted with same emoji on this message, do nothing
+                if ((window.chatLocalReactions[String(messageId)] || null) && window.chatLocalReactions[String(messageId)] === emoji) return;
+                const prev = (window.chatLocalReactions[String(messageId)] || null);
+                // if user has reacted with a different emoji, remove previous one from UI optimistically
+                if (prev && prev !== emoji) {
+                    try { removeReactionFromUI(messageId, prev); } catch(e){}
                 }
+                // mark desired emoji locally (prevents duplicate clicks)
+                try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
 
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 fetch('/chat/messages/reaction', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
-                    body: JSON.stringify({ message_id: messageId, emoji: emoji, remove: !!isUnreact })
+                    body: JSON.stringify({ message_id: messageId, emoji: emoji })
                 }).then(r => r.json()).then(json => {
                     try {
-                        // server payload may include authoritative counts and whether user still reacted
-                        const payload = json || {};
-                        const acted = (typeof payload.acted === 'boolean') ? payload.acted : null;
-                        const sel = (payload.selected_emoji !== undefined) ? payload.selected_emoji : (payload.selectedEmoji !== undefined ? payload.selectedEmoji : null);
-                        const you_reacted = (payload.you_reacted === true || payload.user_reacted === true) ? true : (payload.you_reacted === false ? false : null);
-
-                        // Interpret server signals indicating the reaction was removed
-                        const serverSaysRemoved = (acted === false) || (sel === null) || (you_reacted === false) || (payload.removed === true);
-                        if (serverSaysRemoved) {
-                            try { removeReactionFromUI(messageId, emoji); } catch(e){}
-                            try { delete window.chatLocalReactions[key]; } catch(e){}
-                        } else {
-                            // Only upsert if server provides counts or explicitly indicates you reacted
-                            if (payload && (typeof payload.count === 'number' || payload.you_reacted === true || (payload.reactions && payload.reactions[emoji] !== undefined))) {
-                                try { upsertReactionUI(messageId, emoji, payload); } catch(e){}
-                                try { if (payload.you_reacted) window.chatLocalReactions[key] = emoji; } catch(e){}
-                            } else {
-                                // no authoritative data: avoid creating a phantom button; keep optimistic state
-                            }
-                        }
-                    } catch(e){ console.warn('upsert after send error', e); }
+                        // server acknowledged - update UI using server payload when available
+                        upsertReactionUI(messageId, emoji, json || {});
+                        // ensure local map reflects acknowledged emoji
+                        try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
+                    } catch(e){
+                        console.warn('upsert after send error', e);
+                    }
                 }).catch(err => {
                     console.warn('Reaction failed', err);
-                    // revert optimistic change on error
+                    // restore previous reaction on error
                     try {
-                        if (isUnreact) {
-                            // we attempted to remove but server failed; restore UI
-                            if (current) upsertReactionUI(messageId, current, { you_reacted: true });
-                            try { window.chatLocalReactions[key] = current; } catch(e){}
-                        } else {
-                            // we attempted to add; remove optimistic UI
-                            removeReactionFromUI(messageId, emoji);
-                            try { if (current) window.chatLocalReactions[key] = current; else delete window.chatLocalReactions[key]; } catch(e){}
-                        }
+                        if (prev) upsertReactionUI(messageId, prev, {});
+                        else try { delete window.chatLocalReactions[String(messageId)]; } catch(e){}
                     } catch(e){}
                 });
             } catch (e) { console.warn('sendReaction error', e); }
@@ -2161,80 +2036,57 @@
                 if (!bar) {
                     bar = document.createElement('div');
                     bar.className = 'reaction-bar';
+                    // place bar inside the actual message bubble (.message-content) so it appears on the corner
                     const contentContainer = sel.querySelector('.message-content') || sel.querySelector('.chat-content') || sel;
                     try { contentContainer.style.position = contentContainer.style.position || 'relative'; } catch(e){}
                     contentContainer.appendChild(bar);
                     try { contentContainer.classList.add('has-reactions'); } catch(e){}
                 }
-
                 // find existing reaction button for this emoji
                 let btn = bar.querySelector(`.reaction-btn[data-emoji="${emoji}"]`);
-                const serverCount = (payload && typeof payload.count === 'number') ? Number(payload.count) : null;
-                // Determine whether _this user_ reacted based only on server payload or explicit reaction_users map.
-                let youReacted = false;
-                try {
-                    if (payload && (payload.you_reacted === true || payload.user_reacted === true)) youReacted = true;
-                    else if (payload && payload.reaction_users && Array.isArray(payload.reaction_users[emoji])) {
-                        const currentKey = (currentUserType || '') + ':' + (currentUserId || '');
-                        youReacted = payload.reaction_users[emoji].indexOf(currentKey) !== -1;
-                    }
-                } catch(e) { youReacted = false; }
-
                 if (btn) {
-                    // update count display
-                    let cnt = btn.querySelector('.count');
-                    if (serverCount !== null) {
-                        if (serverCount <= 0) {
-                            btn.remove();
-                            btn = null;
-                        } else if (serverCount === 1) {
-                            if (cnt) cnt.remove();
-                        } else {
-                            if (cnt) cnt.innerText = String(serverCount);
-                            else {
-                                const span = document.createElement('span');
-                                span.className = 'count';
-                                span.innerText = String(serverCount);
-                                btn.appendChild(span);
-                            }
-                        }
+                    const cnt = btn.querySelector('.count');
+                    // determine new count (prefer server-provided count)
+                    let newCount = null;
+                    if (payload && typeof payload.count === 'number') newCount = Number(payload.count);
+                    else {
+                        // if numeric span exists use it, otherwise assume 1 and increment
+                        const cur = cnt ? Number(cnt.innerText || '0') : 1;
+                        newCount = cur + 1;
+                    }
+                    if (newCount <= 0) {
+                        btn.remove();
+                    } else if (newCount === 1) {
+                        // ensure no numeric span for single reaction
+                        if (cnt) cnt.remove();
                     } else {
-                        // no server count provided; ensure at least the button exists
+                        // show numeric span
+                        if (cnt) cnt.innerText = String(newCount);
+                        else {
+                            const span = document.createElement('span');
+                            span.className = 'count';
+                            span.innerText = String(newCount);
+                            btn.appendChild(span);
+                        }
                     }
-                }
-
-                if (!btn) {
-                    // Only create a new button if server provided a count or explicitly indicated you reacted (optimistic add handled elsewhere)
-                    if (serverCount === null && !(payload && payload.you_reacted === true)) {
-                        return; // don't create a phantom button without server confirmation
-                    }
+                } else {
                     const b = document.createElement('button');
                     b.type = 'button';
                     b.className = 'reaction-btn';
                     b.setAttribute('data-emoji', emoji);
-                    const initialCount = serverCount !== null ? serverCount : (payload && payload.you_reacted ? 1 : 0);
-                    if (initialCount > 1) {
-                        const span = document.createElement('span');
-                        span.className = 'count';
-                        span.innerText = String(initialCount);
-                        b.innerHTML = `<span class="emoji">${emoji}</span> `;
-                        b.appendChild(span);
-                    } else {
-                        b.innerHTML = `<span class="emoji">${emoji}</span>`;
-                    }
-                    b.addEventListener('click', () => { sendReaction(messageId, emoji); });
+                    const initialCount = (payload && typeof payload.count === 'number') ? Number(payload.count) : 1;
+                    const countHtml = initialCount > 1 ? ` <span class="count">${initialCount}</span>` : '';
+                    b.innerHTML = `<span class="emoji">${emoji}</span>${countHtml}`;
+                    b.addEventListener('click', () => {
+                        // allow user to click the reaction to quickly add again (client-side only)
+                        sendReaction(messageId, emoji);
+                    });
                     bar.appendChild(b);
-                    btn = b;
                 }
-
-                // mark as you-reacted if applicable
+                // If payload indicates which user reacted and it's this user, store locally
                 try {
-                    if (youReacted) {
-                        btn.classList.add('you-reacted');
-                        btn.setAttribute('data-you', '1');
-                    } else {
-                        btn.classList.remove('you-reacted');
-                        btn.removeAttribute('data-you');
+                    if (payload && (payload.you_reacted === true || payload.user_reacted === true)) {
+                        try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
                     }
                 } catch(e){}
             } catch (e) { console.warn('upsertReactionUI error', e); }
@@ -2504,5 +2356,7 @@
         });
     })();
 </script>
-@endpush
-@endsection
+<?php $__env->stopPush(); ?>
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/chat.blade.php ENDPATH**/ ?>

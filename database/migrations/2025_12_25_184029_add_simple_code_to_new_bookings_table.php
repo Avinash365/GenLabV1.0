@@ -11,18 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('new_booking', function (Blueprint $table) {
-            $table->id();
-            $table->string('booking_name');
-            $table->timestamps();
+        Schema::table('new_bookings', function (Blueprint $table) {
+            $table->string('sample_code', 50)
+                  ->nullable()
+                  ->after('department_id');
         });
     }
-    
+
     /**
      * Reverse the migrations.
      */
     public function down(): void
     {
-        Schema::dropIfExists('new_booking');
+        Schema::table('new_bookings', function (Blueprint $table) {
+             $table->dropColumn('sample_code');
+        });
     }
 };

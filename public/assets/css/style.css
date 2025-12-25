@@ -32430,16 +32430,14 @@ body.layout-mode-rtl .user-info {
     margin-left: 0;
   }
 }
-.chat-wrapper .chat.chat-messages .slimScrollDiv {
-  height: calc(100vh - 160) !important;
-}
+
 @media (max-width: 991.98px) {
   .chat-wrapper .chat.chat-messages .slimScrollDiv {
     height: calc(100vh - 140px) !important;
   }
 }
 .chat-wrapper .chat.chat-messages .slimscroll {
-  height: calc(100vh - 240px) !important;
+  height: calc(100vh - 150px) !important;
 }
 @media (max-width: 991.98px) {
   .chat-wrapper .chat.chat-messages .slimscroll {

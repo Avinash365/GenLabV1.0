@@ -4,7 +4,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Models\ReportEditorFile; 
-use App\Models\BookingItem;
+use App\Models\{BookingItem, NewBooking};
 
 use App\Services\{ReportPdfGenerationService,ReportWordGenerationService}; 
 use App\Services\CountTextLineBreakService;
@@ -159,9 +159,9 @@ class ReportEditorController extends Controller
 
     public function generateReportPDF(Request $request)
     {      
-        // dd($request->all()); 
-        // exit; 
+       $booking = NewBooking::findOrFail($request->booking_id);
        
+
         $request->validate([
             'report_no' => 'required|string|max:255',
             'report_description' => 'nullable|string|max:2000',
@@ -184,6 +184,7 @@ class ReportEditorController extends Controller
         ]);
 
         $headerData = [
+            'sample_code'    => $booking->sample_code ?? "", 
             'booking_item_id' => $request->input('booking_item_id') ?? "",  
             'report_no' => $request->input('report_no') ?? "",
             'ulr_no' => $request->input('ulr_no') ?? "",
@@ -449,6 +450,8 @@ class ReportEditorController extends Controller
 
     public function livePreview(Request $request)
     {
+        
+
         $request->validate([
             'content' => 'required|string',
         ]);
@@ -471,7 +474,10 @@ class ReportEditorController extends Controller
         // Generate PDF using your existing service
         $pdfService = new ReportPdfGenerationService();
 
+        // $booking = NewBooking::findOrFail($request->booking_id);
+      
         $headerData = [
+            'sample_code' => '',
             'booking_item_id' => $request->input('booking_item_id') ?? 1,
             'report_no' => $request->input('report_no') ?? "",
             'ulr_no' => $request->input('ulr_no') ?? "",
