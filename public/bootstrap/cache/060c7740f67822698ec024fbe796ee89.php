@@ -1,23 +1,22 @@
-@extends('superadmin.layouts.app')
+<?php $__env->startSection('title', 'Create New User'); ?>
 
-@section('title', 'Create New User')
-
-@section('content')
-@if ($errors->any())
+<?php $__env->startSection('content'); ?>
+<?php if($errors->any()): ?>
     <div class="alert alert-danger">
         <ul class="mb-0">
-            @foreach ($errors->all() as $error)
-                <li>{{ $error }}</li>
-            @endforeach
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($error); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
         </ul>
     </div>
-@endif
+<?php endif; ?>
 
-@if (session('success'))
+<?php if(session('success')): ?>
     <div class="alert alert-success">
-        {{ session('success') }}
+        <?php echo e(session('success')); ?>
+
     </div>
-@endif
+<?php endif; ?>
 
 <div class="content">
     <div class="page-header">
@@ -31,20 +30,20 @@
             <li><a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a></li>
         </ul>
         <div class="page-btn mt-0">
-            <a href="{{route('superadmin.showbooking.showBooking')}}" class="btn btn-secondary">
+            <a href="<?php echo e(route('superadmin.showbooking.showBooking')); ?>" class="btn btn-secondary">
                 <i data-feather="arrow-left" class="me-2"></i>Show Bookings
             </a>
         </div>
     </div>
 
-    <form action="{{ route('superadmin.bookings.update', $booking->id) }}" method="POST" enctype="multipart/form-data" class="add-product-form">
-        @csrf 
-        @method('PUT')
+    <form action="<?php echo e(route('superadmin.bookings.update', $booking->id)); ?>" method="POST" enctype="multipart/form-data" class="add-product-form">
+        <?php echo csrf_field(); ?> 
+        <?php echo method_field('PUT'); ?>
         
         <div class="add-product">
             <div class="accordions-items-seperate" id="accordionSpacingExample">
 
-                {{-- Booking Information --}}
+                
                 <div class="accordion-item border mb-4">
                     <h2 class="accordion-header" id="headingBookingInfo">
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#bookingInfo" aria-expanded="true">
@@ -59,12 +58,12 @@
                                     <div class="input-group mb-3">
                                         <span class="input-group-text">👤</span>
                                         <input type="text" class="form-control" name="client_name" 
-                                            value="{{ old('client_name', $booking->client_name) }}" required>
+                                            value="<?php echo e(old('client_name', $booking->client_name)); ?>" required>
                                     </div>
                                 </div>
                                 <div class="col-sm-6 col-12">
                                     <label class="form-label">Client Address <span class="text-danger">*</span></label>
-                                    <textarea class="form-control" name="client_address" rows="3" required>{{ old('client_address', $booking->client_address) }}</textarea>
+                                    <textarea class="form-control" name="client_address" rows="3" required><?php echo e(old('client_address', $booking->client_address)); ?></textarea>
                                 </div>
                             </div>
 
@@ -72,19 +71,19 @@
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Letter Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" name="letter_date" 
-                                        value="{{ old('letter_date', $booking->letter_date ? \Carbon\Carbon::parse($booking->letter_date)->format('Y-m-d') : '') }}" 
+                                        value="<?php echo e(old('letter_date', $booking->letter_date ? \Carbon\Carbon::parse($booking->letter_date)->format('Y-m-d') : '')); ?>" 
                                         required>
                                 </div>
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Job Order Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" name="job_order_date" 
-                                        value="{{ old('job_order_date', $booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('Y-m-d') : '') }}" 
+                                        value="<?php echo e(old('job_order_date', $booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('Y-m-d') : '')); ?>" 
                                         required>
                                 </div>
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="report_issue_to" 
-                                        value="{{ old('report_issue_to', $booking->report_issue_to) }}" required>
+                                        value="<?php echo e(old('report_issue_to', $booking->report_issue_to)); ?>" required>
                                 </div>
                             </div>
 
@@ -92,38 +91,39 @@
                                 <div class="col-lg-4 col-sm-6 col-12">
                                     <label class="form-label">Reference No <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="reference_no" 
-                                        value="{{ old('reference_no', $booking->reference_no) }}" required>
+                                        value="<?php echo e(old('reference_no', $booking->reference_no)); ?>" required>
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                     <label class="form-label">Marketing Code <span class="text-danger">*</span></label>
                                     <input type="text" name="marketing_id" class="form-control marketing_code" 
-                                        value="{{ old('marketing_id', $booking->marketing_id) }}" required>
+                                        value="<?php echo e(old('marketing_id', $booking->marketing_id)); ?>" required>
                                     <div class="dropdown-menu w-100 MarketingCodeList overflow-auto"></div>
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12">
                                     <label class="form-label">Contact No <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="contact_no" 
-                                        value="{{ old('contact_no', $booking->contact_no) }}" required>
+                                        value="<?php echo e(old('contact_no', $booking->contact_no)); ?>" required>
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Contact Email <span class="text-danger">*</span></label>
                                     <input type="email" class="form-control" name="contact_email" 
-                                        value="{{ old('contact_email', $booking->contact_email) }}" required>
+                                        value="<?php echo e(old('contact_email', $booking->contact_email)); ?>" required>
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Department<span class="text-danger">*</span></label>
                                     <select class="form-select" name="department_id" id="departmentSelect" required>
                                         <option value="">Select</option>
-                                        @foreach($departments as $department)
-                                            <option value="{{ $department->id }}" 
-                                                {{ old('department_id', $booking->department_id) == $department->id ? 'selected' : '' }}>
-                                                {{ $department->name }}
+                                        <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $department): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                            <option value="<?php echo e($department->id); ?>" 
+                                                <?php echo e(old('department_id', $booking->department_id) == $department->id ? 'selected' : ''); ?>>
+                                                <?php echo e($department->name); ?>
+
                                             </option>
-                                        @endforeach
+                                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                     </select>
                                 </div> 
 
@@ -131,19 +131,19 @@
                                     <label class="form-label">Payment Option<span class="text-danger">*</span></label>
                                     <select class="form-select" name="payment_option" required>
                                         <option value="">Select</option>
-                                        <option value="bill" {{ old('payment_option', $booking->payment_option) == 'bill' ? 'selected' : '' }}>Bill</option>
-                                        <option value="without_bill" {{ old('payment_option', $booking->payment_option) == 'without_bill' ? 'selected' : '' }}>Without Bill</option>
+                                        <option value="bill" <?php echo e(old('payment_option', $booking->payment_option) == 'bill' ? 'selected' : ''); ?>>Bill</option>
+                                        <option value="without_bill" <?php echo e(old('payment_option', $booking->payment_option) == 'without_bill' ? 'selected' : ''); ?>>Without Bill</option>
                                     </select>
                                 </div>
                                 <div class="row">   
                                     <div class="col-sm-8 col-12 mt-3">
                                         <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
                                         <input type="text" class="form-control" name="name_of_work" 
-                                            value="{{ old('name_of_work', $booking->name_of_work) }}">
+                                            value="<?php echo e(old('name_of_work', $booking->name_of_work)); ?>">
                                     </div>    
                                     <div class="col-sm-4 col-12 mt-3">
                                         <label class="form-label">M.S <span class="text-danger">*</span></label>
-                                        <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="{{ old('m_s', $booking->m_s) }}">
+                                        <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s', $booking->m_s)); ?>">
                                     </div> 
                                 </div>
                                  <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none" id="misField">
@@ -151,15 +151,15 @@
                                 <input type="text"
        class="form-control"
        name="sample_code"
-       value="{{ old('sample_code', $booking->sample_code ?? '') }}"
+       value="<?php echo e(old('sample_code', $booking->sample_code ?? '')); ?>"
        placeholder="Enter MIS code">
                             </div>
                             </div>
                         </div>
                     </div>
                 </div>
-                 {{-- Upload Letter --}}
-               {{-- Upload Letter --}}
+                 
+               
                 <div class="accordion-item border mb-4">
                     <h2 class="accordion-header" id="headingUploadLetter">
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#uploadLetter" aria-expanded="true">
@@ -173,36 +173,36 @@
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
 
-                            {{-- Show existing file if available --}}
-                            @if(!empty($booking->upload_letter_path))
+                            
+                            <?php if(!empty($booking->upload_letter_path)): ?>
                                 
                                 <label class="form-label">Current Uploaded Letter:</label>
 
-                                {{-- If it is an image --}}
-                                @if(Str::endsWith($booking->upload_letter_path, ['jpg','jpeg','png','gif','webp']))
-                                    <img src="{{ $booking->upload_letter_path }}" 
+                                
+                                <?php if(Str::endsWith($booking->upload_letter_path, ['jpg','jpeg','png','gif','webp'])): ?>
+                                    <img src="<?php echo e($booking->upload_letter_path); ?>" 
                                         alt="Uploaded Letter" 
                                         class="img-fluid mb-2 border p-1" 
                                         style="max-height: 200px;">
-                                @endif
+                                <?php endif; ?>
 
-                                {{-- If it is a PDF --}}
-                                @if(Str::endsWith($booking->upload_letter_path, ['pdf']))
-                                    <embed src="{{ $booking->upload_letter_path }}" 
+                                
+                                <?php if(Str::endsWith($booking->upload_letter_path, ['pdf'])): ?>
+                                    <embed src="<?php echo e($booking->upload_letter_path); ?>" 
                                         type="application/pdf" 
                                         class="w-100 mb-2" 
                                         style="height: 250px;">
-                                @endif
+                                <?php endif; ?>
 
                                 <div class="mb-3">
-                                    <a href="{{ $booking->upload_letter_path }}" target="_blank" class="btn btn-sm btn-primary">
+                                    <a href="<?php echo e($booking->upload_letter_path); ?>" target="_blank" class="btn btn-sm btn-primary">
                                         View / Download
                                     </a>
                                 </div>
 
-                            @endif
+                            <?php endif; ?>
 
-                            {{-- Upload new file --}}
+                            
                             <label class="form-label">Upload New Letter (optional):</label>
                             <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf">
                             <small class="text-muted">Leave empty if you don't want to replace the current file.</small>
@@ -210,7 +210,7 @@
                     </div>
                 </div>
 
-                {{-- Items Section --}}
+                
                 <div class="accordion-item border mb-4">
                     <h2 class="accordion-header" id="headingDataFields">
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#dataFields">
@@ -220,23 +220,23 @@
                     <div id="dataFields" class="accordion-collapse collapse show">
                         <div class="accordion-body border-top">
                             <div id="itemsContainer">
-                                @foreach( $booking->items->toArray() as $index => $item)
+                                <?php $__currentLoopData = $booking->items->toArray(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <input type="hidden"
-       name="booking_items[{{ $index }}][id]"
-       value="{{ $item['id'] ?? '' }}">
+       name="booking_items[<?php echo e($index); ?>][id]"
+       value="<?php echo e($item['id'] ?? ''); ?>">
                                     <div class="item-group border p-3 mb-3 rounded">
                                         <div class="row g-3">
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Sample Description *</label>
-                                                <input type="text" name="booking_items[{{ $index }}][sample_description]" class="form-control" value="{{ $item['sample_description'] ?? '' }}" required>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][sample_description]" class="form-control" value="<?php echo e($item['sample_description'] ?? ''); ?>" required>
                                             </div>
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Particulars *</label>
-                                                <input type="text" name="booking_items[{{ $index }}][particulars]" class="form-control" value="{{ $item['particulars'] ?? '' }}" required>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][particulars]" class="form-control" value="<?php echo e($item['particulars'] ?? ''); ?>" required>
                                             </div>
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Job Order No *</label>
-                                                <input type="text" name="booking_items[{{ $index }}][job_order_no]" class="form-control job_order_no" value="{{ $item['job_order_no'] ?? '' }}" required>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][job_order_no]" class="form-control job_order_no" value="<?php echo e($item['job_order_no'] ?? ''); ?>" required>
                                                 <div class="dropdown-menu w-100 jobOrderList overflow-auto"></div>
                                             </div> 
                                             <div class="col-sm-3 col-12">
@@ -244,8 +244,8 @@
                                                                 <input 
                                                                     type="date" 
                                                                     class="form-control" 
-                                                                    name="booking_items[{{ $index }}][job_order_date]" 
-                                                                    value="{{ !empty($item['job_order_date']) ? \Carbon\Carbon::parse($item['job_order_date'])->format('Y-m-d') : '' }}"
+                                                                    name="booking_items[<?php echo e($index); ?>][job_order_date]" 
+                                                                    value="<?php echo e(!empty($item['job_order_date']) ? \Carbon\Carbon::parse($item['job_order_date'])->format('Y-m-d') : ''); ?>"
 
                                                                     required
                                                                 >
@@ -253,26 +253,26 @@
                                             </div>
                                             <div class="col-lg-2 col-sm-6 col-12">
                                                 <label class="form-label">Amount *</label>
-                                                <input type="text" name="booking_items[{{ $index }}][amount]" class="form-control" value="{{ $item['amount'] ?? '' }}" required>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][amount]" class="form-control" value="<?php echo e($item['amount'] ?? ''); ?>" required>
                                             </div>
                                             <div class="col-lg-2 col-sm-6 col-12">
                                                 <label class="form-label">Sample Quality *</label>
-                                                <input type="text" name="booking_items[{{ $index }}][sample_quality]" class="form-control" value="{{ $item['sample_quality'] ?? '' }}" required>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][sample_quality]" class="form-control" value="<?php echo e($item['sample_quality'] ?? ''); ?>" required>
                                             </div>
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Lab Analysis *</label>
-                                                <input type="text" name="booking_items[{{ $index }}][lab_analysis_code]" class="form-control lab_analysis_code" value="{{ $item['lab_analysis_code'] ?? '' }}" required>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][lab_analysis_code]" class="form-control lab_analysis_code" value="<?php echo e($item['lab_analysis_code'] ?? ''); ?>" required>
                                                 <div class="dropdown-menu w-100 labAnalysisList overflow-auto"></div>
                                             </div>
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Lab Expected Date *</label>
-                                                <input type="date" name="booking_items[{{ $index }}][lab_expected_date]" class="form-control" 
-                                                    value="{{ !empty($item['lab_expected_date']) ? \Carbon\Carbon::parse($item['lab_expected_date'])->format('Y-m-d') : '' }}" required>
+                                                <input type="date" name="booking_items[<?php echo e($index); ?>][lab_expected_date]" class="form-control" 
+                                                    value="<?php echo e(!empty($item['lab_expected_date']) ? \Carbon\Carbon::parse($item['lab_expected_date'])->format('Y-m-d') : ''); ?>" required>
                                             </div>
                                         </div>
-                                        <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="{{ $index == 0 ? 'display:none;' : '' }}">Remove</button>
+                                        <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="<?php echo e($index == 0 ? 'display:none;' : ''); ?>">Remove</button>
                                     </div>
-                                @endforeach
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
 
                             <div class="d-flex justify-content-end mt-3">
@@ -280,13 +280,13 @@
                                     <i class="fas fa-plus me-1"></i> Add Items
                                 </button>
                             </div>
-                            <span id="totalItems" class="float-end mt-2 mb-2">Total Items: {{ count(old('booking_items', $booking->items)) }}</span>
+                            <span id="totalItems" class="float-end mt-2 mb-2">Total Items: <?php echo e(count(old('booking_items', $booking->items))); ?></span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            {{-- Submit --}}
+            
             <div class="d-flex align-items-center justify-content-end mb-4 mt-4">
                 <button type="button" class="btn btn-secondary me-2">Cancel</button>
                 <button type="submit" class="btn btn-primary">Submit Data</button>
@@ -363,4 +363,6 @@ $(document).ready(function () {
 </script>
 
 
-@endsection
+<?php $__env->stopSection(); ?>
+
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/Bookings/update.blade.php ENDPATH**/ ?>

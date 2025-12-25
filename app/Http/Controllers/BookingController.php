@@ -94,7 +94,8 @@ class BookingController extends Controller
 
             $booking = DB::transaction(function () use ($request, $creatorId, $creatorType) {
                 
-                
+                $department = Department::find($request->department_id);
+ 
                 $bookingData = $request->only([
                     'client_name',
                     'client_address',
@@ -111,6 +112,9 @@ class BookingController extends Controller
                     'payment_option',  
                     'm_s', 
                 ]);
+                if ($department && strtolower($department->name) === 'bis') {
+                    $bookingData['sample_code'] = $request->sample_code;
+                }
 
                 $bookingData['created_by_id']   = $creatorId;
                 $bookingData['created_by_type'] = $creatorType;
@@ -185,6 +189,8 @@ class BookingController extends Controller
                     abort(403, 'Unauthorized');
                 }
 
+                $department = Department::find($request->department_id);
+
                 // Update booking main info
                 $bookingData = $request->only([
                     'client_name',
@@ -202,6 +208,10 @@ class BookingController extends Controller
                     'payment_option', 
                     'm_s', 
                 ]);
+                
+                if ($department && strtolower($department->name) === 'bis') {
+                    $bookingData['sample_code'] = $request->sample_code;
+                }
 
                 $bookingData['created_by_id']   = $creatorId;
                 $bookingData['created_by_type'] = $creatorType;
