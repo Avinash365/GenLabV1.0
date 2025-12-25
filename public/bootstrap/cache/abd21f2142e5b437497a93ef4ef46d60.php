@@ -119,16 +119,17 @@
 
     <?php if(isset($include_header) && $include_header == 2): ?>
      <div align="center">
-            <table style="width: 100%; margin-bottom:20px; border: 1px solid #000; border-collapse: collapse;">
+            <table style="width: 100%; margin-left: -2.18487%; margin-bottom:20px; border: 1px solid #000; border-collapse: collapse;">
              <tbody>   
             <tr>
                     <td style="width: 50%; vertical-align: top; padding: 12px 15px; border-right: 2px solid #000;">
                         <p style="margin: 4px 0; font-weight: bold;">Issued to: <span
-                                style="font-weight: normal;"><?php echo nl2br(e($issued_to)); ?></span></p>
+                                style="font-weight: normal;"></span></p>
                         <p style="margin: 4px 0; font-weight: bold;">
                             QR Code Number:
-                            <span style="font-weight: normal;">100000843376</span>
+                            <span style="font-weight: normal;"><?php echo e($sample_code ?? "455454545445"); ?></span>
                         </p>
+                        <span><?php echo nl2br(e($issued_to ?? '')); ?></span>
                     </td>
 
                     <td style="width: 50%; vertical-align: top; padding: 12px 15px;">

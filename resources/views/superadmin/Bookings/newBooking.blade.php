@@ -26,7 +26,7 @@
                 <h4 class="fw-bold">Create Booking</h4>
                 <h6>New Booking</h6>
             </div>
-        </div>
+        </div>  
         <ul class="table-top-head">
             <li><a data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh"><i class="ti ti-refresh"></i></a></li>
             <li><a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a></li>
@@ -114,7 +114,7 @@
                                 </div>
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Department<span class="text-danger">*</span></label>
-                                    <select class="form-select" name="department_id" required>
+                                    <select class="form-select" name="department_id" id="departmentSelect" required>
                                         <option value="">Select</option>
                                         @foreach($departments as $department)
                                             <option value="{{ $department->id }}">{{ $department->name }}</option>
@@ -140,6 +140,10 @@
                                     <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="{{ old('m_s') }}">
                                 </div> 
                             </div>
+                            <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none" id="misField">
+                                <label class="form-label">Sample Code<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="sample_code" placeholder="Enter MIS code">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -152,7 +156,7 @@
                     </h2>
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
-                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" required>
+                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" >
                         </div>
                     </div>
                 </div>
@@ -505,6 +509,21 @@
 
     });
 </script>
+<script>
+$(document).ready(function () {
 
+    $('#departmentSelect').on('change', function () {
+        let depName = $(this).find(':selected').text().trim().toLowerCase();
+
+        if (depName === 'bis') {
+            $('#misField').removeClass('d-none');
+        } else {
+            $('#misField').addClass('d-none');
+            $('#misField input').val('');
+        }
+    });
+
+});
+</script>
 
 @endsection

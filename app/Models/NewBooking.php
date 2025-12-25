@@ -27,6 +27,7 @@ class NewBooking extends Model
         'contact_email',
         'name_of_work', 
         'department_id', 
+        'sample_code',
         'hold_status',
         'payment_option', 
         'upload_letter_path', 
