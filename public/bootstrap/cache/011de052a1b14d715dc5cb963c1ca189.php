@@ -322,6 +322,9 @@
                                             Employees Salary
                                         </a>
                                     </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.accounts.cleared_expenses')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.cleared_expenses') ? 'active' : ''); ?>">Cleared Expenses</a>
+                                    </li>
                                 </ul>
                             </li> 
                         <?php endif; ?>   
