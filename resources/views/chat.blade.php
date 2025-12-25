@@ -12,7 +12,7 @@
 @push('styles')
 <style>
     /* Chat layout adjustments to ensure scrolling works with the new theme */
-    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height:100vh; }
+    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height:87vh; }
     .sidebar-group { flex: 0 0 360px; max-width: 360px; display: flex; flex-direction: column; }
     .sidebar-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sidebar-body { flex: 1; overflow-y: auto; }
