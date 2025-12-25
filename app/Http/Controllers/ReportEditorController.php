@@ -159,8 +159,6 @@ class ReportEditorController extends Controller
 
     public function generateReportPDF(Request $request)
     {      
-        // dd($request->all()); 
-        // exit; 
        
         $request->validate([
             'report_no' => 'required|string|max:255',
@@ -449,6 +447,9 @@ class ReportEditorController extends Controller
 
     public function livePreview(Request $request)
     {
+        // dd($request->all()); 
+        // exit; 
+
         $request->validate([
             'content' => 'required|string',
         ]);
@@ -470,7 +471,7 @@ class ReportEditorController extends Controller
 
         // Generate PDF using your existing service
         $pdfService = new ReportPdfGenerationService();
-
+      
         $headerData = [
             'booking_item_id' => $request->input('booking_item_id') ?? 1,
             'report_no' => $request->input('report_no') ?? "",

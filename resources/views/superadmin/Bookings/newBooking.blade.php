@@ -83,7 +83,6 @@
                                             <small class="text-danger"></small>
                                         @endif
                                 </div>
-
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="report_issue_to" value="{{ old('report_issue_to') }}" placeholder="Enter person/team to report issue to" required >

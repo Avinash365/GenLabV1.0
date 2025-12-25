@@ -1,9 +1,7 @@
-@extends('superadmin.layouts.app')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
     <div class="container mt-4">
 
-        {{-- Top bar --}}
+        
         <div class="d-flex justify-content-between align-items-center mb-3">
             <h4>Generate A Report</h4>
             <button class="btn btn-success" type="button" data-bs-toggle="offcanvas" data-bs-target="#reportList"
@@ -12,128 +10,129 @@
             </button>
         </div>
 
-        {{-- Flash Messages --}}
-        @if(session('success'))
-            <div class="alert alert-success">{{ session('success') }}</div>
-        @endif
+        
+        <?php if(session('success')): ?>
+            <div class="alert alert-success"><?php echo e(session('success')); ?></div>
+        <?php endif; ?>
 
-        @if(session('error'))
-            <div class="alert alert-danger">{{ session('error') }}</div>
-        @endif
+        <?php if(session('error')): ?>
+            <div class="alert alert-danger"><?php echo e(session('error')); ?></div>
+        <?php endif; ?>
 
-        @if($errors->any())
+        <?php if($errors->any()): ?>
             <div class="alert alert-danger">
                 <ul class="mb-0">
-                    @foreach($errors->all() as $error)
-                        <li>{{ $error }}</li>
-                    @endforeach
+                    <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <li><?php echo e($error); ?></li>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </ul>
             </div>
-        @endif
+        <?php endif; ?>
 
-        {{-- Main Form --}}
+        
         <form id="editorForm" method="POST">
-            @csrf
+            <?php echo csrf_field(); ?>
             <input type="hidden" name="editing_report_id" id="editing_report_id"
-                value="{{ old('editing_report_id', $assignedReport->id ?? '') }}">
-            <input type="hidden" name="booking_item_id" value="{{ $item->id }}">
-            <input type="hidden" name="booking_id" value="{{ $booking->id ?? '' }}">
-            <input type="hidden" name="m_s" value="{{ $booking->m_s ?? '' }}">
+                value="<?php echo e(old('editing_report_id', $assignedReport->id ?? '')); ?>">
+            <input type="hidden" name="booking_item_id" value="<?php echo e($item->id); ?>">
+            <input type="hidden" name="booking_id" value="<?php echo e($booking->id ?? ''); ?>">
+            <input type="hidden" name="m_s" value="<?php echo e($booking->m_s ?? ''); ?>">
 
-            {{-- Row 1: Report No & ULR No --}}
+            
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="report_no" class="form-label">REPORT NO:</label>
                     <input type="text" name="report_no" id="report_no" class="form-control"
-                        value="{{ old('report_no', $item->job_order_no) }}" required>
+                        value="<?php echo e(old('report_no', $item->job_order_no)); ?>" required>
                 </div>
                 <div class="col-md-6">
                     <label for="ulr_no" class="form-label">ULR No:</label>
                     <input type="text" name="ulr_no" id="ulr_no" class="form-control"
-                        value="{{ old('ulr_no', $pivotRecord->ult_r_no ?? '') }}" required>
+                        value="<?php echo e(old('ulr_no', $pivotRecord->ult_r_no ?? '')); ?>" required>
                 </div>
             </div>
 
-            {{-- Row 2: Issued To & Dates --}}
+            
             <div class="row mb-3">
                 <div class="col-md-3">
                     <label for="issued_to" class="form-label">Issued To:</label>
                     <textarea name="issued_to" id="issued_to" class="form-control" rows="2"
-                        required>{{ old('issued_to', $booking->report_issue_to ?? '') }}</textarea>
+                        required><?php echo e(old('issued_to', $booking->report_issue_to ?? '')); ?></textarea>
                 </div>
                 <div class="col-md-3">
                     <label for="name_of_work" class="form-label">Name of Work:</label>
                     <textarea name="name_of_work" id="name_of_work" class="form-control" rows="2"
-                        required>{{ old('name_of_work', $booking->name_of_work ?? '') }}</textarea>
+                        required><?php echo e(old('name_of_work', $booking->name_of_work ?? '')); ?></textarea>
                 </div>
                 <div class="col-md-3">
                     <label for="date_of_receipt" class="form-label">Date of Receipt:</label>
                     <input type="date" name="date_of_receipt" id="date_of_receipt" class="form-control"
-                        value="{{ old('date_of_receipt', isset($pivotRecord) && $pivotRecord->date_of_receipt ? \Carbon\Carbon::parse($pivotRecord->date_of_receipt)->format('Y-m-d') : '') }}"
+                        value="<?php echo e(old('date_of_receipt', isset($pivotRecord) && $pivotRecord->date_of_receipt ? \Carbon\Carbon::parse($pivotRecord->date_of_receipt)->format('Y-m-d') : '')); ?>"
                         required>
                 </div>
                 <div class="col-md-3">
                     <label for="another_date" class="form-label">Date of Start of Analysis:</label>
                     <input type="date" name="date_of_start_analysis" id="another_date" class="form-control"
-                        value="{{ old('date_of_start_analysis', isset($pivotRecord) && $pivotRecord->date_of_start_of_analysis ? \Carbon\Carbon::parse($pivotRecord->date_of_start_of_analysis)->format('Y-m-d') : '') }}"
+                        value="<?php echo e(old('date_of_start_analysis', isset($pivotRecord) && $pivotRecord->date_of_start_of_analysis ? \Carbon\Carbon::parse($pivotRecord->date_of_start_of_analysis)->format('Y-m-d') : '')); ?>"
                         required>
                 </div>
             </div>
 
-            {{-- Row 3: Reference Info --}}
+            
             <div class="row mb-3">
                 <div class="col-md-6">
                     <label for="letter_ref_no" class="form-label">Letter Ref. No.:</label>
                     <input type="text" name="letter_ref_no" id="letter_ref_no" class="form-control"
-                        value="{{ old('letter_ref_no', $booking->reference_no ?? '') }}" required>
+                        value="<?php echo e(old('letter_ref_no', $booking->reference_no ?? '')); ?>" required>
                 </div>
                 <div class="col-md-3">
                     <label for="letter_ref_date" class="form-label">Letter Ref Date:</label>
                     <input type="date" name="letter_ref_date" id="letter_ref_date" class="form-control"
-                        value="{{ old('letter_ref_date', $booking->letter_date ?? '') }}" required>
+                        value="<?php echo e(old('letter_ref_date', $booking->letter_date ?? '')); ?>" required>
                 </div>
                 <div class="col-md-3">
                     <label for="completion_date" class="form-label">Date of Completion of Analysis:</label>
                     <input type="date" name="completion_date" id="completion_date" class="form-control"
-                        value="{{ old('completion_date', isset($pivotRecord) && $pivotRecord->date_of_completion_of_analysis ? \Carbon\Carbon::parse($pivotRecord->date_of_completion_of_analysis)->format('Y-m-d') : '') }}"
+                        value="<?php echo e(old('completion_date', isset($pivotRecord) && $pivotRecord->date_of_completion_of_analysis ? \Carbon\Carbon::parse($pivotRecord->date_of_completion_of_analysis)->format('Y-m-d') : '')); ?>"
                         required>
                 </div>
             </div>
 
-            {{-- Row 4: Sample Description, Issue Date, Work Name --}}
+            
             <div class="row mb-3">
                 <div class="col-md-9">
                     <label for="sample_description" class="form-label">Sample Description:</label>
                     <textarea name="sample_description" id="sample_description" class="form-control" rows="1"
-                        required>{{ old('sample_description', $item->sample_description ?? '') }}</textarea>
+                        required><?php echo e(old('sample_description', $item->sample_description ?? '')); ?></textarea>
                 </div>
                 <div class="col-md-3">
                     <label for="date_of_issue" class="form-label">Date of Issue:</label>
                     <input type="date" name="date_of_issue" id="date_of_issue" class="form-control"
-                        value="{{ old('date_of_issue', isset($pivotRecord) && $pivotRecord->issue_to_date ? \Carbon\Carbon::parse($pivotRecord->issue_to_date)->format('Y-m-d') : '') }}"
+                        value="<?php echo e(old('date_of_issue', isset($pivotRecord) && $pivotRecord->issue_to_date ? \Carbon\Carbon::parse($pivotRecord->issue_to_date)->format('Y-m-d') : '')); ?>"
                         required>
                 </div>
             </div>
 
-            {{-- Editor --}}
+            
             <div class="row">
                 <div class="col-md-12">
                     <textarea id="jodit-editor" name="content" class="form-control" style="height: 400px;">
-                            {{ old(
+                            <?php echo e(old(
         'content',
         (isset($pivotRecord) && $pivotRecord->generated_report_path)
         ? Storage::disk('public')->get($pivotRecord->generated_report_path)
         : (isset($assignedReport) && $assignedReport->file_path ? Storage::disk('public')->get($assignedReport->file_path) : '')
-    ) }}
+    )); ?>
+
                         </textarea>
                 </div>
             </div>
 
-            {{-- Submit Buttons --}}
-            {{-- Submit Buttons --}}
+            
+            
             <div class="d-flex justify-content-end align-items-center gap-3 mt-3 mb-2">
 
-                {{-- Include Header Checkbox --}}
+                
                 <!-- <div class="form-check me-auto">
                             <input class="form-check-input" type="checkbox" name="include_header" id="include_header" value="1" checked>
                             <label class="form-check-label" for="include_header">
@@ -171,33 +170,33 @@
 
 
 
-                {{-- Buttons --}}
-                @if(isset($type) && $type === '28day')
+                
+                <?php if(isset($type) && $type === '28day'): ?>
                     <button type="submit" class="btn btn-primary"
-                        formaction="{{ route('generateReportPDF.generatePdf28Days') }}">
+                        formaction="<?php echo e(route('generateReportPDF.generatePdf28Days')); ?>">
                         Save (28Days)
                     </button>
-                @else
-                    <button type="submit" class="btn btn-primary" formaction="{{ route('generateReportPDF.generatePdf') }}">
+                <?php else: ?>
+                    <button type="submit" class="btn btn-primary" formaction="<?php echo e(route('generateReportPDF.generatePdf')); ?>">
                         Save
                     </button>
-                @endif
-                <button type="submit" class="btn btn-primary" formaction="{{ route('download.qr') }}">QR</button>
+                <?php endif; ?>
+                <button type="submit" class="btn btn-primary" formaction="<?php echo e(route('download.qr')); ?>">QR</button>
 
                 <button type="submit" class="btn btn-primary"
-                    formaction="{{ route('generateReportPDF.generateReportWord') }}">Word Doc</button>
+                    formaction="<?php echo e(route('generateReportPDF.generateReportWord')); ?>">Word Doc</button>
 
-                @if(isset($pivotRecord) && !empty($pivotRecord->pdf_path))
-                    <a href="{{ route('viewPdf', basename($pivotRecord->pdf_path)) }}" target="_blank"
+                <?php if(isset($pivotRecord) && !empty($pivotRecord->pdf_path)): ?>
+                    <a href="<?php echo e(route('viewPdf', basename($pivotRecord->pdf_path))); ?>" target="_blank"
                         class="btn btn-sm btn-info pt-2">
                         View
                     </a>
-                @endif
+                <?php endif; ?>
             </div>
         </form>
     </div>
 
-    {{-- Offcanvas Sidebar --}}
+    
     <div class="offcanvas offcanvas-end" tabindex="-1" id="reportList" aria-labelledby="reportListLabel">
         <div class="offcanvas-header">
             <h5 id="reportListLabel">Saved Reports</h5>
@@ -205,43 +204,43 @@
         </div>
         <div class="offcanvas-body">
 
-            {{-- Search bar --}}
+            
             <div class="mb-3">
                 <input type="text" id="searchReports" class="form-control" placeholder="Search report by name...">
             </div>
 
             <div id="reportListContainer">
-                @forelse($reports as $report)
+                <?php $__empty_1 = true; $__currentLoopData = $reports; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $report): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                     <div
-                        class="card mb-2 report-card {{ (isset($assignedReport) && $assignedReport->id == $report->id) ? 'active-report' : '' }}">
+                        class="card mb-2 report-card <?php echo e((isset($assignedReport) && $assignedReport->id == $report->id) ? 'active-report' : ''); ?>">
                         <div class="card-body d-flex justify-content-between align-items-center gap-2">
-                            <span class="report-title"><strong>{{ $report->report_no }}</strong></span>
+                            <span class="report-title"><strong><?php echo e($report->report_no); ?></strong></span>
                             <div class="d-flex gap-1">
                                 <button type="button" class="btn btn-sm btn-outline-primary load-report"
-                                    data-id="{{ $report->id }}"
-                                    data-content="{{ Storage::disk('public')->get($report->file_path) }}"
-                                    data-name="{{ $report->report_no }}" data-description="{{ $report->report_description }}"
+                                    data-id="<?php echo e($report->id); ?>"
+                                    data-content="<?php echo e(Storage::disk('public')->get($report->file_path)); ?>"
+                                    data-name="<?php echo e($report->report_no); ?>" data-description="<?php echo e($report->report_description); ?>"
                                     title="Load Report">
                                     <i class="fa-solid fa-pen-to-square"></i>
                                 </button>
                             </div>
                         </div>
                     </div>
-                @empty
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                     <p>No reports saved yet.</p>
-                @endforelse
+                <?php endif; ?>
             </div>
         </div>
     </div>
 
-    {{-- Floating PDF Icon --}}
+    
     <div id="pdfIcon" style="position: fixed; bottom: 100px; right: 30px; background-color: #007bff; color: #fff; 
                     width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; 
                     justify-content: center; cursor: grab; z-index: 1050; box-shadow: 0 4px 8px rgba(0,0,0,0.2);">
         <i class="fa-solid fa-file-pdf fa-lg"></i>
     </div>
 
-    {{-- Floating PDF View --}}
+    
     <div id="floatingPdfView" style="display:none; position: fixed; top: 80px; left: 100px; width: 600px; height: 650px; 
                     background: #fff; border: 2px solid #007bff; border-radius: 8px; z-index: 1051; 
                     box-shadow: 0 5px 15px rgba(0,0,0,0.3); overflow: hidden;">
@@ -253,7 +252,7 @@
         <iframe id="floatingPdfFrame" src="" style="width:100%; height:590px; border: none;"></iframe>
     </div>
 
-    {{-- Jodit Editor --}}
+    
     <link href="https://cdn.jsdelivr.net/npm/jodit@latest/es2021/jodit.fat.min.css" rel="stylesheet" />
     <script src="https://cdn.jsdelivr.net/npm/jodit@latest/es2021/jodit.fat.min.js"></script>
 
@@ -312,16 +311,16 @@
                     sample_description: document.getElementById('sample_description').value,
                     date_of_issue: document.getElementById('date_of_issue').value,
                     name_of_work: document.getElementById('name_of_work').value,
-                    m_s: '{{ $booking->m_s ?? "" }}',
+                    m_s: '<?php echo e($booking->m_s ?? ""); ?>',
                     include_header: selectedHeader, 
 
                 };
 
-                fetch("{{ route('reports.livePreview') }}", {
+                fetch("<?php echo e(route('reports.livePreview')); ?>", {
                     method: "POST",
                     headers: {
                         "Content-Type": "application/json",
-                        "X-CSRF-TOKEN": "{{ csrf_token() }}"
+                        "X-CSRF-TOKEN": "<?php echo e(csrf_token()); ?>"
                     },
                     body: JSON.stringify(headerData)
                 })
@@ -439,4 +438,5 @@
     </script>
 
 
-@endsection
+<?php $__env->stopSection(); ?>
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/Reportfrmt/generate.blade.php ENDPATH**/ ?>

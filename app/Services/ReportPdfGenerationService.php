@@ -29,11 +29,15 @@ class ReportPdfGenerationService
         // Calculate dynamic top margin
         $extraMargin = 0;
         if (
-            (!isset($headerData['include_header']) || $headerData['include_header'] == 1)
+            (!isset($headerData['include_header']) || $headerData['include_header'] == 1 || $headerData['include_header'] == 2)
             && isset($headerData['line_breaks']['total_n'])
         ) {
             $pix = 5;
             $extraMargin = 50 + $pix * (int) $headerData['line_breaks']['total_n'];
+        } 
+
+        if($headerData['include_header'] == 2){
+            $extraMargin = $extraMargin - 10; 
         }
 
         // Create new Mpdf instance
