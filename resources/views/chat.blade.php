@@ -12,7 +12,7 @@
 @push('styles')
 <style>
     /* Chat layout adjustments to ensure scrolling works with the new theme */
-    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height: calc(100vh - 90px); }
+    .chat-wrapper { display: flex; gap: 10px; align-items: stretch; height:87vh;}
     .sidebar-group { flex: 0 0 360px; max-width: 360px; display: flex; flex-direction: column; }
     .sidebar-content { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
     .sidebar-body { flex: 1; overflow-y: auto; }
@@ -734,6 +734,23 @@
 
     async function loadMessages(userId, markRead = false) {
         if (!userId) return;
+        // If user has scrolled up (viewing earlier messages), skip polling reloads
+        try {
+            const containerCheck = document.getElementById('messagesContainer');
+            const wrapCheck = containerCheck && containerCheck.parentElement ? containerCheck.parentElement : null;
+            const clientH = wrapCheck ? wrapCheck.clientHeight : 0;
+            const prevH = wrapCheck ? wrapCheck.scrollHeight : 0;
+            const prevTop = wrapCheck ? wrapCheck.scrollTop : 0;
+            const distFromBottom = prevH - clientH - prevTop;
+            const nearB = distFromBottom <= 100;
+            const forced = !!(window._forceScrollToBottom);
+            if (!markRead && !nearB && !forced) return; // user is reading history; avoid auto-reload
+        } catch(e){}
+        // prevent concurrent loads which can race and cause scroll jumps
+        try {
+            if (window._loadingMessages) return;
+            window._loadingMessages = true;
+        } catch(e){}
         try {
             let url = '/chat/messages/' + encodeURIComponent(userId);
             if (markRead) url += '?mark_read=1';
@@ -796,9 +813,10 @@
                 } catch (re) { /* ignore reapply errors */ }
             });
 
-            // If user was near bottom, auto-scroll to bottom. Otherwise preserve their scroll position.
+            // If user was near bottom, auto-scroll to bottom. Also honor a one-time force flag when user opened a contact.
             try {
-                if (nearBottom) {
+                const forceScroll = !!(window._forceScrollToBottom);
+                if (nearBottom || forceScroll) {
                     containerWrap.scrollTop = containerWrap.scrollHeight;
                 } else {
                     // preserve approximate viewport position by shifting by the change in height
@@ -806,6 +824,27 @@
                     const delta = newScrollHeight - prevScrollHeight;
                     containerWrap.scrollTop = Math.max(0, prevScrollTop + delta);
                 }
+                try { if (window._forceScrollToBottom) window._forceScrollToBottom = false; } catch(e){}
+                // If we forced a scroll when opening a contact, re-apply after layout settles
+                try {
+                    if (forceScroll) {
+                        setTimeout(() => {
+                            try { containerWrap.scrollTop = containerWrap.scrollHeight; } catch(e){}
+                        }, 220);
+                        // also re-scroll when media finishes loading to avoid image/video layout jumps
+                        try {
+                            const media = container.querySelectorAll('img, video');
+                            media.forEach(m => {
+                                try {
+                                    const ev = m.tagName.toLowerCase() === 'video' ? 'loadedmetadata' : 'load';
+                                    m.addEventListener(ev, () => {
+                                        try { containerWrap.scrollTop = containerWrap.scrollHeight; } catch(e){}
+                                    });
+                                } catch(e){}
+                            });
+                        } catch(e){}
+                    }
+                } catch(e){}
             } catch (err) { /* ignore scroll errors */ }
 
                 // initialize audio controls for newly appended messages
@@ -836,6 +875,9 @@
             // Refresh sidebar contacts so unread counts update immediately after loading messages
             try { if (typeof refreshContacts === 'function') refreshContacts(); } catch(e) {}
         } catch (e) { console.error("Error loading messages", e); }
+        finally {
+            try { window._loadingMessages = false; } catch(e){}
+        }
     }
 
     document.addEventListener('DOMContentLoaded', function(){
@@ -879,6 +921,8 @@
             document.getElementById('chatHeaderAvatar').src = avatar;
             document.getElementById('chatStatus').innerText = 'Online';
 
+            // ensure we scroll to bottom when user explicitly opens a contact
+            try { window._forceScrollToBottom = true; } catch(e){}
             loadMessages(userId, true);
             try { if (window.updateBookingFileCounts) setTimeout(window.updateBookingFileCounts, 250); } catch(e){}
             // show booking actions only for booking group: detect by data attribute or name contains 'booking'
@@ -1743,6 +1787,56 @@
                         });
                     } catch (ex) { console.error('ChatMessageRead handler error', ex); }
                 });
+            // Reaction updates: listen for server broadcasts and update UI live
+            Echo.private(`chat.user.${currentUserType}.${currentUserId}`)
+                .listen('.ChatMessageReacted', (payload) => {
+                    try {
+                        // payload contains: message_id, reactions (map emoji=>count), reaction_users (map emoji=>[userKey])
+                        const mid = payload && (payload.message_id || payload.messageId || payload.id) ? (payload.message_id || payload.messageId || payload.id) : null;
+                        if (!mid) return;
+
+                        const counts = payload.reactions || {};
+                        const usersMap = payload.reaction_users || {};
+                        const currentKey = (currentUserType || '') + ':' + (currentUserId || '');
+
+                        // Remove any existing reaction buttons that are no longer present
+                        try {
+                            const sel = document.querySelector(`[data-message-id="${mid}"]`);
+                            if (sel) {
+                                const bar = sel.querySelector('.reaction-bar');
+                                if (bar) {
+                                    // remove buttons for emojis not present in counts
+                                    Array.from(bar.querySelectorAll('.reaction-btn')).forEach(b => {
+                                        try {
+                                            const em = b.getAttribute('data-emoji');
+                                            if (!(em in counts)) b.remove();
+                                        } catch(e){}
+                                    });
+                                }
+                            }
+                        } catch(e){}
+
+                        // Upsert buttons from counts map
+                        Object.keys(counts).forEach(emoji => {
+                            try {
+                                const c = counts[emoji];
+                                const users = usersMap[emoji] || [];
+                                const youReacted = Array.isArray(users) ? users.indexOf(currentKey) !== -1 : false;
+                                upsertReactionUI(mid, emoji, { count: Number(c), you_reacted: !!youReacted });
+                            } catch(e){}
+                        });
+
+                        // If server indicates that selected_emoji was removed for this user, ensure local state cleared
+                        try {
+                            if (payload.selected_emoji === null || payload.acted === false) {
+                                // If acted === false and userKey not present anywhere, clear local map
+                                let found = false;
+                                Object.keys(usersMap).forEach(k => { if (Array.isArray(usersMap[k]) && usersMap[k].indexOf(currentKey) !== -1) found = true; });
+                                if (!found) try { delete window.chatLocalReactions[String(mid)]; } catch(e){}
+                            }
+                        } catch(e){}
+                    } catch (ex) { console.error('ChatMessageReacted handler error', ex); }
+                });
         }
     } catch (er) { /* ignore */ }
 
@@ -1994,36 +2088,66 @@
         function sendReaction(messageId, emoji){
             try {
                 if (!messageId) return;
-                // if user already reacted with same emoji on this message, do nothing
-                if ((window.chatLocalReactions[String(messageId)] || null) && window.chatLocalReactions[String(messageId)] === emoji) return;
-                const prev = (window.chatLocalReactions[String(messageId)] || null);
-                // if user has reacted with a different emoji, remove previous one from UI optimistically
-                if (prev && prev !== emoji) {
-                    try { removeReactionFromUI(messageId, prev); } catch(e){}
+                const key = String(messageId);
+                const current = (window.chatLocalReactions[key] || null);
+                const isUnreact = current === emoji; // clicking same emoji should remove
+
+                // optimistic UI update
+                if (isUnreact) {
+                    try { removeReactionFromUI(messageId, emoji); } catch(e){}
+                    try { delete window.chatLocalReactions[key]; } catch(e){}
+                } else {
+                    // if previously reacted with different emoji, remove that first
+                    if (current && current !== emoji) {
+                        try { removeReactionFromUI(messageId, current); } catch(e){}
+                    }
+                    // mark desired emoji locally so UI reflects choice immediately
+                    try { window.chatLocalReactions[key] = emoji; } catch(e){}
+                    // optimistically add UI
+                    try { upsertReactionUI(messageId, emoji, { you_reacted: true }); } catch(e){}
                 }
-                // mark desired emoji locally (prevents duplicate clicks)
-                try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
 
                 const token = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
                 fetch('/chat/messages/reaction', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': token, 'Accept': 'application/json' },
-                    body: JSON.stringify({ message_id: messageId, emoji: emoji })
+                    body: JSON.stringify({ message_id: messageId, emoji: emoji, remove: !!isUnreact })
                 }).then(r => r.json()).then(json => {
                     try {
-                        // server acknowledged - update UI using server payload when available
-                        upsertReactionUI(messageId, emoji, json || {});
-                        // ensure local map reflects acknowledged emoji
-                        try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
-                    } catch(e){
-                        console.warn('upsert after send error', e);
-                    }
+                        // server payload may include authoritative counts and whether user still reacted
+                        const payload = json || {};
+                        const acted = (typeof payload.acted === 'boolean') ? payload.acted : null;
+                        const sel = (payload.selected_emoji !== undefined) ? payload.selected_emoji : (payload.selectedEmoji !== undefined ? payload.selectedEmoji : null);
+                        const you_reacted = (payload.you_reacted === true || payload.user_reacted === true) ? true : (payload.you_reacted === false ? false : null);
+
+                        // Interpret server signals indicating the reaction was removed
+                        const serverSaysRemoved = (acted === false) || (sel === null) || (you_reacted === false) || (payload.removed === true);
+                        if (serverSaysRemoved) {
+                            try { removeReactionFromUI(messageId, emoji); } catch(e){}
+                            try { delete window.chatLocalReactions[key]; } catch(e){}
+                        } else {
+                            // Only upsert if server provides counts or explicitly indicates you reacted
+                            if (payload && (typeof payload.count === 'number' || payload.you_reacted === true || (payload.reactions && payload.reactions[emoji] !== undefined))) {
+                                try { upsertReactionUI(messageId, emoji, payload); } catch(e){}
+                                try { if (payload.you_reacted) window.chatLocalReactions[key] = emoji; } catch(e){}
+                            } else {
+                                // no authoritative data: avoid creating a phantom button; keep optimistic state
+                            }
+                        }
+                    } catch(e){ console.warn('upsert after send error', e); }
                 }).catch(err => {
                     console.warn('Reaction failed', err);
-                    // restore previous reaction on error
+                    // revert optimistic change on error
                     try {
-                        if (prev) upsertReactionUI(messageId, prev, {});
-                        else try { delete window.chatLocalReactions[String(messageId)]; } catch(e){}
+                        if (isUnreact) {
+                            // we attempted to remove but server failed; restore UI
+                            if (current) upsertReactionUI(messageId, current, { you_reacted: true });
+                            try { window.chatLocalReactions[key] = current; } catch(e){}
+                        } else {
+                            // we attempted to add; remove optimistic UI
+                            removeReactionFromUI(messageId, emoji);
+                            try { if (current) window.chatLocalReactions[key] = current; else delete window.chatLocalReactions[key]; } catch(e){}
+                        }
                     } catch(e){}
                 });
             } catch (e) { console.warn('sendReaction error', e); }
@@ -2037,57 +2161,80 @@
                 if (!bar) {
                     bar = document.createElement('div');
                     bar.className = 'reaction-bar';
-                    // place bar inside the actual message bubble (.message-content) so it appears on the corner
                     const contentContainer = sel.querySelector('.message-content') || sel.querySelector('.chat-content') || sel;
                     try { contentContainer.style.position = contentContainer.style.position || 'relative'; } catch(e){}
                     contentContainer.appendChild(bar);
                     try { contentContainer.classList.add('has-reactions'); } catch(e){}
                 }
+
                 // find existing reaction button for this emoji
                 let btn = bar.querySelector(`.reaction-btn[data-emoji="${emoji}"]`);
+                const serverCount = (payload && typeof payload.count === 'number') ? Number(payload.count) : null;
+                // Determine whether _this user_ reacted based only on server payload or explicit reaction_users map.
+                let youReacted = false;
+                try {
+                    if (payload && (payload.you_reacted === true || payload.user_reacted === true)) youReacted = true;
+                    else if (payload && payload.reaction_users && Array.isArray(payload.reaction_users[emoji])) {
+                        const currentKey = (currentUserType || '') + ':' + (currentUserId || '');
+                        youReacted = payload.reaction_users[emoji].indexOf(currentKey) !== -1;
+                    }
+                } catch(e) { youReacted = false; }
+
                 if (btn) {
-                    const cnt = btn.querySelector('.count');
-                    // determine new count (prefer server-provided count)
-                    let newCount = null;
-                    if (payload && typeof payload.count === 'number') newCount = Number(payload.count);
-                    else {
-                        // if numeric span exists use it, otherwise assume 1 and increment
-                        const cur = cnt ? Number(cnt.innerText || '0') : 1;
-                        newCount = cur + 1;
-                    }
-                    if (newCount <= 0) {
-                        btn.remove();
-                    } else if (newCount === 1) {
-                        // ensure no numeric span for single reaction
-                        if (cnt) cnt.remove();
-                    } else {
-                        // show numeric span
-                        if (cnt) cnt.innerText = String(newCount);
-                        else {
-                            const span = document.createElement('span');
-                            span.className = 'count';
-                            span.innerText = String(newCount);
-                            btn.appendChild(span);
+                    // update count display
+                    let cnt = btn.querySelector('.count');
+                    if (serverCount !== null) {
+                        if (serverCount <= 0) {
+                            btn.remove();
+                            btn = null;
+                        } else if (serverCount === 1) {
+                            if (cnt) cnt.remove();
+                        } else {
+                            if (cnt) cnt.innerText = String(serverCount);
+                            else {
+                                const span = document.createElement('span');
+                                span.className = 'count';
+                                span.innerText = String(serverCount);
+                                btn.appendChild(span);
+                            }
                         }
+                    } else {
+                        // no server count provided; ensure at least the button exists
                     }
-                } else {
+                }
+
+                if (!btn) {
+                    // Only create a new button if server provided a count or explicitly indicated you reacted (optimistic add handled elsewhere)
+                    if (serverCount === null && !(payload && payload.you_reacted === true)) {
+                        return; // don't create a phantom button without server confirmation
+                    }
                     const b = document.createElement('button');
                     b.type = 'button';
                     b.className = 'reaction-btn';
                     b.setAttribute('data-emoji', emoji);
-                    const initialCount = (payload && typeof payload.count === 'number') ? Number(payload.count) : 1;
-                    const countHtml = initialCount > 1 ? ` <span class="count">${initialCount}</span>` : '';
-                    b.innerHTML = `<span class="emoji">${emoji}</span>${countHtml}`;
-                    b.addEventListener('click', () => {
-                        // allow user to click the reaction to quickly add again (client-side only)
-                        sendReaction(messageId, emoji);
-                    });
+                    const initialCount = serverCount !== null ? serverCount : (payload && payload.you_reacted ? 1 : 0);
+                    if (initialCount > 1) {
+                        const span = document.createElement('span');
+                        span.className = 'count';
+                        span.innerText = String(initialCount);
+                        b.innerHTML = `<span class="emoji">${emoji}</span> `;
+                        b.appendChild(span);
+                    } else {
+                        b.innerHTML = `<span class="emoji">${emoji}</span>`;
+                    }
+                    b.addEventListener('click', () => { sendReaction(messageId, emoji); });
                     bar.appendChild(b);
+                    btn = b;
                 }
-                // If payload indicates which user reacted and it's this user, store locally
+
+                // mark as you-reacted if applicable
                 try {
-                    if (payload && (payload.you_reacted === true || payload.user_reacted === true)) {
-                        try { window.chatLocalReactions[String(messageId)] = emoji; } catch(e){}
+                    if (youReacted) {
+                        btn.classList.add('you-reacted');
+                        btn.setAttribute('data-you', '1');
+                    } else {
+                        btn.classList.remove('you-reacted');
+                        btn.removeAttribute('data-you');
                     }
                 } catch(e){}
             } catch (e) { console.warn('upsertReactionUI error', e); }

@@ -15,7 +15,7 @@
         content="inventory management, admin dashboard, bootstrap template, invoicing, estimates, business management, responsive admin, POS system">
     <meta name="author" content="Dreams Technologies">
     <meta name="robots" content="index, follow">
-    <title>Dreams POS - Inventory Management & Admin Dashboard Template</title>
+    <title></title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" type="image/x-icon" href="<?php echo e(url('assets/img/favicon.png')); ?>">
