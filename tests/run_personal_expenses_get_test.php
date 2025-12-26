@@ -31,3 +31,29 @@ if (is_object($response) && method_exists($response, 'getContent')) {
 } else {
     echo json_encode($response, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL;
 }
+// --- Fetch checked-in (cleared) items via MarketingExpenseController::checkedInApi
+use App\Http\Controllers\Accounts\MarketingExpenseController;
+
+$req2 = Request::create('/api/superadmin/personal/checked-in', 'GET', [ 'per_page' => 5, 'page' => 1 ]);
+$controller2 = $app->make(\App\Http\Controllers\Accounts\MarketingExpenseController::class);
+try {
+    $response2 = $controller2->checkedInApi($req2);
+} catch (\Throwable $e) {
+    echo "Exception (checkedInApi): " . $e->getMessage() . PHP_EOL;
+    echo $e->getTraceAsString() . PHP_EOL;
+    exit(1);
+}
+
+if (is_object($response2) && method_exists($response2, 'getContent')) {
+    $status = method_exists($response2, 'getStatusCode') ? $response2->getStatusCode() : 'N/A';
+    $content = $response2->getContent();
+    echo "\nChecked-in HTTP Status: {$status}\n";
+    $decoded = json_decode($content, true);
+    if (json_last_error() === JSON_ERROR_NONE) {
+        echo json_encode($decoded, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+    } else {
+        echo $content . PHP_EOL;
+    }
+} else {
+    echo json_encode($response2, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) . PHP_EOL;
+}

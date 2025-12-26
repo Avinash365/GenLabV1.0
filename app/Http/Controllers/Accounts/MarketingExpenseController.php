@@ -866,6 +866,111 @@ class MarketingExpenseController extends Controller
         ]);
     }
 
+    /**
+     * API: Return paginated checked-in (cleared) items.
+     * Query params: per_page, page, mine (bool), search
+     */
+    public function checkedInApi(Request $request)
+    {
+        try {
+            $records = ClearedExpense::orderByDesc('created_at')->get();
+        } catch (\Throwable $_) {
+            $records = collect();
+        }
+
+        $items = $records->map(function($rec){
+            $path = $rec->path;
+            return [
+                'id' => $rec->id,
+                'path' => $path,
+                'url' => asset('storage/' . $path),
+                'filename' => $rec->filename,
+                'meta' => $rec->meta ?? [],
+                'approver_id' => $rec->approver_id,
+                'approved_total' => (float) ($rec->approved_total ?? 0),
+                'approved_section' => $rec->approved_section,
+                'created_at' => $rec->created_at?->toDateTimeString() ?? ($rec->meta['created_at'] ?? null),
+                'person_name' => $rec->person_name,
+                'person_code' => $rec->person_code,
+            ];
+        })->values();
+
+        $items = $items->map(function($it){
+            $approverName = $it['meta']['approver_name'] ?? null;
+            if (empty($approverName) && !empty($it['approver_id'])){
+                $approver = \App\Models\Admin::find($it['approver_id']) ?? \App\Models\User::find($it['approver_id']);
+                $approverName = $approver?->name ?? null;
+            }
+            $meta = $it['meta'] ?? [];
+            $personNames = $meta['person_names'] ?? [];
+            $displayName = null;
+            if (!empty($meta['hide_from_personal']) || (is_array($personNames) && count($personNames) > 1) || stripos($it['filename'] ?? '', 'Global Expense') !== false) {
+                $displayName = 'Global Expense';
+            } else {
+                $displayName = $meta['person_name'] ?? $it['person_name'] ?? (is_array($personNames) && !empty($personNames[0]) ? $personNames[0] : null);
+            }
+
+            return array_merge($it, [
+                'approver_name' => $approverName,
+                'approved_total' => $it['approved_total'] ?? ($meta['approved_total'] ?? ($meta['total_expenses'] ?? 0)),
+                'approved_section' => $it['approved_section'] ?? ($meta['approved_section'] ?? null),
+                'created_at' => $it['created_at'] ?? ($meta['created_at'] ?? null),
+                'display_name' => $displayName,
+            ]);
+        });
+
+        // search
+        if ($search = $request->input('search')){
+            $term = mb_strtolower($search);
+            $items = $items->filter(function($it) use ($term){
+                $fn = mb_strtolower((string) ($it['filename'] ?? ''));
+                $dn = mb_strtolower((string) ($it['display_name'] ?? ''));
+                $pc = mb_strtolower((string) ($it['person_code'] ?? ''));
+                return str_contains($fn, $term) || str_contains($dn, $term) || str_contains($pc, $term);
+            })->values();
+        }
+
+        // mine filter: restrict to authenticated user's own cleared exports
+        if ($request->boolean('mine')){
+            $user = $request->user();
+            if ($user) {
+                $items = $items->filter(function($it) use ($user){
+                    $meta = $it['meta'] ?? [];
+                    if (!empty($meta['hide_from_personal'])) return false;
+                    $filters = $meta['filters'] ?? [];
+                    $mp = $filters['marketing_person_code'] ?? null;
+                    if ($mp && (string)$mp === (string)$user->user_code) return true;
+                    $personCodes = $meta['person_codes'] ?? [];
+                    $personNames = $meta['person_names'] ?? [];
+                    if (!empty($personCodes) && in_array((string)$user->user_code, array_map('strval', $personCodes), true)) return true;
+                    foreach ($personNames as $pn){ if (!empty($pn) && stripos($pn, $user->name) !== false) return true; }
+                    $personCode = $meta['person_code'] ?? null;
+                    $personName = $meta['person_name'] ?? null;
+                    if ($personCode && (string)$personCode === (string)$user->user_code) return true;
+                    if ($personName && stripos($personName, $user->name) !== false) return true;
+                    $filename = $it['filename'] ?? '';
+                    if ($filename && (stripos($filename, $user->user_code) !== false || stripos($filename, $user->name) !== false)) return true;
+                    return false;
+                })->values();
+            }
+        }
+
+        $perPage = (int) ($request->input('per_page') ?? 15);
+        $page = (int) ($request->input('page') ?? 1);
+        $paginator = new LengthAwarePaginator(
+            $items->forPage($page, $perPage),
+            $items->count(),
+            $perPage,
+            $page,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+
+        return response()->json([
+            'success' => true,
+            'data' => $paginator,
+        ]);
+    }
+
     public function updatePersonal(Request $request, MarketingExpense $expense)
     {
         if($expense->section !== 'personal'){

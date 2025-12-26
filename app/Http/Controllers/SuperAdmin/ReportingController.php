@@ -372,8 +372,22 @@ class ReportingController extends Controller
                 });
             }
             if (!$overdue) {
-                if ($month) { $bookingQuery->whereHas('items', function($qi) use ($month){ $qi->whereMonth('received_at',$month); }); }
-                if ($year) { $bookingQuery->whereHas('items', function($qi) use ($year){ $qi->whereYear('received_at',$year); }); }
+                if ($month) {
+                    $bookingQuery->whereHas('items', function($qi) use ($month){
+                        $qi->where(function($qii) use ($month){
+                            $qii->whereMonth('received_at', $month)
+                                ->orWhereMonth('created_at', $month);
+                        });
+                    });
+                }
+                if ($year) {
+                    $bookingQuery->whereHas('items', function($qi) use ($year){
+                        $qi->where(function($qii) use ($year){
+                            $qii->whereYear('received_at', $year)
+                                ->orWhereYear('created_at', $year);
+                        });
+                    });
+                }
             }
             $bookingQuery->having('pending_items_count','>',0)->latest('id');
             $bookings = $bookingQuery->paginate($perPage)->withQueryString();
@@ -403,8 +417,18 @@ class ReportingController extends Controller
                 });
             }
             if (!$overdue) {
-                if ($month) { $q->whereMonth('received_at', $month); }
-                if ($year) { $q->whereYear('received_at', $year); }
+                if ($month) {
+                    $q->where(function($qq) use ($month){
+                        $qq->whereMonth('received_at', $month)
+                           ->orWhereMonth('created_at', $month);
+                    });
+                }
+                if ($year) {
+                    $q->where(function($qq) use ($year){
+                        $qq->whereYear('received_at', $year)
+                           ->orWhereYear('created_at', $year);
+                    });
+                }
             }
             $q->latest('id');
             $items = $q->paginate($perPage)->withQueryString();
@@ -458,8 +482,18 @@ class ReportingController extends Controller
             });
         }
         if (!$overdue) {
-            if ($month) { $q->whereMonth('received_at', $month); }
-            if ($year) { $q->whereYear('received_at', $year); }
+            if ($month) {
+                $q->where(function($qq) use ($month){
+                    $qq->whereMonth('received_at', $month)
+                       ->orWhereMonth('created_at', $month);
+                });
+            }
+            if ($year) {
+                $q->where(function($qq) use ($year){
+                    $qq->whereYear('received_at', $year)
+                       ->orWhereYear('created_at', $year);
+                });
+            }
         }
         return $q;
     }

@@ -127,6 +127,9 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
 
 });
 
+// Checked-in (Cleared) personal/approved exports listing (paginated)
+Route::middleware(['multi_jwt:api'])->get('superadmin/personal/checked-in', [\App\Http\Controllers\Accounts\MarketingExpenseController::class, 'checkedInApi']);
+
 // Mobile Chat API (user)
 Route::middleware(['multi_jwt:api'])->prefix('chat')->group(function () {
     Route::get('contacts', [\App\Http\Controllers\MobileControllers\ChatController::class, 'contacts']);
