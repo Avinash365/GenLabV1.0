@@ -36,7 +36,7 @@
                     @endif
                     @if(request('month'))<input type="hidden" name="month" value="{{ request('month') }}">@endif
                     @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
-                    @if(request('overdue'))<input type="hidden" name="overdue" value="1">@endif
+                    {{-- overdue hidden input is handled by the form on the right to preserve month/year when toggling --}}
                     @if(request('marketing'))<input type="hidden" name="marketing" value="{{ request('marketing') }}">@endif
                     <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
@@ -61,7 +61,7 @@
                 </div>
             </div>
             <div class="search-set">
-                <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex input-group align-items-center gap-2 flex-wrap">
+                <form id="pendings-filter-form" method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex input-group align-items-center gap-2 flex-wrap">
                     <input type="hidden" name="mode" value="{{ $mode }}">
                     @if(request('department'))
                         <input type="hidden" name="department" value="{{ request('department') }}">
@@ -69,7 +69,7 @@
                     @if(request('marketing'))
                         <input type="hidden" name="marketing" value="{{ request('marketing') }}">
                     @endif
-                    @if(request('overdue'))<input type="hidden" name="overdue" value="1">@endif
+                    <input type="hidden" name="overdue" id="overdueInput" value="{{ request('overdue') ? 1 : '' }}">
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
                         @foreach(range(1,12) as $m)
@@ -313,6 +313,7 @@
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function(){
+    // overdue toggle uses a normal navigation link (server-built URL) to avoid JS submission issues
     const modalId = 'pendingItemsModal';
     if(!document.getElementById(modalId)){
     const modalHtml = `<div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">\n  <div class="modal-dialog modal-lg modal-dialog-scrollable">\n    <div class="modal-content">\n      <div class="modal-header">\n        <h5 class="modal-title">Pending Items</h5>\n        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>\n      </div>\n      <div class="modal-body">\n        <div class="mb-2 small text-muted" id="pending-items-meta"></div>\n        <div class="table-responsive">\n          <table class="table table-sm table-bordered mb-0">\n            <thead class="table-light">\n              <tr><th>#</th><th>Job Order No</th><th>Sample Description</th><th>Sample Quality</th><th>Particulars</th><th>Status</th></tr>\n            </thead>\n            <tbody id="pending-items-body"><tr><td colspan=6 class='text-center text-muted'>No data</td></tr></tbody>\n          </table>\n        </div>\n      </div>\n      <div class="modal-footer">\n        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>\n      </div>\n    </div>\n  </div>\n</div>`;

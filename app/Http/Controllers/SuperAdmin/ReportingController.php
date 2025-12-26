@@ -345,22 +345,46 @@ class ReportingController extends Controller
 
         if ($mode === 'reference') {
             // Aggregate by booking (reference_no) where at least one pending/overdue item
-            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $cutoff) {
+            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $cutoff, $month, $year) {
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
                         ->whereDate('lab_expected_date', '<', $cutoff);
+                    if ($month) { $q->whereMonth('lab_expected_date', $month); }
+                    if ($year) { $q->whereYear('lab_expected_date', $year); }
                 } else {
                     // Pendings are items that do not have an issue date
                     $q->whereNull('issue_date');
+                    if ($month) {
+                        $q->where(function($qq) use ($month){
+                            $qq->whereMonth('received_at', $month)->orWhereMonth('created_at', $month);
+                        });
+                    }
+                    if ($year) {
+                        $q->where(function($qq) use ($year){
+                            $qq->whereYear('received_at', $year)->orWhereYear('created_at', $year);
+                        });
+                    }
                 }
-            }])->with(['items' => function($q) use ($overdue, $cutoff){
+            }])->with(['items' => function($q) use ($overdue, $cutoff, $month, $year){
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
                         ->whereDate('lab_expected_date', '<', $cutoff);
+                    if ($month) { $q->whereMonth('lab_expected_date', $month); }
+                    if ($year) { $q->whereYear('lab_expected_date', $year); }
                 } else {
                     $q->whereNull('issue_date');
+                    if ($month) {
+                        $q->where(function($qq) use ($month){
+                            $qq->whereMonth('received_at', $month)->orWhereMonth('created_at', $month);
+                        });
+                    }
+                    if ($year) {
+                        $q->where(function($qq) use ($year){
+                            $qq->whereYear('received_at', $year)->orWhereYear('created_at', $year);
+                        });
+                    }
                 }
             }]);
             if ($departmentId) { $bookingQuery->where('department_id', $departmentId); }
@@ -371,8 +395,17 @@ class ReportingController extends Controller
                         ->orWhere('reference_no','like',"%{$search}%");
                 });
             }
-            if (!$overdue) {
-                if ($month) {
+            // Apply month/year filters. For overdue mode filter by lab_expected_date,
+            // otherwise filter by received_at OR created_at.
+            if ($month) {
+                if ($overdue) {
+                    $bookingQuery->whereHas('items', function($qi) use ($month, $cutoff){
+                        $qi->whereNull('issue_date')
+                           ->where('lab_expected_date','!=','0000-00-00')
+                           ->whereDate('lab_expected_date','<', $cutoff)
+                           ->whereMonth('lab_expected_date', $month);
+                    });
+                } else {
                     $bookingQuery->whereHas('items', function($qi) use ($month){
                         $qi->where(function($qii) use ($month){
                             $qii->whereMonth('received_at', $month)
@@ -380,7 +413,16 @@ class ReportingController extends Controller
                         });
                     });
                 }
-                if ($year) {
+            }
+            if ($year) {
+                if ($overdue) {
+                    $bookingQuery->whereHas('items', function($qi) use ($year, $cutoff){
+                        $qi->whereNull('issue_date')
+                           ->where('lab_expected_date','!=','0000-00-00')
+                           ->whereDate('lab_expected_date','<', $cutoff)
+                           ->whereYear('lab_expected_date', $year);
+                    });
+                } else {
                     $bookingQuery->whereHas('items', function($qi) use ($year){
                         $qi->where(function($qii) use ($year){
                             $qii->whereYear('received_at', $year)
@@ -399,6 +441,9 @@ class ReportingController extends Controller
                 $q->whereNull('issue_date')
                   ->where('lab_expected_date', '!=', '0000-00-00')
                   ->whereDate('lab_expected_date','<', $cutoff);
+                // When overdue filtering, allow month/year to target lab_expected_date
+                if ($month) { $q->whereMonth('lab_expected_date', $month); }
+                if ($year) { $q->whereYear('lab_expected_date', $year); }
             } else {
                 // Pending items: items without an issue date
                 $q->whereNull('issue_date');
@@ -481,7 +526,11 @@ class ReportingController extends Controller
                    });
             });
         }
-        if (!$overdue) {
+        // Apply month/year filters: when overdue use lab_expected_date, otherwise use received_at OR created_at
+        if ($overdue) {
+            if ($month) { $q->whereMonth('lab_expected_date', $month); }
+            if ($year) { $q->whereYear('lab_expected_date', $year); }
+        } else {
             if ($month) {
                 $q->where(function($qq) use ($month){
                     $qq->whereMonth('received_at', $month)

@@ -35,7 +35,7 @@
                     <?php endif; ?>
                     <?php if(request('month')): ?><input type="hidden" name="month" value="<?php echo e(request('month')); ?>"><?php endif; ?>
                     <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
-                    <?php if(request('overdue')): ?><input type="hidden" name="overdue" value="1"><?php endif; ?>
+                    
                     <?php if(request('marketing')): ?><input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>"><?php endif; ?>
                     <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
@@ -60,7 +60,7 @@
                 </div>
             </div>
             <div class="search-set">
-                <form method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group align-items-center gap-2 flex-wrap">
+                <form id="pendings-filter-form" method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group align-items-center gap-2 flex-wrap">
                     <input type="hidden" name="mode" value="<?php echo e($mode); ?>">
                     <?php if(request('department')): ?>
                         <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
@@ -68,7 +68,7 @@
                     <?php if(request('marketing')): ?>
                         <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
                     <?php endif; ?>
-                    <?php if(request('overdue')): ?><input type="hidden" name="overdue" value="1"><?php endif; ?>
+                    <input type="hidden" name="overdue" id="overdueInput" value="<?php echo e(request('overdue') ? 1 : ''); ?>">
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
                         <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -314,6 +314,7 @@
 <?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
+    // overdue toggle uses a normal navigation link (server-built URL) to avoid JS submission issues
     const modalId = 'pendingItemsModal';
     if(!document.getElementById(modalId)){
     const modalHtml = `<div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">\n  <div class="modal-dialog modal-lg modal-dialog-scrollable">\n    <div class="modal-content">\n      <div class="modal-header">\n        <h5 class="modal-title">Pending Items</h5>\n        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>\n      </div>\n      <div class="modal-body">\n        <div class="mb-2 small text-muted" id="pending-items-meta"></div>\n        <div class="table-responsive">\n          <table class="table table-sm table-bordered mb-0">\n            <thead class="table-light">\n              <tr><th>#</th><th>Job Order No</th><th>Sample Description</th><th>Sample Quality</th><th>Particulars</th><th>Status</th></tr>\n            </thead>\n            <tbody id="pending-items-body"><tr><td colspan=6 class='text-center text-muted'>No data</td></tr></tbody>\n          </table>\n        </div>\n      </div>\n      <div class="modal-footer">\n        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>\n      </div>\n    </div>\n  </div>\n</div>`;
