@@ -112,6 +112,12 @@
                         @if($lockedMarketingCode)
                             <input type="hidden" name="marketing" value="{{ $lockedMarketingCode }}">
                         @endif
+                        <div class="input-group input-group-sm me-2" style="min-width:220px;">
+                            <button type="button" id="localSearchBtn" class="input-group-text bg-white border-end-0" style="cursor:pointer;" aria-label="Focus search">
+                                <i class="ti ti-search"></i>
+                            </button>
+                            <input type="search" id="localSearchInput" class="form-control form-control-sm border-start-0" placeholder="Search on page (Job/Client/Sample)" aria-label="Search on page" title="Search visible rows">
+                        </div>
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;" {{ $lockedMarketingCode ? 'disabled' : '' }}>
                             @if(!$lockedMarketingCode)
                                 <option value="">Select Marketing Person</option>
@@ -207,7 +213,7 @@
                             @endforeach
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                @foreach([25,50,100] as $size)
+                                @foreach([25,50,100,250,500] as $size)
                                     <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
                                 @endforeach
                             </select>
@@ -294,7 +300,7 @@
                             @endforeach
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                @foreach([25,50,100] as $size)
+                                @foreach([25,50,100,250,500] as $size)
                                     <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
                                 @endforeach
                             </select>
@@ -321,7 +327,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     const modalEl = document.getElementById(modalId);
     const modal = () => new bootstrap.Modal(modalEl);
-    document.querySelectorAll('.show-pending-modal').forEach(function(btn){
+            document.querySelectorAll('.show-pending-modal').forEach(function(btn){
         btn.addEventListener('click', function(){
             let items = [];
             try { items = JSON.parse(btn.getAttribute('data-items')); } catch(e) {}
@@ -340,127 +346,50 @@ document.addEventListener('DOMContentLoaded', function(){
                     }).join('');
                 }
             }
-            // Ensure hscroll bars are created for modal content as well
-            setupHScrollSync();
             modal().show();
         });
     });
 
-    // Create a small utility to add a custom horizontal scroller (track + buttons + draggable thumb)
-    function setupHScrollSync(){
-        document.querySelectorAll('.table-responsive').forEach(function(container){
-            // Skip adding custom hscroll for the modal listing
-            if(container.closest('#pendingItemsModal')) return;
-            if(container.dataset.hscrollInit) return; // already initialized
-            const table = container.querySelector('table');
-            if(!table) return;
-
-            // helper to create scroller DOM
-            const createScroller = function(){
-                const scroller = document.createElement('div');
-                scroller.className = 'hscroll-bar';
-                const btnLeft = document.createElement('button'); btnLeft.className = 'hscroll-btn left'; btnLeft.setAttribute('aria-label','scroll left'); btnLeft.innerHTML = '&#9664;';
-                const track = document.createElement('div'); track.className = 'hscroll-track';
-                const thumb = document.createElement('div'); thumb.className = 'hscroll-thumb';
-                const dots = document.createElement('div'); dots.className = 'dots'; thumb.appendChild(dots);
-                track.appendChild(thumb);
-                const btnRight = document.createElement('button'); btnRight.className = 'hscroll-btn right'; btnRight.setAttribute('aria-label','scroll right'); btnRight.innerHTML = '&#9654;';
-                scroller.appendChild(btnLeft); scroller.appendChild(track); scroller.appendChild(btnRight);
-                return { scroller, btnLeft, btnRight, track, thumb };
-            };
-
-            // create header and footer scrollers
-            const top = createScroller();
-            const bottom = createScroller();
-            container.parentNode.insertBefore(top.scroller, container);
-            container.parentNode.insertBefore(bottom.scroller, container.nextSibling);
-
-            const scrollers = [top, bottom];
-
-            // central update function to resize thumbs and positions for both scrollers
-            const updateSizes = function(){
-                const cw = container.clientWidth;
-                const sw = Math.max(1, table.scrollWidth || table.offsetWidth);
-                const maxScroll = Math.max(0, sw - cw);
-                scrollers.forEach(function(s){
-                    const track = s.track;
-                    const thumb = s.thumb;
-                    const btnLeft = s.btnLeft; const btnRight = s.btnRight;
-                    const trackW = Math.max(40, track.clientWidth || 100);
-                    const thumbW = Math.max(36, Math.round(trackW * (cw / sw)));
-                    thumb.style.width = thumbW + 'px';
-                    const avail = Math.max(0, trackW - thumbW);
-                    const left = avail * ( (container.scrollLeft || 0) / (maxScroll || 1) );
-                    // Guard against invalid numbers before applying thumb position
-                    thumb.style.left = (isFinite(left) ? left : 0) + 'px';
-                    btnLeft.disabled = (container.scrollLeft <= 0);
-                    btnRight.disabled = (container.scrollLeft >= maxScroll - 1);
-                });
-            };
-
-            // when container scrolls, update both scrollers
-            container.addEventListener('scroll', function(){ updateSizes(); }, { passive: true });
-
-            // wire interactions for each scroller to set container.scrollLeft
-            scrollers.forEach(function(s){
-                const track = s.track; const thumb = s.thumb; const btnLeft = s.btnLeft; const btnRight = s.btnRight;
-                const trackRect = ()=>track.getBoundingClientRect();
-
-                track.addEventListener('click', function(ev){
-                    if(ev.target === thumb) return;
-                    const rect = trackRect();
-                    const clickX = ev.clientX - rect.left;
-                    const trackW = track.clientWidth;
-                    const thumbW = thumb.clientWidth;
-                    const avail = Math.max(1, trackW - thumbW);
-                    const ratio = Math.max(0, Math.min(1, (clickX - thumbW/2) / avail));
-                    const sw = Math.max(1, table.scrollWidth || table.offsetWidth);
-                    const cw = container.clientWidth;
-                    const maxScroll = Math.max(0, sw - cw);
-                    container.scrollLeft = Math.round(ratio * maxScroll);
-                    updateSizes();
-                });
-
-                // thumb dragging
-                let dragging = false, startX = 0, startLeft = 0;
-                thumb.addEventListener('mousedown', function(ev){ ev.preventDefault(); dragging = true; startX = ev.clientX; startLeft = parseFloat(getComputedStyle(thumb).left) || 0; document.body.classList.add('hscroll-dragging'); });
-                document.addEventListener('mousemove', function(ev){
-                    if(!dragging) return;
-                    const dx = ev.clientX - startX;
-                    const trackW = track.clientWidth;
-                    const thumbW = thumb.clientWidth;
-                    const avail = Math.max(0, trackW - thumbW);
-                    let newLeft = Math.max(0, Math.min(avail, startLeft + dx));
-                    const ratio = avail ? (newLeft / avail) : 0;
-                    const sw = Math.max(1, table.scrollWidth || table.offsetWidth);
-                    const cw = container.clientWidth;
-                    const maxScroll = Math.max(0, sw - cw);
-                    container.scrollLeft = Math.round(ratio * maxScroll);
-                    updateSizes();
-                });
-                document.addEventListener('mouseup', function(){ if(dragging){ dragging = false; document.body.classList.remove('hscroll-dragging'); } });
-
-                // buttons
-                btnLeft.addEventListener('click', function(){ container.scrollBy({ left: -Math.max(60, Math.round(container.clientWidth/2)), behavior: 'smooth' }); });
-                btnRight.addEventListener('click', function(){ container.scrollBy({ left: Math.max(60, Math.round(container.clientWidth/2)), behavior: 'smooth' }); });
-            });
-
-            // resize and mutation observer
-            let resizeTimer = null;
-            const onResize = function(){ clearTimeout(resizeTimer); resizeTimer = setTimeout(updateSizes, 80); };
-            window.addEventListener('resize', onResize);
-            try{ const mo = new MutationObserver(onResize); mo.observe(table, { attributes:true, childList:true, subtree:true, characterData:true }); }catch(e){}
-
-            // initial
-            updateSizes();
-
-            // mark initialized
-            container.dataset.hscrollInit = '1';
-        });
-    }
-
-            // Initialize scrollers on page load
-            setupHScrollSync();
+            // Local page search: filter visible rows in current table (Job Order, Client, Sample)
+            try{
+                const localInput = document.getElementById('localSearchInput');
+                if(localInput){
+                    let tmr = null;
+                    const doFilter = (val)=>{
+                        const q = (val||'').trim().toLowerCase();
+                        // find all data tables inside card body (bookings or items)
+                        const tables = document.querySelectorAll('.card-body .table-responsive table');
+                        tables.forEach(table=>{
+                            const tbody = table.querySelector('tbody'); if(!tbody) return;
+                            Array.from(tbody.querySelectorAll('tr')).forEach(row=>{
+                                // only consider rows with td cells
+                                const tds = Array.from(row.querySelectorAll('td'));
+                                if(!tds.length) return;
+                                // Collect first three relevant columns (Job Order / Client / Sample)
+                                const parts = [];
+                                for(let i=0;i<3;i++){
+                                    const td = tds[i];
+                                    if(td) parts.push((td.innerText||td.textContent||'').trim());
+                                }
+                                const text = parts.join(' ').replace(/\s+/g,' ').toLowerCase();
+                                const ok = q === '' || text.indexOf(q) !== -1;
+                                row.style.display = ok ? '' : 'none';
+                            });
+                        });
+                    };
+                    localInput.addEventListener('input', function(){ clearTimeout(tmr); tmr = setTimeout(()=>doFilter(this.value), 120); });
+                    localInput.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ this.value = ''; doFilter(''); } if(e.key === 'Enter'){ e.preventDefault(); } });
+                    // if search button present, focus the input and trigger filter when clicked
+                    const searchBtn = document.getElementById('localSearchBtn');
+                    if(searchBtn){
+                        searchBtn.addEventListener('click', function(){
+                            localInput.focus();
+                            // small delay to ensure focus happens before filtering
+                            setTimeout(function(){ doFilter(localInput.value || ''); }, 10);
+                        });
+                    }
+                }
+            }catch(e){ /* ignore errors for local search */ }
 
             // Initialize Bootstrap tooltips for truncated cells and other tooltip elements
             try{
@@ -471,7 +400,7 @@ document.addEventListener('DOMContentLoaded', function(){
                 });
             }catch(e){ /* ignore if bootstrap not available */ }
 });
-</script>
+
 @endpush
 
 @push('styles')
@@ -513,66 +442,11 @@ document.addEventListener('DOMContentLoaded', function(){
         .search-set { flex-wrap:wrap; }
         .pagination-scroll-wrapper { max-width: 100vw; }
     }
-    /* Custom horizontal scroller placed under responsive tables */
-    .hscroll-bar {
-        --hscroll-accent: #f39c32; /* user requested accent color */
-        --hscroll-accent-dark: #d1762b;
-        --hscroll-accent-soft: #ffe9d6;
-        --hscroll-accent-shadow: rgba(243,156,50,0.18);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 12px;
-        margin-top: 10px;
-        user-select: none;
-    }
-    .hscroll-bar .hscroll-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: none;
-        background: linear-gradient(180deg,var(--hscroll-accent),var(--hscroll-accent-dark));
-        box-shadow: 0 6px 16px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.38);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: #fff;
-        padding: 0;
-        font-size: 18px;
-        line-height: 1;
-    }
-    .hscroll-bar .hscroll-btn:active { transform: translateY(1px) scale(0.995); }
-    .hscroll-bar .hscroll-track {
-        position: relative;
-        flex: 1 1 auto;
-        height: 26px;
-        background: linear-gradient(90deg,var(--hscroll-accent-soft), rgba(243,156,50,0.08));
-        border-radius: 20px;
-        box-shadow: inset 0 2px 0 rgba(255,255,255,0.5);
-        cursor: pointer;
-        padding: 6px; /* inner padding so thumb sits visually centered */
-    }
-    .hscroll-bar .hscroll-thumb {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        height: 14px;
-        min-width: 36px;
-        background: #fff;
-        border-radius: 10px;
-        box-shadow: 0 8px 18px var(--hscroll-accent-shadow), inset 0 1px 0 rgba(0,0,0,0.04);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 6px;
-        cursor: grab;
-    }
-    .hscroll-bar .hscroll-thumb:active { cursor: grabbing; }
-    .hscroll-bar .hscroll-thumb .dots{
-        width:26px; height:6px; border-radius:6px; background: linear-gradient(90deg,var(--hscroll-accent),var(--hscroll-accent-dark));
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06) inset;
-    }
+    /* custom horizontal scroller removed */
+
+    /* Small styling for the local page search input group */
+    .marketing-filter-form .input-group .input-group-text { border-right: 0; }
+    .marketing-filter-form .input-group .form-control { border-left: 0; }
 
     /* Force fixed table layout so columns don't shift when long content wraps */
     table.table { table-layout: fixed; }

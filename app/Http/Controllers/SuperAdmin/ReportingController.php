@@ -70,7 +70,7 @@ class ReportingController extends Controller
         $month = $request->get('month');
         $year = $request->get('year');
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100], true)) {
+        if (!in_array($perPage, [25, 50, 100, 250, 500], true)) {
             $perPage = 25;
         }
 
@@ -141,7 +141,7 @@ class ReportingController extends Controller
         $month = $request->get('month');
         $year = $request->get('year');
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100], true)) {
+        if (!in_array($perPage, [25, 50, 100, 250, 500], true)) {
             $perPage = 25;
         }
 
@@ -339,7 +339,7 @@ class ReportingController extends Controller
         $marketingPersons = $marketingPersonsQuery->get(['id','name','user_code']);
 
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100])) {
+        if (!in_array($perPage, [25, 50, 100, 250, 500], true)) {
             $perPage = 25;
         }
 
