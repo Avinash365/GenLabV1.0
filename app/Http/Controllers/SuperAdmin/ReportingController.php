@@ -316,8 +316,8 @@ class ReportingController extends Controller
         $month = $request->has('month') ? (int) $request->get('month') : null;
         $year = $request->has('year') ? (int) $request->get('year') : null;
         $overdue = $request->boolean('overdue');
-        $beforeDate = $request->get('before_date');
-        $cutoff = $beforeDate ?: now()->toDateString();
+        // Always use current date as cutoff for overdue (lab_expected_date < today)
+        $cutoff = now()->toDateString();
         $departmentId = $request->get('department');
         $marketing = $request->get('marketing'); // user_code of marketing person
         if ($this->isMarketingUser($user)) {
@@ -497,8 +497,8 @@ class ReportingController extends Controller
             }
         }
         $overdue = $request->boolean('overdue');
-        $beforeDate = $request->get('before_date');
-        $cutoff = $beforeDate ?: now()->toDateString();
+        // Always use current date as cutoff for overdue (lab_expected_date < today)
+        $cutoff = now()->toDateString();
 
         $q = BookingItem::query()->with(['booking']);
         if ($overdue) {
