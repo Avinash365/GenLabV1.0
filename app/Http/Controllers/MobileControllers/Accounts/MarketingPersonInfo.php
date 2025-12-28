@@ -807,29 +807,7 @@ class MarketingPersonInfo extends Controller
         }
 
         $perPage = (int) $request->get('perPage', 25);
-        // Restrict to bookings that have uploaded letter files (match web panel behavior)
-        $withLettersIds = (clone $query)->select(['id','reference_no'])->get()->filter(function($booking){
-            $reference = (string) ($booking->reference_no ?? '');
-            $key = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim($reference));
-            if ($key === '') return false;
-            $dir = "public/letters/{$key}";
-            if (!\Illuminate\Support\Facades\Storage::exists($dir)) return false;
-            foreach (\Illuminate\Support\Facades\Storage::files($dir) as $path) {
-                $base = basename($path);
-                if ($base === '_meta.json' || str_starts_with($base, '_')) continue;
-                $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
-                if (in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'], true)) {
-                    return true;
-                }
-            }
-            return false;
-        })->pluck('id')->all();
-
-        if (empty($withLettersIds)) {
-            $bookings = collect()->paginate ? (function() use($perPage){ return (new \Illuminate\Pagination\LengthAwarePaginator([],0,$perPage,1,['path'=>url()->current()])); })() : (clone $query)->latest()->paginate($perPage);
-        } else {
-            $bookings = $query->whereIn('id', $withLettersIds)->latest()->paginate($perPage);
-        }
+        $bookings = $query->latest()->paginate($perPage);
 
         // Prepare response items
         $items = $bookings->getCollection()->map(function($booking){
@@ -1027,23 +1005,24 @@ class MarketingPersonInfo extends Controller
     {
         $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
 
-        $query = \App\Models\NewBooking::with(['items.reports'])
+        // Build base query (apply filters first, then restrict to bookings that have uploaded letters)
+        $baseQuery = \App\Models\NewBooking::with(['items.reports'])
             ->where('marketing_id', $marketingPerson->user_code);
 
         // Optional department filter
         if ($request->filled('department')) {
-            $query->where('department_id', $request->department);
+            $baseQuery->where('department_id', $request->department);
         }
 
         // Optional marketing override
         if ($request->filled('marketing')) {
-            $query->where('marketing_id', $request->marketing);
+            $baseQuery->where('marketing_id', $request->marketing);
         }
 
         // Search across booking reference, client and items
         if ($request->filled('search')) {
             $s = $request->search;
-            $query->where(function($q) use ($s) {
+            $baseQuery->where(function($q) use ($s) {
                 $q->where('reference_no', 'like', "%{$s}%")
                   ->orWhere('client_name', 'like', "%{$s}%")
                   ->orWhereHas('items', function($qi) use ($s) {
@@ -1057,14 +1036,39 @@ class MarketingPersonInfo extends Controller
 
         // Month/Year filter on booking created_at
         if ($request->filled('year')) {
-            $query->whereYear('created_at', $request->year);
+            $baseQuery->whereYear('created_at', $request->year);
         }
         if ($request->filled('month')) {
-            $query->whereMonth('created_at', $request->month);
+            $baseQuery->whereMonth('created_at', $request->month);
         }
 
         $perPage = (int) $request->get('perPage', 25);
-        $bookings = $query->latest()->paginate($perPage);
+
+        // Determine bookings that have uploaded report files under public/letters/{sanitized_reference}
+        $withLettersIds = (clone $baseQuery)
+            ->select(['id', 'reference_no'])
+            ->get()
+            ->filter(function($booking){
+                $ref = (string) ($booking->reference_no ?? '');
+                $key = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim($ref)) ?: '';
+                if ($key === '') return false;
+                $dir = "public/letters/{$key}";
+                if (!\Illuminate\Support\Facades\Storage::exists($dir)) return false;
+                foreach (\Illuminate\Support\Facades\Storage::files($dir) as $path) {
+                    $base = basename($path);
+                    if ($base === '_meta.json' || str_starts_with($base, '_')) continue;
+                    $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
+                    if (in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'], true)) return true;
+                }
+                return false;
+            })
+            ->pluck('id')
+            ->all();
+
+        $bookings = (clone $baseQuery)
+            ->whereIn('id', $withLettersIds)
+            ->latest('id')
+            ->paginate($perPage);
 
         // Prepare response items and letter files map
         $items = $bookings->getCollection()->map(function($booking){
