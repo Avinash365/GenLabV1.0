@@ -199,7 +199,7 @@
                                                             <tbody>
                                                                 @foreach($booking->items as $item)
                                                                 <tr>
-                                                                    <td>{{ $item->job_order_no }}</td>
+                                                                    <td class="job-order-cell">{{ $item->job_order_no }}</td>
                                                                     <td>{{ $item->sample_description }}</td>
                                                                     <td>{{ $item->sample_quality }}</td>
                                                                     <td>{{ $item->issue_date ? 'Issued' : 'Pending' }}</td>
@@ -243,7 +243,7 @@
                                                     <ul class="list-group">
                                                         @foreach($files as $file)
                                                             <li class="list-group-item d-flex justify-content-between align-items-center">
-                                                                <span class="text-truncate" style="max-width: 320px;" title="{{ $file['name'] }}">{{ $file['name'] }}</span>
+                                                                <span style="display:block; white-space:normal; word-break:break-word; max-width:420px;" title="{{ $file['name'] }}">{{ $file['name'] }}</span>
                                                                 <a href="{{ $file['url'] }}" target="_blank" class="btn btn-sm btn-outline-secondary">View</a>
                                                             </li>
                                                         @endforeach
@@ -272,17 +272,28 @@
             <style>
                 /* Allow client/reference text to wrap and use available width */
                 .table { width: 100%; table-layout: auto; }
+                .table-responsive { overflow-x: auto; }
+
+                /* Ensure cells and inner blocks wrap to multiple lines instead of forcing horizontal scroll */
+                th, td { white-space: normal !important; vertical-align: top; }
                 .truncate-cell { max-width: none; }
                 .truncate-cell .cell-inner {
                     display: block;
                     white-space: normal;
                     word-break: break-word;
+                    overflow-wrap: anywhere;
                 }
                 @media (max-width: 768px){ .truncate-cell { max-width: none; } }
 
                 /* Action column layout */
-                .action-cell { min-width: 140px; }
+                .action-cell { min-width: 220px; }
                 .action-cell .btn { padding: 6px 10px; }
+                .action-cell .d-flex { gap: 0.5rem; align-items: center; }
+
+                /* Ensure Job Order and modal table cells wrap and show full content */
+                .job-order-cell { min-width: 220px; white-space: normal; word-break: break-word; }
+                .modal-body .table { table-layout: auto; }
+                .modal-body .table th, .modal-body .table td { white-space: normal; word-break: break-word; }
 
                 /* Keep modal close button aligned when title is long */
                 .booking-items-modal-header {

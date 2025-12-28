@@ -251,14 +251,11 @@
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->particulars); ?>"><?php echo e($item->particulars); ?></div>
                                 </td>
                                 <td>
-                                    <?php
-                                        $receiver = $item->received_by_name ?? optional($item->receivedBy)->name;
-                                    ?>
-                                    <?php if($receiver): ?>
-                                        <span class="status-dot received" data-bs-toggle="tooltip" title="Received by <?php echo e($receiver); ?>" aria-label="Received"></span>
-                                    <?php else: ?>
-                                        <span class="status-dot pending" data-bs-toggle="tooltip" title="Pending" aria-label="Pending"></span>
-                                    <?php endif; ?>
+                                    
+                                    <div class="cell-inner"><?php echo e($item->status); ?></div>
+ 
+                                
+                                     
                                 </td>
                                 <td class="action-cell">
                                     <?php

@@ -251,14 +251,11 @@
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
                                 </td>
                                 <td>
-                                    @php
-                                        $receiver = $item->received_by_name ?? optional($item->receivedBy)->name;
-                                    @endphp
-                                    @if($receiver)
-                                        <span class="status-dot received" data-bs-toggle="tooltip" title="Received by {{ $receiver }}" aria-label="Received"></span>
-                                    @else
-                                        <span class="status-dot pending" data-bs-toggle="tooltip" title="Pending" aria-label="Pending"></span>
-                                    @endif
+                                    
+                                    <div class="cell-inner">{{ $item->status }}</div>
+ 
+                                
+                                     
                                 </td>
                                 <td class="action-cell">
                                     @php
