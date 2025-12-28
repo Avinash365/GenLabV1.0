@@ -807,7 +807,29 @@ class MarketingPersonInfo extends Controller
         }
 
         $perPage = (int) $request->get('perPage', 25);
-        $bookings = $query->latest()->paginate($perPage);
+        // Restrict to bookings that have uploaded letter files (match web panel behavior)
+        $withLettersIds = (clone $query)->select(['id','reference_no'])->get()->filter(function($booking){
+            $reference = (string) ($booking->reference_no ?? '');
+            $key = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim($reference));
+            if ($key === '') return false;
+            $dir = "public/letters/{$key}";
+            if (!\Illuminate\Support\Facades\Storage::exists($dir)) return false;
+            foreach (\Illuminate\Support\Facades\Storage::files($dir) as $path) {
+                $base = basename($path);
+                if ($base === '_meta.json' || str_starts_with($base, '_')) continue;
+                $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
+                if (in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'], true)) {
+                    return true;
+                }
+            }
+            return false;
+        })->pluck('id')->all();
+
+        if (empty($withLettersIds)) {
+            $bookings = collect()->paginate ? (function() use($perPage){ return (new \Illuminate\Pagination\LengthAwarePaginator([],0,$perPage,1,['path'=>url()->current()])); })() : (clone $query)->latest()->paginate($perPage);
+        } else {
+            $bookings = $query->whereIn('id', $withLettersIds)->latest()->paginate($perPage);
+        }
 
         // Prepare response items
         $items = $bookings->getCollection()->map(function($booking){
@@ -896,11 +918,18 @@ class MarketingPersonInfo extends Controller
         $query = \App\Models\BookingItem::with(['booking', 'reports'])
             ->whereHas('booking', function($q) use ($marketingPerson) {
                 $q->where('marketing_id', $marketingPerson->user_code);
+            })
+            ->whereHas('reports', function ($q) {
+                $q->whereNotNull('booking_item_report.pdf_path');
             });
 
         // Optional marketing override
         if ($request->filled('marketing')) {
-            $query = \App\Models\BookingItem::with(['booking','reports'])->whereHas('booking', function($q) use ($request){ $q->where('marketing_id', $request->marketing); });
+            $query = \App\Models\BookingItem::with(['booking','reports'])
+                ->whereHas('booking', function($q) use ($request){ $q->where('marketing_id', $request->marketing); })
+                ->whereHas('reports', function ($q) {
+                    $q->whereNotNull('booking_item_report.pdf_path');
+                });
         }
 
         // Search
@@ -930,29 +959,46 @@ class MarketingPersonInfo extends Controller
         $items = $query->latest()->paginate($perPage);
 
         $data = $items->through(function($it){
-            // Find first report pdf path if exists
+            // Find first report pdf path if exists — check multiple possible pivot keys
             $report = null;
             if (is_iterable($it->reports)){
                 foreach ($it->reports as $r){
-                    $p = $r->pivot->pdf_path ?? $r->pivot->generated_report_path ?? null;
+                    $p = $r->pivot->pdf_path ?? $r->pivot->generated_report_path ?? $r->pivot->file_path ?? $r->pivot->report_path ?? $r->pivot->path ?? null;
                     if ($p){ $report = $p; break; }
                 }
             }
+
             $reportUrl = null;
             if ($report){
-                if (preg_match('#^https?://#i', $report)) { $reportUrl = $report; }
-                else {
-                    try { $reportUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($report) ? \Illuminate\Support\Facades\Storage::url($report) : asset($report); } catch(\Exception $_){ $reportUrl = asset($report); }
+                if (preg_match('#^https?://#i', $report)) {
+                    $reportUrl = $report;
+                } else {
+                    try {
+                        $reportUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($report)
+                            ? \Illuminate\Support\Facades\Storage::url($report)
+                            : asset($report);
+                    } catch(\Exception $_){
+                        $reportUrl = asset($report);
+                    }
                 }
             }
+
+            // Decode HTML entities stored in DB and trim whitespace/newlines for consistent API output
+            $clientName = $it->booking?->client_name ?? null;
+            $sampleDescription = $it->sample_description ?? null;
+            $particulars = $it->particulars ?? null;
+
+            if ($clientName) { $clientName = trim(html_entity_decode($clientName)); }
+            if ($sampleDescription) { $sampleDescription = trim(html_entity_decode($sampleDescription)); }
+            if ($particulars) { $particulars = trim(html_entity_decode($particulars)); }
 
             return [
                 'id' => $it->id,
                 'job_order_no' => $it->job_order_no,
-                'client_name' => $it->booking?->client_name ?? null,
-                'sample_description' => $it->sample_description,
+                'client_name' => $clientName,
+                'sample_description' => $sampleDescription,
                 'sample_quality' => $it->sample_quality,
-                'particulars' => $it->particulars,
+                'particulars' => $particulars,
                 'report_url' => $reportUrl,
             ];
         });
