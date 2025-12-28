@@ -4,6 +4,28 @@
 
 @section('content')
 <div class="content">
+    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
+        <h4 class="mb-0">Received Reports</h4>
+    </div>
+
+    @if(session('status'))
+        <div class="alert alert-success">{{ session('status') }}</div>
+    @endif
+
+    <div class="card mb-3">
+        <div class="card-body">
+            <form method="GET" action="{{ route('superadmin.reporting.received') }}" class="row g-2 align-items-end">
+                <div class="col-sm-4">
+                    <label class="form-label">Reference No</label>
+                    <input type="text" name="job" value="{{ $job }}" class="form-control" placeholder="Enter Reference No">
+                </div>
+                <div class="col-sm-2">
+                    <button type="submit" class="btn btn-primary w-100">Search</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         document.addEventListener('DOMContentLoaded', function () {
             const perPageSelect = document.getElementById('perPageSelect');
@@ -958,8 +980,8 @@
                                 issueInput.disabled = false;
                                 issueInput.focus();
                             }
-                            btn.textContent = 'Submit';
-                            btn.setAttribute('data-mode', 'submit');
+                            btn.textContent = 'Received';
+                            btn.setAttribute('data-mode', 'Received');
                             btn.style.backgroundColor = '#FE9F43';
                             btn.style.borderColor = '#FE9F43';
                             if (typeof updateBulkButtons === 'function') updateBulkButtons();
@@ -1071,8 +1093,8 @@
                         // Update receive button state
                         const btn = document.querySelector('.receive-toggle-btn[data-id="' + id + '"]');
                         if (btn) {
-                            btn.textContent = 'Submit';
-                            btn.setAttribute('data-mode', 'submit');
+                            btn.textContent = 'Received';
+                            btn.setAttribute('data-mode', 'Received');
                             btn.style.backgroundColor = '#FE9F43';
                             btn.style.borderColor = '#FE9F43';
                         }
@@ -1134,7 +1156,7 @@
                             }
                             const btn = document.querySelector('.receive-toggle-btn[data-id="' + id + '"]');
                             if (btn) {
-                                btn.textContent = 'Submit';
+                                btn.textContent = 'Received';
                                 btn.setAttribute('data-mode', 'submit');
                                 btn.style.backgroundColor = '#FE9F43';
                                 btn.style.borderColor = '#FE9F43';
@@ -1171,8 +1193,8 @@
                         input.disabled = false;
                     });
                     document.querySelectorAll('.receive-toggle-btn').forEach(function(btn) {
-                        btn.textContent = 'Submit';
-                        btn.setAttribute('data-mode', 'submit');
+                        btn.textContent = 'Received';
+                        btn.setAttribute('data-mode', 'Received');
                         btn.style.backgroundColor = '#FE9F43';
                         btn.style.borderColor = '#FE9F43';
                     });
