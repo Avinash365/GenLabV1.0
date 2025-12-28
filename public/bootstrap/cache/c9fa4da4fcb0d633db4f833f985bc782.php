@@ -214,7 +214,8 @@
 
         <div class="a4-page">
 
-            <form id="previewInvoiceForm" method="POST" action="<?php echo e($ACTION_URL ?? 'superadmin.bookingInvoiceStatuses.storeBulk'); ?>">
+            <form id="previewInvoiceForm" method="POST"
+                action="<?php echo e($ACTION_URL ?? 'superadmin.bookingInvoiceStatuses.storeBulk'); ?>">
 
                 <?php echo csrf_field(); ?>
 
@@ -237,9 +238,9 @@
                                 </th>
 
                                 <!-- <th class="text-centre text-uppercase" colspan="2" contenteditable="true">
-                                                                                            <?php echo e($invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice'); ?>
+                                                                                                <?php echo e($invoiceData['invoice']['invoiceType'] ?? 'Tax Invoice'); ?>
 
-                                                                                        </th>   -->
+                                                                                            </th>   -->
                                 <th class="text-centre text-uppercase" colspan="2" id="invoiceTypeHeader">
                                     <?php echo e($invoiceData['invoice']['invoiceType'] ?? 'Tax_Invoice'); ?>
 
@@ -290,15 +291,15 @@
 
                             <tr>
                                 <!-- <th class="text-start">Ref. No & Date:</th>
-                                <td colspan="3" contenteditable="false" id="td_reference_block">
-                                    <?php echo e($allReferences ?? ''); ?>
+                                    <td colspan="3" contenteditable="false" id="td_reference_block">
+                                        <?php echo e($allReferences ?? ''); ?>
 
-                                    &nbsp;&&nbsp;
-                                    <?php echo e($allLetterDates ?? ''); ?>
+                                        &nbsp;&&nbsp;
+                                        <?php echo e($allLetterDates ?? ''); ?>
 
-                                </td> -->
+                                    </td> -->
                                 <th class="text-start">Ref. No & Date:</th>
-                                <td colspan="3"  contenteditable="false" id="td_reference_block">
+                                <td colspan="3" contenteditable="false" id="td_reference_block">
                                     <?php echo $refDateLines; ?>
 
                                 </td>
@@ -500,6 +501,10 @@
                     
                     <div class="fw-semibold mb-2">Item Row Actions</div>
 
+                    <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2"
+                        onclick="addRowBeforeSelected()">
+                        ⬆️ Add Row Before
+                    </button>
                     <button type="button" class="btn btn-sm btn-outline-primary w-100 mb-2" onclick="addRowAfterSelected()">
                         ➕ Add Row After
                     </button>
@@ -586,7 +591,7 @@
                                             <a href="<?php echo e($bookings->first()->generatedInvoice?->invoice_letter_path
         ? url($bookings->first()->generatedInvoice->invoice_letter_path)
         : '#'); ?>" target="_blank" class="btn btn-outline-secondary btn-sm
-                                                                                                        <?php echo e(empty($bookings->first()->generatedInvoice?->invoice_letter_path) ? 'disabled' : ''); ?>">
+                                                                                                            <?php echo e(empty($bookings->first()->generatedInvoice?->invoice_letter_path) ? 'disabled' : ''); ?>">
                                                 <i class="bi bi-eye">View</i>
                                             </a>
 
@@ -657,8 +662,8 @@
     
     <script>
         document.getElementById('previewInvoiceForm')
-            .addEventListener('submit', function (e) { 
-               e.preventDefault(); 
+            .addEventListener('submit', function (e) {
+                e.preventDefault();
 
                 /* ================= FORCE CLEAN STATE ================= */
                 const enableDiscount =
@@ -1026,6 +1031,28 @@
 
     
     <script>
+        function createNewItemRow() {
+            const row = document.createElement('tr');
+            row.className = 'item-row';
+
+            row.innerHTML = `
+                    <td contenteditable="true" class="editable description"></td>
+                    <td contenteditable="true">10101</td>
+                    <td contenteditable="true"></td>
+                    <td contenteditable="true" class="editable qty">1</td>
+                    <td contenteditable="true" class="editable rate">0.00</td>
+                    <td class="amount">0.00</td>
+                `;
+
+            return row;
+        }
+
+        function clearSelection() {
+            document
+                .querySelectorAll('.item-row')
+                .forEach(r => r.classList.remove('selected'));
+        }
+
         function addRowAfterSelected() {
             const selected = document.querySelector('.item-row.selected');
 
@@ -1034,21 +1061,29 @@
                 return;
             }
 
-            const newRow = document.createElement('tr');
-            newRow.className = 'item-row';
-
-            newRow.innerHTML = `
-                                                                            <td contenteditable="true" class="editable description"></td>
-                                                                            <td contenteditable="true">10101</td>
-                                                                            <td contenteditable="true"></td>
-                                                                            <td contenteditable="true" class="editable qty">1</td>
-                                                                            <td contenteditable="true" class="editable rate">0.00</td>
-                                                                            <td contenteditable="true" class="amount">0.00</td>
-                                                                        `;
-
+            const newRow = createNewItemRow();
             selected.after(newRow);
 
-            renumberRows();
+            clearSelection();
+            newRow.classList.add('selected');
+
+            recalculateAll();
+        }
+
+        function addRowBeforeSelected() {
+            const selected = document.querySelector('.item-row.selected');
+
+            if (!selected) {
+                alert('Please select a row first');
+                return;
+            }
+
+            const newRow = createNewItemRow();
+            selected.before(newRow);
+
+            clearSelection();
+            newRow.classList.add('selected');
+
             recalculateAll();
         }
 
@@ -1060,18 +1095,22 @@
                 return;
             }
 
-            if (document.querySelectorAll('.item-row').length === 1) {
+            const rows = document.querySelectorAll('.item-row');
+
+            if (rows.length === 1) {
                 alert('At least one item row is required');
                 return;
             }
 
+            const nextRow = selected.nextElementSibling || selected.previousElementSibling;
+
             selected.remove();
 
-            renumberRows();
+            clearSelection();
+            if (nextRow) nextRow.classList.add('selected');
+
             recalculateAll();
         }
-
-
     </script>
 
 
@@ -1128,10 +1167,10 @@
 
             // Build combined text from current columns
             const combinedText = `
-                                                                    ${cells[0].innerText}
-                                                                    Job: ${cells[1].innerText}
-                                                                    SAC: ${cells[2].innerText}
-                                                                    `.trim();
+                                                                        ${cells[0].innerText}
+                                                                        Job: ${cells[1].innerText}
+                                                                        SAC: ${cells[2].innerText}
+                                                                        `.trim();
 
             // Save original row (for future undo)
             row.dataset.original = row.innerHTML;
@@ -1141,15 +1180,15 @@
             // - 1 combined column (Desc + Job + SAC + Qty + Rate)
             // - Amount column preserved
             row.innerHTML = `
-                                                                            <td contenteditable="true"
-                                                                                colspan="3"
-                                                                                class="editable description">
-                                                                                ${combinedText}
-                                                                            </td>
-                                                                            <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
-                                                                            <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
-                                                                            <td contenteditable="true" class="amount">${cells[5].innerText}</td>
-                                                                        `;
+                                                                                <td contenteditable="true"
+                                                                                    colspan="3"
+                                                                                    class="editable description">
+                                                                                    ${combinedText}
+                                                                                </td>
+                                                                                <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
+                                                                                <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
+                                                                                <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                                                                            `;
 
             recalculateAll();
         }

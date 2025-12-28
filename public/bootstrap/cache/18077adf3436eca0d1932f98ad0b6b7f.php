@@ -1,6 +1,5 @@
-@extends('superadmin.layouts.app')
-@section('title', 'Pending Issue Dates')
-@section('content')
+<?php $__env->startSection('title', 'Pending Issue Dates'); ?>
+<?php $__env->startSection('content'); ?>
 <div class="content">
     <div class="page-header">
         <div class="add-item d-flex">
@@ -11,13 +10,13 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing'])) }}" data-bs-toggle="tooltip" title="PDF"><i class="ti ti-file-type-pdf"></i></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="PDF"><i class="ti ti-file-type-pdf"></i></a>
             </li>
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing'])) }}" data-bs-toggle="tooltip" title="Excel"><i class="ti ti-file-spreadsheet"></i></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="Excel"><i class="ti ti-file-spreadsheet"></i></a>
             </li>
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings', request()->only(['search','month','year','department','overdue','marketing'])) }}" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
             </li>
         </ul>
     </div>
@@ -25,26 +24,26 @@
     <div class="card">
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
             <div class="search-set d-flex align-items-center gap-3 w-100" style="max-width:50%;">
-                <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex input-group me-2 flex-shrink-0 search-compact" style="max-width:450px;">
-                    @php 
+                <form method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group me-2 flex-shrink-0 search-compact" style="max-width:450px;">
+                    <?php 
                         $mode = $mode ?? request('mode','job'); 
                         $isOverdue = request()->has('overdue') && (request('overdue') == 1 || request('overdue') === true || request('overdue') === 'true');
-                    @endphp
-                    <input type="hidden" name="mode" value="{{ $mode }}">
-                    @if(request('department'))
-                        <input type="hidden" name="department" value="{{ request('department') }}">
-                    @endif
-                    @if(request('month'))<input type="hidden" name="month" value="{{ request('month') }}">@endif
-                    @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
-                    {{-- overdue hidden input is handled by the form on the right to preserve month/year when toggling --}}
-                    @if(request('marketing'))<input type="hidden" name="marketing" value="{{ request('marketing') }}">@endif
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search job/order/sample...">
+                    ?>
+                    <input type="hidden" name="mode" value="<?php echo e($mode); ?>">
+                    <?php if(request('department')): ?>
+                        <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
+                    <?php endif; ?>
+                    <?php if(request('month')): ?><input type="hidden" name="month" value="<?php echo e(request('month')); ?>"><?php endif; ?>
+                    <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
+                    
+                    <?php if(request('marketing')): ?><input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>"><?php endif; ?>
+                    <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
                     <div class="mode-toggle-group d-flex align-items-center flex-shrink-0">
-                        <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>'reference','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')])) }}" class="mode-toggle {{ (!$isOverdue && $mode==='reference') ? 'active' : '' }}">By Reference No</a>
-                        <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>'job','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')])) }}" class="mode-toggle {{ (!$isOverdue && $mode==='job') ? 'active' : '' }}">By Job Order No</a>
-                    @php
+                        <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>'reference','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')]))); ?>" class="mode-toggle <?php echo e((!$isOverdue && $mode==='reference') ? 'active' : ''); ?>">By Reference No</a>
+                        <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>'job','department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year')]))); ?>" class="mode-toggle <?php echo e((!$isOverdue && $mode==='job') ? 'active' : ''); ?>">By Job Order No</a>
+                    <?php
                         $base = [
                             'mode' => request('mode','job'),
                             'department' => request('department'),
@@ -56,87 +55,87 @@
                         // Always set overdue=1 for Out of Expected Date, remove for others
                         $onParams = array_filter($base + ['overdue' => 1], function($v){ return !is_null($v) && $v !== ''; });
                         $offParams = array_filter($base, function($v){ return !is_null($v) && $v !== ''; });
-                    @endphp
-                    <a href="{{ route('superadmin.reporting.pendings', !$isOverdue ? $onParams : $offParams) }}" class="mode-toggle {{ $isOverdue ? 'active' : '' }}" title="Show only items with no Issue Date and lab expected date overdue">Out of Expected Date</a>
+                    ?>
+                    <a href="<?php echo e(route('superadmin.reporting.pendings', !$isOverdue ? $onParams : $offParams)); ?>" class="mode-toggle <?php echo e($isOverdue ? 'active' : ''); ?>" title="Show only items with no Issue Date and lab expected date overdue">Out of Expected Date</a>
                 </div>
             </div>
             <div class="search-set">
-                <form id="pendings-filter-form" method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex input-group align-items-center gap-2 flex-wrap">
-                    <input type="hidden" name="mode" value="{{ $mode }}">
-                    @if(request('department'))
-                        <input type="hidden" name="department" value="{{ request('department') }}">
-                    @endif
-                    @if(request('marketing'))
-                        <input type="hidden" name="marketing" value="{{ request('marketing') }}">
-                    @endif
-                    <input type="hidden" name="overdue" id="overdueInput" value="{{ request('overdue') ? 1 : '' }}">
+                <form id="pendings-filter-form" method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group align-items-center gap-2 flex-wrap">
+                    <input type="hidden" name="mode" value="<?php echo e($mode); ?>">
+                    <?php if(request('department')): ?>
+                        <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
+                    <?php endif; ?>
+                    <?php if(request('marketing')): ?>
+                        <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
+                    <?php endif; ?>
+                    <input type="hidden" name="overdue" id="overdueInput" value="<?php echo e(request('overdue') ? 1 : ''); ?>">
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
-                        @foreach(range(1,12) as $m)
-                            <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>{{ \Carbon\Carbon::create()->month($m)->format('F') }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($m); ?>" <?php echo e(request('month') == $m ? 'selected' : ''); ?>><?php echo e(\Carbon\Carbon::create()->month($m)->format('F')); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                     <select name="year" class="form-control">
                         <option value="">Select Year</option>
-                        @foreach(range(date('Y'), date('Y') - 10) as $y)
-                            <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
-                        @endforeach
+                        <?php $__currentLoopData = range(date('Y'), date('Y') - 10); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $y): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <option value="<?php echo e($y); ?>" <?php echo e(request('year') == $y ? 'selected' : ''); ?>><?php echo e($y); ?></option>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
                         <button class="btn btn-outline-secondary" type="submit">Filter</button>
                 </form>
             </div>
         </div>
-        @if(isset($departments) && $departments->count())
+        <?php if(isset($departments) && $departments->count()): ?>
         <div class="px-3 pb-3">
             <div class="d-flex flex-wrap gap-2 align-items-center">
-                @php $currentDept = request('department'); @endphp
-                <a href="{{ route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')])) }}" class="btn btn-sm {{ !$currentDept ? 'btn-warning text-white' : 'btn-outline-warning' }}">All</a>
-                @foreach($departments as $dept)
-                    <a href="{{ route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')])) }}" class="btn btn-sm {{ (int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning' }}">{{ $dept->name }}</a>
-                @endforeach
-                @if(isset($marketingPersons) && $marketingPersons->count())
-                    @php
+                <?php $currentDept = request('department'); ?>
+                <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e(!$currentDept ? 'btn-warning text-white' : 'btn-outline-warning'); ?>">All</a>
+                <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e((int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning'); ?>"><?php echo e($dept->name); ?></a>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php if(isset($marketingPersons) && $marketingPersons->count()): ?>
+                    <?php
                         $authUser = auth('admin')->user() ?: auth()->user();
                         $roleName = $authUser->role->role_name ?? $authUser->role ?? null;
                         $isMarketingUser = $roleName && stripos($roleName, 'market') !== false;
                         $lockedMarketingCode = $isMarketingUser ? ($authUser->user_code ?? null) : null;
                         $marketingOptions = $lockedMarketingCode ? $marketingPersons->where('user_code', $lockedMarketingCode) : $marketingPersons;
-                    @endphp
-                    <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="ms-auto d-flex align-items-center gap-2 marketing-filter-form">
-                        <input type="hidden" name="mode" value="{{ request('mode','job') }}">
-                        @if(request('department'))<input type="hidden" name="department" value="{{ request('department') }}">@endif
-                        @if(request('month'))<input type="hidden" name="month" value="{{ request('month') }}">@endif
-                        @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
-                        @if(request('overdue'))<input type="hidden" name="overdue" value="1">@endif
-                        @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
-                        @if($lockedMarketingCode)
-                            <input type="hidden" name="marketing" value="{{ $lockedMarketingCode }}">
-                        @endif
+                    ?>
+                    <form method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="ms-auto d-flex align-items-center gap-2 marketing-filter-form">
+                        <input type="hidden" name="mode" value="<?php echo e(request('mode','job')); ?>">
+                        <?php if(request('department')): ?><input type="hidden" name="department" value="<?php echo e(request('department')); ?>"><?php endif; ?>
+                        <?php if(request('month')): ?><input type="hidden" name="month" value="<?php echo e(request('month')); ?>"><?php endif; ?>
+                        <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
+                        <?php if(request('overdue')): ?><input type="hidden" name="overdue" value="1"><?php endif; ?>
+                        <?php if(request('search')): ?><input type="hidden" name="search" value="<?php echo e(request('search')); ?>"><?php endif; ?>
+                        <?php if($lockedMarketingCode): ?>
+                            <input type="hidden" name="marketing" value="<?php echo e($lockedMarketingCode); ?>">
+                        <?php endif; ?>
                         <div class="input-group input-group-sm me-2" style="min-width:220px;">
                             <button type="button" id="localSearchBtn" class="input-group-text bg-white border-end-0" style="cursor:pointer;" aria-label="Focus search">
                                 <i class="ti ti-search"></i>
                             </button>
                             <input type="search" id="localSearch" class="form-control form-control-sm border-start-0" placeholder="Search on page (Job/Client/Sample)" aria-label="Search on page" title="Search visible rows">
                         </div>
-                        <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;" {{ $lockedMarketingCode ? 'disabled' : '' }}>
-                            @if(!$lockedMarketingCode)
+                        <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;" <?php echo e($lockedMarketingCode ? 'disabled' : ''); ?>>
+                            <?php if(!$lockedMarketingCode): ?>
                                 <option value="">Select Marketing Person</option>
-                            @endif
-                            @foreach($marketingOptions as $mp)
-                                <option value="{{ $mp->user_code }}" {{ request('marketing') == $mp->user_code ? 'selected' : '' }}>{{ $mp->user_code }} - {{ $mp->name }}</option>
-                            @endforeach
+                            <?php endif; ?>
+                            <?php $__currentLoopData = $marketingOptions; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($mp->user_code); ?>" <?php echo e(request('marketing') == $mp->user_code ? 'selected' : ''); ?>><?php echo e($mp->user_code); ?> - <?php echo e($mp->name); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
-                        @if(request('marketing') && !$lockedMarketingCode)
-                            <a href="{{ route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue')])) }}" class="btn btn-sm btn-outline-secondary">Clear</a>
-                        @endif
+                        <?php if(request('marketing') && !$lockedMarketingCode): ?>
+                            <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm btn-outline-secondary">Clear</a>
+                        <?php endif; ?>
                     </form>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
-        @endif
+        <?php endif; ?>
         <div class="card-body p-0">
             <div class="table-responsive">
-                @if(($mode ?? 'job') === 'reference')
+                <?php if(($mode ?? 'job') === 'reference'): ?>
                     <table class="table table-striped">
                         <thead class="table-light">
                             <tr>
@@ -149,22 +148,22 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @forelse($bookings as $b)
+                        <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr 
 
                             >
                             <tr class="align-middle">
-                                <td><label class="checkboxs"><input type="checkbox" class="row-check-ref" data-booking="{{ $b->id }}"><span class="checkmarks"></span></label></td>
+                                <td><label class="checkboxs"><input type="checkbox" class="row-check-ref" data-booking="<?php echo e($b->id); ?>"><span class="checkmarks"></span></label></td>
                                 <td class="truncate-cell">
-                                    <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $b->client_name }}">{{ $b->client_name }}</div>
+                                    <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($b->client_name); ?>"><?php echo e($b->client_name); ?></div>
                                 </td>
-                                <td>{{ $b->reference_no }}</td>
-                                <td class="text-center">{{ $b->pending_items_count }}</td>
+                                <td><?php echo e($b->reference_no); ?></td>
+                                <td class="text-center"><?php echo e($b->pending_items_count); ?></td>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='@json($pendingItemsPayload)' data-ref="{{ $b->reference_no }}" data-client="{{ $b->client_name }}" title="Show Pending Items"><i class="ti ti-eye"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='<?php echo json_encode($pendingItemsPayload, 15, 512) ?>' data-ref="<?php echo e($b->reference_no); ?>" data-client="<?php echo e($b->client_name); ?>" title="Show Pending Items"><i class="ti ti-eye"></i></button>
                                 </td>
                                 <td class="action-cell">
-                                    @php
+                                    <?php
                                         $letterUrl = null;
                                         $path = $b->upload_letter_path ?? null;
                                         if($path){
@@ -183,38 +182,39 @@
                                                 $letterUrl = asset($path);
                                             }
                                         }
-                                    @endphp
-                                    @if($letterUrl)
-                                        <a href="{{ $letterUrl }}" target="_blank" class="btn btn-icon btn-xs btn-light-primary" title="View Letter">
+                                    ?>
+                                    <?php if($letterUrl): ?>
+                                        <a href="<?php echo e($letterUrl); ?>" target="_blank" class="btn btn-icon btn-xs btn-light-primary" title="View Letter">
                                             <i class="ti ti-file-text"></i>
                                         </a>
-                                    @else
+                                    <?php else: ?>
                                         <span class="badge bg-light text-muted fw-normal">No Letter</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr><td colspan="6" class="text-center">No pending bookings found.</td></tr>
-                        @endforelse
+                        <?php endif; ?>
                         </tbody>
                     </table>
                     <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
-                        <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex align-items-center gap-2">
-                            @foreach(request()->except(['perPage','page']) as $key => $val)
-                                <input type="hidden" name="{{ $key }}" value="{{ $val }}">
-                            @endforeach
+                        <form method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex align-items-center gap-2">
+                            <?php $__currentLoopData = request()->except(['perPage','page']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($val); ?>">
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                @foreach([25,50,100,250,500] as $size)
-                                    <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = [25,50,100,250,500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($size); ?>" <?php echo e(request('perPage',25)==$size ? 'selected' : ''); ?>><?php echo e($size); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </form>
                         <div class="pagination-scroll-wrapper">
-                            {{ $bookings->appends(request()->all())->links('pagination::bootstrap-5') }}
+                            <?php echo e($bookings->appends(request()->all())->links('pagination::bootstrap-5')); ?>
+
                         </div>
                     </div>
-                @else
+                <?php else: ?>
                     <table class="table">
                         <thead class="table-light">
                             <tr>
@@ -228,40 +228,40 @@
                             </tr>
                         </thead>
                         <tbody>
-                        @forelse($items as $item)
+                        <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr class="table-row"
-                                data-search="{{ strtolower(
+                                data-search="<?php echo e(strtolower(
                                     $item->job_order_no . ' ' .
                                     ($item->booking?->client_name ?? '') . ' ' .
                                     $item->sample_description . ' ' .
                                     $item->sample_quality . ' ' .
                                     $item->particulars
-                              )}}" >
-                                <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
+                              )); ?>" >
+                                <td class="job-order-cell" data-bs-toggle="tooltip" title="<?php echo e($item->job_order_no); ?>"><?php echo e($item->job_order_no); ?></td>
                                 <td class="truncate-cell">
-                                    <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
+                                    <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->booking?->client_name ?? '-'); ?>"><?php echo e($item->booking?->client_name ?? '-'); ?></div>
                                 </td>
                                 <td class="truncate-cell">
-                                    <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
+                                    <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->sample_description); ?>"><?php echo e($item->sample_description); ?></div>
                                 </td>
                                 <td>
-                                    <div class="cell-inner">{{ $item->sample_quality }}</div>
+                                    <div class="cell-inner"><?php echo e($item->sample_quality); ?></div>
                                 </td>
                                 <td>
-                                    <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                    <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->particulars); ?>"><?php echo e($item->particulars); ?></div>
                                 </td>
                                 <td>
-                                    @php
+                                    <?php
                                         $receiver = $item->received_by_name ?? optional($item->receivedBy)->name;
-                                    @endphp
-                                    @if($receiver)
-                                        <span class="status-dot received" data-bs-toggle="tooltip" title="Received by {{ $receiver }}" aria-label="Received"></span>
-                                    @else
+                                    ?>
+                                    <?php if($receiver): ?>
+                                        <span class="status-dot received" data-bs-toggle="tooltip" title="Received by <?php echo e($receiver); ?>" aria-label="Received"></span>
+                                    <?php else: ?>
                                         <span class="status-dot pending" data-bs-toggle="tooltip" title="Pending" aria-label="Pending"></span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                                 <td class="action-cell">
-                                    @php
+                                    <?php
                                         $letterUrl = null;
                                         $path = $item->booking?->upload_letter_path ?? null;
                                         if($path){
@@ -279,43 +279,44 @@
                                                 $letterUrl = asset($path);
                                             }
                                         }
-                                    @endphp
-                                    @if($letterUrl)
-                                        <a href="{{ $letterUrl }}" target="_blank" class="btn btn-icon btn-xs btn-light-primary" title="View Letter"><i class="ti ti-file-text"></i></a>
-                                    @else
+                                    ?>
+                                    <?php if($letterUrl): ?>
+                                        <a href="<?php echo e($letterUrl); ?>" target="_blank" class="btn btn-icon btn-xs btn-light-primary" title="View Letter"><i class="ti ti-file-text"></i></a>
+                                    <?php else: ?>
                                         <span class="badge bg-light text-muted fw-normal">No Letter</span>
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr><td colspan="7" class="text-center">No pending items found.</td></tr>
-                        @endforelse
+                        <?php endif; ?>
                         </tbody>
                     </table>
                     <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
-                        <form method="GET" action="{{ route('superadmin.reporting.pendings') }}" class="d-flex align-items-center gap-2">
-                            @foreach(request()->except(['perPage','page']) as $key => $val)
-                                <input type="hidden" name="{{ $key }}" value="{{ $val }}">
-                            @endforeach
+                        <form method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex align-items-center gap-2">
+                            <?php $__currentLoopData = request()->except(['perPage','page']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($val); ?>">
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                @foreach([25,50,100,250,500] as $size)
-                                    <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
-                                @endforeach
+                                <?php $__currentLoopData = [25,50,100,250,500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($size); ?>" <?php echo e(request('perPage',25)==$size ? 'selected' : ''); ?>><?php echo e($size); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </form>
                         <div class="pagination-scroll-wrapper">
-                            {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                            <?php echo e($items->appends(request()->all())->links('pagination::bootstrap-5')); ?>
+
                         </div>
                     </div>
-                @endif
+                <?php endif; ?>
             </div>
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
     // overdue toggle uses a normal navigation link (server-built URL) to avoid JS submission issues
@@ -372,11 +373,11 @@ document.addEventListener('DOMContentLoaded', function(){
     }
 </script>
 
-@endpush
+<?php $__env->stopPush(); ?>
 
 
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     .search-compact input.form-control { border-radius:6px 0 0 6px; }
     .search-compact button { border-radius:0 6px 6px 0; }
@@ -485,4 +486,5 @@ document.addEventListener('DOMContentLoaded', function(){
     .status-dot.received { background: #28a745; box-shadow: 0 4px 10px rgba(40,167,69,0.14); }
     .status-dot.pending { background: #ffc107; box-shadow: 0 4px 10px rgba(255,193,7,0.12); }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/reporting/pendings.blade.php ENDPATH**/ ?>

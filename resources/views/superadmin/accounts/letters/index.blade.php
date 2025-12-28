@@ -12,6 +12,20 @@
         </div>
     @endif
 
+@php
+    $query = http_build_query(
+        array_filter(request()->only([
+            'search',
+            'department_id',
+            'month',
+            'year',
+            'payment_option',
+            'marketing_person',
+            'client_id'
+        ]))
+    );
+@endphp
+
     <div class="content">
         <div class="page-header">
             <div class="add-item d-flex justify-content-between w-100">
@@ -26,27 +40,59 @@
                 </button>
             </div>
         </div>
-
+       
         <div class="card">
             <!-- Filters: Search, Month, Year, Payment Option, Client -->
             <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <!-- Search Form -->
                 <div class="search-set">
-                    <form method="GET" action="{{ route('superadmin.accountBookingsLetters.index') }}"
-                        class="d-flex input-group">
-                        <input type="text" name="search" value="{{ request('search') }}" class="form-control"
-                            placeholder="Search...">
-                        <input type="hidden" name="department_id" value="{{ request('department_id') }}">
-                        <button class="btn btn-outline-secondary" type="submit">🔍</button>
-                    </form>
+                    <div class="search-set">
+                        <form method="GET"
+                            action="{{ route('superadmin.accountBookingsLetters.index') }}"
+                            class="d-flex input-group">
+
+                            {{-- Preserve ALL other filters --}}
+                            @foreach([
+                                'department_id',
+                                'month',
+                                'year',
+                                'payment_option',
+                                'marketing_person',
+                                'client_id'
+                            ] as $filter)
+                                @if(request($filter))
+                                    <input type="hidden" name="{{ $filter }}" value="{{ request($filter) }}">
+                                @endif
+                            @endforeach
+
+                            {{-- Search --}}
+                            <input type="text"
+                                name="search"
+                                id="autoSearch"
+                                value="{{ request('search') }}"
+                                class="form-control"
+                                placeholder="Search...">
+
+                            <button class="btn btn-outline-secondary" type="submit">🔍</button>
+                        </form>
+                    </div>
                 </div>
 
 
                 <!-- Month & Year Filter -->
                 <div class="search-set">
-                    <form method="GET" action="{{ route('superadmin.accountBookingsLetters.index') }}"
+                    <form method="GET"
+                        id="invoiceFilterForm"
+                        action="{{ route('superadmin.accountBookingsLetters.index') }}"
                         class="d-flex input-group gap-2">
+
+                        {{-- Preserve department --}}
                         <input type="hidden" name="department_id" value="{{ request('department_id') }}">
+
+                        {{--  FIXED search preservation --}}
+                        <input type="hidden" name="search" value="{{ request('search') }}">
+
+                        {{-- Month --}}
                         <select name="month" class="form-control">
                             <option value="">Select Month</option>
                             @foreach(range(1, 12) as $m)
@@ -56,39 +102,45 @@
                             @endforeach
                         </select>
 
+                        {{-- Year --}}
                         <select name="year" class="form-control">
                             <option value="">Select Year</option>
                             @foreach(range(date('Y'), date('Y') - 10) as $y)
-                                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>{{ $y }}</option>
+                                <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
+                                    {{ $y }}
+                                </option>
                             @endforeach
                         </select>
 
-                        <!-- 🔹 Payment Option Filter -->
+                        {{-- Payment Option --}}
                         <select name="payment_option" class="form-control">
                             <option value="">Payment Option</option>
                             <option value="bill" {{ request('payment_option') == 'bill' ? 'selected' : '' }}>Bill</option>
                             <option value="without_bill" {{ request('payment_option') == 'without_bill' ? 'selected' : '' }}>
-                                Without Bill</option>
-                            <option value="old_bill" {{ request('payment_option') == 'old_bill' ? 'selected' : '' }}>Old Bill
+                                Without Bill
+                            </option>
+                            <option value="old_bill" {{ request('payment_option') == 'old_bill' ? 'selected' : '' }}>
+                                Old Bill
                             </option>
                         </select>
 
-                        <!-- Marketing person filter-->
-                        <div class="col-lg-4 col-sm-6 col-12 position-relative">
-
-                            <input type="text" id="marketing_code_input" class="form-control" autocomplete="off"
+                        {{-- Marketing person --}}
+                        <div class="position-relative" style="min-width:200px;">
+                            <input type="text"
+                                id="marketing_code_input"
+                                class="form-control"
+                                autocomplete="off"
                                 placeholder="Search marketing person">
 
                             <input type="hidden" name="marketing_person" id="marketing_code_hidden">
 
-                            <div id="marketingCodeDropdown" class="dropdown-menu w-100"
+                            <div id="marketingCodeDropdown"
+                                class="dropdown-menu w-100"
                                 style="display:none; max-height:200px; overflow:auto;">
                             </div>
                         </div>
 
-
-
-                        <!-- 🔹 Client Filter -->
+                        {{-- Client --}}
                         <select name="client_id" class="form-control">
                             <option value="">Select Client</option>
                             @foreach($clients as $client)
@@ -98,31 +150,58 @@
                             @endforeach
                         </select>
 
-                        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                        <button class="btn btn-secondary" type="submit" title="Apply filters"><i class="fa fa-filter"></i></button>
+                        <a href="{{ route('superadmin.accountBookingsLetters.index') }}"
+                            class="btn btn-primary"
+                            title="Reset filters">
+                                <i class="ti ti-refresh"></i>
+                        </a>
                     </form>
                 </div>
-            </div>
+
 
 
             <!-- Department Filter -->
-            <div class="mb-4 mt-4 ms-3">
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="{{ route('superadmin.accountBookingsLetters.index') }}?search={{ request('search') }}"
-                        class="btn btn-sm {{ !request('department_id') ? 'btn-primary' : 'btn-outline-primary' }}">
+            <div class="my-3 ms-4">
+    
+                <div class="d-flex gap-2">
+                    {{-- ALL --}}
+                    <a href="{{ route('superadmin.accountBookingsLetters.index') }}{{ $query ? '?' . $query : '' }}"
+                    class="btn btn-sm {{ !request('department_id') ? 'btn-primary' : 'btn-outline-primary' }}">
                         All
                     </a>
+                    {{-- DEPARTMENTS --}}
                     @foreach($departments as $dept)
-                        <a href="{{ route('superadmin.accountBookingsLetters.index') }}?department_id={{ $dept->id }}&search={{ request('search') }}"
-                            class="btn btn-sm {{ request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary' }}">
+                        @php
+                            $deptQuery = http_build_query(
+                                array_merge(
+                                    request()->except('department_id'),
+                                    ['department_id' => $dept->id]
+                                )
+                            );
+                        @endphp
+
+                        <a href="{{ route('superadmin.accountBookingsLetters.index') }}?{{ $deptQuery }}"
+                        class="btn btn-sm {{ request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary' }}">
                             {{ $dept->name }}
                         </a>
                     @endforeach
                 </div>
-            </div>
+    </div>
+</div>
 
             <!-- Booking Table -->
-            <div class="card-body p-0">
+            <div class="card-body">
                 <div class="table-responsive">
+                    <div class="search-set btn-sm p-1 mb-2">
+                        <input
+                            type="text"
+                            id="localSearch"
+                            class="form-control form-control-sm"
+                            placeholder="Search in current page only..."
+                        >
+                    </div>
+
                     <table class="table">
                         <thead class="table-light">
                             <tr>
@@ -138,7 +217,16 @@
                         </thead>
                         <tbody>
                             @forelse($bookings as $booking)
-                                <tr>
+                                <tr 
+                                    class = "table-row" 
+                                    data-search="{{ 
+                                        strtolower(
+                                            $booking->client_name . ' ' . 
+                                                    $booking->reference_no
+
+                                        )
+                                     }}"
+                                    >
                                     <td><input type="checkbox"></td>
                                     <td class="truncate-cell">
                                         <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $booking->client_name }}">
@@ -449,3 +537,54 @@ $(document).ready(function () {
 });
 </script>
 @endpush
+
+@push('scripts')
+
+<script>
+    const localSearchInput = document.getElementById('localSearch');
+
+    if (localSearchInput) {
+        localSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.table-row');
+
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+
+                if (!query || text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
+
+
+@endpush
+
+ @push('scripts')
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+
+                const form = document.getElementById('invoiceFilterForm');
+                if (!form) return;
+
+                /* -----------------------------
+                | AUTO SUBMIT ON SELECT CHANGE
+                ----------------------------- */
+                form.querySelectorAll('select').forEach(select => {
+                    select.addEventListener('change', () => {
+                        form.submit();
+                    });
+                });
+
+                /* -----------------------------
+                | AUTO SUBMIT ON SEARCH (DEBOUNCE)
+                ----------------------------- */
+                
+            });
+        </script>
+    @endpush
+

@@ -26,10 +26,10 @@
                     <h6>Generate Invoice By Letter</h6>
                 </div>
             </div>
-           
+
             <ul class="table-top-head list-inline d-flex gap-3">
-                 <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#missingInvoiceModal">
-                         <i class="fa fa-exclamation text-danger"></i>
+                <button class="btn btn-secondary" data-bs-toggle="modal" data-bs-target="#missingInvoiceModal">
+                    <i class="fa fa-exclamation text-danger"></i>
                 </button>
                 <li class="list-inline-item">
                     <a href="#" data-bs-toggle="tooltip" title="PDF">
@@ -51,7 +51,7 @@
         </div>
 
         
-       
+
         <div class="modal fade" id="missingInvoiceModal" tabindex="-1" aria-hidden="true">
             <div class="modal-dialog modal-lg modal-dialog-centered modal-dialog-scrollable">
                 <div class="modal-content">
@@ -103,39 +103,30 @@
             </div>
         </div>
 
-        
-        <!-- Bulk Generate Invoice Form START -->
-        <form id="bulkInvoiceForm" action="<?php echo e(route('superadmin.bookingInvoiceStatuses.bulkGenerate')); ?>" method="GET">
 
+        <!-- Bulk Generate Invoice Form START -->
+    
             <!-- Bulk Generate Invoice Button -->
-            <div class="mb-3 ms-2 d-flex justify-content-between">
-                <button type="submit" class="btn btn-primary">
-                    Generate Invoice for Selected
-                </button>
-                
-            </div>
+            
 
             <div class="card">
                 <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
 
-                    <!-- Search Form -->
-                    <div class="search-set ">
-                        <form method="GET" class="d-flex input-group">
-                            <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control"
-                                placeholder="Search...">
-                            <button class="btn btn-outline-secondary ms-2" type="submit"
-                                formaction="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', $department?->id)); ?>">🔍</button>
-                        </form>
-                    </div>
+                    <form method="GET" id="invoiceFilterForm"
+                        action="<?php echo e(route('superadmin.bookingInvoiceStatuses.index')); ?>"
+                        class="d-flex align-items-center justify-content-between w-100 gap-3 flex-wrap">
 
-                    <!-- Marketing Person, Client, Month & Year Filter Form -->
-                    <div class="search-set">
-                        <form method="GET" action="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', $department?->id)); ?>"
-                            class="d-flex gap-2">
+                        
+                         <input type="hidden" name="department" value="<?php echo e(request('department', $department ?? '')); ?>">
 
-                            <!-- Marketing Person Filter -->
-                            <select name="marketing_person" class="form-control">
-                                <option value="">Select Marketing Person</option>
+                        <div class="d-flex align-items-center gap-2">
+                            <input type="text" name="search" id="autoSearch" value="<?php echo e(request('search')); ?>"
+                                class="form-control" style="width:220px" placeholder="Search...">
+                        </div>
+                        <div class="d-flex align-items-center gap-2 flex-wrap">
+                            
+                            <select name="marketing_person" class="form-control" style="width:180px">
+                                <option value="">Marketing Person</option>
                                 <?php $__currentLoopData = $marketingPersons; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($mp->user_code); ?>" <?php echo e(request('marketing_person') == $mp->user_code ? 'selected' : ''); ?>>
                                         <?php echo e($mp->label); ?>
@@ -144,16 +135,18 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
 
-                            <!-- 🔹 Payment Option Filter -->
-                            <select name="payment_option" class="form-control">
+                            
+                            <select name="payment_option" class="form-control" style="width:140px">
                                 <option value="">Payment Option</option>
                                 <option value="bill" <?php echo e(request('payment_option') == 'bill' ? 'selected' : ''); ?>>Bill</option>
-                                <option value="old_bill" <?php echo e(request('payment_option') == 'old_bill' ? 'selected' : ''); ?>>Old Bill</option>
-                            </select> 
+                                <option value="old_bill" <?php echo e(request('payment_option') == 'old_bill' ? 'selected' : ''); ?>>Old
+                                    Bill
+                                </option>
+                            </select>
 
-                            <!-- Client Filter -->
-                            <select name="client_id" class="form-control">
-                                <option value="">Select Client</option>
+                            
+                            <select name="client_id" class="form-control" style="width:180px">
+                                <option value="">Client</option>
                                 <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($client->id); ?>" <?php echo e(request('client_id') == $client->id ? 'selected' : ''); ?>>
                                         <?php echo e($client->name); ?>
@@ -162,9 +155,9 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
 
-                            <!-- Month Filter -->
-                            <select name="month" class="form-control">
-                                <option value="">Select Month</option>
+                            
+                            <select name="month" class="form-control" style="width:140px">
+                                <option value="">Month</option>
                                 <?php $__currentLoopData = range(1, 12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($m); ?>" <?php echo e(request('month') == $m ? 'selected' : ''); ?>>
                                         <?php echo e(\Carbon\Carbon::create()->month($m)->format('F')); ?>
@@ -173,9 +166,9 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
 
-                            <!-- Year Filter -->
-                            <select name="year" class="form-control">
-                                <option value="">Select Year</option>
+                            
+                            <select name="year" class="form-control" style="width:120px">
+                                <option value="">Year</option>
                                 <?php $__currentLoopData = range(date('Y'), date('Y') - 10); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $y): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($y); ?>" <?php echo e(request('year') == $y ? 'selected' : ''); ?>>
                                         <?php echo e($y); ?>
@@ -184,192 +177,238 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
 
-                            <button class="btn btn-outline-secondary" type="submit">Filter</button>
-                        </form>
-                    </div>
+                            
+                            <button class="btn btn-outline-secondary" type="submit" title="Apply filters">
+                                <i class="ti ti-filter"></i>
+                            </button>
 
+                            
+                            <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', $department?->id)); ?>"
+                                class="btn btn-outline-secondary" title="Reset filters">
+                                <i class="ti ti-refresh"></i>
+                            </a>
+                        </div>
+                    </form>
                 </div>
 
                 <!-- Department filter buttons -->
-                <div class="mb-4 mt-4 ms-3">
+    <div class="mb-4 mt-4 ms-3">
+                <div class="d-flex justify-content-between">
                     <div class="d-flex flex-wrap gap-2">
-                        <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['search' => request('search')])); ?>"
-                            class="btn btn-sm <?php echo e(!request('department') ? 'btn-primary' : 'btn-outline-primary'); ?>">
+
+                        
+                        <a href="<?php echo e(route(
+                                'superadmin.bookingInvoiceStatuses.index',
+                                request()->except('department')
+                            )); ?>"
+                        class="btn btn-sm <?php echo e(!request('department') ? 'btn-primary' : 'btn-outline-primary'); ?>">
                             All
                         </a>
 
+                        
                         <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                            <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['department' => $dept->id, 'search' => request('search')])); ?>"
-                                class="btn btn-sm <?php echo e(request('department') == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
+                            <a href="<?php echo e(route(
+                                    'superadmin.bookingInvoiceStatuses.index',
+                                    array_merge(
+                                        request()->except('department'),
+                                        ['department' => $dept->id]
+                                    )
+                                )); ?>"
+                            class="btn btn-sm <?php echo e(request('department') == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
                                 <?php echo e($dept->name); ?>
 
                             </a>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                    </div>
+                     <div class="search-set btn-sm me-4">
+                        <input
+                            type="text"
+                            id="localSearch"
+                            class="form-control form-control-sm"
+                            placeholder="Search in current page only..."
+                        >
                     </div>
                 </div>
+</div>
 
-                <div class="card-body p-0">
-                    <div class="table-responsive">
-                        <table class="table table-hover"> <!-- Added table-hover -->
-                            <thead class="table-light">
-                                <tr>
-                                    <th>
-                                        <label class="checkboxs">
-                                            <input type="checkbox" id="select-all">
-                                            <span class="checkmarks"></span>
-                                        </label>
-                                    </th>
-                                    <th>Assigned Client</th>
-                                    <th>Reference No</th>
-                                    <th>Marketing Person</th>
-                                    <th>Booking Date</th>
-                                    <th>Items</th>
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                <form id="bulkInvoiceForm"   action="<?php echo e(route('superadmin.bookingInvoiceStatuses.bulkGenerate')); ?>" method="GET"></form>
+                    <div class="card-body p-0">
+                        <div class="table-responsive">
+        
+                            <table class="table table-hover"> <!-- Added table-hover -->
+                                <thead class="table-light">
                                     <tr>
-                                        <td>
+                                        <th>
                                             <label class="checkboxs">
-                                                <input type="checkbox" name="booking_ids[]" value="<?php echo e($booking->id); ?>">
+                                                <input type="checkbox" id="select-all">
                                                 <span class="checkmarks"></span>
                                             </label>
-                                        </td>
-                                        <td><?php echo e($booking->client->name ?? ''); ?></td>
-                                        <td><?php echo e($booking->reference_no ?? ''); ?></td>
-                                        <td><?php echo e($booking->marketingPerson->name ?? ''); ?></td>
-                                        <td>
-                                            <?php echo e(\Carbon\Carbon::parse($booking->job_order_date)->format('d-m-Y')); ?>
+                                        </th>
+                                        <th>Assigned Client</th>
+                                        <th>Reference No</th>
+                                        <th>Marketing Person</th>
+                                        <th>Booking Date</th>
+                                        <th>Items</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                        <tr  class = "table-row" 
+                                data-search="<?php echo e(strtolower(
+                                         $booking->client->name . ' ' . 
+                                         $booking->reference_no . ' ' . 
+                                         ($booking->marketingPerson->name ?? ' ')
+                        
+                                    )); ?>">
+                                            <td>
+                                                <label class="checkboxs">
+                                                    <input type="checkbox" name="booking_ids[]" form="bulkInvoiceForm" value="<?php echo e($booking->id); ?>">
+                                                    <span class="checkmarks"></span>
+                                                </label>
+                                            </td>
+                                            <td><?php echo e($booking->client->name ?? ''); ?></td>
+                                            <td><?php echo e($booking->reference_no ?? ''); ?></td>
+                                            <td><?php echo e($booking->marketingPerson->name ?? ''); ?></td>
+                                            <td>
+                                                <?php echo e(\Carbon\Carbon::parse($booking->job_order_date)->format('d-m-Y')); ?>
 
-                                        </td>
-                                        <td>
-                                            <?php echo e($booking->items->count()); ?>
+                                            </td>
+                                            <td>
+                                                <?php echo e($booking->items->count()); ?>
 
-                                            <?php if($booking->items->count() > 0): ?>
-                                                <a href="javascript:void(0);" data-bs-toggle="modal"
-                                                    data-bs-target="#itemsModal-<?php echo e($booking->id); ?>">
-                                                    <i data-feather="eye" class="feather-eye ms-1"></i>
+                                                <?php if($booking->items->count() > 0): ?>
+                                                    <a href="javascript:void(0);" data-bs-toggle="modal"
+                                                        data-bs-target="#itemsModal-<?php echo e($booking->id); ?>">
+                                                        <i data-feather="eye" class="feather-eye ms-1"></i>
+                                                    </a>
+
+                                                    <!-- Modal -->
+                                                    <div class="modal fade" id="itemsModal-<?php echo e($booking->id); ?>" tabindex="-1"
+                                                        aria-hidden="true">
+                                                        <div class="modal-dialog modal-dialog-centered modal-lg">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title">Booking Items for
+                                                                        <?php echo e($booking->client_name ?? ''); ?>
+
+                                                                    </h5>
+                                                                    <button type="button" class="close" data-bs-dismiss="modal"
+                                                                        aria-label="Close">
+                                                                        <span aria-hidden="true">&times;</span>
+                                                                    </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <div class="table-responsive">
+                                                                        <table class="table ">
+                                                                            <thead>
+                                                                                <tr>
+                                                                                    <th>Sample Description</th>
+                                                                                    <th>Sample Quality</th>
+                                                                                    <th>Lab Analyst</th>
+                                                                                    <th>Particulars</th>
+                                                                                    <th>Expected Date</th>
+                                                                                    <th>Amount</th>
+                                                                                    <th>Job Order No</th>
+                                                                                </tr>
+                                                                            </thead>
+                                                                            <tbody>
+                                                                                <?php $__currentLoopData = $booking->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                                                                    <tr>
+                                                                                        <td><?php echo e($item->sample_description ?? ''); ?></td>
+                                                                                        <td><?php echo e($item->sample_quality ?? ''); ?></td>
+                                                                                        <td><?php echo e($item->lab_analysis_code ?? ''); ?></td>
+                                                                                        <td><?php echo e($item->particulars ?? ''); ?></td>
+                                                                                        <td><?php echo e(\Carbon\Carbon::parse($item->lab_expected_date)->format('d-m-Y')); ?>
+
+                                                                                        </td>
+                                                                                        <td><?php echo e($item->amount ?? ''); ?></td>
+                                                                                        <td><?php echo e($item->job_order_no ?? ''); ?></td>
+                                                                                    </tr>
+                                                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                                                                            </tbody>
+                                                                        </table>
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                <?php endif; ?>
+                                            </td>
+
+                                            <td class="d-flex align-items-center gap-2">
+                                                <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.edit', $booking->id)); ?>"
+                                                    class="btn btn-success d-flex align-items-center p-2" title="Generate Invoice">
+                                                    <i data-feather="file-text"></i>
                                                 </a>
 
-                                                <!-- Modal -->
-                                                <div class="modal fade" id="itemsModal-<?php echo e($booking->id); ?>" tabindex="-1"
-                                                    aria-hidden="true">
-                                                    <div class="modal-dialog modal-dialog-centered modal-lg">
-                                                        <div class="modal-content">
-                                                            <div class="modal-header">
-                                                                <h5 class="modal-title">Booking Items for
-                                                                    <?php echo e($booking->client_name ?? ''); ?></h5>
-                                                                <button type="button" class="close" data-bs-dismiss="modal"
-                                                                    aria-label="Close">
-                                                                    <span aria-hidden="true">&times;</span>
-                                                                </button>
-                                                            </div>
-                                                            <div class="modal-body">
-                                                                <div class="table-responsive">
-                                                                    <table class="table ">
-                                                                        <thead>
-                                                                            <tr>
-                                                                                <th>Sample Description</th>
-                                                                                <th>Sample Quality</th>
-                                                                                <th>Lab Analyst</th>
-                                                                                <th>Particulars</th>
-                                                                                <th>Expected Date</th>
-                                                                                <th>Amount</th>
-                                                                                <th>Job Order No</th>
-                                                                            </tr>
-                                                                        </thead>
-                                                                        <tbody>
-                                                                            <?php $__currentLoopData = $booking->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                                                <tr>
-                                                                                    <td><?php echo e($item->sample_description ?? ''); ?></td>
-                                                                                    <td><?php echo e($item->sample_quality ?? ''); ?></td>
-                                                                                    <td><?php echo e($item->lab_analysis_code ?? ''); ?></td>
-                                                                                    <td><?php echo e($item->particulars ?? ''); ?></td>
-                                                                                    <td><?php echo e(\Carbon\Carbon::parse($item->lab_expected_date)->format('d-m-Y')); ?>
+                                                <!-- <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
+                                                                class="btn btn-outline-primary d-flex align-items-center p-2">
+                                                                    <i data-feather="edit"></i>
+                                                                </a> -->
 
-                                                                                    </td>
-                                                                                    <td><?php echo e($item->amount ?? ''); ?></td>
-                                                                                    <td><?php echo e($item->job_order_no ?? ''); ?></td>
-                                                                                </tr>
-                                                                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                                                        </tbody>
-                                                                    </table>
+                                                <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2"
+                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">
+                                                    <i data-feather="trash-2"></i>
+                                                </button>
+
+                                                <!-- Move / Transfer -->
+                                                <a href="#" class="btn btn-warning d-flex align-items-center p-2"
+                                                    title="Without Bill">
+                                                    <i data-feather="corner-up-right"></i>
+                                                </a>
+
+                                                <!-- Delete Modal -->
+                                                <div class="modal fade" id="deleteModal-<?php echo e($booking->id); ?>" tabindex="-1"
+                                                    aria-hidden="true">
+                                                    <div class="modal-dialog modal-dialog-centered">
+                                                        <div class="modal-content">
+                                                            <div class="modal-body text-center p-4">
+                                                                <div class="icon-success bg-danger-transparent text-danger mb-2">
+                                                                    <i class="ti ti-trash"></i>
+                                                                </div>
+                                                                <h5 class="mb-3">Are you sure you want to delete this booking?</h5>
+                                                                <div class="d-flex justify-content-center gap-2">
+                                                                    <button type="button" class="btn btn-secondary"
+                                                                        data-bs-dismiss="modal">Cancel</button>
+                                                                    <form
+                                                                        action="<?php echo e(route('superadmin.bookings.destroy', $booking->id)); ?>"
+                                                                        method="POST">
+                                                                        <?php echo csrf_field(); ?>
+                                                                        <?php echo method_field('DELETE'); ?>
+                                                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                                                    </form>
                                                                 </div>
                                                             </div>
                                                         </div>
                                                     </div>
                                                 </div>
-                                            <?php endif; ?>
-                                        </td>
 
-                                        <td class="d-flex align-items-center gap-2">
-                                            <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.edit', $booking->id)); ?>"
-                                                class="btn btn-success d-flex align-items-center p-2" title="Generate Invoice">
-                                                <i data-feather="file-text"></i>
-                                            </a>
+                                            </td>
+                                        </tr>
+                                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                        <tr>
+                                            <td colspan="14" class="text-center">No bookings found.</td>
+                                        </tr>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
+                        <!-- Pagination -->
+                        <div class="p-3">
+                            <?php echo e($bookings->appends(request()->all())->links('pagination::bootstrap-5')); ?>
 
-                                            <!-- <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
-                                               class="btn btn-outline-primary d-flex align-items-center p-2">
-                                                <i data-feather="edit"></i>
-                                            </a> -->
-
-                                            <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2"
-                                                data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">
-                                                <i data-feather="trash-2"></i>
-                                            </button>
-
-                                            <!-- Move / Transfer -->
-                                            <a href="#" class="btn btn-warning d-flex align-items-center p-2"
-                                                title="Without Bill">
-                                                <i data-feather="corner-up-right"></i>
-                                            </a>
-
-                                            <!-- Delete Modal -->
-                                            <div class="modal fade" id="deleteModal-<?php echo e($booking->id); ?>" tabindex="-1"
-                                                aria-hidden="true">
-                                                <div class="modal-dialog modal-dialog-centered">
-                                                    <div class="modal-content">
-                                                        <div class="modal-body text-center p-4">
-                                                            <div class="icon-success bg-danger-transparent text-danger mb-2">
-                                                                <i class="ti ti-trash"></i>
-                                                            </div>
-                                                            <h5 class="mb-3">Are you sure you want to delete this booking?</h5>
-                                                            <div class="d-flex justify-content-center gap-2">
-                                                                <button type="button" class="btn btn-secondary"
-                                                                    data-bs-dismiss="modal">Cancel</button>
-                                                                <form
-                                                                    action="<?php echo e(route('superadmin.bookings.destroy', $booking->id)); ?>"
-                                                                    method="POST">
-                                                                    <?php echo csrf_field(); ?>
-                                                                    <?php echo method_field('DELETE'); ?>
-                                                                    <button type="submit" class="btn btn-danger">Delete</button>
-                                                                </form>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-
-                                        </td>
-                                    </tr>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                                    <tr>
-                                        <td colspan="14" class="text-center">No bookings found.</td>
-                                    </tr>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <!-- Pagination -->
-                    <div class="p-3">
-                        <?php echo e($bookings->appends(request()->all())->links('pagination::bootstrap-5')); ?>
-
-                    </div>
+                        </div>
+                    </div> 
+                </form>
+                <div class="mb-3 ms-2 d-flex justify-content-between">
+                    <button type="submit" form="bulkInvoiceForm" class="btn btn-primary">
+                        Generate Invoice for Selected
+                    </button>
                 </div>
             </div>
-        </form>
+      
         <!-- Bulk Generate Invoice Form END -->
     </div>
 
@@ -423,11 +462,11 @@
 
                     res.data.forEach((inv, i) => {
                         rows += `
-                                <tr>
-                                    <td>${start + i + 1}</td>
-                                    <td>${inv}</td>
-                                </tr>
-                            `;
+                                        <tr>
+                                            <td>${start + i + 1}</td>
+                                            <td>${inv}</td>
+                                        </tr>
+                                    `;
                     });
 
                     $('#missingTable').html(rows);
@@ -455,6 +494,76 @@
         // Initial load
         loadMissing();
     </script>
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const form = document.getElementById('invoiceFilterForm');
+    if (!form) return;
+
+    /* -----------------------------
+     | AUTO SUBMIT ON SELECT CHANGE
+     ----------------------------- */
+    form.querySelectorAll('select').forEach(select => {
+        select.addEventListener('change', () => {
+            form.submit();
+        });
+    });
+
+    /* -----------------------------
+     | AUTO SUBMIT ON SEARCH (NO LAG)
+     ----------------------------- */
+    const searchInput = document.getElementById('autoSearch');
+    if (!searchInput) return;
+
+    let typingTimer;
+    let lastValue = searchInput.value.trim();
+    const delay = 400;
+    const minLength = 2;
+
+    searchInput.addEventListener('input', function () {
+        clearTimeout(typingTimer);
+
+        typingTimer = setTimeout(() => {
+            const currentValue = this.value.trim();
+
+            //  Ignore if value didn't actually change
+            if (currentValue === lastValue) return;
+
+            //  Ignore only-spaces typing
+            if (currentValue.length === 0 && lastValue.length === 0) return;
+
+            //  Submit if valid length OR cleared
+            if (currentValue.length >= minLength || currentValue.length === 0) {
+                lastValue = currentValue;
+                form.submit();
+            }
+
+        }, delay);
+    });
+});
+</script>
+  <script>
+            const localSearchInput = document.getElementById('localSearch');
+
+            if (localSearchInput) {
+                localSearchInput.addEventListener('input', function () {
+                    const query = this.value.toLowerCase().trim();
+                    const rows = document.querySelectorAll('.table-row');
+
+                    rows.forEach(row => {
+                        const text = row.getAttribute('data-search');
+
+                        if (!query || text.includes(query)) {
+                            row.style.display = '';
+                        } else {
+                            row.style.display = 'none';
+                        }
+                    });
+                });
+            }
+        </script>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/generateInvoice/index.blade.php ENDPATH**/ ?>

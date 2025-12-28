@@ -121,8 +121,6 @@ class StoreBookingRequest extends FormRequest
                 }
             }
         }
-
-
         return $rules;
     }
 }

@@ -46,12 +46,17 @@
 
     <div class="card">
 
+
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
 
             <!-- Search Form -->
             <div class="search-set">
                 <form method="GET" action="{{ route('superadmin.bookings.bookingByLetter.index') }}" class="d-flex input-group">
-                    <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
+                        {{-- Preserve month & year --}}
+                    <input type="hidden" name="month" value="{{ request('month') }}">
+                    <input type="hidden" name="year" value="{{ request('year') }}">
+                    <input type="text" name="search" value="{{ request('search') }}"  id="autoSearch" class="form-control" placeholder="Search...">
+    
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
             </div>
@@ -59,6 +64,8 @@
             <!-- Month & Year Filter Form -->
             <div class="search-set">
                 <form method="GET" action="{{ route('superadmin.bookings.bookingByLetter.index') }}" class="d-flex input-group">
+                     {{-- Preserve search --}}
+                    <input type="hidden" name="search" value="{{ request('search') }}">
                     <!-- Month Filter -->
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
@@ -85,7 +92,16 @@
 
         </div>
 
+
         <div class="card-body p-0">
+            <div class="search-set mb-2 p-4">
+                <input
+                    type="text"
+                    id="localSearch"
+                    class="form-control"
+                    placeholder="Search in current page only..."
+                >
+            </div>
             <div class="table-responsive">
                 <table class="table">
                     <thead class="table-light">
@@ -102,7 +118,17 @@
                     </thead>
                     <tbody>
                         @forelse($items as $item)
-                        <tr>
+                        <tr 
+                            class="table-row"
+                            data-search="{{ strtolower(
+                                $item->job_order_no . ' ' .
+                                ($item->booking?->client_name ?? '') . ' ' .
+                                $item->sample_description . ' ' .
+                                $item->sample_quality . ' ' .
+                                $item->particulars
+                            ) }}" 
+                        >
+
                             <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                             <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
                             <td class="truncate-cell">
@@ -179,7 +205,7 @@
                             @endforeach
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                @foreach([25,50,100] as $size)
+                                @foreach([25,50,100,500] as $size)
                                     <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
                                 @endforeach
                             </select>
@@ -212,6 +238,52 @@
     /* job order short single-line truncation */
     .job-order-cell{ max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
 </style>
+@endpush
+
+@push('scripts')
+<script>
+    let typingTimer;
+    const delay = 400; // milliseconds
+    const minLength = 3;
+
+    const searchInput = document.getElementById('autoSearch');
+
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            clearTimeout(typingTimer);
+
+            typingTimer = setTimeout(() => {
+                const value = this.value.trim();
+
+                // Submit only if 3+ characters OR field is cleared
+                if (value.length >= minLength || value.length === 0) {
+                    this.form.submit();
+                }
+            }, delay);
+        });
+    }
+</script>
+<script>
+    const localSearchInput = document.getElementById('localSearch');
+
+    if (localSearchInput) {
+        localSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.table-row');
+
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+
+                if (!query || text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
+
 @endpush
 
 @endsection

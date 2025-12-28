@@ -6,6 +6,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CalibrationController;
 use App\Http\Controllers\ISCodeController;
+use App\Http\Controllers\OtpAuthController; 
 
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\LoginController;
@@ -23,6 +24,7 @@ use App\Http\Controllers\SuperAdmin\PurchaseListController;
 use App\Http\Controllers\SuperAdmin\PurchaseAddController;
 use App\Http\Controllers\SuperAdmin\ShowBookingController;
 use App\Http\Controllers\SuperAdmin\ShowBookingByLetterController;
+
 use App\Http\Controllers\ListController;
 
 use App\Http\Controllers\SuperAdmin\IsCodesController;
@@ -53,6 +55,7 @@ use App\Http\Controllers\Accounts\ChequeController;
 use App\Http\Controllers\Accounts\BankController;
 use App\Http\Controllers\Accounts\ChequeTemplateController;
 use App\Http\Controllers\Accounts\VoucherController;
+use App\Http\Controllers\Accounts\PurchaseBillController;
 
 use App\Http\Controllers\Accounts\AccountsLetterController;
 use App\Http\Controllers\Accounts\PayrollReviewController;
@@ -927,3 +930,11 @@ Route::prefix('manual-invoice-payment')
         Route::put('{id}', [ManualInvoicePaymentController::class, 'update'])->name('update');
         Route::delete('{id}', [ManualInvoicePaymentController::class, 'destroy'])->name('destroy');
     });
+
+Route::prefix('purchase')->name('purchase.')->group(function () {
+    Route::get('/', [PurchaseBillController::class, 'index'])->name('index');
+    Route::get('/upload', [PurchaseBillController::class, 'create'])->name('create');
+    Route::post('/', [PurchaseBillController::class, 'store'])->name('store');
+    Route::put('/{id}', [PurchaseBillController::class, 'update'])->name('update');
+    Route::delete('/{id}', [PurchaseBillController::class, 'destroy'])->name('destroy');
+});
