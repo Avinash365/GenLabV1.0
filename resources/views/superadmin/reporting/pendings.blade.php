@@ -116,7 +116,7 @@
                             <button type="button" id="localSearchBtn" class="input-group-text bg-white border-end-0" style="cursor:pointer;" aria-label="Focus search">
                                 <i class="ti ti-search"></i>
                             </button>
-                            <input type="search" id="localSearchInput" class="form-control form-control-sm border-start-0" placeholder="Search on page (Job/Client/Sample)" aria-label="Search on page" title="Search visible rows">
+                            <input type="search" id="localSearch" class="form-control form-control-sm border-start-0" placeholder="Search on page (Job/Client/Sample)" aria-label="Search on page" title="Search visible rows">
                         </div>
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;" {{ $lockedMarketingCode ? 'disabled' : '' }}>
                             @if(!$lockedMarketingCode)
@@ -150,17 +150,9 @@
                         </thead>
                         <tbody>
                         @forelse($bookings as $b)
-                            @php
-                                $pendingItemsPayload = $b->items->map(function($pi){
-                                    return [
-                                        'job_order_no' => $pi->job_order_no,
-                                        'sample_description' => $pi->sample_description,
-                                        'sample_quality' => $pi->sample_quality,
-                                        'particulars' => $pi->particulars,
-                                        'receiver' => $pi->received_by_name ?? optional($pi->receivedBy)->name,
-                                    ];
-                                });
-                            @endphp
+                            <tr 
+
+                            >
                             <tr class="align-middle">
                                 <td><label class="checkboxs"><input type="checkbox" class="row-check-ref" data-booking="{{ $b->id }}"><span class="checkmarks"></span></label></td>
                                 <td class="truncate-cell">
@@ -237,7 +229,14 @@
                         </thead>
                         <tbody>
                         @forelse($items as $item)
-                            <tr>
+                            <tr class="table-row"
+                                data-search="{{ strtolower(
+                                    $item->job_order_no . ' ' .
+                                    ($item->booking?->client_name ?? '') . ' ' .
+                                    $item->sample_description . ' ' .
+                                    $item->sample_quality . ' ' .
+                                    $item->particulars
+                              )}}" >
                                 <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
                                 <td class="truncate-cell">
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
@@ -349,59 +348,33 @@ document.addEventListener('DOMContentLoaded', function(){
             modal().show();
         });
     });
-
-            // Local page search: filter visible rows in current table (Job Order, Client, Sample)
-            try{
-                const localInput = document.getElementById('localSearchInput');
-                if(localInput){
-                    let tmr = null;
-                    const doFilter = (val)=>{
-                        const q = (val||'').trim().toLowerCase();
-                        // find all data tables inside card body (bookings or items)
-                        const tables = document.querySelectorAll('.card-body .table-responsive table');
-                        tables.forEach(table=>{
-                            const tbody = table.querySelector('tbody'); if(!tbody) return;
-                            Array.from(tbody.querySelectorAll('tr')).forEach(row=>{
-                                // only consider rows with td cells
-                                const tds = Array.from(row.querySelectorAll('td'));
-                                if(!tds.length) return;
-                                // Collect first three relevant columns (Job Order / Client / Sample)
-                                const parts = [];
-                                for(let i=0;i<3;i++){
-                                    const td = tds[i];
-                                    if(td) parts.push((td.innerText||td.textContent||'').trim());
-                                }
-                                const text = parts.join(' ').replace(/\s+/g,' ').toLowerCase();
-                                const ok = q === '' || text.indexOf(q) !== -1;
-                                row.style.display = ok ? '' : 'none';
-                            });
-                        });
-                    };
-                    localInput.addEventListener('input', function(){ clearTimeout(tmr); tmr = setTimeout(()=>doFilter(this.value), 120); });
-                    localInput.addEventListener('keydown', function(e){ if(e.key === 'Escape'){ this.value = ''; doFilter(''); } if(e.key === 'Enter'){ e.preventDefault(); } });
-                    // if search button present, focus the input and trigger filter when clicked
-                    const searchBtn = document.getElementById('localSearchBtn');
-                    if(searchBtn){
-                        searchBtn.addEventListener('click', function(){
-                            localInput.focus();
-                            // small delay to ensure focus happens before filtering
-                            setTimeout(function(){ doFilter(localInput.value || ''); }, 10);
-                        });
-                    }
-                }
-            }catch(e){ /* ignore errors for local search */ }
-
-            // Initialize Bootstrap tooltips for truncated cells and other tooltip elements
-            try{
-                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el){
-                    if(!el._tooltipInst){
-                        el._tooltipInst = new bootstrap.Tooltip(el);
-                    }
-                });
-            }catch(e){ /* ignore if bootstrap not available */ }
 });
+</script>
+
+<script>
+    const localSearchInput = document.getElementById('localSearch');
+
+    if (localSearchInput) {
+        localSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.table-row');
+
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+
+                if (!query || text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
 
 @endpush
+
+
 
 @push('styles')
 <style>

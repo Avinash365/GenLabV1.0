@@ -22,6 +22,12 @@ class ReportingController extends Controller
     {
         $job = trim((string) $request->get('job'));
 
+        // per-page control (allow users to change pagination size)
+        $perPage = (int) $request->get('perPage', 25);
+        if (!in_array($perPage, [25, 50, 100, 250], true)) {
+            $perPage = 25;
+        }
+
         $baseQuery = BookingItem::query()->with(['booking', 'analyst', 'receivedBy']);
 
         $header = null;
@@ -49,7 +55,7 @@ class ReportingController extends Controller
                 ];
 
                 // Show all items for the same booking/reference
-                $items = $b->items()->with(['booking', 'analyst', 'reports','receivedBy'])->latest('id')->paginate(20)->withQueryString();
+                $items = $b->items()->with(['booking', 'analyst', 'reports','receivedBy'])->latest('id')->paginate($perPage)->withQueryString();
                 $reports = ReportEditorFile::latest()->get();
 
                 return view('superadmin.reporting.received', compact('items', 'job', 'header', 'reports'));
@@ -57,7 +63,7 @@ class ReportingController extends Controller
         }
 
         // Default: no auto-listing; show empty when no search or not found
-        $items = BookingItem::query()->whereRaw('1=0')->paginate(20)->withQueryString();
+        $items = BookingItem::query()->whereRaw('1=0')->paginate($perPage)->withQueryString();
         return view('superadmin.reporting.received', compact('items', 'job', 'header'));
     }
 
@@ -586,8 +592,15 @@ class ReportingController extends Controller
         if (Schema::hasColumn('booking_items', 'received_by_id')) {
             $item->received_by_id = $receiverId;
         }
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $item->status = $receiverName;
+        }
         if (array_key_exists('issue_date', $data)) {
             $item->issue_date = $data['issue_date'];
+            // When an issue date is set, mark status as Report Generated
+            if (Schema::hasColumn('booking_items', 'status')) {
+                $item->status = 'Report Generated';
+            }
         }
         $item->save();
         if ($request->wantsJson()) {
@@ -610,7 +623,50 @@ class ReportingController extends Controller
     {
         $job = trim((string) $request->get('job'));
 
-        // If job is provided, try to scope to that booking's items
+        // Prepare receiver data
+        $receiverId = auth('web')->check() ? auth('web')->id() : null;
+        $receiverName = auth('web')->check()
+            ? optional(auth('web')->user())->name
+            : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
+        $update = [
+            'received_by_name' => $receiverName,
+            'received_at'    => now(),
+        ];
+        if (Schema::hasColumn('booking_items', 'received_by_id')) {
+            $update['received_by_id'] = $receiverId;
+        }
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $update['status'] = $receiverName;
+        }
+
+        // If explicit IDs provided, update only those (useful for current page)
+        // Accept multiple forms: array from inputs named ids[], single string '1,2,3', or single id
+        $ids = $request->input('ids');
+        if (empty($ids)) {
+            $ids = $request->input('ids[]') ?? $request->get('ids');
+        }
+        if (is_string($ids)) {
+            // comma separated or single
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
+        }
+        if ($ids instanceof \Illuminate\Support\Collection) {
+            $ids = $ids->all();
+        }
+        if (is_numeric($ids)) {
+            $ids = [(int) $ids];
+        }
+        if (is_array($ids) && count($ids) > 0) {
+            $validIds = array_values(array_filter(array_map('intval', $ids)));
+            if (!empty($validIds)) {
+                BookingItem::whereIn('id', $validIds)->update($update);
+                if ($request->wantsJson()) {
+                    return response()->json(['ok' => true, 'scope' => 'ids', 'count' => count($validIds), 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
+                }
+                return back()->with('status', 'Selected reports marked as received');
+            }
+        }
+
+        // If job is provided, try to scope to that booking's items (legacy behavior)
         if ($job !== '') {
             $firstItem = BookingItem::with('booking')
                 ->where('job_order_no', 'like', "%{$job}%")
@@ -618,17 +674,6 @@ class ReportingController extends Controller
                 ->first();
 
             if ($firstItem && $firstItem->booking) {
-                $receiverId = auth('web')->check() ? auth('web')->id() : null;
-                $receiverName = auth('web')->check()
-                    ? optional(auth('web')->user())->name
-                    : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-                $update = [
-                    'received_by_name' => $receiverName,
-                    'received_at'    => now(),
-                ];
-                if (Schema::hasColumn('booking_items', 'received_by_id')) {
-                    $update['received_by_id'] = $receiverId;
-                }
                 $firstItem->booking->items()->update($update);
                 if ($request->wantsJson()) {
                     return response()->json(['ok' => true, 'scope' => 'booking', 'booking_id' => $firstItem->booking->id, 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
@@ -638,17 +683,6 @@ class ReportingController extends Controller
         }
 
         // Fallback: mark all items as received (use sparingly)
-        $receiverId = auth('web')->check() ? auth('web')->id() : null;
-        $receiverName = auth('web')->check()
-            ? optional(auth('web')->user())->name
-            : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-        $update = [
-            'received_by_name' => $receiverName,
-            'received_at' => now()
-        ];
-        if (Schema::hasColumn('booking_items', 'received_by_id')) {
-            $update['received_by_id'] = $receiverId;
-        }
         BookingItem::query()->update($update);
         if ($request->wantsJson()) {
             return response()->json(['ok' => true, 'scope' => 'all', 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
@@ -683,8 +717,14 @@ class ReportingController extends Controller
                         $item->received_by_id = $receiverId;
                     }
                     $item->received_at = now();
+                    if (Schema::hasColumn('booking_items', 'status')) {
+                        $item->status = $receiverName;
+                    }
                 }
                 $item->issue_date = $row['issue_date'] ?? $item->issue_date;
+                if (!empty($row['issue_date']) && Schema::hasColumn('booking_items', 'status')) {
+                    $item->status = 'Report Generated';
+                }
                 $item->save();
             }
         });
@@ -922,6 +962,9 @@ class ReportingController extends Controller
             ? optional(auth('web')->user())->name
             : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
         $item->account_received_at = now();
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $item->status = 'In Account';
+        }
         if (Schema::hasColumn('booking_items', 'account_received_by_id')) {
             $item->account_received_by_id = $receiverId;
         }
@@ -946,10 +989,17 @@ class ReportingController extends Controller
         $receiverName = auth('web')->check()
             ? optional(auth('web')->user())->name
             : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-        \App\Models\BookingItem::whereIn('id', $payload['ids'])->update([
+        $update = [
             'account_received_at' => now(),
             'account_received_by_name' => $receiverName,
-        ] + (Schema::hasColumn('booking_items', 'account_received_by_id') ? ['account_received_by_id' => $receiverId] : []));
+        ];
+        if (Schema::hasColumn('booking_items', 'account_received_by_id')) {
+            $update['account_received_by_id'] = $receiverId;
+        }
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $update['status'] = 'In Account';
+        }
+        \App\Models\BookingItem::whereIn('id', $payload['ids'])->update($update);
         if ($request->wantsJson()) {
             return response()->json(['ok' => true]);
         }

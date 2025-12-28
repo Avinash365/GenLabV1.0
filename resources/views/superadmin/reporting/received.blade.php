@@ -3,29 +3,38 @@
 @section('title', 'Received Reports')
 
 @section('content')
-{{-- Global loading overlay is provided by the layout (window.LoadingOverlay) --}}
 <div class="content">
-    <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
-        <h4 class="mb-0">Received Reports</h4>
-    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const perPageSelect = document.getElementById('perPageSelect');
+            if (perPageSelect) {
+                perPageSelect.addEventListener('change', function () {
+                    document.getElementById('perpage-form').submit();
+                });
+            }
 
-    @if(session('status'))
-        <div class="alert alert-success">{{ session('status') }}</div>
-    @endif
+            const selectAll = document.getElementById('select-all-checkbox');
+            if (selectAll) {
+                selectAll.addEventListener('change', function () {
+                    const checked = this.checked;
+                    document.querySelectorAll('.row-select-checkbox').forEach(cb => {
+                        cb.checked = checked;
+                    });
+                    toggleReceiveAllButton();
+                });
+            }
 
-    <div class="card mb-3">
-        <div class="card-body">
-            <form method="GET" action="{{ route('superadmin.reporting.received') }}" class="row g-2 align-items-end">
-                <div class="col-sm-4">
-                    <label class="form-label">Reference No</label>
-                    <input type="text" name="job" value="{{ $job }}" class="form-control" placeholder="Enter Reference No">
-                </div>
-                <div class="col-sm-2">
-                    <button type="submit" class="btn btn-primary w-100">Search</button>
-                </div>
-            </form>
-        </div>
-    </div>
+            document.querySelectorAll('.row-select-checkbox').forEach(cb => {
+                cb.addEventListener('change', toggleReceiveAllButton);
+            });
+
+            function toggleReceiveAllButton() {
+                const any = Array.from(document.querySelectorAll('.row-select-checkbox')).some(cb => cb.checked);
+                const btn = document.getElementById('receive-all-btn');
+                if (btn) btn.disabled = !any;
+            }
+        });
+    </script>
 
     @if(!empty($header))
     @php
@@ -131,25 +140,32 @@
                 </div>
                 <table class="table table-striped" id="report-table">
                     <thead>
-                        <tr>
-                            <th>Job No.</th>
-                            <!-- <th>Client Name</th> -->
-                            <th>Description</th>
-                            <th>Status</th>
-                            <th id="column-header">Select Report</th>
-                            <th> view </th>
-                            <th>Action</th>
-                        </tr>
+                                <tr>
+                                    <th style="width:40px; text-align:center;"><input type="checkbox" id="select-all-checkbox" title="Select all"></th>
+                                    <th>Job No.</th>
+                                    <!-- <th>Client Name</th> -->
+                                    <th>Description</th>
+                                    <th>Status</th>
+                                    <th id="column-header">Select Report</th>
+                                    <th> view </th>
+                                    <th>Action</th>
+                                </tr>
                     </thead>
                     <tbody id="table-body">
                         @forelse($items as $item)
                             <tr>
+                                <td class="text-center">
+                                    <input type="checkbox" class="row-select-checkbox" value="{{ $item->id }}" title="Select row">
+                                </td>
                                 <td>{{ $item->job_order_no }}</td>
                                 <!-- <td>{{ $item->booking->client_name ?? '-' }}</td> -->
                                 <td>{{ $item->sample_description }}</td>
+                
                                 <td class="status-cell" data-id="{{ $item->id }}">
-                                    @if($item->received_at)
-                                        Received by {{ $item->received_by_name ?? ($item->receivedBy->name ?? '-') }}
+                                    @if(!empty($item->issue_date))
+                                        Report Generated
+                                    @elseif($item->received_at)
+                                        Received by {{ $item->received_by_name ?? ($item->status->name ?? '-') }}
                                     @elseif($item->analyst)
                                         With Analyst: {{ $item->analyst->name }} ({{ $item->analyst->user_code }})
                                     @else
@@ -261,7 +277,7 @@
                                                 @csrf
                                                 @if($item->received_at)
                                                     <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="submit" style="background-color:#FE9F43;border-color:#FE9F43">
-                                                        Submit
+                                                        Received
                                                     </button>
                                                 @else
                                                     <button type="button" class="btn btn-sm receive-toggle-btn" data-id="{{ $item->id }}" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">
@@ -281,8 +297,27 @@
                 </table>
             </div>
             <div class="d-flex justify-content-between align-items-center mt-3">
-                <div>
-                    {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                <div class="d-flex align-items-center gap-3">
+                    <form id="perpage-form" method="GET" action="{{ route('superadmin.reporting.received') }}" class="d-inline-flex align-items-center gap-2">
+                        @foreach(request()->except(['perPage','page']) as $k => $v)
+                            @if(is_array($v))
+                                @foreach($v as $val)
+                                    <input type="hidden" name="{{ $k }}[]" value="{{ $val }}">
+                                @endforeach
+                            @else
+                                <input type="hidden" name="{{ $k }}" value="{{ $v }}">
+                            @endif
+                        @endforeach
+                        <label class="small text-muted mb-0">Rows:</label>
+                        <select name="perPage" id="perPageSelect" class="form-select form-select-sm">
+                            @foreach([25,50,100,250] as $n)
+                                <option value="{{ $n }}" {{ request()->get('perPage',25) == $n ? 'selected' : '' }}>{{ $n }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                    <div>
+                        {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                    </div>
                 </div>
                 <div class="d-flex gap-2">
                     @php
@@ -882,6 +917,10 @@
             btn.addEventListener('click', function() {
                 const id = btn.getAttribute('data-id');
                 const mode = btn.getAttribute('data-mode') || 'receive';
+                // Make 'Submit' display-only: ignore clicks when in submit mode
+                if (mode === 'submit') {
+                    return;
+                }
                 const form = document.getElementById('receive-form-' + id);
                 const row = btn.closest('tr');
                 const issueInput = row ? row.querySelector('.issue-date-input') : document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
@@ -897,11 +936,11 @@
                         }
                     }).then(safeJson), 'Receiving job...').then(data => {
                         if (data && data.ok) {
-                            const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
-                            if (cell) {
-                                const name = data.received_by || data.receiver_name || 'User';
-                                cell.textContent = 'Received by ' + name;
-                            }
+                        const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
+                        if (cell) {
+                            const name = (data && (data.received_by || data.receiver_name)) ? (data.received_by || data.receiver_name) : null;
+                            cell.textContent = name ? ('Received by ' + name) : 'Received';
+                        }
                             const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
                             const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
                             if (wrapper) {
@@ -987,6 +1026,67 @@
             });
         });
 
+        // Auto-save issue date when user selects a date from the picker
+        document.querySelectorAll('.issue-date-input').forEach(function(input) {
+            if (input.dataset.boundIssue === '1') return;
+            input.dataset.boundIssue = '1';
+            input.addEventListener('change', function() {
+                const val = input.value;
+                if (!val) return;
+                const cell = input.closest('.issue-date-cell');
+                const id = cell ? cell.getAttribute('data-id') : null;
+                if (!id) return;
+                const form = document.getElementById('receive-form-' + id);
+                if (!form) return;
+                const csrf = form.querySelector('input[name="_token"]') ? form.querySelector('input[name="_token"]').value : '';
+
+                LoadingOverlay.wrap(() => fetch(form.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: new URLSearchParams({ issue_date: val })
+                }).then(safeJson), 'Saving issue date...').then(data => {
+                    if (data && data.ok) {
+                        const cellStatus = document.querySelector('.status-cell[data-id="' + id + '"]');
+                        if (cellStatus) {
+                            // When an issue date is saved we mark the status as Report Generated
+                            cellStatus.textContent = 'Report Generated';
+                        }
+                        const row = input.closest('tr');
+                        const wrapper = row ? row.querySelector('.report-select-wrapper') : document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                        const selectEl = wrapper ? wrapper.querySelector('.reports-picker') : null;
+                        if (wrapper) {
+                            wrapper.classList.remove('report-select-wrapper--disabled');
+                        }
+                        if (selectEl) {
+                            selectEl.dataset.enabled = '1';
+                            selectEl.removeAttribute('disabled');
+                            const ts = selectEl.tomSelectInstance;
+                            if (ts && typeof ts.enable === 'function') ts.enable();
+                        }
+                        // Update receive button state
+                        const btn = document.querySelector('.receive-toggle-btn[data-id="' + id + '"]');
+                        if (btn) {
+                            btn.textContent = 'Submit';
+                            btn.setAttribute('data-mode', 'submit');
+                            btn.style.backgroundColor = '#FE9F43';
+                            btn.style.borderColor = '#FE9F43';
+                        }
+                        if (typeof updateBulkButtons === 'function') updateBulkButtons();
+                        if (window.Swal) {
+                            Swal.fire({ icon: 'success', title: 'Saved', text: 'Issue Date saved successfully.' });
+                        }
+                        return;
+                    }
+                    window.location.reload();
+                }).catch(() => window.location.reload());
+            });
+        });
+
         const receiveAllForm = document.getElementById('receive-all-form');
         const receiveAllBtn = document.getElementById('receive-all-btn');
         const submitAllForm = document.getElementById('submit-all-form');
@@ -998,55 +1098,71 @@
                 ev.preventDefault();
                 const csrf = receiveAllForm.querySelector('input[name="_token"]').value;
                 const job = receiveAllForm.querySelector('input[name="job"]').value;
-                LoadingOverlay.wrap(() => fetch(receiveAllForm.action, {
-                    method: 'POST',
-                    headers: {
-                        'X-CSRF-TOKEN': csrf,
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'Accept': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: new URLSearchParams({ job })
-                }).then(safeJson), 'Receiving all jobs...').then(data => {
-                    // Update UI to allow entering issue dates for all rows
-                    document.querySelectorAll('.issue-date-input').forEach(function(input) {
-                        input.classList.remove('d-none');
-                        input.disabled = false;
-                    });
-                    document.querySelectorAll('.receive-toggle-btn').forEach(function(btn) {
-                        btn.textContent = 'Submit';
-                        btn.setAttribute('data-mode', 'submit');
-                        btn.style.backgroundColor = '#FE9F43';
-                        btn.style.borderColor = '#FE9F43';
-                    });
-                    // Update status for all rows using backend data
-                    if (data) {
-                        const rn = data.receiver_name || data.received_by || 'User';
-                        document.querySelectorAll('.status-cell').forEach(function(cell) {
-                            cell.textContent = 'Received by ' + rn;
+                // collect checked rows only
+                const checked = Array.from(document.querySelectorAll('.row-select-checkbox:checked')).map(cb => cb.value);
+                if (!checked.length) {
+                    if (window.Swal) {
+                        Swal.fire({ icon: 'warning', title: 'No rows selected', text: 'Please select one or more rows before receiving.' });
+                    } else {
+                        alert('Please select one or more rows before receiving.');
+                    }
+                    return;
+                }
+                LoadingOverlay.wrap(() => {
+                    const params = new URLSearchParams();
+                    params.append('job', job || '');
+                    checked.forEach(id => params.append('ids[]', id));
+                    return fetch(receiveAllForm.action, {
+                        method: 'POST',
+                        headers: {
+                            'X-CSRF-TOKEN': csrf,
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'Accept': 'application/json',
+                            'X-Requested-With': 'XMLHttpRequest'
+                        },
+                        body: params
+                    }).then(safeJson);
+                }, 'Receiving selected jobs...').then(data => {
+                    // Update UI only for checked rows
+                    try {
+                        const rn = (data && (data.receiver_name || data.received_by)) ? (data.receiver_name || data.received_by) : 'User';
+                        checked.forEach(function(id) {
+                            const issueCell = document.querySelector('.issue-date-cell[data-id="' + id + '"]');
+                            if (issueCell) {
+                                const input = issueCell.querySelector('.issue-date-input');
+                                if (input) { input.classList.remove('d-none'); input.disabled = false; }
+                            }
+                            const btn = document.querySelector('.receive-toggle-btn[data-id="' + id + '"]');
+                            if (btn) {
+                                btn.textContent = 'Submit';
+                                btn.setAttribute('data-mode', 'submit');
+                                btn.style.backgroundColor = '#FE9F43';
+                                btn.style.borderColor = '#FE9F43';
+                            }
+                            const statusCell = document.querySelector('.status-cell[data-id="' + id + '"]');
+                            if (statusCell) {
+                                statusCell.textContent = 'Received by ' + rn;
+                            }
+                            const wrapper = document.querySelector('.report-select-wrapper[data-report-wrapper="' + id + '"]');
+                            if (wrapper) {
+                                wrapper.classList.remove('report-select-wrapper--disabled');
+                                const selectEl = wrapper.querySelector('.reports-picker');
+                                if (selectEl) {
+                                    selectEl.dataset.enabled = '1';
+                                    selectEl.removeAttribute('disabled');
+                                    const ts = selectEl.tomSelectInstance;
+                                    if (ts && typeof ts.enable === 'function') ts.enable();
+                                }
+                                setReportCardState(id, false);
+                            }
                         });
+                    } catch (e) {
+                        console.warn('Partial UI update failed', e);
                     }
-                    document.querySelectorAll('.report-select-wrapper').forEach(function(wrapper) {
-                        wrapper.classList.remove('report-select-wrapper--disabled');
-                        const selectEl = wrapper.querySelector('.reports-picker');
-                        if (selectEl) {
-                            selectEl.dataset.enabled = '1';
-                            selectEl.removeAttribute('disabled');
-                            const ts = selectEl.tomSelectInstance;
-                            if (ts) ts.enable();
-                        }
-                        setReportCardState(wrapper.getAttribute('data-report-wrapper'), false);
-                    });
-                    // Flip Receive All -> Submit All and enforce color
-                    if (receiveAllBtn) receiveAllBtn.classList.add('d-none');
-                    if (submitAllBtn) {
-                        submitAllBtn.classList.remove('d-none');
-                        submitAllBtn.style.backgroundColor = '#FE9F43';
-                        submitAllBtn.style.borderColor = '#FE9F43';
-                        submitAllBtn.style.color = '#fff';
-                    }
+                    // Refresh bulk buttons state
+                    if (typeof updateBulkButtons === 'function') updateBulkButtons();
                     if (data && data.ok && window.Swal) {
-                        Swal.fire({ icon: 'success', title: 'Received', text: 'All job orders marked as received.' });
+                        Swal.fire({ icon: 'success', title: 'Received', text: 'Selected job orders marked as received.' });
                     }
                 }).catch(() => {
                     // Fallback to UI-only if backend fails
@@ -1085,6 +1201,39 @@
                 });
             });
         }
+
+        // Selection handlers: update Receive All button enabled state
+        const selectAllCheckbox = document.getElementById('select-all-checkbox');
+        const updateSelectionButtons = () => {
+            const anyChecked = !!document.querySelector('.row-select-checkbox:checked');
+            if (receiveAllBtn) receiveAllBtn.disabled = !anyChecked;
+            if (receiveAllBtn) {
+                if (anyChecked) receiveAllBtn.classList.remove('disabled');
+                else receiveAllBtn.classList.add('disabled');
+            }
+        };
+        // bind change events for row checkboxes
+        document.querySelectorAll('.row-select-checkbox').forEach(cb => {
+            if (cb.dataset.bound === '1') return;
+            cb.dataset.bound = '1';
+            cb.addEventListener('change', () => {
+                // uncheck select-all if any unchecked
+                if (selectAllCheckbox) selectAllCheckbox.checked = document.querySelectorAll('.row-select-checkbox:not(:checked)').length === 0;
+                updateSelectionButtons();
+            });
+        });
+        if (selectAllCheckbox) {
+            if (!selectAllCheckbox.dataset.bound) {
+                selectAllCheckbox.dataset.bound = '1';
+                selectAllCheckbox.addEventListener('change', function() {
+                    const checked = !!this.checked;
+                    document.querySelectorAll('.row-select-checkbox').forEach(cb => { cb.checked = checked; });
+                    updateSelectionButtons();
+                });
+            }
+        }
+        // initial state
+        updateSelectionButtons();
 
         if (submitAllBtn && submitAllBtn.dataset.bound !== '1') {
             submitAllBtn.dataset.bound = '1';
