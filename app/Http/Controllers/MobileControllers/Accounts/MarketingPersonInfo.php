@@ -1005,24 +1005,54 @@ class MarketingPersonInfo extends Controller
     {
         $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
 
-        // Build base query (apply filters first, then restrict to bookings that have uploaded letters)
-        $baseQuery = \App\Models\NewBooking::with(['items.reports'])
+        $query = \App\Models\NewBooking::with(['items.reports'])
             ->where('marketing_id', $marketingPerson->user_code);
 
         // Optional department filter
         if ($request->filled('department')) {
-            $baseQuery->where('department_id', $request->department);
+            $query->where('department_id', $request->department);
         }
 
         // Optional marketing override
         if ($request->filled('marketing')) {
-            $baseQuery->where('marketing_id', $request->marketing);
+            $query->where('marketing_id', $request->marketing);
         }
+
+        // Restrict to bookings that have at least one uploaded report in Received Reports (letters storage)
+        $withLettersIds = (clone $query)
+            ->select(['id', 'reference_no'])
+            ->get()
+            ->filter(function ($booking) {
+                $reference = (string) ($booking->reference_no ?? '');
+                $key = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim($reference));
+                if ($key === '') {
+                    return false;
+                }
+                $dir = "public/letters/{$key}";
+                if (!\Illuminate\Support\Facades\Storage::exists($dir)) {
+                    return false;
+                }
+                foreach (\Illuminate\Support\Facades\Storage::files($dir) as $path) {
+                    $base = basename($path);
+                    if ($base === '_meta.json' || str_starts_with($base, '_')) {
+                        continue;
+                    }
+                    $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
+                    if (in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'], true)) {
+                        return true;
+                    }
+                }
+                return false;
+            })
+            ->pluck('id')
+            ->all();
+
+        $query = (clone $query)->whereIn('id', $withLettersIds);
 
         // Search across booking reference, client and items
         if ($request->filled('search')) {
             $s = $request->search;
-            $baseQuery->where(function($q) use ($s) {
+            $query->where(function($q) use ($s) {
                 $q->where('reference_no', 'like', "%{$s}%")
                   ->orWhere('client_name', 'like', "%{$s}%")
                   ->orWhereHas('items', function($qi) use ($s) {
@@ -1036,39 +1066,14 @@ class MarketingPersonInfo extends Controller
 
         // Month/Year filter on booking created_at
         if ($request->filled('year')) {
-            $baseQuery->whereYear('created_at', $request->year);
+            $query->whereYear('created_at', $request->year);
         }
         if ($request->filled('month')) {
-            $baseQuery->whereMonth('created_at', $request->month);
+            $query->whereMonth('created_at', $request->month);
         }
 
         $perPage = (int) $request->get('perPage', 25);
-
-        // Determine bookings that have uploaded report files under public/letters/{sanitized_reference}
-        $withLettersIds = (clone $baseQuery)
-            ->select(['id', 'reference_no'])
-            ->get()
-            ->filter(function($booking){
-                $ref = (string) ($booking->reference_no ?? '');
-                $key = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim($ref)) ?: '';
-                if ($key === '') return false;
-                $dir = "public/letters/{$key}";
-                if (!\Illuminate\Support\Facades\Storage::exists($dir)) return false;
-                foreach (\Illuminate\Support\Facades\Storage::files($dir) as $path) {
-                    $base = basename($path);
-                    if ($base === '_meta.json' || str_starts_with($base, '_')) continue;
-                    $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
-                    if (in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'], true)) return true;
-                }
-                return false;
-            })
-            ->pluck('id')
-            ->all();
-
-        $bookings = (clone $baseQuery)
-            ->whereIn('id', $withLettersIds)
-            ->latest('id')
-            ->paginate($perPage);
+        $bookings = $query->latest()->paginate($perPage);
 
         // Prepare response items and letter files map
         $items = $bookings->getCollection()->map(function($booking){
@@ -1086,30 +1091,40 @@ class MarketingPersonInfo extends Controller
                 ];
             })->values();
 
-            // Collect uploaded report/letter files from items' reports pivot
+            // Build uploaded letter files map from storage/letters/{sanitized_reference}
             $letterFiles = [];
-            foreach ($booking->items as $it) {
-                if (is_iterable($it->reports)) {
-                    foreach ($it->reports as $r) {
-                        $path = $r->pivot->generated_report_path ?? $r->pivot->pdf_path ?? null;
-                        if (!$path) continue;
-                        $url = $path;
-                        if (!preg_match('#^https?://#i', $path)){
-                            try { $url = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : asset($path); } catch(\Exception $_) { $url = asset($path); }
-                        }
-                        $letterFiles[$path] = ['name' => basename($path), 'url' => $url];
+            $reference = (string) ($booking->reference_no ?? '');
+            $key = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim($reference));
+            if ($key !== '') {
+                $dir = "public/letters/{$key}";
+                if (\Illuminate\Support\Facades\Storage::exists($dir)) {
+                    $meta = [];
+                    $metaPath = $dir.'/_meta.json';
+                    if (\Illuminate\Support\Facades\Storage::exists($metaPath)) {
+                        try {
+                            $raw = \Illuminate\Support\Facades\Storage::get($metaPath);
+                            $rawMeta = json_decode($raw, true);
+                            if (is_array($rawMeta)) { $meta = $rawMeta; }
+                        } catch (\Throwable $_) { $meta = []; }
+                    }
+
+                    $files = \Illuminate\Support\Facades\Storage::files($dir);
+                    usort($files, function ($a, $b) {
+                        return \Illuminate\Support\Facades\Storage::lastModified($b) <=> \Illuminate\Support\Facades\Storage::lastModified($a);
+                    });
+
+                    foreach ($files as $path) {
+                        $base = basename($path);
+                        if ($base === '_meta.json' || str_starts_with($base, '_')) { continue; }
+                        $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
+                        if (!in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'], true)) { continue; }
+                        $original = $meta[$base]['original'] ?? $base;
+                        $letterFiles[$base] = [
+                            'name' => $original,
+                            'url' => route('superadmin.reporting.letters.show', ['job' => $booking->reference_no, 'filename' => $base]),
+                        ];
                     }
                 }
-            }
-
-            // Also include upload_letter_path if present
-            $path = $booking->upload_letter_path ?? null;
-            if ($path) {
-                $url = $path;
-                if (!preg_match('#^https?://#i', $path)){
-                    try { $url = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : asset($path); } catch(\Exception $_) { $url = asset($path); }
-                }
-                $letterFiles[$path] = ['name' => basename($path), 'url' => $url];
             }
 
             return [
