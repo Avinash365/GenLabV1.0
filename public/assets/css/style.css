@@ -32437,7 +32437,7 @@ body.layout-mode-rtl .user-info {
   }
 }
 .chat-wrapper .chat.chat-messages .slimscroll {
-  height: calc(100vh - 150px) !important;
+  height: calc(100vh - 230px) !important;
 }
 @media (max-width: 991.98px) {
   .chat-wrapper .chat.chat-messages .slimscroll {

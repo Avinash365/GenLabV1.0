@@ -1,0 +1,159 @@
+{
+  "info": {
+    "name": "GenLab Mobile Chat API",
+    "description": "Postman collection with example requests for the mobile chat API (user + admin). Update variables before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "version": "1.0.0"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://127.0.0.1:8000" },
+    { "key": "token", "value": "" },
+    { "key": "user_code", "value": "MKT002" },
+    { "key": "password", "value": "123456789" },
+    { "key": "user_id", "value": "37" }
+  ],
+  "item": [
+    {
+      "name": "User - Login",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"user_code\": \"{{user_code}}\",\n  \"password\": \"{{password}}\"\n}"
+        },
+        "url": {
+          "raw": "{{base_url}}/api/user/login",
+          "host": ["{{base_url}}"],
+          "path": ["api","user","login"]
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "// Save access token to collection variable if present",
+              "try {",
+              "  var json = pm.response.json();",
+              "  if (json && json.access_token) { pm.collectionVariables.set('token', json.access_token); }",
+              "} catch (e) { }",
+              "pm.test('Status is 200 or 201', function() { pm.expect(pm.response.code).to.be.oneOf([200,201]); });"
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "name": "Admin - Login",
+      "request": {
+        "method": "POST",
+        "header": [{ "key": "Content-Type", "value": "application/json" }],
+        "body": { "mode": "raw", "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"secret\"\n}" },
+        "url": { "raw": "{{base_url}}/api/admin/login", "host": ["{{base_url}}"], "path": ["api","admin","login"] }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": { "exec": ["try { var json = pm.response.json(); if (json && json.access_token) pm.collectionVariables.set('token', json.access_token); } catch(e){}; pm.test('Login returned 200', () => pm.expect(pm.response.code).to.be.oneOf([200,201]));"] }
+        }
+      ]
+    },
+    {
+      "name": "Get Contacts (user)",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{base_url}}/api/chat/contacts", "host": ["{{base_url}}"], "path": ["api","chat","contacts"] }
+      }
+    },
+    {
+      "name": "Get Messages (user)",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": {
+          "raw": "{{base_url}}/api/chat/messages/user:{{user_id}}?mark_read=1",
+          "host": ["{{base_url}}"],
+          "path": ["api","chat","messages","user:{{user_id}}"],
+          "query": [ { "key": "mark_read", "value": "1" } ]
+        }
+      }
+    },
+    {
+      "name": "Send Message (text)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"receiver_id\": \"user:{{user_id}}\",\n  \"content\": \"Hello from Postman\"\n}" },
+        "url": { "raw": "{{base_url}}/api/chat/messages", "host": ["{{base_url}}"], "path": ["api","chat","messages"] }
+      }
+    },
+    {
+      "name": "Send File (multipart)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "receiver_id", "value": "user:{{user_id}}", "type": "text" },
+            { "key": "files", "type": "file" }
+          ]
+        },
+        "url": { "raw": "{{base_url}}/api/chat/messages", "host": ["{{base_url}}"], "path": ["api","chat","messages"] }
+      }
+    },
+    {
+      "name": "Send Audio (multipart)",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            { "key": "receiver_id", "value": "user:{{user_id}}", "type": "text" },
+            { "key": "audio", "type": "file" }
+          ]
+        },
+        "url": { "raw": "{{base_url}}/api/chat/messages", "host": ["{{base_url}}"], "path": ["api","chat","messages"] }
+      }
+    },
+    {
+      "name": "Typing Notification",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"receiver_id\": \"user:{{user_id}}\",\n  \"typing\": true\n}" },
+        "url": { "raw": "{{base_url}}/api/chat/typing", "host": ["{{base_url}}"], "path": ["api","chat","typing"] }
+      }
+    },
+    {
+      "name": "React to Message",
+      "request": {
+        "method": "POST",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" }, { "key": "Content-Type", "value": "application/json" } ],
+        "body": { "mode": "raw", "raw": "{\n  \"message_id\": 123,\n  \"emoji\": " + "\"👍\"" + "\n}" },
+        "url": { "raw": "{{base_url}}/api/chat/messages/reaction", "host": ["{{base_url}}"], "path": ["api","chat","messages","reaction"] }
+      }
+    },
+    {
+      "name": "Search Contacts",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{base_url}}/api/chat/search?q=John", "host": ["{{base_url}}"], "path": ["api","chat","search"], "query": [ { "key": "q", "value": "John" } ] }
+      }
+    },
+    {
+      "name": "Admin - Get Contacts",
+      "request": {
+        "method": "GET",
+        "header": [ { "key": "Authorization", "value": "Bearer {{token}}" } ],
+        "url": { "raw": "{{base_url}}/api/admin/chat/contacts", "host": ["{{base_url}}"], "path": ["api","admin","chat","contacts"] }
+      }
+    }
+  ]
+}

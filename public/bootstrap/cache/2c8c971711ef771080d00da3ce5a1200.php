@@ -35,7 +35,7 @@
                     <?php endif; ?>
                     <?php if(request('month')): ?><input type="hidden" name="month" value="<?php echo e(request('month')); ?>"><?php endif; ?>
                     <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
-                    <?php if(request('overdue')): ?><input type="hidden" name="overdue" value="1"><?php endif; ?>
+                    
                     <?php if(request('marketing')): ?><input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>"><?php endif; ?>
                     <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
@@ -60,7 +60,7 @@
                 </div>
             </div>
             <div class="search-set">
-                <form method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group align-items-center gap-2 flex-wrap">
+                <form id="pendings-filter-form" method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group align-items-center gap-2 flex-wrap">
                     <input type="hidden" name="mode" value="<?php echo e($mode); ?>">
                     <?php if(request('department')): ?>
                         <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
@@ -68,7 +68,7 @@
                     <?php if(request('marketing')): ?>
                         <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
                     <?php endif; ?>
-                    <?php if(request('overdue')): ?><input type="hidden" name="overdue" value="1"><?php endif; ?>
+                    <input type="hidden" name="overdue" id="overdueInput" value="<?php echo e(request('overdue') ? 1 : ''); ?>">
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
                         <?php $__currentLoopData = range(1,12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -111,6 +111,12 @@
                         <?php if($lockedMarketingCode): ?>
                             <input type="hidden" name="marketing" value="<?php echo e($lockedMarketingCode); ?>">
                         <?php endif; ?>
+                        <div class="input-group input-group-sm me-2" style="min-width:220px;">
+                            <button type="button" id="localSearchBtn" class="input-group-text bg-white border-end-0" style="cursor:pointer;" aria-label="Focus search">
+                                <i class="ti ti-search"></i>
+                            </button>
+                            <input type="search" id="localSearch" class="form-control form-control-sm border-start-0" placeholder="Search on page (Job/Client/Sample)" aria-label="Search on page" title="Search visible rows">
+                        </div>
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;" <?php echo e($lockedMarketingCode ? 'disabled' : ''); ?>>
                             <?php if(!$lockedMarketingCode): ?>
                                 <option value="">Select Marketing Person</option>
@@ -143,17 +149,9 @@
                         </thead>
                         <tbody>
                         <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                            <?php
-                                $pendingItemsPayload = $b->items->map(function($pi){
-                                    return [
-                                        'job_order_no' => $pi->job_order_no,
-                                        'sample_description' => $pi->sample_description,
-                                        'sample_quality' => $pi->sample_quality,
-                                        'particulars' => $pi->particulars,
-                                        'receiver' => $pi->received_by_name ?? optional($pi->receivedBy)->name,
-                                    ];
-                                });
-                            ?>
+                            <tr 
+
+                            >
                             <tr class="align-middle">
                                 <td><label class="checkboxs"><input type="checkbox" class="row-check-ref" data-booking="<?php echo e($b->id); ?>"><span class="checkmarks"></span></label></td>
                                 <td class="truncate-cell">
@@ -206,7 +204,7 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                <?php $__currentLoopData = [25,50,100]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $__currentLoopData = [25,50,100,250,500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($size); ?>" <?php echo e(request('perPage',25)==$size ? 'selected' : ''); ?>><?php echo e($size); ?></option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
@@ -231,7 +229,14 @@
                         </thead>
                         <tbody>
                         <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                            <tr>
+                            <tr class="table-row"
+                                data-search="<?php echo e(strtolower(
+                                    $item->job_order_no . ' ' .
+                                    ($item->booking?->client_name ?? '') . ' ' .
+                                    $item->sample_description . ' ' .
+                                    $item->sample_quality . ' ' .
+                                    $item->particulars
+                              )); ?>" >
                                 <td class="job-order-cell" data-bs-toggle="tooltip" title="<?php echo e($item->job_order_no); ?>"><?php echo e($item->job_order_no); ?></td>
                                 <td class="truncate-cell">
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->booking?->client_name ?? '-'); ?>"><?php echo e($item->booking?->client_name ?? '-'); ?></div>
@@ -246,14 +251,11 @@
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->particulars); ?>"><?php echo e($item->particulars); ?></div>
                                 </td>
                                 <td>
-                                    <?php
-                                        $receiver = $item->received_by_name ?? optional($item->receivedBy)->name;
-                                    ?>
-                                    <?php if($receiver): ?>
-                                        <span class="status-dot received" data-bs-toggle="tooltip" title="Received by <?php echo e($receiver); ?>" aria-label="Received"></span>
-                                    <?php else: ?>
-                                        <span class="status-dot pending" data-bs-toggle="tooltip" title="Pending" aria-label="Pending"></span>
-                                    <?php endif; ?>
+                                    
+                                    <div class="cell-inner"><?php echo e($item->status); ?></div>
+ 
+                                
+                                     
                                 </td>
                                 <td class="action-cell">
                                     <?php
@@ -294,7 +296,7 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                <?php $__currentLoopData = [25,50,100]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $__currentLoopData = [25,50,100,250,500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($size); ?>" <?php echo e(request('perPage',25)==$size ? 'selected' : ''); ?>><?php echo e($size); ?></option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
@@ -314,6 +316,7 @@
 <?php $__env->startPush('scripts'); ?>
 <script>
 document.addEventListener('DOMContentLoaded', function(){
+    // overdue toggle uses a normal navigation link (server-built URL) to avoid JS submission issues
     const modalId = 'pendingItemsModal';
     if(!document.getElementById(modalId)){
     const modalHtml = `<div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">\n  <div class="modal-dialog modal-lg modal-dialog-scrollable">\n    <div class="modal-content">\n      <div class="modal-header">\n        <h5 class="modal-title">Pending Items</h5>\n        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>\n      </div>\n      <div class="modal-body">\n        <div class="mb-2 small text-muted" id="pending-items-meta"></div>\n        <div class="table-responsive">\n          <table class="table table-sm table-bordered mb-0">\n            <thead class="table-light">\n              <tr><th>#</th><th>Job Order No</th><th>Sample Description</th><th>Sample Quality</th><th>Particulars</th><th>Status</th></tr>\n            </thead>\n            <tbody id="pending-items-body"><tr><td colspan=6 class='text-center text-muted'>No data</td></tr></tbody>\n          </table>\n        </div>\n      </div>\n      <div class="modal-footer">\n        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>\n      </div>\n    </div>\n  </div>\n</div>`;
@@ -321,7 +324,7 @@ document.addEventListener('DOMContentLoaded', function(){
     }
     const modalEl = document.getElementById(modalId);
     const modal = () => new bootstrap.Modal(modalEl);
-    document.querySelectorAll('.show-pending-modal').forEach(function(btn){
+            document.querySelectorAll('.show-pending-modal').forEach(function(btn){
         btn.addEventListener('click', function(){
             let items = [];
             try { items = JSON.parse(btn.getAttribute('data-items')); } catch(e) {}
@@ -340,139 +343,36 @@ document.addEventListener('DOMContentLoaded', function(){
                     }).join('');
                 }
             }
-            // Ensure hscroll bars are created for modal content as well
-            setupHScrollSync();
             modal().show();
         });
     });
-
-    // Create a small utility to add a custom horizontal scroller (track + buttons + draggable thumb)
-    function setupHScrollSync(){
-        document.querySelectorAll('.table-responsive').forEach(function(container){
-            // Skip adding custom hscroll for the modal listing
-            if(container.closest('#pendingItemsModal')) return;
-            if(container.dataset.hscrollInit) return; // already initialized
-            const table = container.querySelector('table');
-            if(!table) return;
-
-            // helper to create scroller DOM
-            const createScroller = function(){
-                const scroller = document.createElement('div');
-                scroller.className = 'hscroll-bar';
-                const btnLeft = document.createElement('button'); btnLeft.className = 'hscroll-btn left'; btnLeft.setAttribute('aria-label','scroll left'); btnLeft.innerHTML = '&#9664;';
-                const track = document.createElement('div'); track.className = 'hscroll-track';
-                const thumb = document.createElement('div'); thumb.className = 'hscroll-thumb';
-                const dots = document.createElement('div'); dots.className = 'dots'; thumb.appendChild(dots);
-                track.appendChild(thumb);
-                const btnRight = document.createElement('button'); btnRight.className = 'hscroll-btn right'; btnRight.setAttribute('aria-label','scroll right'); btnRight.innerHTML = '&#9654;';
-                scroller.appendChild(btnLeft); scroller.appendChild(track); scroller.appendChild(btnRight);
-                return { scroller, btnLeft, btnRight, track, thumb };
-            };
-
-            // create header and footer scrollers
-            const top = createScroller();
-            const bottom = createScroller();
-            container.parentNode.insertBefore(top.scroller, container);
-            container.parentNode.insertBefore(bottom.scroller, container.nextSibling);
-
-            const scrollers = [top, bottom];
-
-            // central update function to resize thumbs and positions for both scrollers
-            const updateSizes = function(){
-                const cw = container.clientWidth;
-                const sw = Math.max(1, table.scrollWidth || table.offsetWidth);
-                const maxScroll = Math.max(0, sw - cw);
-                scrollers.forEach(function(s){
-                    const track = s.track;
-                    const thumb = s.thumb;
-                    const btnLeft = s.btnLeft; const btnRight = s.btnRight;
-                    const trackW = Math.max(40, track.clientWidth || 100);
-                    const thumbW = Math.max(36, Math.round(trackW * (cw / sw)));
-                    thumb.style.width = thumbW + 'px';
-                    const avail = Math.max(0, trackW - thumbW);
-                    const left = avail * ( (container.scrollLeft || 0) / (maxScroll || 1) );
-                    // Guard against invalid numbers before applying thumb position
-                    thumb.style.left = (isFinite(left) ? left : 0) + 'px';
-                    btnLeft.disabled = (container.scrollLeft <= 0);
-                    btnRight.disabled = (container.scrollLeft >= maxScroll - 1);
-                });
-            };
-
-            // when container scrolls, update both scrollers
-            container.addEventListener('scroll', function(){ updateSizes(); }, { passive: true });
-
-            // wire interactions for each scroller to set container.scrollLeft
-            scrollers.forEach(function(s){
-                const track = s.track; const thumb = s.thumb; const btnLeft = s.btnLeft; const btnRight = s.btnRight;
-                const trackRect = ()=>track.getBoundingClientRect();
-
-                track.addEventListener('click', function(ev){
-                    if(ev.target === thumb) return;
-                    const rect = trackRect();
-                    const clickX = ev.clientX - rect.left;
-                    const trackW = track.clientWidth;
-                    const thumbW = thumb.clientWidth;
-                    const avail = Math.max(1, trackW - thumbW);
-                    const ratio = Math.max(0, Math.min(1, (clickX - thumbW/2) / avail));
-                    const sw = Math.max(1, table.scrollWidth || table.offsetWidth);
-                    const cw = container.clientWidth;
-                    const maxScroll = Math.max(0, sw - cw);
-                    container.scrollLeft = Math.round(ratio * maxScroll);
-                    updateSizes();
-                });
-
-                // thumb dragging
-                let dragging = false, startX = 0, startLeft = 0;
-                thumb.addEventListener('mousedown', function(ev){ ev.preventDefault(); dragging = true; startX = ev.clientX; startLeft = parseFloat(getComputedStyle(thumb).left) || 0; document.body.classList.add('hscroll-dragging'); });
-                document.addEventListener('mousemove', function(ev){
-                    if(!dragging) return;
-                    const dx = ev.clientX - startX;
-                    const trackW = track.clientWidth;
-                    const thumbW = thumb.clientWidth;
-                    const avail = Math.max(0, trackW - thumbW);
-                    let newLeft = Math.max(0, Math.min(avail, startLeft + dx));
-                    const ratio = avail ? (newLeft / avail) : 0;
-                    const sw = Math.max(1, table.scrollWidth || table.offsetWidth);
-                    const cw = container.clientWidth;
-                    const maxScroll = Math.max(0, sw - cw);
-                    container.scrollLeft = Math.round(ratio * maxScroll);
-                    updateSizes();
-                });
-                document.addEventListener('mouseup', function(){ if(dragging){ dragging = false; document.body.classList.remove('hscroll-dragging'); } });
-
-                // buttons
-                btnLeft.addEventListener('click', function(){ container.scrollBy({ left: -Math.max(60, Math.round(container.clientWidth/2)), behavior: 'smooth' }); });
-                btnRight.addEventListener('click', function(){ container.scrollBy({ left: Math.max(60, Math.round(container.clientWidth/2)), behavior: 'smooth' }); });
-            });
-
-            // resize and mutation observer
-            let resizeTimer = null;
-            const onResize = function(){ clearTimeout(resizeTimer); resizeTimer = setTimeout(updateSizes, 80); };
-            window.addEventListener('resize', onResize);
-            try{ const mo = new MutationObserver(onResize); mo.observe(table, { attributes:true, childList:true, subtree:true, characterData:true }); }catch(e){}
-
-            // initial
-            updateSizes();
-
-            // mark initialized
-            container.dataset.hscrollInit = '1';
-        });
-    }
-
-            // Initialize scrollers on page load
-            setupHScrollSync();
-
-            // Initialize Bootstrap tooltips for truncated cells and other tooltip elements
-            try{
-                document.querySelectorAll('[data-bs-toggle="tooltip"]').forEach(function(el){
-                    if(!el._tooltipInst){
-                        el._tooltipInst = new bootstrap.Tooltip(el);
-                    }
-                });
-            }catch(e){ /* ignore if bootstrap not available */ }
 });
 </script>
+
+<script>
+    const localSearchInput = document.getElementById('localSearch');
+
+    if (localSearchInput) {
+        localSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.table-row');
+
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+
+                if (!query || text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
+
 <?php $__env->stopPush(); ?>
+
+
 
 <?php $__env->startPush('styles'); ?>
 <style>
@@ -513,66 +413,11 @@ document.addEventListener('DOMContentLoaded', function(){
         .search-set { flex-wrap:wrap; }
         .pagination-scroll-wrapper { max-width: 100vw; }
     }
-    /* Custom horizontal scroller placed under responsive tables */
-    .hscroll-bar {
-        --hscroll-accent: #f39c32; /* user requested accent color */
-        --hscroll-accent-dark: #d1762b;
-        --hscroll-accent-soft: #ffe9d6;
-        --hscroll-accent-shadow: rgba(243,156,50,0.18);
-        display: flex;
-        align-items: center;
-        gap: 12px;
-        padding: 8px 12px;
-        margin-top: 10px;
-        user-select: none;
-    }
-    .hscroll-bar .hscroll-btn {
-        width: 44px;
-        height: 44px;
-        border-radius: 50%;
-        border: none;
-        background: linear-gradient(180deg,var(--hscroll-accent),var(--hscroll-accent-dark));
-        box-shadow: 0 6px 16px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.38);
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        color: #fff;
-        padding: 0;
-        font-size: 18px;
-        line-height: 1;
-    }
-    .hscroll-bar .hscroll-btn:active { transform: translateY(1px) scale(0.995); }
-    .hscroll-bar .hscroll-track {
-        position: relative;
-        flex: 1 1 auto;
-        height: 26px;
-        background: linear-gradient(90deg,var(--hscroll-accent-soft), rgba(243,156,50,0.08));
-        border-radius: 20px;
-        box-shadow: inset 0 2px 0 rgba(255,255,255,0.5);
-        cursor: pointer;
-        padding: 6px; /* inner padding so thumb sits visually centered */
-    }
-    .hscroll-bar .hscroll-thumb {
-        position: absolute;
-        top: 50%;
-        transform: translateY(-50%);
-        height: 14px;
-        min-width: 36px;
-        background: #fff;
-        border-radius: 10px;
-        box-shadow: 0 8px 18px var(--hscroll-accent-shadow), inset 0 1px 0 rgba(0,0,0,0.04);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 0 6px;
-        cursor: grab;
-    }
-    .hscroll-bar .hscroll-thumb:active { cursor: grabbing; }
-    .hscroll-bar .hscroll-thumb .dots{
-        width:26px; height:6px; border-radius:6px; background: linear-gradient(90deg,var(--hscroll-accent),var(--hscroll-accent-dark));
-        box-shadow: 0 2px 6px rgba(0,0,0,0.06) inset;
-    }
+    /* custom horizontal scroller removed */
+
+    /* Small styling for the local page search input group */
+    .marketing-filter-form .input-group .input-group-text { border-right: 0; }
+    .marketing-filter-form .input-group .form-control { border-left: 0; }
 
     /* Force fixed table layout so columns don't shift when long content wraps */
     table.table { table-layout: fixed; }
@@ -639,5 +484,4 @@ document.addEventListener('DOMContentLoaded', function(){
     .status-dot.pending { background: #ffc107; box-shadow: 0 4px 10px rgba(255,193,7,0.12); }
 </style>
 <?php $__env->stopPush(); ?>
-
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/reporting/pendings.blade.php ENDPATH**/ ?>

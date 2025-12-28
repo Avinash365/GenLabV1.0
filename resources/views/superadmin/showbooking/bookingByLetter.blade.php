@@ -109,8 +109,9 @@
                             <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
                             <th>Job Order No</th>
                             <th style="width:180px;">Client Name</th>
+                            <th style="width:180px;">Reference No</th>
                             <th style="width:240px;">Sample Description</th>
-                            <th>Sample Quality</th>
+                            <th style="width:90px;">Sample Quality</th>
                             <th style="width:240px;">Particulars</th>
   
                             <th>Action</th>
@@ -135,10 +136,13 @@
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
                             </td>
                             <td class="truncate-cell">
+                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
+                            </td>
+                            <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
                             </td>
-                            <td>
-                                <div class="cell-inner">{{ $item->sample_quality }}</div>
+                            <td class="truncate-cell sample-quality-cell">
+                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>
                             </td>
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
@@ -224,15 +228,15 @@
 @push('styles')
 <style>
     /* clamp/truncate wrappers used for client/sample/particulars */
-    .truncate-cell { max-width: 240px; }
+    .truncate-cell { max-width: none; }
     .truncate-cell .cell-inner{
-        display: -webkit-box;
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2;
-        overflow: hidden;
-        text-overflow: ellipsis;
+        display: block;
         white-space: normal;
+        word-break: break-word;
     }
+        /* Sample Quality narrower and allow two-line wrap */
+        .sample-quality-cell { max-width: 90px; }
+        @media (max-width: 992px){ .sample-quality-cell { max-width: 70px; } }
     @media (max-width: 992px){ .truncate-cell { max-width: 160px; } }
 
     /* job order short single-line truncation */

@@ -22,6 +22,12 @@ class ReportingController extends Controller
     {
         $job = trim((string) $request->get('job'));
 
+        // per-page control (allow users to change pagination size)
+        $perPage = (int) $request->get('perPage', 25);
+        if (!in_array($perPage, [25, 50, 100, 250], true)) {
+            $perPage = 25;
+        }
+
         $baseQuery = BookingItem::query()->with(['booking', 'analyst', 'receivedBy']);
 
         $header = null;
@@ -49,7 +55,7 @@ class ReportingController extends Controller
                 ];
 
                 // Show all items for the same booking/reference
-                $items = $b->items()->with(['booking', 'analyst', 'reports','receivedBy'])->latest('id')->paginate(20)->withQueryString();
+                $items = $b->items()->with(['booking', 'analyst', 'reports','receivedBy'])->latest('id')->paginate($perPage)->withQueryString();
                 $reports = ReportEditorFile::latest()->get();
 
                 return view('superadmin.reporting.received', compact('items', 'job', 'header', 'reports'));
@@ -57,7 +63,7 @@ class ReportingController extends Controller
         }
 
         // Default: no auto-listing; show empty when no search or not found
-        $items = BookingItem::query()->whereRaw('1=0')->paginate(20)->withQueryString();
+        $items = BookingItem::query()->whereRaw('1=0')->paginate($perPage)->withQueryString();
         return view('superadmin.reporting.received', compact('items', 'job', 'header'));
     }
 
@@ -70,7 +76,7 @@ class ReportingController extends Controller
         $month = $request->get('month');
         $year = $request->get('year');
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100], true)) {
+        if (!in_array($perPage, [25, 50, 100, 250, 500], true)) {
             $perPage = 25;
         }
 
@@ -141,7 +147,7 @@ class ReportingController extends Controller
         $month = $request->get('month');
         $year = $request->get('year');
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100], true)) {
+        if (!in_array($perPage, [25, 50, 100, 250, 500], true)) {
             $perPage = 25;
         }
 
@@ -316,8 +322,8 @@ class ReportingController extends Controller
         $month = $request->has('month') ? (int) $request->get('month') : null;
         $year = $request->has('year') ? (int) $request->get('year') : null;
         $overdue = $request->boolean('overdue');
-        $beforeDate = $request->get('before_date');
-        $cutoff = $beforeDate ?: now()->toDateString();
+        // Always use current date as cutoff for overdue (lab_expected_date < today)
+        $cutoff = now()->toDateString();
         $departmentId = $request->get('department');
         $marketing = $request->get('marketing'); // user_code of marketing person
         if ($this->isMarketingUser($user)) {
@@ -339,28 +345,52 @@ class ReportingController extends Controller
         $marketingPersons = $marketingPersonsQuery->get(['id','name','user_code']);
 
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100])) {
+        if (!in_array($perPage, [25, 50, 100, 250, 500], true)) {
             $perPage = 25;
         }
 
         if ($mode === 'reference') {
             // Aggregate by booking (reference_no) where at least one pending/overdue item
-            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $cutoff) {
+            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $cutoff, $month, $year) {
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
                         ->whereDate('lab_expected_date', '<', $cutoff);
+                    if ($month) { $q->whereMonth('lab_expected_date', $month); }
+                    if ($year) { $q->whereYear('lab_expected_date', $year); }
                 } else {
                     // Pendings are items that do not have an issue date
                     $q->whereNull('issue_date');
+                    if ($month) {
+                        $q->where(function($qq) use ($month){
+                            $qq->whereMonth('received_at', $month)->orWhereMonth('created_at', $month);
+                        });
+                    }
+                    if ($year) {
+                        $q->where(function($qq) use ($year){
+                            $qq->whereYear('received_at', $year)->orWhereYear('created_at', $year);
+                        });
+                    }
                 }
-            }])->with(['items' => function($q) use ($overdue, $cutoff){
+            }])->with(['items' => function($q) use ($overdue, $cutoff, $month, $year){
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
                         ->whereDate('lab_expected_date', '<', $cutoff);
+                    if ($month) { $q->whereMonth('lab_expected_date', $month); }
+                    if ($year) { $q->whereYear('lab_expected_date', $year); }
                 } else {
                     $q->whereNull('issue_date');
+                    if ($month) {
+                        $q->where(function($qq) use ($month){
+                            $qq->whereMonth('received_at', $month)->orWhereMonth('created_at', $month);
+                        });
+                    }
+                    if ($year) {
+                        $q->where(function($qq) use ($year){
+                            $qq->whereYear('received_at', $year)->orWhereYear('created_at', $year);
+                        });
+                    }
                 }
             }]);
             if ($departmentId) { $bookingQuery->where('department_id', $departmentId); }
@@ -371,9 +401,41 @@ class ReportingController extends Controller
                         ->orWhere('reference_no','like',"%{$search}%");
                 });
             }
-            if (!$overdue) {
-                if ($month) { $bookingQuery->whereHas('items', function($qi) use ($month){ $qi->whereMonth('received_at',$month); }); }
-                if ($year) { $bookingQuery->whereHas('items', function($qi) use ($year){ $qi->whereYear('received_at',$year); }); }
+            // Apply month/year filters. For overdue mode filter by lab_expected_date,
+            // otherwise filter by received_at OR created_at.
+            if ($month) {
+                if ($overdue) {
+                    $bookingQuery->whereHas('items', function($qi) use ($month, $cutoff){
+                        $qi->whereNull('issue_date')
+                           ->where('lab_expected_date','!=','0000-00-00')
+                           ->whereDate('lab_expected_date','<', $cutoff)
+                           ->whereMonth('lab_expected_date', $month);
+                    });
+                } else {
+                    $bookingQuery->whereHas('items', function($qi) use ($month){
+                        $qi->where(function($qii) use ($month){
+                            $qii->whereMonth('received_at', $month)
+                                ->orWhereMonth('created_at', $month);
+                        });
+                    });
+                }
+            }
+            if ($year) {
+                if ($overdue) {
+                    $bookingQuery->whereHas('items', function($qi) use ($year, $cutoff){
+                        $qi->whereNull('issue_date')
+                           ->where('lab_expected_date','!=','0000-00-00')
+                           ->whereDate('lab_expected_date','<', $cutoff)
+                           ->whereYear('lab_expected_date', $year);
+                    });
+                } else {
+                    $bookingQuery->whereHas('items', function($qi) use ($year){
+                        $qi->where(function($qii) use ($year){
+                            $qii->whereYear('received_at', $year)
+                                ->orWhereYear('created_at', $year);
+                        });
+                    });
+                }
             }
             $bookingQuery->having('pending_items_count','>',0)->latest('id');
             $bookings = $bookingQuery->paginate($perPage)->withQueryString();
@@ -385,6 +447,9 @@ class ReportingController extends Controller
                 $q->whereNull('issue_date')
                   ->where('lab_expected_date', '!=', '0000-00-00')
                   ->whereDate('lab_expected_date','<', $cutoff);
+                // When overdue filtering, allow month/year to target lab_expected_date
+                if ($month) { $q->whereMonth('lab_expected_date', $month); }
+                if ($year) { $q->whereYear('lab_expected_date', $year); }
             } else {
                 // Pending items: items without an issue date
                 $q->whereNull('issue_date');
@@ -403,8 +468,18 @@ class ReportingController extends Controller
                 });
             }
             if (!$overdue) {
-                if ($month) { $q->whereMonth('received_at', $month); }
-                if ($year) { $q->whereYear('received_at', $year); }
+                if ($month) {
+                    $q->where(function($qq) use ($month){
+                        $qq->whereMonth('received_at', $month)
+                           ->orWhereMonth('created_at', $month);
+                    });
+                }
+                if ($year) {
+                    $q->where(function($qq) use ($year){
+                        $qq->whereYear('received_at', $year)
+                           ->orWhereYear('created_at', $year);
+                    });
+                }
             }
             $q->latest('id');
             $items = $q->paginate($perPage)->withQueryString();
@@ -428,8 +503,8 @@ class ReportingController extends Controller
             }
         }
         $overdue = $request->boolean('overdue');
-        $beforeDate = $request->get('before_date');
-        $cutoff = $beforeDate ?: now()->toDateString();
+        // Always use current date as cutoff for overdue (lab_expected_date < today)
+        $cutoff = now()->toDateString();
 
         $q = BookingItem::query()->with(['booking']);
         if ($overdue) {
@@ -457,9 +532,23 @@ class ReportingController extends Controller
                    });
             });
         }
-        if (!$overdue) {
-            if ($month) { $q->whereMonth('received_at', $month); }
-            if ($year) { $q->whereYear('received_at', $year); }
+        // Apply month/year filters: when overdue use lab_expected_date, otherwise use received_at OR created_at
+        if ($overdue) {
+            if ($month) { $q->whereMonth('lab_expected_date', $month); }
+            if ($year) { $q->whereYear('lab_expected_date', $year); }
+        } else {
+            if ($month) {
+                $q->where(function($qq) use ($month){
+                    $qq->whereMonth('received_at', $month)
+                       ->orWhereMonth('created_at', $month);
+                });
+            }
+            if ($year) {
+                $q->where(function($qq) use ($year){
+                    $qq->whereYear('received_at', $year)
+                       ->orWhereYear('created_at', $year);
+                });
+            }
         }
         return $q;
     }
@@ -503,8 +592,15 @@ class ReportingController extends Controller
         if (Schema::hasColumn('booking_items', 'received_by_id')) {
             $item->received_by_id = $receiverId;
         }
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $item->status = $receiverName;
+        }
         if (array_key_exists('issue_date', $data)) {
             $item->issue_date = $data['issue_date'];
+            // When an issue date is set, mark status as Report Generated
+            if (Schema::hasColumn('booking_items', 'status')) {
+                $item->status = 'Report Generated';
+            }
         }
         $item->save();
         if ($request->wantsJson()) {
@@ -527,7 +623,50 @@ class ReportingController extends Controller
     {
         $job = trim((string) $request->get('job'));
 
-        // If job is provided, try to scope to that booking's items
+        // Prepare receiver data
+        $receiverId = auth('web')->check() ? auth('web')->id() : null;
+        $receiverName = auth('web')->check()
+            ? optional(auth('web')->user())->name
+            : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
+        $update = [
+            'received_by_name' => $receiverName,
+            'received_at'    => now(),
+        ];
+        if (Schema::hasColumn('booking_items', 'received_by_id')) {
+            $update['received_by_id'] = $receiverId;
+        }
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $update['status'] = $receiverName;
+        }
+
+        // If explicit IDs provided, update only those (useful for current page)
+        // Accept multiple forms: array from inputs named ids[], single string '1,2,3', or single id
+        $ids = $request->input('ids');
+        if (empty($ids)) {
+            $ids = $request->input('ids[]') ?? $request->get('ids');
+        }
+        if (is_string($ids)) {
+            // comma separated or single
+            $ids = array_filter(array_map('trim', explode(',', $ids)));
+        }
+        if ($ids instanceof \Illuminate\Support\Collection) {
+            $ids = $ids->all();
+        }
+        if (is_numeric($ids)) {
+            $ids = [(int) $ids];
+        }
+        if (is_array($ids) && count($ids) > 0) {
+            $validIds = array_values(array_filter(array_map('intval', $ids)));
+            if (!empty($validIds)) {
+                BookingItem::whereIn('id', $validIds)->update($update);
+                if ($request->wantsJson()) {
+                    return response()->json(['ok' => true, 'scope' => 'ids', 'count' => count($validIds), 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
+                }
+                return back()->with('status', 'Selected reports marked as received');
+            }
+        }
+
+        // If job is provided, try to scope to that booking's items (legacy behavior)
         if ($job !== '') {
             $firstItem = BookingItem::with('booking')
                 ->where('job_order_no', 'like', "%{$job}%")
@@ -535,17 +674,6 @@ class ReportingController extends Controller
                 ->first();
 
             if ($firstItem && $firstItem->booking) {
-                $receiverId = auth('web')->check() ? auth('web')->id() : null;
-                $receiverName = auth('web')->check()
-                    ? optional(auth('web')->user())->name
-                    : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-                $update = [
-                    'received_by_name' => $receiverName,
-                    'received_at'    => now(),
-                ];
-                if (Schema::hasColumn('booking_items', 'received_by_id')) {
-                    $update['received_by_id'] = $receiverId;
-                }
                 $firstItem->booking->items()->update($update);
                 if ($request->wantsJson()) {
                     return response()->json(['ok' => true, 'scope' => 'booking', 'booking_id' => $firstItem->booking->id, 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
@@ -555,17 +683,6 @@ class ReportingController extends Controller
         }
 
         // Fallback: mark all items as received (use sparingly)
-        $receiverId = auth('web')->check() ? auth('web')->id() : null;
-        $receiverName = auth('web')->check()
-            ? optional(auth('web')->user())->name
-            : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-        $update = [
-            'received_by_name' => $receiverName,
-            'received_at' => now()
-        ];
-        if (Schema::hasColumn('booking_items', 'received_by_id')) {
-            $update['received_by_id'] = $receiverId;
-        }
         BookingItem::query()->update($update);
         if ($request->wantsJson()) {
             return response()->json(['ok' => true, 'scope' => 'all', 'receiver_name' => $receiverName, 'received_at' => now()->toIso8601String()]);
@@ -600,8 +717,14 @@ class ReportingController extends Controller
                         $item->received_by_id = $receiverId;
                     }
                     $item->received_at = now();
+                    if (Schema::hasColumn('booking_items', 'status')) {
+                        $item->status = $receiverName;
+                    }
                 }
                 $item->issue_date = $row['issue_date'] ?? $item->issue_date;
+                if (!empty($row['issue_date']) && Schema::hasColumn('booking_items', 'status')) {
+                    $item->status = 'Report Generated';
+                }
                 $item->save();
             }
         });
@@ -839,6 +962,9 @@ class ReportingController extends Controller
             ? optional(auth('web')->user())->name
             : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
         $item->account_received_at = now();
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $item->status = 'In Account';
+        }
         if (Schema::hasColumn('booking_items', 'account_received_by_id')) {
             $item->account_received_by_id = $receiverId;
         }
@@ -863,10 +989,17 @@ class ReportingController extends Controller
         $receiverName = auth('web')->check()
             ? optional(auth('web')->user())->name
             : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-        \App\Models\BookingItem::whereIn('id', $payload['ids'])->update([
+        $update = [
             'account_received_at' => now(),
             'account_received_by_name' => $receiverName,
-        ] + (Schema::hasColumn('booking_items', 'account_received_by_id') ? ['account_received_by_id' => $receiverId] : []));
+        ];
+        if (Schema::hasColumn('booking_items', 'account_received_by_id')) {
+            $update['account_received_by_id'] = $receiverId;
+        }
+        if (Schema::hasColumn('booking_items', 'status')) {
+            $update['status'] = 'In Account';
+        }
+        \App\Models\BookingItem::whereIn('id', $payload['ids'])->update($update);
         if ($request->wantsJson()) {
             return response()->json(['ok' => true]);
         }

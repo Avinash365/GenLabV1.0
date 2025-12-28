@@ -1,25 +1,23 @@
-@extends('superadmin.layouts.app')
+<?php $__env->startSection('title', 'Report Dispatch'); ?>
 
-@section('title', 'Report Dispatch')
-
-@section('content')
+<?php $__env->startSection('content'); ?>
 <div class="content">
     <div class="d-flex align-items-center justify-content-between flex-wrap gap-3 mb-3">
         <h4 class="mb-0">Report Dispatch</h4>
     </div>
 
-    @if(session('status'))
-        <div class="alert alert-success">{{ session('status') }}</div>
-    @endif
+    <?php if(session('status')): ?>
+        <div class="alert alert-success"><?php echo e(session('status')); ?></div>
+    <?php endif; ?>
 
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-2 align-items-end">
                 <div class="col-md-5 col-lg-4">
-                    <form method="GET" action="{{ route('superadmin.reporting.dispatch') }}" class="d-flex gap-2 align-items-end">
+                    <form method="GET" action="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="d-flex gap-2 align-items-end">
                         <div class="flex-grow-1">
                             <label class="form-label">Job Order No</label>
-                            <input type="text" name="job" value="{{ $job }}" class="form-control" placeholder="Enter Job Order No">
+                            <input type="text" name="job" value="<?php echo e($job); ?>" class="form-control" placeholder="Enter Job Order No">
                         </div>
                         <div>
                             <label class="form-label d-none d-md-block">&nbsp;</label>
@@ -28,31 +26,31 @@
                     </form>
                 </div>
                 <div class="col-md-7 col-lg-8">
-                    <form method="GET" action="{{ route('superadmin.reporting.dispatch') }}" class="row g-2 align-items-end justify-content-end">
+                    <form method="GET" action="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="row g-2 align-items-end justify-content-end">
                         <div class="col-sm-4 col-md-3">
                             <label class="form-label">Status</label>
                             <select name="status" class="form-select">
-                                <option value="in-account" {{ (isset($status) && $status==='dispatched') ? '' : 'selected' }}>In Account</option>
-                                <option value="dispatched" {{ (isset($status) && $status==='dispatched') ? 'selected' : '' }}>Dispatched</option>
+                                <option value="in-account" <?php echo e((isset($status) && $status==='dispatched') ? '' : 'selected'); ?>>In Account</option>
+                                <option value="dispatched" <?php echo e((isset($status) && $status==='dispatched') ? 'selected' : ''); ?>>Dispatched</option>
                             </select>
                         </div>
                         <div class="col-sm-4 col-md-3">
                             <label class="form-label">Month</label>
                             <select name="month" class="form-select">
                                 <option value="">Select Month</option>
-                                @for($m=1;$m<=12;$m++)
-                                    <option value="{{ $m }}" {{ (isset($month) && (int)$month === $m) ? 'selected' : '' }}>{{ \Carbon\Carbon::create(null,$m,1)->format('F') }}</option>
-                                @endfor
+                                <?php for($m=1;$m<=12;$m++): ?>
+                                    <option value="<?php echo e($m); ?>" <?php echo e((isset($month) && (int)$month === $m) ? 'selected' : ''); ?>><?php echo e(\Carbon\Carbon::create(null,$m,1)->format('F')); ?></option>
+                                <?php endfor; ?>
                             </select>
                         </div>
                         <div class="col-sm-4 col-md-3">
                             <label class="form-label">Year</label>
                             <select name="year" class="form-select">
                                 <option value="">Select Year</option>
-                                @php $currentY = (int) now()->year; @endphp
-                                @for($y=$currentY; $y>=$currentY-5; $y--)
-                                    <option value="{{ $y }}" {{ (isset($year) && (int)$year === $y) ? 'selected' : '' }}>{{ $y }}</option>
-                                @endfor
+                                <?php $currentY = (int) now()->year; ?>
+                                <?php for($y=$currentY; $y>=$currentY-5; $y--): ?>
+                                    <option value="<?php echo e($y); ?>" <?php echo e((isset($year) && (int)$year === $y) ? 'selected' : ''); ?>><?php echo e($y); ?></option>
+                                <?php endfor; ?>
                             </select>
                         </div>
                         <div class="col-sm-4 col-md-3 col-lg-2 d-grid">
@@ -62,7 +60,7 @@
                     </form>
                 </div>
             </div>
-            @if(isset($readyJobs) && $readyJobs->count())
+            <?php if(isset($readyJobs) && $readyJobs->count()): ?>
             <hr class="my-3">
             <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
@@ -70,83 +68,83 @@
                     <span class="text-muted small">(In Account, not yet Dispatched)</span>
                 </div>
                 <div class="d-flex flex-wrap gap-2">
-                    @foreach($readyJobs as $jn)
-                        <a class="badge bg-light text-dark border" href="{{ route('superadmin.reporting.dispatch', ['job' => $jn]) }}">{{ $jn }}</a>
-                    @endforeach
+                    <?php $__currentLoopData = $readyJobs; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $jn): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <a class="badge bg-light text-dark border" href="<?php echo e(route('superadmin.reporting.dispatch', ['job' => $jn])); ?>"><?php echo e($jn); ?></a>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
             </div>
-            @endif
+            <?php endif; ?>
         </div>
     </div>
 
-    @if(!empty($header))
+    <?php if(!empty($header)): ?>
     <div class="card mb-3">
         <div class="card-body">
             <div class="row g-3">
                 <div class="col-md-3">
                     <label class="form-label">Job Card No.</label>
-                    <input type="text" class="form-control" value="{{ $header['job_card_no'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['job_card_no']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Client Name</label>
-                    <input type="text" class="form-control" value="{{ $header['client_name'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['client_name']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Job Order Date</label>
-                    <input type="date" class="form-control" value="{{ $header['job_order_date'] }}" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['job_order_date']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issue Date</label>
-                    <input type="date" class="form-control" value="{{ $header['issue_date'] }}" readonly>
+                    <input type="date" class="form-control" value="<?php echo e($header['issue_date']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Reference No.</label>
-                    <input type="text" class="form-control" value="{{ $header['reference_no'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['reference_no']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Sample Description</label>
-                    <input type="text" class="form-control" value="{{ $header['sample_description'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['sample_description']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Name of Work</label>
-                    <input type="text" class="form-control" value="{{ $header['name_of_work'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['name_of_work']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">Issued To</label>
-                    <input type="text" class="form-control" value="{{ $header['issued_to'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['issued_to']); ?>" readonly>
                 </div>
                 <div class="col-md-3">
                     <label class="form-label">M/s</label>
-                    <input type="text" class="form-control" value="{{ $header['ms'] }}" readonly>
+                    <input type="text" class="form-control" value="<?php echo e($header['ms']); ?>" readonly>
                 </div>
-                {{-- View-only Letters box (no uploads in Dispatch) --}}
-                @php
+                
+                <?php
                     $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $job]) : '';
-                @endphp
+                ?>
                 <div class="col-md-6">
                     <label class="form-label">Uploaded Reports</label>
-                    <form method="POST" action="#" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}">
-                        @csrf
-                        <input type="hidden" name="job" value="{{ $job }}">
+                    <form method="POST" action="#" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="<?php echo e($listRoute); ?>">
+                        <?php echo csrf_field(); ?>
+                        <input type="hidden" name="job" value="<?php echo e($job); ?>">
                         <div class="d-flex gap-2 align-items-center">
-                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" {{ empty($listRoute) ? 'disabled' : '' }}>
+                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" <?php echo e(empty($listRoute) ? 'disabled' : ''); ?>>
                                 View
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
                         </div>
                     </form>
                 </div>
-                @php
+                <?php
                     $__first = $items->first();
                     $__singleLetter = $__first?->booking?->upload_letter_path ? asset('storage/'.$__first->booking->upload_letter_path) : null;
-                @endphp
-                @if($__singleLetter)
-                    <input type="hidden" id="single-letter-url" value="{{ $__singleLetter }}">
-                @endif
+                ?>
+                <?php if($__singleLetter): ?>
+                    <input type="hidden" id="single-letter-url" value="<?php echo e($__singleLetter); ?>">
+                <?php endif; ?>
             </div>
         </div>
     </div>
-    @endif
+    <?php endif; ?>
 
     <div class="card">
         <div class="card-body">
@@ -163,65 +161,67 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($items as $item)
+                        <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                             <tr>
-                                <td><input type="checkbox" class="row-select" data-id="{{ $item->id }}"></td>
-                                <td>{{ $item->job_order_no }}</td>
-                                <td>{{ $item->booking->client_name ?? '-' }}</td>
-                                <td>{{ $item->sample_description }}</td>
-                                <td class="status-cell" data-id="{{ $item->id }}">
-                                    @if($item->dispatched_at)
+                                <td><input type="checkbox" class="row-select" data-id="<?php echo e($item->id); ?>"></td>
+                                <td><?php echo e($item->job_order_no); ?></td>
+                                <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
+                                <td><?php echo e($item->sample_description); ?></td>
+                                <td class="status-cell" data-id="<?php echo e($item->id); ?>">
+                                    <?php if($item->dispatched_at): ?>
                                         Dispatched
-                                    @elseif($item->account_received_at)
+                                    <?php elseif($item->account_received_at): ?>
                                         In Account
-                                    @elseif($item->analyst)
-                                        {{ $item->status }}
-                                    @else
+                                    <?php elseif($item->analyst): ?>
+                                        <?php echo e($item->status); ?>
+
+                                    <?php else: ?>
                                         In Lab / Analyst TBD
-                                    @endif
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <form method="POST"
-                                          action="{{ $item->dispatched_at ? '#' : ($item->account_received_at ? route('superadmin.reporting.dispatchOne', $item) : route('superadmin.reporting.accountReceiveOne', $item)) }}"
-                                          class="dispatch-form" id="dispatch-form-{{ $item->id }}" data-id="{{ $item->id }}"
-                                          data-receive-url="{{ route('superadmin.reporting.accountReceiveOne', $item) }}"
-                                          data-dispatch-url="{{ route('superadmin.reporting.dispatchOne', $item) }}">
-                                        @csrf
-                                        @if($item->dispatched_at)
-                                            <button type="button" class="btn btn-sm dispatch-toggle-btn" data-id="{{ $item->id }}" disabled style="background-color:#FE9F43;border-color:#FE9F43">Dispatched</button>
-                                        @elseif($item->account_received_at)
-                                            <button type="button" class="btn btn-sm dispatch-toggle-btn" data-id="{{ $item->id }}" data-mode="dispatch" style="background-color:#FE9F43;border-color:#FE9F43">Dispatch</button>
-                                        @else
-                                            <button type="button" class="btn btn-sm dispatch-toggle-btn" data-id="{{ $item->id }}" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">Receive</button>
-                                        @endif
+                                          action="<?php echo e($item->dispatched_at ? '#' : ($item->account_received_at ? route('superadmin.reporting.dispatchOne', $item) : route('superadmin.reporting.accountReceiveOne', $item))); ?>"
+                                          class="dispatch-form" id="dispatch-form-<?php echo e($item->id); ?>" data-id="<?php echo e($item->id); ?>"
+                                          data-receive-url="<?php echo e(route('superadmin.reporting.accountReceiveOne', $item)); ?>"
+                                          data-dispatch-url="<?php echo e(route('superadmin.reporting.dispatchOne', $item)); ?>">
+                                        <?php echo csrf_field(); ?>
+                                        <?php if($item->dispatched_at): ?>
+                                            <button type="button" class="btn btn-sm dispatch-toggle-btn" data-id="<?php echo e($item->id); ?>" disabled style="background-color:#FE9F43;border-color:#FE9F43">Dispatched</button>
+                                        <?php elseif($item->account_received_at): ?>
+                                            <button type="button" class="btn btn-sm dispatch-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="dispatch" style="background-color:#FE9F43;border-color:#FE9F43">Dispatch</button>
+                                        <?php else: ?>
+                                            <button type="button" class="btn btn-sm dispatch-toggle-btn" data-id="<?php echo e($item->id); ?>" data-mode="receive" style="background-color:#092C4C;border-color:#092C4C">Receive</button>
+                                        <?php endif; ?>
                                     </form>
                                 </td>
                             </tr>
-                        @empty
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                             <tr>
                                 <td colspan="6" class="text-center">No items found</td>
                             </tr>
-                        @endforelse
+                        <?php endif; ?>
                     </tbody>
                 </table>
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-3">
                     <div>
-                    {{ $items->links('pagination::bootstrap-5') }}
+                    <?php echo e($items->links('pagination::bootstrap-5')); ?>
+
                 </div>
                 <div class="d-flex gap-2">
-                    @php
+                    <?php
                         $allReceived = $items->count() > 0;
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
-                    @endphp
+                    ?>
                     <button class="btn" type="button" id="receive-selected-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff;">Receive Selected</button>
                     <button class="btn" type="button" id="dispatch-selected-btn" style="background-color:#FE9F43;border-color:#FE9F43;color:#fff;">Dispatch Selected</button>
                 </div>
             </div>
         </div>
     </div>
-    {{-- Letters Modal --}}
+    
     <div class="modal fade" id="lettersModal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
@@ -238,9 +238,9 @@
         </div>
     </div>
 </div>
-@endsection
+<?php $__env->stopSection(); ?>
 
-@push('scripts')
+<?php $__env->startPush('scripts'); ?>
 <script>
 (function initDispatchPage(){
   const init = function() {
@@ -514,7 +514,7 @@
                         if (!selected.length) { alert('Please select at least one row.'); return; }
                                 const anyForm = document.querySelector('form.dispatch-form');
                                 const csrf = anyForm ? anyForm.querySelector('input[name="_token"]').value : '';
-                                await fetch("{{ route('superadmin.reporting.accountReceiveBulk') }}", {
+                                await fetch("<?php echo e(route('superadmin.reporting.accountReceiveBulk')); ?>", {
                                     method: 'POST',
                                     headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                                     body: JSON.stringify({ ids: selected.map(id => Number(id)) })
@@ -587,7 +587,7 @@
                             if (!result.isConfirmed) return; // user cancelled
                             meta = result.value || {};
                         }
-                        await fetch("{{ route('superadmin.reporting.dispatchBulk') }}", {
+                        await fetch("<?php echo e(route('superadmin.reporting.dispatchBulk')); ?>", {
                         method: 'POST',
                             headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
                             body: JSON.stringify({ ids: selected.map(id => Number(id)), meta })
@@ -607,9 +607,9 @@
   if (document.readyState === 'loading') { document.addEventListener('DOMContentLoaded', init); } else { init(); }
 })();
 </script>
-@endpush
+<?php $__env->stopPush(); ?>
 
-@push('styles')
+<?php $__env->startPush('styles'); ?>
 <style>
     .dispatch-toggle-btn {
         border-width: 1px !important;
@@ -653,4 +653,6 @@
     .btn-outline-warning { border-color:#FE9F43; color:#FE9F43; }
     .btn-outline-warning:hover, .btn-outline-warning:focus { background-color:#FE9F43; border-color:#FE9F43; color:#fff; }
 </style>
-@endpush
+<?php $__env->stopPush(); ?>
+
+<?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/reporting/dispatch.blade.php ENDPATH**/ ?>

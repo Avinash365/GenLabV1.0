@@ -1,4 +1,4 @@
-<?php
++<?php
 require __DIR__ . '/../vendor/autoload.php';
 
 $app = require __DIR__ . '/../bootstrap/app.php';
@@ -10,7 +10,7 @@ use App\Http\Controllers\MobileControllers\Accounts\MarketingPersonInfo;
 
 $req = Request::create('/', 'GET', []);
 $ctrl = new MarketingPersonInfo();
-$response = $ctrl->viewByJobOrderApi($req, 'MKT001');
+$response = $ctrl->viewByJobOrderApi($req, 'MKT013');
 
 if ($response instanceof \Illuminate\Http\JsonResponse) {
     $data = $response->getData(true);

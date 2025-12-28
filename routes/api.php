@@ -127,6 +127,29 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
 
 });
 
+// Checked-in (Cleared) personal/approved exports listing (paginated)
+Route::middleware(['multi_jwt:api'])->get('superadmin/personal/checked-in', [\App\Http\Controllers\Accounts\MarketingExpenseController::class, 'checkedInApi']);
+
+// Mobile Chat API (user)
+Route::middleware(['multi_jwt:api'])->prefix('chat')->group(function () {
+    Route::get('contacts', [\App\Http\Controllers\MobileControllers\ChatController::class, 'contacts']);
+    Route::get('messages/{user}', [\App\Http\Controllers\MobileControllers\ChatController::class, 'messages']);
+    Route::post('messages', [\App\Http\Controllers\MobileControllers\ChatController::class, 'send']);
+    Route::post('typing', [\App\Http\Controllers\MobileControllers\ChatController::class, 'typing']);
+    Route::post('messages/reaction', [\App\Http\Controllers\MobileControllers\ChatController::class, 'reaction']);
+    Route::get('search', [\App\Http\Controllers\MobileControllers\ChatController::class, 'search']);
+});
+
+// Mobile Chat API (admin)
+Route::middleware(['multi_jwt:api_admin'])->prefix('admin/chat')->group(function () {
+    Route::get('contacts', [\App\Http\Controllers\MobileControllers\ChatController::class, 'contacts']);
+    Route::get('messages/{user}', [\App\Http\Controllers\MobileControllers\ChatController::class, 'messages']);
+    Route::post('messages', [\App\Http\Controllers\MobileControllers\ChatController::class, 'send']);
+    Route::post('typing', [\App\Http\Controllers\MobileControllers\ChatController::class, 'typing']);
+    Route::post('messages/reaction', [\App\Http\Controllers\MobileControllers\ChatController::class, 'reaction']);
+    Route::get('search', [\App\Http\Controllers\MobileControllers\ChatController::class, 'search']);
+});
+
 /*
  | Marketing Dashboard API
  | Provides overview and compact summary for marketing dashboard widgets

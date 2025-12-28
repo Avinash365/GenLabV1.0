@@ -10,7 +10,7 @@ use App\Http\Controllers\MobileControllers\Accounts\MarketingPersonInfo;
 
 $req = Request::create('/', 'GET', []);
 $ctrl = new MarketingPersonInfo();
-$response = $ctrl->viewByLetterApi($req, 'MKT001');
+$response = $ctrl->viewByLetterApi($req, 'MKT013');
 
 if ($response instanceof \Illuminate\Http\JsonResponse) {
     $data = $response->getData(true);

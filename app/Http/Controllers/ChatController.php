@@ -431,11 +431,15 @@ class ChatController extends Controller
             ->get()
             ->map(fn($a) => ['id' => 'admin:'.$a->id, 'orig_id' => $a->id, 'name' => $a->name, 'type' => 'admin']);
 
-        $employees = Employee::where('name', 'like', "%{$q}%")
+        $employees = Employee::where(function($query) use ($q) {
+                $query->where('first_name', 'like', "%{$q}%")
+                      ->orWhere('last_name', 'like', "%{$q}%")
+                      ->orWhereRaw("CONCAT(first_name, ' ', COALESCE(last_name, '')) like ?", ["%{$q}%"]);
+            })
             ->when($myType === 'employee', fn($query) => $query->where('id', '!=', $myId))
             ->limit(30)
             ->get()
-            ->map(fn($e) => ['id' => 'employee:'.$e->id, 'orig_id' => $e->id, 'name' => $e->name, 'type' => 'employee']);
+            ->map(fn($e) => ['id' => 'employee:'.$e->id, 'orig_id' => $e->id, 'name' => ($e->full_name ?? trim(($e->first_name ?? '') . ' ' . ($e->last_name ?? ''))), 'type' => 'employee']);
 
         $users = User::whereNotNull('name')->where('name', '<>', '')->where('name', 'like', "%{$q}%")
             ->when($myType === 'user', fn($query) => $query->where('id', '!=', $myId))
