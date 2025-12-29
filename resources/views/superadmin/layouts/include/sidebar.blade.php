@@ -104,11 +104,11 @@
                                 </a>
                             </li>
 
-                            <!-- <li>
-                                <a href="{{ route('superadmin.invoices.index', array_merge($invoiceParams, ['context' => 'marketing'])) }}" class="{{ Request::routeIs('superadmin.invoices.*') ? 'active' : '' }}">
-                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Invoices Payments</span>
+                            <li>
+                                <a href="{{ route('superadmin.meter-reading.index') }}" class="{{ Request::routeIs('superadmin.meter-reading.*') ? 'active' : '' }}">
+                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
                                 </a>
-                            </li> -->
+                            </li>
 
                             <li>
                                 @if($isMarketing && $user)
@@ -137,7 +137,7 @@
                             <li>
                                 @if(!empty($uc))
                                     <a href="{{ route('superadmin.reporting.pendings', ['marketing' => $uc]) }}" class="{{ Request::routeIs('superadmin.reporting.pendings') ? 'active' : '' }}">
-                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings</span>
+                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings Item</span>
                                     </a>
                                 @else
                                     <a href="{{ route('superadmin.reporting.pendings') }}" class="{{ Request::routeIs('superadmin.reporting.pendings') ? 'active' : '' }}">

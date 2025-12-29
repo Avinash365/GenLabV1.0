@@ -104,11 +104,11 @@
                                 </a>
                             </li>
 
-                            <!-- <li>
-                                <a href="<?php echo e(route('superadmin.invoices.index', array_merge($invoiceParams, ['context' => 'marketing']))); ?>" class="<?php echo e(Request::routeIs('superadmin.invoices.*') ? 'active' : ''); ?>">
-                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Invoices Payments</span>
+                            <li>
+                                <a href="<?php echo e(route('superadmin.meter-reading.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.meter-reading.*') ? 'active' : ''); ?>">
+                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
                                 </a>
-                            </li> -->
+                            </li>
 
                             <li>
                                 <?php if($isMarketing && $user): ?>
@@ -137,7 +137,7 @@
                             <li>
                                 <?php if(!empty($uc)): ?>
                                     <a href="<?php echo e(route('superadmin.reporting.pendings', ['marketing' => $uc])); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">
-                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings</span>
+                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings Item</span>
                                     </a>
                                 <?php else: ?>
                                     <a href="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">

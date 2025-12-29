@@ -72,6 +72,9 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
         [MarketingPersonInfo::class, 'fetchBookings']
     );
 
+    // Consolidated profile overview used by mobile profile screen
+    Route::get('{user_code}/profile', [MarketingPersonInfo::class, 'profileOverviewApi']);
+
     // Booking items by letter (mobile API) - mirrors bookingByLetter Blade view
     Route::get('{user_code}/bookings/by-letter', [MarketingPersonInfo::class, 'bookingByLetter'])->name('api.marketing.booking.by-letter');
 
