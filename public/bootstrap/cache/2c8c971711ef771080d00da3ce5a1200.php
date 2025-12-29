@@ -251,11 +251,9 @@
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->particulars); ?>"><?php echo e($item->particulars); ?></div>
                                 </td>
                                 <td>
-                                    
+                                 
                                     <div class="cell-inner"><?php echo e($item->status); ?></div>
- 
-                                
-                                     
+  
                                 </td>
                                 <td class="action-cell">
                                     <?php

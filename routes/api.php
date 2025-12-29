@@ -118,8 +118,8 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
         [MarketingPersonInfo::class, 'fetchClients']
     );
 
-    // Client profile (mobile)
-    Route::get('{user_code}/clients/{client_id}/profile', [MarketingPersonInfo::class, 'clientProfileApi'])->name('api.marketing.client.profile');
+    // Client profile (mobile) - client id passed as query param `client_id`
+    Route::get('{user_code}/clients/profile', [MarketingPersonInfo::class, 'clientProfileApi'])->name('api.marketing.client.profile');
 
     // Personal expenses (mobile): list and create
     Route::get('{user_code}/personal/expenses', [MarketingPersonInfo::class, 'personalExpensesListApi'])->name('api.marketing.personal.expenses.list');

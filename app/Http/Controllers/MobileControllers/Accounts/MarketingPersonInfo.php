@@ -434,14 +434,34 @@ class MarketingPersonInfo extends Controller
 
 
     /**
-     * GET /api/marketing-person/{user_code}/clients/{client_id}/profile
-     * Return client profile and summary stats for mobile.
+     * GET /api/marketing-person/{user_code}/clients/profile?client_id={id}
+     * Return client profile and summary stats for mobile. Client id must be supplied
+     * as a query parameter and the client must be linked to the marketing user.
      */
-    public function clientProfileApi(Request $request, $user_code, $client_id)
+    public function clientProfileApi(Request $request, $user_code)
     {
         $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
 
+        $client_id = $request->query('client_id');
+
+        // If no client_id supplied, return the marketing person's client list
+        if (! $client_id) {
+            return $this->fetchClients($request, $user_code);
+        }
+
         $client = \App\Models\Client::findOrFail($client_id);
+
+        // Ensure the marketing person has access to this client (client must appear in their bookings)
+        $hasAccess = \App\Models\NewBooking::where('client_id', $client->id)
+            ->where('marketing_id', $marketingPerson->user_code)
+            ->exists();
+
+        if (! $hasAccess) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized to access this client for the given marketing user'
+            ], 403);
+        }
 
         // Bookings
         $totalBookings = \App\Models\NewBooking::where('client_id', $client->id)->count();
@@ -486,7 +506,6 @@ class MarketingPersonInfo extends Controller
             'message' => 'Client profile fetched',
             'data' => [
                 'client' => [
-                    'id' => $client->id,
                     'name' => $client->name,
                     'email' => $client->email,
                     'phone' => $client->phone ?? null,
