@@ -145,3 +145,22 @@ use Spatie\Browsershot\Browsershot;
 
 
 
+
+use App\Http\Controllers\SuperAdmin\VehicleController;
+
+// Vehicle Registration routes
+Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/vehicles', [VehicleController::class, 'index'])->name('vehicles.index');
+    Route::get('/vehicles/create', [VehicleController::class, 'create'])->name('vehicles.create');
+    Route::post('/vehicles', [VehicleController::class, 'store'])->name('vehicles.store');
+    Route::get('/vehicles/{vehicle}', [VehicleController::class, 'show'])->name('vehicles.show');
+    Route::get('/vehicles/{vehicle}/modal', [VehicleController::class, 'modal'])->name('vehicles.modal');
+    Route::get('/vehicles/preview/{path}', [VehicleController::class, 'previewFile'])->where('path', '.*')->name('vehicles.preview');
+    Route::post('/vehicles/{vehicle}/service', [VehicleController::class, 'storeService'])->name('vehicles.service.store');
+    Route::get('/vehicles/download/{path}', [VehicleController::class, 'downloadFile'])->where('path', '.*')->name('vehicles.download');
+});
+
+
+
+
+

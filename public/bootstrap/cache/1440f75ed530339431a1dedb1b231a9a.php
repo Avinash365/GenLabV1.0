@@ -404,7 +404,7 @@
 
                         <li class="submenu <?php echo e(Request::routeIs('superadmin.marketing.*') ? 'submenu-open' : ''); ?>">
                             <a href="javascript:void(0)">
-                                <i class="ti ti-target fs-16 me-2"></i>
+                                <i class="fa fa-bus fs-16 me-2"></i>
                                 <span>Transportaion</span>
                                 <span class="menu-arrow"></span>
                             </a>
@@ -413,6 +413,12 @@
                                     <a href="<?php echo e(route('superadmin.meter-reading.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.meter-reading.*') ? 'active' : ''); ?>">
                                     <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
                                 </a>
+                                </li>
+
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.vehicles.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.vehicles.*') ? 'active' : ''); ?>">
+                                        <i class="ti ti-file-text fs-16 me-2"></i><span>Vehicle Registration</span>
+                                    </a>
                                 </li>
                             </ul>
                         </li>
