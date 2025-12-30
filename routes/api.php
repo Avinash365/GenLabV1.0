@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\MarketingDashboardController;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Controllers\MobileControllers\MeterReadingController;
 
 
 // Static test file endpoint for client testing
@@ -162,4 +165,49 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-dashboard')->group(funct
     Route::get('{user_code}/summary', [MarketingDashboardController::class, 'summary']);
     // Time-series / chart data endpoint
     Route::get('{user_code}/series', [MarketingDashboardController::class, 'series']);
+});
+
+
+// DEBUG: temporary proxy route to test mobile API tokens when headers aren't forwarded
+Route::get('debug/meter-reading/proxy', function (Request $request) {
+    $token = $request->token ?? $request->query('token');
+    if (! $token) {
+        return response()->json(['error' => 'token missing'], 400);
+    }
+    try {
+        $user = JWTAuth::setToken($token)->toUser();
+        Auth::guard('api')->setUser($user);
+        // Resolve controller from container and call instance method
+        $controller = app(\App\Http\Controllers\MobileControllers\MeterReadingController::class);
+        return $controller->index($request);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 401);
+    }
+});
+
+// DEBUG: temporary proxy route to POST upload (for local testing only)
+Route::post('debug/meter-reading/upload-proxy', function (Request $request) {
+    $token = $request->token ?? $request->query('token');
+    if (! $token) {
+        return response()->json(['error' => 'token missing'], 400);
+    }
+    try {
+        $user = JWTAuth::setToken($token)->toUser();
+        Auth::guard('api')->setUser($user);
+        $controller = app(\App\Http\Controllers\MobileControllers\MeterReadingController::class);
+        return $controller->upload($request);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 401);
+    }
+});
+
+
+/*
+ | Meter Reading Mobile API
+ | GET  /api/meter-reading
+ | POST /api/meter-reading/upload
+ */
+Route::middleware(['multi_jwt:api'])->prefix('meter-reading')->group(function () {
+    Route::get('/', [MeterReadingController::class, 'index']);
+    Route::post('/upload', [MeterReadingController::class, 'upload']);
 });
