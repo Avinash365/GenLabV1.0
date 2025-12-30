@@ -401,6 +401,21 @@
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.rejected')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.rejected') ? 'active' : ''); ?>">Rejected Expenses</a></li>
                             </ul>
                         </li>
+
+                        <li class="submenu <?php echo e(Request::routeIs('superadmin.marketing.*') ? 'submenu-open' : ''); ?>">
+                            <a href="javascript:void(0)">
+                                <i class="ti ti-target fs-16 me-2"></i>
+                                <span>Transportaion</span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <ul>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.meter-reading.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.meter-reading.*') ? 'active' : ''); ?>">
+                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
+                                </a>
+                                </li>
+                            </ul>
+                        </li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>

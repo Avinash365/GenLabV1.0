@@ -9,7 +9,7 @@
             </div>
         </div>
         
-        <ul class="table-top-head list-inline d-flex gap-3" style="margin-left:-40px;">
+        <ul class="table-top-head list-inline d-flex gap-3" >
                     <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReadingModal">Upload Reading</button>
 
             <li class="list-inline-item">
@@ -22,13 +22,31 @@
                     </svg>
                 </a>
             </li>
-            <li><a data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a></li>
+            <li style="margin-right:22px;"><a data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh" ></i></a></li>
         </ul>
     </div>
 
     @if(session('success'))
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
+    @if(session('error'))
+        <div class="alert alert-danger">{{ session('error') }}</div>
+    @endif
+
+    @php
+        $isAdmin = false;
+        if (auth()->check()) {
+            $userRole = auth()->user()->role;
+            if (is_object($userRole) && isset($userRole->role_name)) {
+                $roleName = $userRole->role_name;
+            } elseif (is_string($userRole)) {
+                $roleName = $userRole;
+            } else {
+                $roleName = '';
+            }
+            $isAdmin = $roleName ? stripos($roleName, 'admin') !== false : false;
+        }
+    @endphp
  
     <!-- Upload Modal -->
     <div class="modal fade" id="uploadReadingModal" tabindex="-1" aria-hidden="true">
@@ -69,9 +87,9 @@
                 <div class="text-end">
                     <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Close</button>
                     @if(!empty($hasOpen))
-                        <button class="btn btn-primary">Close Reading</button>
+                        <button class="btn btn-primary">Close Trip</button>
                     @else
-                        <button class="btn btn-success">Start Reading</button>
+                        <button class="btn btn-success">Start Trip</button>
                     @endif
                 </div>
             </form>
@@ -83,15 +101,33 @@
     <div class="card mt-3">
         <div class="card-body p-0">
 
-            <div class="search-set p-3 border-bottom">
-                <div class="d-flex justify-content-between align-items-center">
-                    <form method="GET" action="{{ route('superadmin.meter-reading.index') }}" class="d-flex input-group me-3" style="max-width:600px; width:100%">
+         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
+
+            <!-- Search Form -->
+            <div class="search-set">
+                 <form method="GET" action="{{ route('superadmin.meter-reading.index') }}" class="d-flex input-group me-3" style="max-width:600px; width:100%">
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
                         <button class="btn btn-outline-secondary" type="submit">🔍</button>
-                    </form>
+                </form>
+            </div>
 
-                    <form method="GET" action="{{ route('superadmin.meter-reading.index') }}" class="d-flex input-group align-items-center" style="min-width:360px;">
-                        <select name="month" class="form-control me-2">
+            <!-- Month & Year Filter Form -->
+            <div class="search-set">
+                <form id="filterForm" method="GET" action="{{ route('superadmin.meter-reading.index') }}" class="d-flex input-group">
+
+                    @if($isAdmin ?? false)
+                            <select name="marketing_person" class="form-control me-2">
+                                <option value="">All Marketing Persons</option>
+                                @foreach($marketingPersons as $mp)
+                                    <option value="{{ $mp->id }}" {{ request('marketing_person') == $mp->id ? 'selected' : '' }}>
+                                        {{ $mp->name }} ({{ $mp->user_code }})
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
+
+                    <!-- Month Filter -->
+                    <select name="month" class="form-control">
                             <option value="">Select Month</option>
                             @foreach(range(1,12) as $m)
                                 <option value="{{ $m }}" {{ request('month') == $m ? 'selected' : '' }}>
@@ -100,19 +136,22 @@
                             @endforeach
                         </select>
 
-                        <select name="year" class="form-control me-2">
+                    <!-- Year Filter -->
+                    <select name="year" class="form-control">
                             <option value="">Select Year</option>
                             @foreach(range(date('Y'), date('Y') - 10) as $y)
                                 <option value="{{ $y }}" {{ request('year') == $y ? 'selected' : '' }}>
                                     {{ $y }}
                                 </option>
                             @endforeach
-                        </select>
+                    </select>
 
-                        <button class="btn btn-outline-secondary" type="submit">Filter</button>
-                    </form>
-                </div>
+                        <button class="btn btn-outline-secondary" type="button" id="clearFiltersBtn">Clear</button>
+                </form>
             </div>
+
+        </div>
+
 
             <div class="table-responsive">
                 <table class="table table-hover align-middle mb-0" id="readingsTable">
@@ -120,6 +159,10 @@
                         <tr>
                             <th>#</th>
                             <th>Description</th>
+                            {{-- $isAdmin computed above --}}
+                            @if($isAdmin)
+                                <th>Marketing Person</th>
+                            @endif
                             <th>Starting Reading (value &amp; date)</th>
                             <th>Ending Reading (value &amp; date)</th>
                             <th>Total Reading</th>
@@ -130,6 +173,9 @@
                             <tr>
                                         <td>{{ $loop->iteration }}</td>
                                         <td>{{ $r['description'] ?? ($r['end_description'] ?? '-') }}</td>
+                                        @if($isAdmin)
+                                            <td>{{ $r['marketing_person']['name'] ?? ($r['marketing_person']['user_code'] ?? '-') }}</td>
+                                        @endif
                                         <td>
                                             @if(!empty($r['starting_reading']))
                                                 {{ $r['starting_reading'] }}
@@ -157,7 +203,8 @@
                                         <td>{{ isset($r['total_reading']) && is_numeric($r['total_reading']) ? number_format($r['total_reading'], 2) : '-' }}</td>
                                     </tr>
                         @empty
-                            <tr><td colspan="6" class="text-center">No readings uploaded yet.</td></tr>
+                            @php $colspan = $isAdmin ? 6 : 5; @endphp
+                            <tr><td colspan="{{ $colspan }}" class="text-center">No readings uploaded yet.</td></tr>
                         @endforelse
                     </tbody>
                 </table>
@@ -191,6 +238,7 @@
                     <input type="hidden" name="search" value="{{ request('search') }}">
                     <input type="hidden" name="month" value="{{ request('month') }}">
                     <input type="hidden" name="year" value="{{ request('year') }}">
+                    <input type="hidden" name="marketing_person" value="{{ request('marketing_person') }}">
                 </form>
             </div>
 
@@ -209,6 +257,24 @@
                         document.getElementById('perPageForm').submit();
                     });
                 }
+                    // auto-submit filter form when marketing person / month / year changes
+                    var filterForm = document.getElementById('filterForm');
+                    if (filterForm) {
+                        var mp = filterForm.querySelector('select[name="marketing_person"]');
+                        var month = filterForm.querySelector('select[name="month"]');
+                        var year = filterForm.querySelector('select[name="year"]');
+                        [mp, month, year].forEach(function(el){
+                            if (el) el.addEventListener('change', function(){ filterForm.submit(); });
+                        });
+                        var clearBtn = document.getElementById('clearFiltersBtn');
+                        if (clearBtn) {
+                            clearBtn.addEventListener('click', function () {
+                                // clear all selects inside the filter form and submit
+                                filterForm.querySelectorAll('select').forEach(function(s){ s.value = ''; });
+                                filterForm.submit();
+                            });
+                        }
+                    }
             });
         </script>
     </div>
