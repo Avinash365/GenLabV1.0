@@ -73,12 +73,12 @@ class GenerateInvoiceStatusController extends Controller
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
-                $q->where('id', 'like', "%{$search}%")
-                    ->orWhere('reference_no', 'like', "%{$search}%")
-                    ->orWhereHas('department', fn($deptQ) => $deptQ->where('name', 'like', "%{$search}%"))
-                    ->orWhereHas('marketingPerson', fn($mpQ) => $mpQ->where('name', 'like', "%{$search}%"))
+                $q->where('id', 'like', "{$search}%")
+                    ->orWhere('reference_no', 'like', "{$search}%")
+                    ->orWhereHas('department', fn($deptQ) => $deptQ->where('name', 'like', "{$search}%"))
+                    ->orWhereHas('marketingPerson', fn($mpQ) => $mpQ->where('name', 'like', "{$search}%"))
                     ->orWhereDate('job_order_date', $search)
-                    ->orWhereHas('items', fn($itemQ) => $itemQ->where('job_order_no', 'like', "%{$search}%"));
+                    ->orWhereHas('items', fn($itemQ) => $itemQ->where('job_order_no', 'like', "{$search}%"));
             });
         }
 

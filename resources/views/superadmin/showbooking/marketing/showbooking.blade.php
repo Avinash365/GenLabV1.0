@@ -18,7 +18,7 @@
     </div>
 @endif 
 
-<div class="content">
+<div class="content">   
     <div class="page-header">
         <div class="add-item d-flex">
             <div class="page-title">

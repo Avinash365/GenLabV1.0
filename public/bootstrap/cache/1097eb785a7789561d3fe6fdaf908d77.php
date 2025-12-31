@@ -112,38 +112,34 @@
                 <table class="table">
                     <thead class="table-light">
                         <tr>
-                            <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                            <th style="width:200px;">Client Name</th>
-                            <th style="width:160px;">Reference No</th>
-                            <th>Marketing Person</th>
-                            <th>Show Letter</th>
-                            <th>Items</th>
-                            <th>Action</th>
+                            <th class="checkbox-col"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                            <th class="client-col">Client Name</th>
+                            <th class="reference-col">Reference No</th>
+                            <th class="marketing-col">Marketing Person</th>
+                            <th class="show-letter-col">Show Letter</th>
+                            <th class="items-col">Items</th>
+                            <th class="action-col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr>
-                            <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                          
-                           
-                            <td class="truncate-cell">
+                            <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
+                            <td class="truncate-cell client-col">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($booking->client_name); ?>"><?php echo e($booking->client_name); ?></div>
                             </td>
-                            <td class="truncate-cell">
+                            <td class="truncate-cell reference-col">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($booking->reference_no); ?>"><?php echo e($booking->reference_no); ?></div>
                             </td>
-                     
-                            <td><?php echo e($booking->marketingPerson->name); ?></td>
-                         
-                            <td>
+                            <td class="marketing-col"><?php echo e($booking->marketingPerson->name); ?></td>
+                            <td class="show-letter-col">
                                 <?php if($booking->upload_letter_path): ?>
                                     <a href="<?php echo e(url($booking->upload_letter_path)); ?>" target="_blank">View</a>
                                 <?php else: ?>
                                     -
                                 <?php endif; ?>
                             </td>
-                            <td>
+                            <td class="items-col">
                                 <?php echo e($booking->items->count()); ?>
 
                                 <?php if($booking->items->count() > 0): ?>
@@ -195,42 +191,45 @@
                                     </div>
                                 <?php endif; ?>
                             </td>
-                            <td class="d-flex"> 
+                            <td class="action-col">
+                                <div class="d-flex justify-content-end align-items-center">
+                                    <a href="<?php echo e(route('superadmin.bookings.cards.all', [$booking->id])); ?>"
+                                        target="_blank"
+                                        class="border rounded d-flex align-items-center p-2 text-decoration-none me-2"
+                                        aria-label="View booking">
+                                            <i data-feather="eye" class="feather-eye"></i>
+                                    </a>
 
-                            <!-- View Booking Card -->
-                                <a href="<?php echo e(route('superadmin.bookings.cards.all', [$booking->id])); ?>"
-                                    target="_blank"
-                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
-                                        <i data-feather="eye" class="feather-eye"></i>
-                                </a> 
+                                    <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
+                                       class="border rounded d-flex align-items-center p-2 text-decoration-none me-2"
+                                       aria-label="Edit booking">
+                                        <i data-feather="edit" class="feather-edit"></i>
+                                    </a>
 
-                                <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
-                                   class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
-                                    <i data-feather="edit" class="feather-edit"></i>
-                                </a>
+                                    <!-- Delete Button -->
+                                    <button type="button" class="border rounded d-flex align-items-center p-2 btn-delete"
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($booking->id); ?>"
+                                            aria-label="Delete booking">
+                                        <i data-feather="trash-2" class="feather-trash-2"></i>
+                                    </button>
 
-                                <!-- Delete Button -->
-                                <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete" 
-                                        data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">
-                                    <i data-feather="trash-2" class="feather-trash-2"></i>
-                                </button>
-
-                                <!-- Delete Modal -->
-                                <div class="modal fade" id="deleteModal-<?php echo e($booking->id); ?>" tabindex="-1" aria-hidden="true">
-                                    <div class="modal-dialog modal-dialog-centered">
-                                        <div class="modal-content">
-                                            <div class="modal-body text-center p-4">
-                                                <div class="icon-success bg-danger-transparent text-danger mb-2">
-                                                    <i class="ti ti-trash"></i>
-                                                </div>
-                                                <h5 class="mb-3">Are you sure you want to delete this booking?</h5>
-                                                <div class="d-flex justify-content-center gap-2">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                    <form action="<?php echo e(route('superadmin.bookings.destroy', $booking->id)); ?>" method="POST">
-                                                        <?php echo csrf_field(); ?>
-                                                        <?php echo method_field('DELETE'); ?>
-                                                        <button type="submit" class="btn btn-danger">Delete</button>
-                                                    </form>
+                                    <!-- Delete Modal -->
+                                    <div class="modal fade" id="deleteModal-<?php echo e($booking->id); ?>" tabindex="-1" aria-hidden="true">
+                                        <div class="modal-dialog modal-dialog-centered">
+                                            <div class="modal-content">
+                                                <div class="modal-body text-center p-4">
+                                                    <div class="icon-success bg-danger-transparent text-danger mb-2">
+                                                        <i class="ti ti-trash"></i>
+                                                    </div>
+                                                    <h5 class="mb-3">Are you sure you want to delete this booking?</h5>
+                                                    <div class="d-flex justify-content-center gap-2">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                                        <form action="<?php echo e(route('superadmin.bookings.destroy', $booking->id)); ?>" method="POST">
+                                                            <?php echo csrf_field(); ?>
+                                                            <?php echo method_field('DELETE'); ?>
+                                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                                        </form>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </div>
@@ -249,17 +248,42 @@
 
             <?php $__env->startPush('styles'); ?>
             <style>
-                /* Truncate and clamp wrapper to show up to two lines */
-                .truncate-cell { max-width: 200px; }
+                /* Allow full content to display: remove two-line clamp and enable wrapping */
+                .truncate-cell { max-width: none; }
                 .truncate-cell .cell-inner {
-                    display: -webkit-box;
-                    -webkit-box-orient: vertical;
-                    -webkit-line-clamp: 2;
-                    overflow: hidden;
-                    text-overflow: ellipsis;
+                    display: block;
                     white-space: normal;
+                    word-break: break-word;
+                    overflow-wrap: anywhere;
                 }
-                @media (max-width: 768px){ .truncate-cell { max-width: 140px; } }
+                @media (max-width: 768px){ .truncate-cell { max-width: none; } }
+
+                /* Column sizing and responsive behavior */
+                table.table { width: 100%; table-layout: auto; }
+
+                .checkbox-col { width: 44px; padding-left: 6px; padding-right: 6px; }
+
+                .client-col { min-width: 220px; max-width: 380px; }
+                .reference-col { min-width: 160px; max-width: 260px; }
+                .marketing-col { min-width: 140px; max-width: 220px; }
+                .show-letter-col { min-width: 90px; max-width: 120px; text-align: center; }
+                .items-col { min-width: 90px; max-width: 120px; text-align: center; }
+                .action-col { min-width: 140px; text-align: right; }
+
+                /* Ensure cells wrap within their max widths */
+                td.client-col, th.client-col,
+                td.reference-col, th.reference-col,
+                td.marketing-col, th.marketing-col,
+                td.show-letter-col, th.show-letter-col,
+                td.items-col, th.items-col {
+                    white-space: normal; word-break: break-word; overflow-wrap: anywhere;
+                }
+
+                @media (max-width: 992px) {
+                    .client-col { min-width: 160px; }
+                    .reference-col { min-width: 120px; }
+                    .marketing-col { min-width: 120px; }
+                }
             </style>
             <?php $__env->stopPush(); ?>
 

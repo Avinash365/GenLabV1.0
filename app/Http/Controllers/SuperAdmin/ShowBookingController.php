@@ -26,7 +26,7 @@ class ShowBookingController extends Controller
 
         protected function buildQuery(Request $request, Department $department = null)
         {
-            $search = $request->input('search');
+            $search = trim($request->input('search'));
             $month  = $request->input('month');
             $year   = $request->input('year');
 
@@ -37,48 +37,44 @@ class ShowBookingController extends Controller
                 'generatedInvoice',
             ]);
 
+            // Department filter
             if ($department) {
                 $query->where('department_id', $department->id);
             }
 
-            if (!empty($search)) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('id', 'like', "%{$search}%")
-                      ->orWhere('reference_no', 'like', "%{$search}%")
-                      ->orWhere('client_name', 'like', "%{$search}%")
-                      ->orWhere('contact_email', 'like', "%{$search}%")
-                      ->orWhere('contact_no', 'like', "%{$search}%")
-                      ->orWhereHas('department', function ($deptQ) use ($search) {
-                          $deptQ->where('name', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('items', function ($itemQ) use ($search) {
-                          $itemQ->where('sample_description', 'like', "%{$search}%")
-                                ->orWhere('sample_quality', 'like', "%{$search}%")
-                                ->orWhere('lab_analysis_code', 'like', "%{$search}%")
-                                ->orWhere('particulars', 'like', "%{$search}%");
-                      })
-                      ->orWhereHas('marketingPerson', function ($mpQ) use ($search) {
-                          $mpQ->where('name', 'like', "%{$search}%");
-                      })
-                      ->orWhere('job_order_date', 'like', "%{$search}%");
-                });
-            }
+            //  Optimized Search
+            $query->when(strlen($search) >= 2, function ($q) use ($search) {
+                $q->where(function ($sub) use ($search) {
 
+                    if (is_numeric($search)) {
+                        $sub->orWhere('id', (int) $search);
+                    }
+
+                    $sub->orWhere('reference_no', 'like', $search . '%')
+                        ->orWhereHas('department', function ($deptQ) use ($search) {
+                            $deptQ->where('name', 'like', $search . '%');
+                        });
+                });
+            });
+
+            // Month filter
             if (!empty($month)) {
                 $query->whereMonth('job_order_date', $month);
             }
 
+            // Year filter
             if (!empty($year)) {
                 $query->whereYear('job_order_date', $year);
             }
 
-            // Restrict to a specific marketing person when provided (user_code is stored in marketing_id)
+            // Marketing person filter
             if ($request->filled('marketing')) {
                 $query->where('marketing_id', $request->input('marketing'));
             }
 
             return $query;
         }
+
 
         public function exportPdf(Request $request, Department $department = null)
         {
@@ -147,7 +143,7 @@ class ShowBookingController extends Controller
         $query = $this->buildQuery($request, $department);
 
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100])) { $perPage = 25; }
+        if (!in_array($perPage, [25, 50, 100,500])) { $perPage = 25; }
         $bookings = $query->latest()->paginate($perPage)->withQueryString();
 
         // Collect uploaded report files per booking (align with reporting view)

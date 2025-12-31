@@ -14,7 +14,7 @@ use App\Services\InvoicePdfService;
 use App\Http\Requests\GenerateInvoiceRequest;
 use App\Jobs\SendMarketingNotificationJob;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Facades\DB; 
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 
 
@@ -102,15 +102,15 @@ class InvoiceController extends Controller
 
         // Search filter
         if ($request->filled('search')) {
-            $search = $request->search;
+            $search = trim($request->search);
+
             $query->where(function ($q) use ($search) {
-                $q->where('invoice_no', 'like', "%$search%")
+                $q->where('invoice_no', 'like', "{$search}%")
                     ->orWhereHas('relatedBooking', function ($subQ) use ($search) {
-                        $subQ->where('client_name', 'like', "%$search%");
+                        $subQ->where('client_name', 'like', "{$search}%");
                     });
             });
         }
-
         // Payment status filter
         if ($request->filled('payment_status')) {
             $query->where('status', $request->payment_status);
@@ -199,7 +199,7 @@ class InvoiceController extends Controller
 
     public function updateBulk(Request $request, $invoiceId)
     {
-       
+
 
         $request->validate([
             'invoice_data' => 'required',
@@ -343,7 +343,7 @@ class InvoiceController extends Controller
     {
         try {
 
-           
+
             $html = $request->invoice_html;
             Storage::put(
                 "invoices/invoice_{$invoice->id}.html",
@@ -643,7 +643,7 @@ class InvoiceController extends Controller
 
         $numbers = $query
             ->pluck('invoice_no')
-            ->map(fn ($inv) => (int) last(explode('/', $inv)))
+            ->map(fn($inv) => (int) last(explode('/', $inv)))
             ->sort()
             ->values();
 

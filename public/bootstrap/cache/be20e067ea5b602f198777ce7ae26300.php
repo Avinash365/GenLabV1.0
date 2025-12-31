@@ -1,5 +1,3 @@
-
-
 <?php $__env->startSection('title', 'Invoice Report'); ?>
 
 <?php $__env->startSection('content'); ?>

@@ -27,7 +27,7 @@ class ShowBookingByLetterController extends Controller
 
         // Get results (paginated)
         $perPage = (int) $request->get('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100])) { $perPage = 25; }
+        if (!in_array($perPage, [25, 50, 100,500])) { $perPage = 25; }
         $items = $query->latest()->paginate($perPage)->withQueryString();
 
         // Return view
@@ -37,7 +37,7 @@ class ShowBookingByLetterController extends Controller
             'month' => $request->input('month'),
             'year' => $request->input('year'),
         ]);
-    } 
+    }   
 
     public function marketingIndex(Request $request)
     {
@@ -87,20 +87,12 @@ class ShowBookingByLetterController extends Controller
         $query = BookingItem::with(['booking', 'booking.marketingPerson']);
 
         if (!empty($search)) {
+            $search = trim($search);
+
             $query->where(function ($q) use ($search) {
-                $q->where('job_order_no', 'like', "%{$search}%")
-                  ->orWhere('sample_description', 'like', "%{$search}%")
-                  ->orWhere('sample_quality', 'like', "%{$search}%")
-                  ->orWhere('particulars', 'like', "%{$search}%")
-                  ->orWhereHas('booking', function ($bq) use ($search) {
-                      $bq->where('client_name', 'like', "%{$search}%")
-                         ->orWhereHas('marketingPerson', function ($mpq) use ($search) {
-                             $mpq->where('name', 'like', "%{$search}%");
-                         });
-                  });
+                $q->where('job_order_no', 'like', $search . '%');
             });
         }
-
         if (!empty($month)) {
             $query->whereMonth('lab_expected_date', $month);
         }

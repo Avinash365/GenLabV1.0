@@ -11,6 +11,20 @@
         </div>
     <?php endif; ?>
 
+<?php
+    $query = http_build_query(
+        array_filter(request()->only([
+            'search',
+            'department_id',
+            'month',
+            'year',
+            'payment_option',
+            'marketing_person',
+            'client_id'
+        ]))
+    );
+?>
+
     <div class="content">
         <div class="page-header">
             <div class="add-item d-flex justify-content-between w-100">
@@ -25,27 +39,59 @@
                 </button>
             </div>
         </div>
-
+       
         <div class="card">
             <!-- Filters: Search, Month, Year, Payment Option, Client -->
             <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
                 <!-- Search Form -->
                 <div class="search-set">
-                    <form method="GET" action="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
-                        class="d-flex input-group">
-                        <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control"
-                            placeholder="Search...">
-                        <input type="hidden" name="department_id" value="<?php echo e(request('department_id')); ?>">
-                        <button class="btn btn-outline-secondary" type="submit">🔍</button>
-                    </form>
+                    <div class="search-set">
+                        <form method="GET"
+                            action="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
+                            class="d-flex input-group">
+
+                            
+                            <?php $__currentLoopData = [
+                                'department_id',
+                                'month',
+                                'year',
+                                'payment_option',
+                                'marketing_person',
+                                'client_id'
+                            ]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $filter): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php if(request($filter)): ?>
+                                    <input type="hidden" name="<?php echo e($filter); ?>" value="<?php echo e(request($filter)); ?>">
+                                <?php endif; ?>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                            
+                            <input type="text"
+                                name="search"
+                                id="autoSearch"
+                                value="<?php echo e(request('search')); ?>"
+                                class="form-control"
+                                placeholder="Search...">
+
+                            <button class="btn btn-outline-secondary" type="submit">🔍</button>
+                        </form>
+                    </div>
                 </div>
 
 
                 <!-- Month & Year Filter -->
                 <div class="search-set">
-                    <form method="GET" action="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
+                    <form method="GET"
+                        id="invoiceFilterForm"
+                        action="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
                         class="d-flex input-group gap-2">
+
+                        
                         <input type="hidden" name="department_id" value="<?php echo e(request('department_id')); ?>">
+
+                        
+                        <input type="hidden" name="search" value="<?php echo e(request('search')); ?>">
+
+                        
                         <select name="month" class="form-control">
                             <option value="">Select Month</option>
                             <?php $__currentLoopData = range(1, 12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -56,39 +102,46 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
 
+                        
                         <select name="year" class="form-control">
                             <option value="">Select Year</option>
                             <?php $__currentLoopData = range(date('Y'), date('Y') - 10); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $y): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($y); ?>" <?php echo e(request('year') == $y ? 'selected' : ''); ?>><?php echo e($y); ?></option>
+                                <option value="<?php echo e($y); ?>" <?php echo e(request('year') == $y ? 'selected' : ''); ?>>
+                                    <?php echo e($y); ?>
+
+                                </option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
 
-                        <!-- 🔹 Payment Option Filter -->
+                        
                         <select name="payment_option" class="form-control">
                             <option value="">Payment Option</option>
                             <option value="bill" <?php echo e(request('payment_option') == 'bill' ? 'selected' : ''); ?>>Bill</option>
                             <option value="without_bill" <?php echo e(request('payment_option') == 'without_bill' ? 'selected' : ''); ?>>
-                                Without Bill</option>
-                            <option value="old_bill" <?php echo e(request('payment_option') == 'old_bill' ? 'selected' : ''); ?>>Old Bill
+                                Without Bill
+                            </option>
+                            <option value="old_bill" <?php echo e(request('payment_option') == 'old_bill' ? 'selected' : ''); ?>>
+                                Old Bill
                             </option>
                         </select>
 
-                        <!-- Marketing person filter-->
-                        <div class="col-lg-4 col-sm-6 col-12 position-relative">
-
-                            <input type="text" id="marketing_code_input" class="form-control" autocomplete="off"
+                        
+                        <div class="position-relative" style="min-width:200px;">
+                            <input type="text"
+                                id="marketing_code_input"
+                                class="form-control"
+                                autocomplete="off"
                                 placeholder="Search marketing person">
 
                             <input type="hidden" name="marketing_person" id="marketing_code_hidden">
 
-                            <div id="marketingCodeDropdown" class="dropdown-menu w-100"
+                            <div id="marketingCodeDropdown"
+                                class="dropdown-menu w-100"
                                 style="display:none; max-height:200px; overflow:auto;">
                             </div>
                         </div>
 
-
-
-                        <!-- 🔹 Client Filter -->
+                        
                         <select name="client_id" class="form-control">
                             <option value="">Select Client</option>
                             <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
@@ -99,32 +152,59 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
 
-                        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                        <button class="btn btn-secondary" type="submit" title="Apply filters"><i class="fa fa-filter"></i></button>
+                        <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
+                            class="btn btn-primary"
+                            title="Reset filters">
+                                <i class="ti ti-refresh"></i>
+                        </a>
                     </form>
                 </div>
-            </div>
+
 
 
             <!-- Department Filter -->
-            <div class="mb-4 mt-4 ms-3">
-                <div class="d-flex flex-wrap gap-2">
-                    <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>?search=<?php echo e(request('search')); ?>"
-                        class="btn btn-sm <?php echo e(!request('department_id') ? 'btn-primary' : 'btn-outline-primary'); ?>">
+            <div class="my-3 ms-4">
+    
+                <div class="d-flex gap-2">
+                    
+                    <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?><?php echo e($query ? '?' . $query : ''); ?>"
+                    class="btn btn-sm <?php echo e(!request('department_id') ? 'btn-primary' : 'btn-outline-primary'); ?>">
                         All
                     </a>
+                    
                     <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>?department_id=<?php echo e($dept->id); ?>&search=<?php echo e(request('search')); ?>"
-                            class="btn btn-sm <?php echo e(request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
+                        <?php
+                            $deptQuery = http_build_query(
+                                array_merge(
+                                    request()->except('department_id'),
+                                    ['department_id' => $dept->id]
+                                )
+                            );
+                        ?>
+
+                        <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>?<?php echo e($deptQuery); ?>"
+                        class="btn btn-sm <?php echo e(request('department_id') == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
                             <?php echo e($dept->name); ?>
 
                         </a>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
-            </div>
+    </div>
+</div>
 
             <!-- Booking Table -->
-            <div class="card-body p-0">
+            <div class="card-body">
                 <div class="table-responsive">
+                    <div class="search-set btn-sm p-1 mb-2">
+                        <input
+                            type="text"
+                            id="localSearch"
+                            class="form-control form-control-sm"
+                            placeholder="Search in current page only..."
+                        >
+                    </div>
+
                     <table class="table">
                         <thead class="table-light">
                             <tr>
@@ -140,7 +220,14 @@
                         </thead>
                         <tbody>
                             <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                                <tr>
+                                <tr 
+                                    class = "table-row" 
+                                    data-search="<?php echo e(strtolower(
+                                            $booking->client_name . ' ' . 
+                                                    $booking->reference_no
+
+                                        )); ?>"
+                                    >
                                     <td><input type="checkbox"></td>
                                     <td class="truncate-cell">
                                         <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($booking->client_name); ?>">
@@ -455,5 +542,56 @@ $(document).ready(function () {
 });
 </script>
 <?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+
+<script>
+    const localSearchInput = document.getElementById('localSearch');
+
+    if (localSearchInput) {
+        localSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.table-row');
+
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+
+                if (!query || text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
+
+
+<?php $__env->stopPush(); ?>
+
+ <?php $__env->startPush('scripts'); ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+
+                const form = document.getElementById('invoiceFilterForm');
+                if (!form) return;
+
+                /* -----------------------------
+                | AUTO SUBMIT ON SELECT CHANGE
+                ----------------------------- */
+                form.querySelectorAll('select').forEach(select => {
+                    select.addEventListener('change', () => {
+                        form.submit();
+                    });
+                });
+
+                /* -----------------------------
+                | AUTO SUBMIT ON SEARCH (DEBOUNCE)
+                ----------------------------- */
+                
+            });
+        </script>
+    <?php $__env->stopPush(); ?>
+
 
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/letters/index.blade.php ENDPATH**/ ?>

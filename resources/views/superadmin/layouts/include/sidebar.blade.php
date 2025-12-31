@@ -314,7 +314,7 @@
                                     <li><a href="{{route('superadmin.cashPayments.index')}}">Invoice Transaction</a></li>
                                     <li><a href="{{route('superadmin.client-ledger.index')}}">Client Ledger</a></li>
                                     <li><a href="{{ route('superadmin.marketing-person-ledger.index') }}">Marketing Person Ledger</a></li>
-                                    <li><a href="#">Purchase Bill</a></li> 
+                                    <li><a href="{{ route('purchase.index') }}" >Purchase Bill</a></li> 
                                     <li><a href="{{ route('superadmin.bank.upload') }}">Bank Transactions</a></li>
                                     <li>
                                         <a href="{{ route('superadmin.accounts.payroll.index') }}" class="{{ Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : '' }}">
