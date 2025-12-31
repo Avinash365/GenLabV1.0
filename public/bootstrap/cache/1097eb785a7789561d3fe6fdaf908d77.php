@@ -124,13 +124,13 @@
 
             <div class="card-body p-0">
                 <div class="search-set mb-2 p-3">
-                <input
-                    type="text"
-                    id="localSearch"
-                    class="form-control"
-                    placeholder="Search in current page only..."
-                >
-            </div>
+                    <input
+                        type="text"
+                        id="localSearch"
+                        class="form-control"
+                        placeholder="Search in current page only..."
+                    >
+                </div>
                 <div class="table-responsive">
                     <table class="table">
                         <thead class="table-light">

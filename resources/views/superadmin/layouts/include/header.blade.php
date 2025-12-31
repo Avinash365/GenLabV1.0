@@ -117,12 +117,12 @@
     
         <!-- Left: Search -->
         <div class="d-flex align-items-center flex-grow-1" style="gap:30px; min-width:0;">
-            <form class="d-flex align-items-center flex-shrink-0" style="width:300px;">
+            <form class="d-flex align-items-center flex-shrink-0" method="GET" action="{{ route('job-order.search') }}" style="width:300px;">
                 <div class="input-group" style="width:100%; height:30px;">
                     <span class="input-group-text bg-white border-end-0" style="border-radius:8px 0 0 8px; height:30px; display:flex; align-items:center; font-size:16px; border:1px solid #e5e7eb; border-right:0; padding-left:14px; background:#fff;">
                         <i class="fa fa-search" style="color:#bdbdbd;"></i>
                     </span>
-                    <input type="text" class="form-control border-start-0" placeholder="Search" style="border-radius:0; height:30px; font-size:15px; padding:0 10px; border:1px solid #e5e7eb; border-left:0; background:#fff;">
+                    <input type="text" class="form-control border-start-0"  name="jobOrderNumber" placeholder="Search" style="border-radius:0; height:30px; font-size:15px; padding:0 10px; border:1px solid #e5e7eb; border-left:0; background:#fff;">
                     <span class="input-group-text bg-white border-start-0" style="border-radius:0 8px 8px 0; height:30px; border:1px solid #e5e7eb; border-left:0; padding-right:14px; background:#fff;">
                         <kbd class="d-flex align-items-center" style="background:#f3f4f6; border-radius:6px; padding:2px 8px; font-size:13px;">
                             <img src="{{ url('assets/img/icons/command.svg') }}" alt="img" class="me-1" style="height:15px;">K

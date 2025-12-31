@@ -127,6 +127,7 @@ class BookingController extends Controller
                     );
                 }
 
+                //new booking
                 $booking = NewBooking::create($bookingData);
 
                 // Add booking items if present

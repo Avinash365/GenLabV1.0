@@ -1,5 +1,6 @@
 ﻿<?php
 
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
 
@@ -7,6 +8,7 @@ use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CalibrationController;
 use App\Http\Controllers\ISCodeController;
 use App\Http\Controllers\OtpAuthController; 
+use App\Http\Controllers\JobOrderController;
 
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\LoginController;
@@ -74,6 +76,7 @@ use App\Http\Controllers\OnlyOfficeController;
 
 use App\Http\Controllers\Email\EmailController;
 use App\Http\Controllers\Accounts\ManualInvoicePaymentController;
+
 
 
 
@@ -938,3 +941,16 @@ Route::prefix('purchase')->name('purchase.')->group(function () {
     Route::put('/{id}', [PurchaseBillController::class, 'update'])->name('update');
     Route::delete('/{id}', [PurchaseBillController::class, 'destroy'])->name('destroy');
 });
+
+
+Route::get(
+    '/job-order/{jobOrderNumber}/items',
+    [JobOrderController::class, 'index']
+)->name('job-order.items');
+
+Route::get('/job-order/search', function (Request $request) {
+    return redirect()->route(
+        'job-order.items',
+        ['jobOrderNumber' => $request->jobOrderNumber]
+    );
+})->name('job-order.search');

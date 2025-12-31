@@ -43,3 +43,30 @@ desktop.ini
 *.tmp
 *.swp
 *.zip
+
+
+# Laravel build / frontend
+/public/build
+/public/hot
+/public/mix-manifest.json
+/public/bootstrap
+
+# Laravel cache (extra safety)
+bootstrap/cache/*.php
+bootstrap/cache/*.json
+
+# Storage (keep .gitignore inside)
+/storage/app/*
+!/storage/app/.gitignore
+
+# PHP
+*.log
+
+# Environment
+.env.testing
+.env.production
+.env.local
+
+# IDE extras
+.idea/
+.vscode/
