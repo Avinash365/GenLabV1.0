@@ -52,6 +52,7 @@ class ReportingController extends Controller
                     'name_of_work'     => $b->name_of_work ?: $b->client_address,
                     'issued_to'        => $b->report_issue_to,
                     'ms'               => $b->m_s,
+                    'marketing_person' => $b->marketingPerson?->name ?? $b->marketing_name ?? $b->marketing ?? null,
                 ];
 
                 // Show all items for the same booking/reference

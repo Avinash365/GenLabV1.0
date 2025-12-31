@@ -106,7 +106,7 @@
                 <table class="table">
                     <thead class="table-light">
                         <tr>
-                            <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                            <th class="checkbox-col"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
                             <th>Job Order No</th>
                             <th style="width:180px;">Client Name</th>
                             <th style="width:180px;">Reference No</th>
@@ -119,18 +119,8 @@
                     </thead>
                     <tbody>
                         @forelse($items as $item)
-                        <tr 
-                            class="table-row"
-                            data-search="{{ strtolower(
-                                $item->job_order_no . ' ' .
-                                ($item->booking?->client_name ?? '') . ' ' .
-                                $item->sample_description . ' ' .
-                                $item->sample_quality . ' ' .
-                                $item->particulars
-                            ) }}" 
-                        >
-
-                            <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
+                        <tr>
+                            <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                             <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
@@ -149,25 +139,27 @@
                             </td>
                            
                            
-                            <td class="d-flex"> 
-                                <!-- View Button --> 
-                                 <!-- View Booking Card -->
+                            <td class="action-cell">
+                                <div class="d-flex justify-content-end align-items-center">
                                     <a href="{{ route('superadmin.bookings.cards.single', [$item->booking->id, $item->id]) }}"
-                                    target="_blank"
-                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                       target="_blank"
+                                       class="border rounded d-flex align-items-center p-2 text-decoration-none"
+                                       aria-label="View booking">
                                         <i data-feather="eye" class="feather-eye"></i>
                                     </a>
 
-                                <a href="{{ route('superadmin.bookings.edit', $item->booking->id ?? 0) }}"
-                                   class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
-                                    <i data-feather="edit" class="feather-edit"></i>
-                                </a>
+                                    <a href="{{ route('superadmin.bookings.edit', $item->booking->id ?? 0) }}"
+                                       class="border rounded d-flex align-items-center p-2 text-decoration-none"
+                                       aria-label="Edit booking">
+                                        <i data-feather="edit" class="feather-edit"></i>
+                                    </a>
 
-                                <!-- Delete Button -->
-                                <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete" 
-                                        data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $item->id }}">
-                                    <i data-feather="trash-2" class="feather-trash-2"></i>
-                                </button>
+                                    <button type="button" class="border rounded d-flex align-items-center p-2 btn-delete"
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $item->id }}"
+                                            aria-label="Delete item">
+                                        <i data-feather="trash-2" class="feather-trash-2"></i>
+                                    </button>
+                                </div>
 
                                 <!-- Delete Modal -->
                                 <div class="modal fade" id="deleteModal-{{ $item->id }}" tabindex="-1" aria-hidden="true">
@@ -239,8 +231,24 @@
         @media (max-width: 992px){ .sample-quality-cell { max-width: 70px; } }
     @media (max-width: 992px){ .truncate-cell { max-width: 160px; } }
 
-    /* job order short single-line truncation */
-    .job-order-cell{ max-width:160px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    /* job order: allow wrapping so full content is visible */
+    .job-order-cell{ max-width: none; white-space: normal; word-break: break-word; overflow: visible; }
+
+    /* Tighten checkbox column spacing */
+    .checkbox-col { width: 44px; padding-left: 4px !important; padding-right: 4px !important; }
+    .table th.checkbox-col, .table td.checkbox-col { padding-left: 6px !important; padding-right: 6px !important; }
+    .checkbox-col label.checkboxs { display: inline-flex; align-items: center; margin-right: 0 !important; }
+    .checkbox-col .checkmarks { margin-left: 0 !important; }
+    @media (max-width: 768px) { .checkbox-col { width: 40px; padding-left:4px; padding-right:4px; } }
+
+    /* Action column alignment */
+    .action-cell { min-width: 140px; vertical-align: middle; }
+    .action-cell .d-flex { gap: 0.5rem; }
+    .action-cell a, .action-cell button { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; }
+    .action-cell a i, .action-cell button i { display:block; }
+
+    /* Reduce gap between checkbox and Job Order by removing extra left padding on job-order cell */
+    .table td.job-order-cell, .table th.job-order-cell { padding-left: 6px !important; }
 </style>
 @endpush
 

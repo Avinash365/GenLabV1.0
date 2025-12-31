@@ -104,11 +104,11 @@
                                 </a>
                             </li>
 
-                            <!-- <li>
-                                <a href="<?php echo e(route('superadmin.invoices.index', array_merge($invoiceParams, ['context' => 'marketing']))); ?>" class="<?php echo e(Request::routeIs('superadmin.invoices.*') ? 'active' : ''); ?>">
-                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Invoices Payments</span>
+                            <li>
+                                <a href="<?php echo e(route('superadmin.meter-reading.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.meter-reading.*') ? 'active' : ''); ?>">
+                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
                                 </a>
-                            </li> -->
+                            </li>
 
                             <li>
                                 <?php if($isMarketing && $user): ?>
@@ -137,7 +137,7 @@
                             <li>
                                 <?php if(!empty($uc)): ?>
                                     <a href="<?php echo e(route('superadmin.reporting.pendings', ['marketing' => $uc])); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">
-                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings</span>
+                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings Item</span>
                                     </a>
                                 <?php else: ?>
                                     <a href="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">
@@ -399,6 +399,27 @@
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved', ['status' => 'pending'])); ?>" class="<?php echo e((Request::routeIs('superadmin.marketing.expenses.approved') && request('status','pending') === 'pending') ? 'active' : ''); ?>">Approve Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved', ['status' => 'approved'])); ?>" class="<?php echo e((Request::routeIs('superadmin.marketing.expenses.approved') && request('status') === 'approved') ? 'active' : ''); ?>">Approved Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.rejected')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.rejected') ? 'active' : ''); ?>">Rejected Expenses</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="submenu <?php echo e(Request::routeIs('superadmin.marketing.*') ? 'submenu-open' : ''); ?>">
+                            <a href="javascript:void(0)">
+                                <i class="fa fa-bus fs-16 me-2"></i>
+                                <span>Transportaion</span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <ul>
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.meter-reading.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.meter-reading.*') ? 'active' : ''); ?>">
+                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
+                                </a>
+                                </li>
+
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.vehicles.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.vehicles.*') ? 'active' : ''); ?>">
+                                        <i class="ti ti-file-text fs-16 me-2"></i><span>Vehicle Registration</span>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>

@@ -75,6 +75,25 @@
                     <label class="form-label">Client Name</label>
                     <input type="text" class="form-control" value="{{ $header['client_name'] }}" readonly>
                 </div>
+                <!-- Marketing Person (new) -->
+                @php
+                    $marketingName = '';
+                    if (isset($header['marketing_person'])) {
+                        $mp = $header['marketing_person'];
+                        if (is_string($mp)) {
+                            $marketingName = $mp;
+                        } elseif (is_array($mp)) {
+                            $marketingName = $mp['name'] ?? ($mp['full_name'] ?? '');
+                        } elseif (is_object($mp)) {
+                            $marketingName = $mp->name ?? $mp->full_name ?? '';
+                        }
+                    }
+                    $marketingName = $marketingName ?: ($header['marketing_name'] ?? $header['marketing_person_name'] ?? $header['marketing'] ?? '');
+                @endphp
+                <div class="col-md-4">
+                    <label class="form-label">Marketing Person</label>
+                    <input type="text" class="form-control" value="{{ $marketingName }}" readonly>
+                </div>
                 <!-- <div class="col-md-4">
                     <label class="form-label">Job Order Date</label>
                     <input type="date" class="form-control" value="{{ $header['job_order_date'] }}" readonly>

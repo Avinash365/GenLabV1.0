@@ -62,6 +62,9 @@ use App\Http\Controllers\Accounts\PurchaseBillController;
 use App\Http\Controllers\Accounts\AccountsLetterController;
 use App\Http\Controllers\Accounts\PayrollReviewController;
 
+use App\Models\MeterReading;
+use App\Http\Controllers\SuperAdmin\MeterReadingController;
+
 use App\Http\Controllers\Client\ClientController;
 use App\Http\Controllers\Client\ClientLedgerController;
 
@@ -263,6 +266,12 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
         Route::patch('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
+
+        // Meter Reading - DB-backed (meter_readings table)
+        Route::prefix('meter-reading')->name('meter-reading.')->group(function () {
+            Route::get('/', [MeterReadingController::class, 'index'])->name('index');
+            Route::post('/upload', [MeterReadingController::class, 'upload'])->name('upload');
+        });
 
 
 

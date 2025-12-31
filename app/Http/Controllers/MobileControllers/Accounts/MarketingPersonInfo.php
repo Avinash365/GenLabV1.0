@@ -434,14 +434,34 @@ class MarketingPersonInfo extends Controller
 
 
     /**
-     * GET /api/marketing-person/{user_code}/clients/{client_id}/profile
-     * Return client profile and summary stats for mobile.
+     * GET /api/marketing-person/{user_code}/clients/profile?client_id={id}
+     * Return client profile and summary stats for mobile. Client id must be supplied
+     * as a query parameter and the client must be linked to the marketing user.
      */
-    public function clientProfileApi(Request $request, $user_code, $client_id)
+    public function clientProfileApi(Request $request, $user_code)
     {
         $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
 
+        $client_id = $request->query('client_id');
+
+        // If no client_id supplied, return the marketing person's client list
+        if (! $client_id) {
+            return $this->fetchClients($request, $user_code);
+        }
+
         $client = \App\Models\Client::findOrFail($client_id);
+
+        // Ensure the marketing person has access to this client (client must appear in their bookings)
+        $hasAccess = \App\Models\NewBooking::where('client_id', $client->id)
+            ->where('marketing_id', $marketingPerson->user_code)
+            ->exists();
+
+        if (! $hasAccess) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Unauthorized to access this client for the given marketing user'
+            ], 403);
+        }
 
         // Bookings
         $totalBookings = \App\Models\NewBooking::where('client_id', $client->id)->count();
@@ -486,7 +506,6 @@ class MarketingPersonInfo extends Controller
             'message' => 'Client profile fetched',
             'data' => [
                 'client' => [
-                    'id' => $client->id,
                     'name' => $client->name,
                     'email' => $client->email,
                     'phone' => $client->phone ?? null,
@@ -1362,6 +1381,169 @@ class MarketingPersonInfo extends Controller
                     'last_page' => $bookings->lastPage(),
                 ],
             ],
+        ], 200);
+    }
+
+
+    /**
+     * Consolidated profile overview for mobile apps.
+     * GET /api/marketing-person/{user_code}/profile
+     */
+    public function profileOverviewApi(Request $request, $user_code)
+    {
+        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+
+        // Basic profile
+        $profile = [
+            'id' => $marketingPerson->id,
+            'name' => $marketingPerson->name ?? $marketingPerson->person_name ?? null,
+            'user_code' => $marketingPerson->user_code,
+            'email' => $marketingPerson->email ?? null,
+            'phone' => $marketingPerson->phone ?? null,
+        ];
+
+        // Avatar resolution: prefer storage public path then fallback to placeholder
+        $avatar = null;
+        if (!empty($marketingPerson->profile_picture)) {
+            $path = $marketingPerson->profile_picture;
+            if (preg_match('#^https?://#i', $path)) { $avatar = $path; }
+            else {
+                try { $avatar = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : asset($path); } catch (\Exception $_) { $avatar = asset($path); }
+            }
+        }
+        if (!$avatar) { $avatar = asset('assets/img/profiles/avator1.jpg'); }
+
+        // Bookings summary
+        $bookingQuery = \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code);
+        $totalBookings = (int) $bookingQuery->count();
+        // Compute booking amounts from booking items (table has `amount` column)
+        $totalBookingAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
+            $q->where('marketing_id', $marketingPerson->user_code);
+        })->sum('amount');
+
+        // Bookings by payment option (amounts and counts)
+        $billBookingsCount = (int) \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'with_bill')->count();
+        // Bill and cash booking amounts derived from booking items
+        $billAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
+            $q->where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'with_bill');
+        })->sum('amount');
+        $cashBookingsCount = (int) \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'without_bill')->count();
+        $cashAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
+            $q->where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'without_bill');
+        })->sum('amount');
+
+        // Invoices summary
+        $bookingIds = $marketingPerson->marketingBookings->pluck('id')->toArray();
+        $invoiceQuery = \App\Models\Invoice::whereIn('new_booking_id', $bookingIds);
+        $totalInvoiceAmount = (float) $invoiceQuery->sum('total_amount');
+        $paidInv = (float) \App\Models\InvoiceTransaction::where('marketing_person_id', $marketingPerson->user_code)->sum('amount_received');
+        $unpaidInv = max(0, $totalInvoiceAmount - $paidInv);
+        // Partial / in-between invoices (status mapping used across views: 0=unpaid,1=paid,2=cancelled,3=partial,4=settled)
+        $partialInv = (float) $invoiceQuery->where('status', 3)->sum('total_amount');
+
+        $partialTaxInvoicesCount = (int) $invoiceQuery->where('status', 3)->count();
+        $unpaidInvoicesCount = (int) $invoiceQuery->where('status', 0)->count();
+        $canceledInvoicesCount = (int) $invoiceQuery->where('status', 2)->count();
+        $notGeneratedInvoicesCount = (int) \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code)->whereDoesntHave('generatedInvoice')->count();
+        // Sum amounts for bookings without generated invoices using booking items
+        $notGeneratedInvoicesAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
+            $q->where('marketing_id', $marketingPerson->user_code)->whereDoesntHave('generatedInvoice');
+        })->sum('amount');
+        $unpaidInvAmount = (float) $invoiceQuery->where('status', 0)->sum('total_amount');
+        $canceledInvAmount = (float) $invoiceQuery->where('status', 2)->sum('total_amount');
+        $partialInvAmount = (float) $invoiceQuery->where('status', 3)->sum('total_amount');
+
+        // Personal expenses summary
+        $personalTotal = (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)->sum('amount');
+        $personalApproved = (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)->sum('approved_amount');
+
+        // Recent transactions (last 10)
+        $recentTransactions = \App\Models\InvoiceTransaction::with(['invoice','client'])->where('marketing_person_id', $marketingPerson->user_code)
+            ->orderBy('transaction_date', 'desc')->limit(10)->get()->map(function($t){
+                return [
+                    'id' => $t->id,
+                    'invoice_no' => $t->invoice->invoice_no ?? null,
+                    'amount_received' => (float) $t->amount_received,
+                    'payment_mode' => $t->payment_mode,
+                            'transaction_date' => $t->transaction_date ? (\Carbon\Carbon::parse($t->transaction_date)->toDateString()) : null,
+                ];
+            })->values();
+
+        // Cash letters summary
+        $cashQuery = \App\Models\CashLetterPayment::where('marketing_person_id', $marketingPerson->user_code);
+        $cashPaidLettersCount = (int) $cashQuery->where('transaction_status', 2)->count();
+        $cashPaidLettersAmount = (float) $cashQuery->where('transaction_status', 2)->sum('amount_received');
+        $cashUnpaidLettersCount = (int) $cashQuery->where('transaction_status', '!=', 2)->count();
+        $cashUnpaidLettersAmount = (float) $cashQuery->where('transaction_status', '!=', 2)->sum('total_amount');
+        $cashPartialLettersCount = (int) $cashQuery->where('transaction_status', 1)->count();
+        $cashPartialDueAmount = (float) $cashQuery->where('transaction_status', 1)->sum(\DB::raw('(total_amount - amount_received)'));
+        $cashSettledLettersCount = (int) $cashQuery->where('transaction_status', 3)->count();
+        $cashSettledAmount = (float) $cashQuery->where('transaction_status', 3)->sum('amount_received');
+
+        // Clients
+        $clientIds = $marketingPerson->marketingBookings()->whereNotNull('client_id')->pluck('client_id')->unique()->values();
+        $allClientsCount = $clientIds->count();
+
+        $payload = [
+            'profile' => $profile,
+            'avatar' => $avatar,
+            'stats' => [
+                'totalBookings' => $totalBookings,
+                'totalBookingAmount' => $totalBookingAmount,
+                'billBookings' => $billBookingsCount,
+                'totalBillBookingAmount' => $billAmount,
+                'withoutBillBookings' => $cashBookingsCount,
+                'totalWithoutBillBookings' => $cashAmount,
+
+                'notGeneratedInvoices' => $notGeneratedInvoicesCount,
+                'totalNotGeneratedInvoicesAmount' => $notGeneratedInvoicesAmount,
+
+                'partialTaxInvoices' => $partialTaxInvoicesCount,
+                'totalPartialTaxInvoiceAmount' => $partialInvAmount,
+                'unpaidInvoices' => $unpaidInvoicesCount,
+                'totalUnpaidInvoiceAmount' => $unpaidInvAmount,
+                'canceledGeneratedInvoices' => $canceledInvoicesCount,
+                'totalcanceledGeneratedInvoicesAmount' => $canceledInvAmount,
+
+                'GeneratedPIs' => (int) $invoiceQuery->where('type', 'proforma_invoice')->count(),
+                'totalPIAmount' => (float) $invoiceQuery->where('type', 'proforma_invoice')->sum('total_amount'),
+                'paidPiInvoices' => (int) $invoiceQuery->where('type', 'proforma_invoice')->where('status', 1)->count(),
+                'totalPaidPIAmount' => (float) $invoiceQuery->where('type', 'proforma_invoice')->where('status', 1)->sum('total_amount'),
+
+                'transactions' => (int) \App\Models\InvoiceTransaction::where('marketing_person_id', $marketingPerson->user_code)->count(),
+                'totalTransactionsAmount' => (float) \App\Models\InvoiceTransaction::where('marketing_person_id', $marketingPerson->user_code)->sum('amount_received'),
+
+                'cashPaidLetters' => $cashPaidLettersCount,
+                'totalCashPaidLettersAmount' => $cashPaidLettersAmount,
+                'cashUnpaidLetters' => $cashUnpaidLettersCount,
+                'totalCashUnpaidAmounts' => $cashUnpaidLettersAmount,
+                'cashPartialLetters' => $cashPartialLettersCount,
+                'totalDueAmount' => $cashPartialDueAmount,
+                'cashSettledLetters' => $cashSettledLettersCount,
+                'totalSettledAmount' => $cashSettledAmount,
+
+                'allClients' => $allClientsCount,
+                'tdsAmount' => 0, // placeholder—TDS calculation not implemented here
+
+                // personal expenses
+                'totalPersonalExpensesAmount' => $personalTotal,
+                'totalApprovedPersonalExpensesAmount' => $personalApproved,
+            ],
+            'recent_transactions' => $recentTransactions,
+            // helper links for other paginated endpoints
+            'endpoints' => [
+                'bookings' => url("/api/marketing-person/{$marketingPerson->user_code}/bookings"),
+                'invoices' => url("/api/marketing-person/{$marketingPerson->user_code}/invoices"),
+                'transactions' => url("/api/marketing-person/{$marketingPerson->user_code}/invoice-transactions"),
+                'cash_transactions' => url("/api/marketing-person/{$marketingPerson->user_code}/cash-transactions"),
+                'personal_expenses' => url("/api/marketing-person/{$marketingPerson->user_code}/personal/expenses"),
+            ],
+        ];
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Marketing person profile overview',
+            'data' => $payload,
         ], 200);
     }
 

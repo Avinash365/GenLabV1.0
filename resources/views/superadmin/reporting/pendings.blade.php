@@ -251,11 +251,9 @@
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
                                 </td>
                                 <td>
-                                    
+                                 
                                     <div class="cell-inner">{{ $item->status }}</div>
- 
-                                
-                                     
+  
                                 </td>
                                 <td class="action-cell">
                                     @php

@@ -9,6 +9,9 @@ use App\Http\Controllers\Api\MarketingDashboardController;
 
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\Request;
+use Tymon\JWTAuth\Facades\JWTAuth;
+use App\Http\Controllers\MobileControllers\MeterReadingController;
 
 
 // Static test file endpoint for client testing
@@ -72,6 +75,9 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
         [MarketingPersonInfo::class, 'fetchBookings']
     );
 
+    // Consolidated profile overview used by mobile profile screen
+    Route::get('{user_code}/profile', [MarketingPersonInfo::class, 'profileOverviewApi']);
+
     // Booking items by letter (mobile API) - mirrors bookingByLetter Blade view
     Route::get('{user_code}/bookings/by-letter', [MarketingPersonInfo::class, 'bookingByLetter'])->name('api.marketing.booking.by-letter');
 
@@ -118,8 +124,8 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
         [MarketingPersonInfo::class, 'fetchClients']
     );
 
-    // Client profile (mobile)
-    Route::get('{user_code}/clients/{client_id}/profile', [MarketingPersonInfo::class, 'clientProfileApi'])->name('api.marketing.client.profile');
+    // Client profile (mobile) - client id passed as query param `client_id`
+    Route::get('{user_code}/clients/profile', [MarketingPersonInfo::class, 'clientProfileApi'])->name('api.marketing.client.profile');
 
     // Personal expenses (mobile): list and create
     Route::get('{user_code}/personal/expenses', [MarketingPersonInfo::class, 'personalExpensesListApi'])->name('api.marketing.personal.expenses.list');
@@ -159,4 +165,75 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-dashboard')->group(funct
     Route::get('{user_code}/summary', [MarketingDashboardController::class, 'summary']);
     // Time-series / chart data endpoint
     Route::get('{user_code}/series', [MarketingDashboardController::class, 'series']);
+});
+
+
+// DEBUG: temporary proxy route to test mobile API tokens when headers aren't forwarded
+Route::get('debug/meter-reading/proxy', function (Request $request) {
+    $token = $request->token ?? $request->query('token');
+    if (! $token) {
+        return response()->json(['error' => 'token missing'], 400);
+    }
+    try {
+        $user = JWTAuth::setToken($token)->toUser();
+        Auth::guard('api')->setUser($user);
+        // Resolve controller from container and call instance method
+        $controller = app(\App\Http\Controllers\MobileControllers\MeterReadingController::class);
+        return $controller->index($request);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 401);
+    }
+});
+
+// DEBUG: inspect incoming headers to verify Authorization forwarding
+Route::get('debug/echo-headers', function (Request $request) {
+    return response()->json([
+        'headers' => $request->headers->all(),
+        'server' => array_filter($request->server->all(), function($k){ return in_array($k, ['HTTP_AUTHORIZATION','REDIRECT_HTTP_AUTHORIZATION']); }, ARRAY_FILTER_USE_KEY)
+    ]);
+});
+
+// DEBUG: compare JWTAuth parsed user vs auth('api')->user()
+Route::get('debug/token-verify', function (Request $request) {
+    try {
+        $token = \Tymon\JWTAuth\Facades\JWTAuth::getToken();
+        $jwtUser = $token ? \Tymon\JWTAuth\Facades\JWTAuth::parseToken()->authenticate() : null;
+    } catch (\Exception $e) {
+        $jwtUser = ['error' => $e->getMessage()];
+    }
+
+    $guardUser = auth('api')->user();
+
+    return response()->json([
+        'jwt_user' => $jwtUser ? (is_object($jwtUser) ? ['id' => $jwtUser->id, 'name' => $jwtUser->name] : $jwtUser) : null,
+        'guard_user' => $guardUser ? ['id' => $guardUser->id, 'name' => $guardUser->name] : null,
+        'token_present' => (bool) $token,
+    ]);
+});
+
+// DEBUG: temporary proxy route to POST upload (for local testing only)
+Route::post('debug/meter-reading/upload-proxy', function (Request $request) {
+    $token = $request->token ?? $request->query('token');
+    if (! $token) {
+        return response()->json(['error' => 'token missing'], 400);
+    }
+    try {
+        $user = JWTAuth::setToken($token)->toUser();
+        Auth::guard('api')->setUser($user);
+        $controller = app(\App\Http\Controllers\MobileControllers\MeterReadingController::class);
+        return $controller->upload($request);
+    } catch (\Throwable $e) {
+        return response()->json(['error' => $e->getMessage()], 401);
+    }
+});
+
+
+/*
+ | Meter Reading Mobile API
+ | GET  /api/meter-reading
+ | POST /api/meter-reading/upload
+ */
+Route::middleware(['multi_jwt:api'])->prefix('meter-reading')->group(function () {
+    Route::get('/', [MeterReadingController::class, 'index']);
+    Route::post('/upload', [MeterReadingController::class, 'upload']);
 });

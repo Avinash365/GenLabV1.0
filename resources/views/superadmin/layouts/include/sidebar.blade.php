@@ -104,11 +104,11 @@
                                 </a>
                             </li>
 
-                            <!-- <li>
-                                <a href="{{ route('superadmin.invoices.index', array_merge($invoiceParams, ['context' => 'marketing'])) }}" class="{{ Request::routeIs('superadmin.invoices.*') ? 'active' : '' }}">
-                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Invoices Payments</span>
+                            <li>
+                                <a href="{{ route('superadmin.meter-reading.index') }}" class="{{ Request::routeIs('superadmin.meter-reading.*') ? 'active' : '' }}">
+                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
                                 </a>
-                            </li> -->
+                            </li>
 
                             <li>
                                 @if($isMarketing && $user)
@@ -137,7 +137,7 @@
                             <li>
                                 @if(!empty($uc))
                                     <a href="{{ route('superadmin.reporting.pendings', ['marketing' => $uc]) }}" class="{{ Request::routeIs('superadmin.reporting.pendings') ? 'active' : '' }}">
-                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings</span>
+                                        <i class="ti ti-alert-circle fs-16 me-2"></i><span>Pendings Item</span>
                                     </a>
                                 @else
                                     <a href="{{ route('superadmin.reporting.pendings') }}" class="{{ Request::routeIs('superadmin.reporting.pendings') ? 'active' : '' }}">
@@ -398,6 +398,27 @@
                                 <li><a href="{{ route('superadmin.marketing.expenses.approved', ['status' => 'pending']) }}" class="{{ (Request::routeIs('superadmin.marketing.expenses.approved') && request('status','pending') === 'pending') ? 'active' : '' }}">Approve Expenses</a></li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.approved', ['status' => 'approved']) }}" class="{{ (Request::routeIs('superadmin.marketing.expenses.approved') && request('status') === 'approved') ? 'active' : '' }}">Approved Expenses</a></li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.rejected') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.rejected') ? 'active' : '' }}">Rejected Expenses</a></li>
+                            </ul>
+                        </li>
+
+                        <li class="submenu {{ Request::routeIs('superadmin.marketing.*') ? 'submenu-open' : '' }}">
+                            <a href="javascript:void(0)">
+                                <i class="fa fa-bus fs-16 me-2"></i>
+                                <span>Transportaion</span>
+                                <span class="menu-arrow"></span>
+                            </a>
+                            <ul>
+                                <li>
+                                    <a href="{{ route('superadmin.meter-reading.index') }}" class="{{ Request::routeIs('superadmin.meter-reading.*') ? 'active' : '' }}">
+                                    <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
+                                </a>
+                                </li>
+
+                                <li>
+                                    <a href="{{ route('superadmin.vehicles.index') }}" class="{{ Request::routeIs('superadmin.vehicles.*') ? 'active' : '' }}">
+                                        <i class="ti ti-file-text fs-16 me-2"></i><span>Vehicle Registration</span>
+                                    </a>
+                                </li>
                             </ul>
                         </li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
