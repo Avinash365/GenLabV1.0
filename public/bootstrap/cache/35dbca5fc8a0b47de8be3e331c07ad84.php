@@ -29,6 +29,15 @@
 
     <div class="card mt-3">
 
+    <style>
+        /* Light, professional expiry colors */
+        .expiry-expired { background-color: #fff5f5; color: #7a1120; font-weight:600; }
+        .expiry-soon    { background-color: #fffdf0; color: #6b4f00; font-weight:600; }
+        .expiry-ok      { background-color: #f6fffa; color: #0b5e3c; font-weight:600; }
+        /* small visual tweak so text padding looks consistent inside table cells */
+        table.table td.expiry-expired, table.table td.expiry-soon, table.table td.expiry-ok { vertical-align: middle; }
+    </style>
+
     <div class="card-body p-0">
 
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
@@ -88,10 +97,10 @@
         <thead>
             <tr>
                 <th>Vehicle Name</th>
-                <th>RC Expiry Date</th>
+                <th>Insurance Expiry Date</th>
+                <th>PUCC Expiry Date</th>
+                <th>Registration Date</th>
                 <th>Handed Over Person</th>
-                <th>PUC Details</th>
-                <th>Added Date</th>
                 <th>Action</th>
             </tr>
         </thead>
@@ -99,12 +108,52 @@
             <?php $__empty_1 = true; $__currentLoopData = $vehicles; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr>
                     <td><a href="#" class="vehicle-link" data-url="<?php echo e(route('superadmin.vehicles.modal', $v->id)); ?>"><?php echo e($v->name); ?></a></td>
-                    <td><?php echo e(optional($v->rc_expiry_date)->format('Y-m-d')); ?></td>
+                    <?php
+                        $today = \Carbon\Carbon::today();
+                        $rc = $v->rc_expiry_date;
+                        $rcClass = '';
+                        $rcStyle = '';
+                        if ($rc) {
+                            if ($rc->lt($today)) {
+                                $rcClass = 'expiry-expired';
+                                $rcStyle = 'background-color:#fff5f5;color:#7a1120;font-weight:600;';
+                            } elseif ($rc->greaterThanOrEqualTo($today) && $rc->lessThanOrEqualTo($today->copy()->addMonth())) {
+                                $rcClass = 'expiry-soon';
+                                $rcStyle = 'background-color:#fffdf0;color:#6b4f00;font-weight:600;';
+                            } else {
+                                $rcClass = 'expiry-ok';
+                                $rcStyle = 'background-color:#f6fffa;color:#0b5e3c;font-weight:600;';
+                            }
+                        }
+                        $puc = $v->puc_expiry_date;
+                        $pucClass = '';
+                        $pucStyle = '';
+                        if ($puc) {
+                            if ($puc->lt($today)) {
+                                $pucClass = 'expiry-expired';
+                                $pucStyle = 'background-color:#fff5f5;color:#7a1120;font-weight:600;';
+                            } elseif ($puc->greaterThanOrEqualTo($today) && $puc->lessThanOrEqualTo($today->copy()->addMonth())) {
+                                $pucClass = 'expiry-soon';
+                                $pucStyle = 'background-color:#fffdf0;color:#6b4f00;font-weight:600;';
+                            } else {
+                                $pucClass = 'expiry-ok';
+                                $pucStyle = 'background-color:#f6fffa;color:#0b5e3c;font-weight:600;';
+                            }
+                        }
+                    ?>
+                    <td class="<?php echo e($rcClass); ?>" style="<?php echo e($rcStyle); ?>"><?php echo e($rc ? $rc->format('d-m-Y') : '-'); ?></td>
+                    <td class="<?php echo e($pucClass); ?>" style="<?php echo e($pucStyle); ?>"><?php echo e($puc ? $puc->format('d-m-Y') : '-'); ?></td>
+                    <td><?php echo e(optional($v->created_at)->format('d-m-Y')); ?></td>
                     <td><?php echo e($v->handed_over_person); ?></td>
-                    <td><?php if($v->puc_path): ?><a href="#" class="file-preview-link" data-url="<?php echo e(route('superadmin.vehicles.preview', $v->puc_path)); ?>">Preview</a><?php else: ?> - <?php endif; ?></td>
-                    <td><?php echo e(optional($v->created_at)->format('Y-m-d')); ?></td>
                     <td>
-                        <button class="btn btn-sm btn-primary add-service-btn" data-id="<?php echo e($v->id); ?>" data-name="<?php echo e($v->name); ?>">Add Service</button>
+                        <div class="d-flex gap-2">
+                                <button class="btn btn-sm btn-primary add-service-btn" data-id="<?php echo e($v->id); ?>" data-name="<?php echo e($v->name); ?>">Add Service</button>
+                                <form id="vehicle-delete-form-<?php echo e($v->id); ?>" method="POST" action="<?php echo e(route('superadmin.vehicles.destroy', $v->id)); ?>" class="vehicle-delete-form" data-name="<?php echo e($v->name); ?>">
+                                    <?php echo csrf_field(); ?>
+                                    <?php echo method_field('DELETE'); ?>
+                                </form>
+                                <button type="button" class="btn btn-sm btn-danger vehicle-delete-btn" data-form-id="vehicle-delete-form-<?php echo e($v->id); ?>" data-name="<?php echo e($v->name); ?>">Delete</button>
+                        </div>
                     </td>
                 </tr>
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -159,8 +208,12 @@
                         </div>
 
                         <div class="col-md-4">
-                            <label class="form-label">RC Expiry Date</label>
+                            <label class="form-label">Insurance Expiry Date</label>
                             <input type="date" name="rc_expiry_date" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">PUC Expiry Date</label>
+                            <input type="date" name="puc_expiry_date" class="form-control form-control-sm">
                         </div>
                     </div>
 
@@ -235,6 +288,53 @@
         previewBody.appendChild(iframe);
         const modal = new bootstrap.Modal(document.getElementById('filePreviewModal'));
         modal.show();
+    });
+</script>
+
+<!-- Confirm Delete Modal -->
+<div class="modal fade" id="confirmDeleteModal" tabindex="-1" aria-labelledby="confirmDeleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmDeleteModalLabel">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete <strong class="text-danger" id="confirmDeleteName">this vehicle</strong>?</p>
+                <p class="small text-muted">This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const confirmModalEl = document.getElementById('confirmDeleteModal');
+        const confirmModal = new bootstrap.Modal(confirmModalEl);
+        let currentFormId = null;
+
+        document.querySelectorAll('.vehicle-delete-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                currentFormId = this.dataset.formId;
+                const name = this.dataset.name || 'this vehicle';
+                const nameEl = document.getElementById('confirmDeleteName');
+                if (nameEl) nameEl.textContent = name;
+                confirmModal.show();
+            });
+        });
+
+        const confirmBtn = document.getElementById('confirmDeleteBtn');
+        if (confirmBtn) {
+            confirmBtn.addEventListener('click', function () {
+                if (!currentFormId) return;
+                const form = document.getElementById(currentFormId);
+                if (form) form.submit();
+            });
+        }
     });
 </script>
 

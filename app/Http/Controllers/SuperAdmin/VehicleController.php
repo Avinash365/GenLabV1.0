@@ -54,6 +54,7 @@ class VehicleController extends Controller
             'engine_number' => 'nullable|string|max:255',
             'handed_over_person' => 'nullable|string|max:255',
             'rc_expiry_date' => 'nullable|date',
+            'puc_expiry_date' => 'nullable|date',
             'rc_copy' => 'nullable|file',
             'insurance' => 'nullable|file',
             'puc' => 'nullable|file',
@@ -64,6 +65,7 @@ class VehicleController extends Controller
         $vehicle->engine_number = $data['engine_number'] ?? null;
         $vehicle->handed_over_person = $data['handed_over_person'] ?? null;
         $vehicle->rc_expiry_date = $data['rc_expiry_date'] ?? null;
+        $vehicle->puc_expiry_date = $data['puc_expiry_date'] ?? null;
 
         if ($request->hasFile('rc_copy')) {
             $vehicle->rc_copy_path = $request->file('rc_copy')->store('vehicles');
@@ -148,5 +150,39 @@ class VehicleController extends Controller
             'Content-Type' => $mime,
             'Content-Disposition' => 'inline; filename="' . basename($path) . '"'
         ]);
+    }
+
+    /**
+     * Remove the specified vehicle and its files.
+     */
+    public function destroy(Vehicle $vehicle)
+    {
+        // delete related service bills
+        foreach ($vehicle->services as $s) {
+            if (!empty($s->service_bill_path) && \Illuminate\Support\Facades\Storage::exists($s->service_bill_path)) {
+                \Illuminate\Support\Facades\Storage::delete($s->service_bill_path);
+            }
+            // delete the service record
+            $s->delete();
+        }
+
+        // delete vehicle files
+        if (!empty($vehicle->rc_copy_path) && \Illuminate\Support\Facades\Storage::exists($vehicle->rc_copy_path)) {
+            \Illuminate\Support\Facades\Storage::delete($vehicle->rc_copy_path);
+        }
+        if (!empty($vehicle->insurance_path) && \Illuminate\Support\Facades\Storage::exists($vehicle->insurance_path)) {
+            \Illuminate\Support\Facades\Storage::delete($vehicle->insurance_path);
+        }
+        if (!empty($vehicle->puc_path) && \Illuminate\Support\Facades\Storage::exists($vehicle->puc_path)) {
+            \Illuminate\Support\Facades\Storage::delete($vehicle->puc_path);
+        }
+
+        $vehicle->delete();
+
+        if (request()->ajax() || request()->wantsJson()) {
+            return response()->json(['success' => true, 'message' => 'Vehicle deleted']);
+        }
+
+        return redirect()->route('superadmin.vehicles.index')->with('success', 'Vehicle deleted');
     }
 }
