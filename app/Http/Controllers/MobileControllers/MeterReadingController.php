@@ -17,7 +17,8 @@ class MeterReadingController extends Controller
      */
     public function index(Request $request)
     {
-        $user = $request->user();
+        // Use the API guard explicitly so JWT tokens are respected
+        $user = $request->user('api') ?? auth('api')->user();
 
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
@@ -118,7 +119,8 @@ class MeterReadingController extends Controller
             return response()->json(['success' => false, 'errors' => $validator->errors()], 422);
         }
 
-        $user = $request->user();
+        // Use the API guard explicitly so JWT tokens are respected
+        $user = $request->user('api') ?? auth('api')->user();
 
         if (! $user) {
             return response()->json(['success' => false, 'message' => 'Unauthenticated'], 401);
@@ -157,7 +159,7 @@ class MeterReadingController extends Controller
                 $reading->starting_image_path = $path;
             }
             if ($request->filled('description')) {
-                $reading->description = $request->description;
+                $reading->start_description = $request->description;
             }
             $reading->save();
 

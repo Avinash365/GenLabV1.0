@@ -185,6 +185,32 @@ Route::get('debug/meter-reading/proxy', function (Request $request) {
     }
 });
 
+// DEBUG: inspect incoming headers to verify Authorization forwarding
+Route::get('debug/echo-headers', function (Request $request) {
+    return response()->json([
+        'headers' => $request->headers->all(),
+        'server' => array_filter($request->server->all(), function($k){ return in_array($k, ['HTTP_AUTHORIZATION','REDIRECT_HTTP_AUTHORIZATION']); }, ARRAY_FILTER_USE_KEY)
+    ]);
+});
+
+// DEBUG: compare JWTAuth parsed user vs auth('api')->user()
+Route::get('debug/token-verify', function (Request $request) {
+    try {
+        $token = \Tymon\JWTAuth\Facades\JWTAuth::getToken();
+        $jwtUser = $token ? \Tymon\JWTAuth\Facades\JWTAuth::parseToken()->authenticate() : null;
+    } catch (\Exception $e) {
+        $jwtUser = ['error' => $e->getMessage()];
+    }
+
+    $guardUser = auth('api')->user();
+
+    return response()->json([
+        'jwt_user' => $jwtUser ? (is_object($jwtUser) ? ['id' => $jwtUser->id, 'name' => $jwtUser->name] : $jwtUser) : null,
+        'guard_user' => $guardUser ? ['id' => $guardUser->id, 'name' => $guardUser->name] : null,
+        'token_present' => (bool) $token,
+    ]);
+});
+
 // DEBUG: temporary proxy route to POST upload (for local testing only)
 Route::post('debug/meter-reading/upload-proxy', function (Request $request) {
     $token = $request->token ?? $request->query('token');
