@@ -11,9 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('vehicles', function (Blueprint $table) {
-            $table->date('puc_expiry_date')->nullable()->after('puc_path');
-        });
+        if (!Schema::hasColumn('vehicles', 'puc_expiry_date')) {
+            Schema::table('vehicles', function (Blueprint $table) {
+                $table->date('puc_expiry_date')->nullable()->after('puc_path');
+            });
+        }
     }
 
     /**
@@ -21,8 +23,10 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('vehicles', function (Blueprint $table) {
-            $table->dropColumn('puc_expiry_date');
-        });
+        if (Schema::hasColumn('vehicles', 'puc_expiry_date')) {
+            Schema::table('vehicles', function (Blueprint $table) {
+                $table->dropColumn('puc_expiry_date');
+            });
+        }
     }
 };

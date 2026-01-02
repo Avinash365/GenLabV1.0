@@ -62,7 +62,7 @@
             </div>
             <?php if(isset($readyJobs) && $readyJobs->count()): ?>
             <hr class="my-3">
-            <div>
+            <!-- <div>
                 <div class="d-flex align-items-center gap-2 mb-2">
                     <strong>Ready to Dispatch:</strong>
                     <span class="text-muted small">(In Account, not yet Dispatched)</span>
@@ -72,7 +72,7 @@
                         <a class="badge bg-light text-dark border" href="<?php echo e(route('superadmin.reporting.dispatch', ['job' => $jn])); ?>"><?php echo e($jn); ?></a>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </div>
-            </div>
+            </div> -->
             <?php endif; ?>
         </div>
     </div>
@@ -168,10 +168,15 @@
                                 <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
                                 <td><?php echo e($item->sample_description); ?></td>
                                 <td class="status-cell" data-id="<?php echo e($item->id); ?>">
-                                    <?php if($item->dispatched_at): ?>
+                                    <?php if(!empty($item->storage_no) || !empty($item->storage_description)): ?>
+                                        <?php if(!empty($item->storage_no)): ?>
+                                            <div class="fw-semibold">Storage: <?php echo e($item->storage_no); ?></div>
+                                        <?php endif; ?>
+                                        <?php if(!empty($item->storage_description)): ?>
+                                            <div class="small text-muted"><?php echo e($item->storage_description); ?></div>
+                                        <?php endif; ?>
+                                    <?php elseif($item->dispatched_at): ?>
                                         Dispatched
-                                    <?php elseif($item->account_received_at): ?>
-                                        In Account
                                     <?php elseif($item->analyst): ?>
                                         <?php echo e($item->status); ?>
 
@@ -243,8 +248,9 @@
 <?php $__env->startPush('scripts'); ?>
 <script>
 (function initDispatchPage(){
-  const init = function() {
-    const safeJson = async (resp) => { try { const ct = resp.headers.get('content-type')||''; if (ct.includes('application/json')) return await resp.json(); return null; } catch(e){ return null; } };
+    const init = function() {
+        const safeJson = async (resp) => { try { const ct = resp.headers.get('content-type')||''; if (ct.includes('application/json')) return await resp.json(); return null; } catch(e){ return null; } };
+        const escHtml = (s) => { if (s === null || s === undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
 
         // Ensure SweetAlert is available before using it
         const ensureSwal = () => new Promise((resolve) => {
@@ -412,14 +418,63 @@
         const receiveUrl = form.getAttribute('data-receive-url');
         const dispatchUrl = form.getAttribute('data-dispatch-url');
 
-        const doPost = (url) => fetch(url, { method:'POST', headers:{ 'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value, 'Accept':'application/json','X-Requested-With':'XMLHttpRequest' }});
+        const doPost = (url, body) => fetch(url, { method:'POST', headers:{ 'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value, 'Accept':'application/json','X-Requested-With':'XMLHttpRequest', 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
 
         if (mode === 'receive') {
+            await ensureSwal();
+            let meta = {};
+            if (window.Swal) {
+                const result = await Swal.fire({
+                    title: 'Receive Details',
+                    width: 720,
+                    html: `
+                        <div class="container-fluid p-0 receive-form-grid">
+                            <div class="col g-3">
+                                <div class="col-1 col-md-12">
+                                    <label class="form-label">Storage No</label>
+                                    <input id="sw-storage-${id}" class="form-control" placeholder="Enter Storage No">
+                                </div>
+                                <div class="col-1 col-md-12 mt-3">
+                                    <label class="form-label">Notes</label>
+                                    <input id="sw-desc-${id}" class="form-control" placeholder="Optional description">
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    focusConfirm: false,
+                    showCancelButton: true,
+                    confirmButtonText: 'Receive',
+                    confirmButtonColor: '#092C4C',
+                    cancelButtonColor: '#6c757d',
+                    preConfirm: () => {
+                        const storage = (document.getElementById(`sw-storage-${id}`) || {}).value?.trim();
+                        const desc = (document.getElementById(`sw-desc-${id}`) || {}).value?.trim();
+                        if (!storage) {
+                            Swal.showValidationMessage('Please enter Storage No.');
+                            return false;
+                        }
+                        return { storage_no: storage, storage_description: desc || null };
+                    }
+                });
+                if (!result.isConfirmed) return; // user cancelled
+                meta = result.value || {};
+            }
             try {
-                const data = await doPost(receiveUrl).then(safeJson);
+                const data = await doPost(receiveUrl, meta).then(safeJson);
                 if (data && data.ok) {
                     const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
-                    if (cell) cell.textContent = 'In Account';
+                    const storageNo = data.storage_no || meta.storage_no || '';
+                    const storageDesc = data.storage_description || meta.storage_description || '';
+                    if (cell) {
+                        const parts = [];
+                        if (storageNo) parts.push('<div class="fw-semibold">' + escHtml(storageNo) + '</div>');
+                        if (storageDesc) parts.push('<div class="small text-muted">' + escHtml(storageDesc) + '</div>');
+                        if (!parts.length) {
+                            cell.textContent = '';
+                        } else {
+                            cell.innerHTML = parts.join('');
+                        }
+                    }
                     btn.textContent = 'Dispatch';
                     btn.setAttribute('data-mode','dispatch');
                     btn.style.backgroundColor = '#FE9F43';
@@ -510,22 +565,66 @@
                 if (receiveSelectedBtn && receiveSelectedBtn.dataset.bound !== '1') {
                     receiveSelectedBtn.dataset.bound = '1';
                             receiveSelectedBtn.addEventListener('click', async function(){
-                        const selected = Array.from(document.querySelectorAll('.row-select:checked')).map(cb => cb.getAttribute('data-id'));
-                        if (!selected.length) { alert('Please select at least one row.'); return; }
+                                const selected = Array.from(document.querySelectorAll('.row-select:checked')).map(cb => cb.getAttribute('data-id'));
+                                if (!selected.length) { alert('Please select at least one row.'); return; }
+                                await ensureSwal();
+                                let meta = {};
+                                if (window.Swal) {
+                                    const result = await Swal.fire({
+                                        title: 'Receive Details',
+                                        width: 720,
+                                        html: `
+                                            <div class="container-fluid p-0">
+                                                <div class="row g-3">
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label">Storage No</label>
+                                                        <input id="sw-storage-bulk" class="form-control" placeholder="Enter Storage No">
+                                                    </div>
+                                                    <div class="col-12 col-md-6">
+                                                        <label class="form-label">Notes</label>
+                                                        <input id="sw-desc-bulk" class="form-control" placeholder="Optional description">
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        `,
+                                        focusConfirm: false,
+                                        showCancelButton: true,
+                                        confirmButtonText: 'Receive',
+                                        confirmButtonColor: '#092C4C',
+                                        cancelButtonColor: '#6c757d',
+                                        preConfirm: () => {
+                                            const storage = (document.getElementById('sw-storage-bulk') || {}).value?.trim();
+                                            const desc = (document.getElementById('sw-desc-bulk') || {}).value?.trim();
+                                            if (!storage) {
+                                                Swal.showValidationMessage('Please enter Storage No.');
+                                                return false;
+                                            }
+                                            return { storage_no: storage, storage_description: desc || null };
+                                        }
+                                    });
+                                    if (!result.isConfirmed) return;
+                                    meta = result.value || {};
+                                }
                                 const anyForm = document.querySelector('form.dispatch-form');
                                 const csrf = anyForm ? anyForm.querySelector('input[name="_token"]').value : '';
                                 await fetch("<?php echo e(route('superadmin.reporting.accountReceiveBulk')); ?>", {
                                     method: 'POST',
                                     headers: { 'X-CSRF-TOKEN': csrf, 'Content-Type': 'application/json', 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                                    body: JSON.stringify({ ids: selected.map(id => Number(id)) })
+                                    body: JSON.stringify({ ids: selected.map(id => Number(id)), storage_no: meta.storage_no, storage_description: meta.storage_description })
                                 }).then(safeJson).catch(() => null);
-                        selected.forEach(id => {
-                            const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
-                            if (cell) cell.textContent = 'In Account';
-                            const btn = document.querySelector('.dispatch-toggle-btn[data-id="' + id + '"]');
-                            if (btn) { btn.textContent = 'Dispatch'; btn.setAttribute('data-mode','dispatch'); btn.style.backgroundColor = '#FE9F43'; btn.style.borderColor = '#FE9F43'; }
-                        });
-                    });
+                                // Update UI
+                                selected.forEach(id => {
+                                    const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
+                                    if (cell) {
+                                        const parts = [];
+                                        if (meta.storage_no) parts.push('<div class="fw-semibold">' + escHtml(meta.storage_no) + '</div>');
+                                        if (meta.storage_description) parts.push('<div class="small text-muted">' + escHtml(meta.storage_description) + '</div>');
+                                        cell.innerHTML = parts.join('') || '';
+                                    }
+                                    const btn = document.querySelector('.dispatch-toggle-btn[data-id="' + id + '"]');
+                                    if (btn) { btn.textContent = 'Dispatch'; btn.setAttribute('data-mode','dispatch'); btn.style.backgroundColor = '#FE9F43'; btn.style.borderColor = '#FE9F43'; }
+                                });
+                            });
                 }
                 if (dispatchSelectedBtn && dispatchSelectedBtn.dataset.bound !== '1') {
                 dispatchSelectedBtn.dataset.bound = '1';
@@ -652,6 +751,17 @@
     /* Themed Filter button */
     .btn-outline-warning { border-color:#FE9F43; color:#FE9F43; }
     .btn-outline-warning:hover, .btn-outline-warning:focus { background-color:#FE9F43; border-color:#FE9F43; color:#fff; }
+
+    /* Center SweetAlert vertically (force center, with small-screen fallback) */
+    .swal2-container {
+        align-items: center !important;
+    }
+    .swal2-popup {
+        margin: 0;
+    }
+    @media (max-height: 520px) {
+        .swal2-container { align-items: flex-start !important; padding-top: 1.5rem; }
+    }
 </style>
 <?php $__env->stopPush(); ?>
 

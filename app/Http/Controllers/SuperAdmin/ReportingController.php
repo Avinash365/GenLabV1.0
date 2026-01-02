@@ -958,6 +958,11 @@ class ReportingController extends Controller
      */
     public function accountReceiveOne(Request $request, \App\Models\BookingItem $item)
     {
+        $data = $request->validate([
+            'storage_no' => ['nullable', 'string', 'max:100'],
+            'storage_description' => ['nullable', 'string'],
+        ]);
+
         $receiverId = auth('web')->check() ? auth('web')->id() : null;
         $receiverName = auth('web')->check()
             ? optional(auth('web')->user())->name
@@ -970,9 +975,24 @@ class ReportingController extends Controller
             $item->account_received_by_id = $receiverId;
         }
         $item->account_received_by_name = $receiverName;
+
+        // Save storage fields if the columns exist
+        if (array_key_exists('storage_no', $data) && Schema::hasColumn('booking_items', 'storage_no')) {
+            $item->storage_no = $data['storage_no'];
+        }
+        if (array_key_exists('storage_description', $data) && Schema::hasColumn('booking_items', 'storage_description')) {
+            $item->storage_description = $data['storage_description'];
+        }
+
         $item->save();
         if ($request->wantsJson()) {
-            return response()->json(['ok' => true, 'account_received_at' => optional($item->account_received_at)->toIso8601String(), 'receiver_name' => $receiverName]);
+            return response()->json([
+                'ok' => true,
+                'account_received_at' => optional($item->account_received_at)->toIso8601String(),
+                'receiver_name' => $receiverName,
+                'storage_no' => $item->storage_no ?? null,
+                'storage_description' => $item->storage_description ?? null,
+            ]);
         }
         return back()->with('status', 'Report marked In Account');
     }
@@ -985,6 +1005,8 @@ class ReportingController extends Controller
         $payload = $request->validate([
             'ids' => ['required', 'array'],
             'ids.*' => ['integer', 'exists:booking_items,id'],
+            'storage_no' => ['nullable', 'string', 'max:100'],
+            'storage_description' => ['nullable', 'string'],
         ]);
         $receiverId = auth('web')->check() ? auth('web')->id() : null;
         $receiverName = auth('web')->check()
@@ -999,6 +1021,13 @@ class ReportingController extends Controller
         }
         if (Schema::hasColumn('booking_items', 'status')) {
             $update['status'] = 'In Account';
+        }
+        // Add storage fields when provided and column exists
+        if (!empty($payload['storage_no']) && Schema::hasColumn('booking_items', 'storage_no')) {
+            $update['storage_no'] = $payload['storage_no'];
+        }
+        if (array_key_exists('storage_description', $payload) && Schema::hasColumn('booking_items', 'storage_description')) {
+            $update['storage_description'] = $payload['storage_description'];
         }
         \App\Models\BookingItem::whereIn('id', $payload['ids'])->update($update);
         if ($request->wantsJson()) {
