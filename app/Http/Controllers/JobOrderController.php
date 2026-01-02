@@ -20,13 +20,16 @@ class JobOrderController extends Controller
 
         $bookingId = $item->new_booking_id;
 
-        // 2 Get all items under same booking
-        $items = BookingItem::where('new_booking_id', $bookingId)->get();
+        // Determine per-page size (allow user to change via query param)
+        $perPage = (int) request()->input('perPage', 25);
 
-        // 3 Get all invoices related to this booking
+        // 2 Get paginated items under same booking
+        $items = BookingItem::where('new_booking_id', $bookingId)->paginate($perPage);
+
+        // 3 Get paginated invoices related to this booking
         $invoices = Invoice::where('new_booking_id', $bookingId)
             ->with(['client', 'marketingPerson', 'transactions', 'tdsTransaction'])
-            ->get();
+            ->paginate($perPage);
 
         return view ('superadmin.jobOrderInfo.index', compact('invoices','items'));
 

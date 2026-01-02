@@ -10,6 +10,7 @@ use App\Models\User;
 use App\Models\NewBooking; 
 use App\Models\{Invoice,InvoiceTransaction,CashLetterPayment}; 
 use App\Services\GetUserActiveDepartment;  
+use App\Services\MarketingPersonStatsService;
 
 
 class MarketingPersonInfo extends Controller 
@@ -1413,51 +1414,19 @@ class MarketingPersonInfo extends Controller
         }
         if (!$avatar) { $avatar = asset('assets/img/profiles/avator1.jpg'); }
 
-        // Bookings summary
-        $bookingQuery = \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code);
-        $totalBookings = (int) $bookingQuery->count();
-        // Compute booking amounts from booking items (table has `amount` column)
-        $totalBookingAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
-            $q->where('marketing_id', $marketingPerson->user_code);
-        })->sum('amount');
+        // Use centralized service to compute stats (ensures parity with web panel)
+        $filters = [];
+        if ($request->filled('month')) { $filters['month'] = $request->month; }
+        if ($request->filled('year')) { $filters['year'] = $request->year; }
 
-        // Bookings by payment option (amounts and counts)
-        $billBookingsCount = (int) \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'with_bill')->count();
-        // Bill and cash booking amounts derived from booking items
-        $billAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
-            $q->where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'with_bill');
-        })->sum('amount');
-        $cashBookingsCount = (int) \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'without_bill')->count();
-        $cashAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
-            $q->where('marketing_id', $marketingPerson->user_code)->where('payment_option', 'without_bill');
-        })->sum('amount');
+        $statsService = new MarketingPersonStatsService();
+        $serviceStats = $statsService->calculate($marketingPerson->user_code, $filters);
 
-        // Invoices summary
-        $bookingIds = $marketingPerson->marketingBookings->pluck('id')->toArray();
-        $invoiceQuery = \App\Models\Invoice::whereIn('new_booking_id', $bookingIds);
-        $totalInvoiceAmount = (float) $invoiceQuery->sum('total_amount');
-        $paidInv = (float) \App\Models\InvoiceTransaction::where('marketing_person_id', $marketingPerson->user_code)->sum('amount_received');
-        $unpaidInv = max(0, $totalInvoiceAmount - $paidInv);
-        // Partial / in-between invoices (status mapping used across views: 0=unpaid,1=paid,2=cancelled,3=partial,4=settled)
-        $partialInv = (float) $invoiceQuery->where('status', 3)->sum('total_amount');
+        // Ensure personal expense totals exist
+        $serviceStats['totalPersonalExpensesAmount'] = $serviceStats['totalPersonalExpensesAmount'] ?? (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)->sum('amount');
+        $serviceStats['totalApprovedPersonalExpensesAmount'] = $serviceStats['totalApprovedPersonalExpensesAmount'] ?? (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)->sum('approved_amount');
 
-        $partialTaxInvoicesCount = (int) $invoiceQuery->where('status', 3)->count();
-        $unpaidInvoicesCount = (int) $invoiceQuery->where('status', 0)->count();
-        $canceledInvoicesCount = (int) $invoiceQuery->where('status', 2)->count();
-        $notGeneratedInvoicesCount = (int) \App\Models\NewBooking::where('marketing_id', $marketingPerson->user_code)->whereDoesntHave('generatedInvoice')->count();
-        // Sum amounts for bookings without generated invoices using booking items
-        $notGeneratedInvoicesAmount = (float) \App\Models\BookingItem::whereHas('booking', function($q) use ($marketingPerson){
-            $q->where('marketing_id', $marketingPerson->user_code)->whereDoesntHave('generatedInvoice');
-        })->sum('amount');
-        $unpaidInvAmount = (float) $invoiceQuery->where('status', 0)->sum('total_amount');
-        $canceledInvAmount = (float) $invoiceQuery->where('status', 2)->sum('total_amount');
-        $partialInvAmount = (float) $invoiceQuery->where('status', 3)->sum('total_amount');
-
-        // Personal expenses summary
-        $personalTotal = (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)->sum('amount');
-        $personalApproved = (float) \App\Models\MarketingExpense::where('marketing_person_code', $marketingPerson->user_code)->sum('approved_amount');
-
-        // Recent transactions (last 10)
+        // recent transactions
         $recentTransactions = \App\Models\InvoiceTransaction::with(['invoice','client'])->where('marketing_person_id', $marketingPerson->user_code)
             ->orderBy('transaction_date', 'desc')->limit(10)->get()->map(function($t){
                 return [
@@ -1465,70 +1434,16 @@ class MarketingPersonInfo extends Controller
                     'invoice_no' => $t->invoice->invoice_no ?? null,
                     'amount_received' => (float) $t->amount_received,
                     'payment_mode' => $t->payment_mode,
-                            'transaction_date' => $t->transaction_date ? (\Carbon\Carbon::parse($t->transaction_date)->toDateString()) : null,
+                    'transaction_date' => $t->transaction_date ? (\Carbon\Carbon::parse($t->transaction_date)->toDateString()) : null,
                 ];
             })->values();
 
-        // Cash letters summary
-        $cashQuery = \App\Models\CashLetterPayment::where('marketing_person_id', $marketingPerson->user_code);
-        $cashPaidLettersCount = (int) $cashQuery->where('transaction_status', 2)->count();
-        $cashPaidLettersAmount = (float) $cashQuery->where('transaction_status', 2)->sum('amount_received');
-        $cashUnpaidLettersCount = (int) $cashQuery->where('transaction_status', '!=', 2)->count();
-        $cashUnpaidLettersAmount = (float) $cashQuery->where('transaction_status', '!=', 2)->sum('total_amount');
-        $cashPartialLettersCount = (int) $cashQuery->where('transaction_status', 1)->count();
-        $cashPartialDueAmount = (float) $cashQuery->where('transaction_status', 1)->sum(\DB::raw('(total_amount - amount_received)'));
-        $cashSettledLettersCount = (int) $cashQuery->where('transaction_status', 3)->count();
-        $cashSettledAmount = (float) $cashQuery->where('transaction_status', 3)->sum('amount_received');
-
-        // Clients
-        $clientIds = $marketingPerson->marketingBookings()->whereNotNull('client_id')->pluck('client_id')->unique()->values();
-        $allClientsCount = $clientIds->count();
+        $allClientsCount = $serviceStats['allClients'] ?? 0;
 
         $payload = [
             'profile' => $profile,
             'avatar' => $avatar,
-            'stats' => [
-                'totalBookings' => $totalBookings,
-                'totalBookingAmount' => $totalBookingAmount,
-                'billBookings' => $billBookingsCount,
-                'totalBillBookingAmount' => $billAmount,
-                'withoutBillBookings' => $cashBookingsCount,
-                'totalWithoutBillBookings' => $cashAmount,
-
-                'notGeneratedInvoices' => $notGeneratedInvoicesCount,
-                'totalNotGeneratedInvoicesAmount' => $notGeneratedInvoicesAmount,
-
-                'partialTaxInvoices' => $partialTaxInvoicesCount,
-                'totalPartialTaxInvoiceAmount' => $partialInvAmount,
-                'unpaidInvoices' => $unpaidInvoicesCount,
-                'totalUnpaidInvoiceAmount' => $unpaidInvAmount,
-                'canceledGeneratedInvoices' => $canceledInvoicesCount,
-                'totalcanceledGeneratedInvoicesAmount' => $canceledInvAmount,
-
-                'GeneratedPIs' => (int) $invoiceQuery->where('type', 'proforma_invoice')->count(),
-                'totalPIAmount' => (float) $invoiceQuery->where('type', 'proforma_invoice')->sum('total_amount'),
-                'paidPiInvoices' => (int) $invoiceQuery->where('type', 'proforma_invoice')->where('status', 1)->count(),
-                'totalPaidPIAmount' => (float) $invoiceQuery->where('type', 'proforma_invoice')->where('status', 1)->sum('total_amount'),
-
-                'transactions' => (int) \App\Models\InvoiceTransaction::where('marketing_person_id', $marketingPerson->user_code)->count(),
-                'totalTransactionsAmount' => (float) \App\Models\InvoiceTransaction::where('marketing_person_id', $marketingPerson->user_code)->sum('amount_received'),
-
-                'cashPaidLetters' => $cashPaidLettersCount,
-                'totalCashPaidLettersAmount' => $cashPaidLettersAmount,
-                'cashUnpaidLetters' => $cashUnpaidLettersCount,
-                'totalCashUnpaidAmounts' => $cashUnpaidLettersAmount,
-                'cashPartialLetters' => $cashPartialLettersCount,
-                'totalDueAmount' => $cashPartialDueAmount,
-                'cashSettledLetters' => $cashSettledLettersCount,
-                'totalSettledAmount' => $cashSettledAmount,
-
-                'allClients' => $allClientsCount,
-                'tdsAmount' => 0, // placeholder—TDS calculation not implemented here
-
-                // personal expenses
-                'totalPersonalExpensesAmount' => $personalTotal,
-                'totalApprovedPersonalExpensesAmount' => $personalApproved,
-            ],
+            'stats' => $serviceStats,
             'recent_transactions' => $recentTransactions,
             // helper links for other paginated endpoints
             'endpoints' => [
