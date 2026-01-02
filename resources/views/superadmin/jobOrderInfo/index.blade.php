@@ -70,7 +70,15 @@
                     
                     <div id="dataFields" class="accordion-collapse collapse show" aria-labelledby="headingDataFields">
                         <div class="accordion-body border-top">
-                                                     <div class="table-responsive">
+                        <div class="search-set mb-2 p-4">
+                            <input
+                                type="text"
+                                id="localSearchBooking"
+                                class="form-control"
+                                placeholder="Search in current page only..."
+                            >
+                        </div>
+                    <div class="table-responsive">
                         <table class="table">
                             <thead class="table-light">
                                 <tr>
@@ -120,12 +128,18 @@
                                     <td class="d-flex"> 
                                         <!-- View Button --> 
                                         <!-- View Booking Card -->
-                                            <a href="{{ route('superadmin.bookings.cards.single', [$item->booking->id, $item->id]) }}"
+                                            <!-- <a href="{{ route('superadmin.bookings.cards.single', [$item->booking->id, $item->id]) }}"
                                             target="_blank"
                                             class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
                                                 <i data-feather="eye" class="feather-eye"></i>
-                                            </a>
+                                            </a> -->
+                                            <a href="{{ $item->booking->upload_letter_path }}"
+                                            target="_blank"
+                                            class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                                <i data-feather="eye" class="feather-eye"></i>
+                                        </a> 
 
+                                        
                                         <a href="{{ route('superadmin.bookings.edit', $item->booking->id ?? 0) }}"
                                         class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
                                             <i data-feather="edit" class="feather-edit"></i>
@@ -200,7 +214,7 @@
                     <h2 class="accordion-header" id="headingClinetFields">
                         
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#clientFields" aria-expanded="true">
-                            <h5 class="d-flex align-items-center"><i data-feather="list" class="text-primary me-2"></i>Assigned Client</h5>
+                            <h5 class="d-flex align-items-center"><i data-feather="list" class="text-primary me-2"></i>Accounts</h5>
 
                         </div>
         
@@ -208,109 +222,122 @@
                     
                     <div id="clientFields" class="accordion-collapse collapse show" aria-labelledby="headingClientFields">
                         <div class="accordion-body border-top">
-                                                     <div class="table-responsive">
-                        <table class="table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                                    <th>Job Order No</th>
-                                    <th style="width:180px;">Client Name</th>
-                                    <th style="width:180px;">Reference No</th>
-                                    <th style="width:240px;">Sample Description</th>
-                                    <th style="width:90px;">Sample Quality</th>
-                                    <th style="width:240px;">Particulars</th>
-        
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($items as $item)
-                                <tr 
-                                    class="table-row"
-                                    data-search="{{ strtolower(
-                                        $item->job_order_no . ' ' .
-                                        ($item->booking?->client_name ?? '') . ' ' .
-                                        $item->sample_description . ' ' .
-                                        $item->sample_quality . ' ' .
-                                        $item->particulars
-                                    ) }}" 
+                            <div class="search-set mb-2 p-4">
+                                <input
+                                    type="text"
+                                    id="localSearchClient"
+                                    class="form-control"
+                                    placeholder="Search in current page only..."
                                 >
-
-                                    <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                                    <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
-                                    </td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
-                                    </td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
-                                    </td>
-                                    <td class="truncate-cell sample-quality-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>
-                                    </td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
-                                    </td>
-                                
-                                
-                                    <td class="d-flex"> 
-                                        <!-- View Button --> 
-                                        <!-- View Booking Card -->
-                                            <a href="{{ route('superadmin.bookings.cards.single', [$item->booking->id, $item->id]) }}"
-                                            target="_blank"
-                                            class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
-                                                <i data-feather="eye" class="feather-eye"></i>
-                                            </a>
-                                        @if(is_null($item->booking?->client_id))
-    <a href="{{ route('superadmin.accountBookingsLetters.index', [
-            'search' => $item->booking->reference_no, 
-            'payment_option' => $item->booking->payment_option
-        ]) }}"
-       class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-       title="Assigned">
-        <i data-feather="user-check"></i>
-    </a>
-@else
-    <a href="{{ route('superadmin.bookingInvoiceStatuses.edit', $item->booking->id) }}"
-       class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-       title="Generate Invoice">
-        <i data-feather="file-text"></i>
-    </a>
-@endif
-
-                                        
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="10" class="text-center">No items found.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
-                            <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
-                                @foreach(request()->except(['perPage','page']) as $key => $val)
-                                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
-                                @endforeach
-                                <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
-                                <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                    @foreach([25,50,100] as $size)
-                                        <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                            </form>
-                            <div class="pagination-scroll-wrapper">
-                                @if(method_exists($items, 'links'))
-                                    {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
-                                @endif
                             </div>
-                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                                        <th>Job Order No</th>
+                                        <th style="width:180px;">Client Name</th>
+                                        <th style="width:180px;">Reference No</th>
+                                        <th style="width:240px;">Sample Description</th>
+                                        <th style="width:90px;">Sample Quality</th>
+                                        <th style="width:240px;">Particulars</th>
+            
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($items as $item)
+                                    <tr 
+                                        class="table-row"
+                                        data-search="{{ strtolower(
+                                            $item->job_order_no . ' ' .
+                                            ($item->booking?->client_name ?? '') . ' ' .
+                                            $item->sample_description . ' ' .
+                                            $item->sample_quality . ' ' .
+                                            $item->particulars
+                                        ) }}" 
+                                    >
 
-                    </div>
+                                        <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
+                                        <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
+                                        </td>
+                                        <td class="truncate-cell sample-quality-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                        </td>
+                                    
+                                    
+                                        <td class="d-flex"> 
+                                            <!-- View Button --> 
+                                            <!-- View Booking Card -->
+                                                <!-- <a href="{{ route('superadmin.bookings.cards.single', [$item->booking->id, $item->id]) }}"
+                                                target="_blank"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                                    <i data-feather="eye" class="feather-eye"></i>
+                                                </a> -->
+                                                <a href="{{ $item->booking->upload_letter_path }}"
+                                                target="_blank" 
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                                    <i data-feather="eye" class="feather-eye"></i>
+                                            </a> 
+                                            @if(is_null($item->booking?->client_id))
+        <a href="{{ route('superadmin.accountBookingsLetters.index', [
+                'search' => $item->booking->reference_no, 
+                'payment_option' => $item->booking->payment_option
+            ]) }}"
+        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+        title="Assigned">
+            <i data-feather="user-check"></i>
+        </a>
+    @else
+        <a href="{{ route('superadmin.bookingInvoiceStatuses.edit', $item->booking->id) }}"
+        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+        title="Generate Invoice">
+            <i data-feather="file-text"></i>
+        </a>
+    @endif
+
+                                            
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center">No items found.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+
+                            <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
+                                <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                                    @foreach(request()->except(['perPage','page']) as $key => $val)
+                                        <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                                    @endforeach
+                                    <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                    <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                        @foreach([25,50,100] as $size)
+                                            <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                                <div class="pagination-scroll-wrapper">
+                                    @if(method_exists($items, 'links'))
+                                        {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                                    @endif
+                                </div>
+                            </div>
+
+                        </div>
                         </div> 
                     
                     </div>
@@ -551,7 +578,7 @@
                     <h2 class="accordion-header" id="headingReportFields">
                         
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#reportFields" aria-expanded="true">
-                            <h5 class="d-flex align-items-center"><i data-feather="list" class="text-primary me-2"></i>Received and Dispatch</h5>
+                            <h5 class="d-flex align-items-center"><i data-feather="list" class="text-primary me-2"></i>Generate Report</h5>
 
                         </div>
         
@@ -559,113 +586,253 @@
                     
                     <div id="reportFields" class="accordion-collapse collapse show" aria-labelledby="headingReportFields">
                         <div class="accordion-body border-top">
-                                                     <div class="table-responsive">
-                        <table class="table">
-                            <thead class="table-light">
-                                <tr>
-                                    <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                                    <th>Job Order No</th>
-                                    <th style="width:180px;">Client Name</th>
-                                    <th style="width:180px;">Reference No</th>
-                                    <th style="width:240px;">Sample Description</th>
-                                    <th style="width:90px;">Sample Quality</th>
-                                    <th style="width:240px;">Particulars</th>
-        
-                                    <th>Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                @forelse($items as $item)
-                                <tr 
-                                    class="table-row"
-                                    data-search="{{ strtolower(
-                                        $item->job_order_no . ' ' .
-                                        ($item->booking?->client_name ?? '') . ' ' .
-                                        $item->sample_description . ' ' .
-                                        $item->sample_quality . ' ' .
-                                        $item->particulars
-                                    ) }}" 
+                            <div class="search-set mb-2 p-4">
+                                <input
+                                    type="text"
+                                    id="localSearchReport"
+                                    class="form-control"
+                                    placeholder="Search in current page only..."
                                 >
-
-                                    <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                                    <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
-                                    </td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
-                                    </td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
-                                    </td>
-                                    <td class="truncate-cell sample-quality-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>
-                                    </td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
-                                    </td>
-                                
-                
-                                    <td class="d-flex"> 
-                                        <!-- View Button --> 
-                                        <!-- report section -->
-                                       
-                                        @if(!is_null($item->booking?->client_id))
-                                            <a href="{{ route('superadmin.reporting.received', [
-                                                    'job' => $item->job_order_no
-                                                ]) }}"
-                                            class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-                                            title="Received">
-                                            <i data-feather="inbox"></i>
-                                            </a>
-        
-                                        @endif      
-                                         <a href="{{ route('superadmin.reporting.dispatch', [
-                                            'job' => $item->job_order_no
-                                        ])}}"
-                                            class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-                                            title="Not Assigned">
-                                               <i data-feather="send"></i>
-                                            </a>                                  
-                                    </td>
-                                </tr>
-                                @empty
-                                <tr>
-                                    <td colspan="10" class="text-center">No items found.</td>
-                                </tr>
-                                @endforelse
-                            </tbody>
-                        </table>
-
-                        <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
-                            <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
-                                @foreach(request()->except(['perPage','page']) as $key => $val)
-                                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
-                                @endforeach
-                                <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
-                                <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                    @foreach([25,50,100] as $size)
-                                        <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
-                                    @endforeach
-                                </select>
-                            </form>
-                            <div class="pagination-scroll-wrapper">
-                                @if(method_exists($items, 'links'))
-                                    {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
-                                @endif
                             </div>
-                        </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                                        <th>Job Order No</th>
+                                        <th style="width:180px;">Client Name</th>
+                                        <th style="width:180px;">Reference No</th>
+                                        <th style="width:240px;">Sample Description</th>
+                                        <th style="width:90px;">Sample Quality</th>
+                                        <th style="width:240px;">Particulars</th>
+            
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($items as $item)
+                                    <tr 
+                                        class="table-row"
+                                        data-search="{{ strtolower(
+                                            $item->job_order_no . ' ' .
+                                            ($item->booking?->client_name ?? '') . ' ' .
+                                            $item->sample_description . ' ' .
+                                            $item->sample_quality . ' ' .
+                                            $item->particulars
+                                        ) }}" 
+                                    >
 
-                    </div>
+                                        <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
+                                        <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
+                                        </td>
+                                        <td class="truncate-cell sample-quality-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                        </td>
+                                    
+                    
+                                        <td class="d-flex"> 
+                                            <!-- View Button --> 
+                                            <!-- report section -->
+                                            <a href="{{ $item->booking->upload_letter_path }}"
+                                                target="_blank"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                                    <i data-feather="eye" class="feather-eye"></i>
+                                            </a> 
+
+                                        
+                                            @if(!is_null($item->booking?->client_id))
+                                                <a href="{{ route('superadmin.reporting.received', [
+                                                        'job' => $item->job_order_no
+                                                    ]) }}"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+                                                title="Received">
+                                                <i data-feather="inbox"></i>
+                                                </a>
+            
+                                            @endif      
+                                            <!-- <a href="{{ route('superadmin.reporting.dispatch', [
+                                                'job' => $item->job_order_no
+                                            ])}}"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+                                                title="Dispatch">
+                                                <i data-feather="send"></i>
+                                                </a>                                   -->
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center">No items found.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+
+                            <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
+                                <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                                    @foreach(request()->except(['perPage','page']) as $key => $val)
+                                        <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                                    @endforeach
+                                    <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                    <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                        @foreach([25,50,100] as $size)
+                                            <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                                <div class="pagination-scroll-wrapper">
+                                    @if(method_exists($items, 'links'))
+                                        {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                                    @endif
+                                </div>
+                            </div>
+
+                        </div>
                         </div> 
                     
                     </div>
                 </div>
-
                 
-             
 
-                
+                {{--Dispatch --}}
+                 <div class="accordion-item border mb-4">
+                    <h2 class="accordion-header" id="headingDispatchFields">
+                        
+                        <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#DispatchFields" aria-expanded="true">
+                            <h5 class="d-flex align-items-center"><i data-feather="list" class="text-primary me-2"></i>Dispatch</h5>
+
+                        </div>
+        
+                    </h2> 
+                    
+                    <div id="DispatchFields" class="accordion-collapse collapse show" aria-labelledby="headingDispatchFields">
+                        <div class="accordion-body border-top">
+                            <div class="search-set mb-2 p-4">
+                                <input
+                                    type="text"
+                                    id="localSearchDispatch"
+                                    class="form-control"
+                                    placeholder="Search in current page only..."
+                                >
+                            </div>
+                        <div class="table-responsive">
+                            <table class="table">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                                        <th>Job Order No</th>
+                                        <th style="width:180px;">Client Name</th>
+                                        <th style="width:180px;">Reference No</th>
+                                        <th style="width:240px;">Sample Description</th>
+                                        <th style="width:90px;">Sample Quality</th>
+                                        <th style="width:240px;">Particulars</th>
+            
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @forelse($items as $item)
+                                    <tr 
+                                        class="table-row"
+                                        data-search="{{ strtolower(
+                                            $item->job_order_no . ' ' .
+                                            ($item->booking?->client_name ?? '') . ' ' .
+                                            $item->sample_description . ' ' .
+                                            $item->sample_quality . ' ' .
+                                            $item->particulars
+                                        ) }}" 
+                                    >
+
+                                        <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
+                                        <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
+                                        </td>
+                                        <td class="truncate-cell sample-quality-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>
+                                        </td>
+                                        <td class="truncate-cell">
+                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                        </td>
+                                    
+                    
+                                        <td class="d-flex"> 
+                                            <!-- View Button --> 
+                                            <!-- report section -->
+                                            <a href="{{ $item->booking->upload_letter_path }}"
+                                                target="_blank"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                                    <i data-feather="eye" class="feather-eye"></i>
+                                            </a> 
+
+                                        
+                                            @if(!is_null($item->booking?->client_id))
+                                                <!-- <a href="{{ route('superadmin.reporting.received', [
+                                                        'job' => $item->job_order_no
+                                                    ]) }}"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+                                                title="Received">
+                                                <i data-feather="inbox"></i>
+                                                </a> -->
+            
+                                            @endif      
+                                            <a href="{{ route('superadmin.reporting.dispatch', [
+                                                'job' => $item->job_order_no
+                                            ])}}"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+                                                title="Not Assigned">
+                                                <i data-feather="send"></i>
+                                                </a>                                  
+                                        </td>
+                                    </tr>
+                                    @empty
+                                    <tr>
+                                        <td colspan="10" class="text-center">No items found.</td>
+                                    </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+
+                            <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
+                                <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                                    @foreach(request()->except(['perPage','page']) as $key => $val)
+                                        <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                                    @endforeach
+                                    <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                    <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                        @foreach([25,50,100] as $size)
+                                            <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                                        @endforeach
+                                    </select>
+                                </form>
+                                <div class="pagination-scroll-wrapper">
+                                    @if(method_exists($items, 'links'))
+                                        {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                                    @endif
+                                </div>
+                            </div>
+
+                        </div>
+                        </div> 
+                    
+                    </div>
+                </div>
    
 </div>
 
@@ -751,4 +918,50 @@ document.addEventListener('DOMContentLoaded', function(){
     });
 });
 </script>
+@endpush
+
+@push('scripts')
+@push('scripts')
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+
+        const searchInputs = [
+            'localSearchBooking',
+            'localSearchClient',
+            'localSearchDispatch',
+            'localSearchReport'
+        ]
+        .map(id => document.getElementById(id))
+        .filter(Boolean); // remove nulls
+
+        searchInputs.forEach(input => {
+
+            input.addEventListener('input', function () {
+
+                const query = this.value.toLowerCase().trim();
+
+                //  Find the closest table for THIS search box
+                const container =
+                    this.closest('.accordion-body') ||
+                    this.closest('.card') ||
+                    document;
+
+                const rows = container.querySelectorAll('.table-row');
+
+                rows.forEach(row => {
+                    const text = row.dataset.search || '';
+
+                    row.style.display =
+                        !query || text.includes(query)
+                            ? ''
+                            : 'none';
+                });
+            });
+
+        });
+
+    });
+</script>
+@endpush
+
 @endpush

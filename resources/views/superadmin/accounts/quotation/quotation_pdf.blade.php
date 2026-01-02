@@ -171,10 +171,10 @@
                 Payment can be made in following modes: RTGS/NEFT Transfer<br><br>
                 <table style="border:none; width:60%; margin-top:5px;">
                     <tr><td><strong>Bank</strong></td><td>: ICICI Bank</td></tr>
-                    <tr><td><strong>Branch</strong></td><td>: Crossing Republic (GZB)</td></tr>
-                    <tr><td><strong>Current A/c No.</strong></td><td>: 325405000561</td></tr>
-                    <tr><td><strong>IFSC Code</strong></td><td>: ICIC0003254</td></tr>
-                    <tr><td><strong>GSTIN</strong></td><td>: 09AAGFI2411P1Z6</td></tr>
+                    <tr><td><strong>Branch</strong></td><td>: Panchsheel Hynish</td></tr>
+                    <tr><td><strong>Current A/c No.</strong></td><td>: 538805500070</td></tr>
+                    <tr><td><strong>IFSC Code</strong></td><td>: ICIC0005388</td></tr>
+                    <tr><td><strong>GSTIN</strong></td><td>: 09AAHCI9223K1Z5</td></tr>
                 </table>
             </li>
             <li>Tax components are as per the regulatory norms by Government of India.</li>
