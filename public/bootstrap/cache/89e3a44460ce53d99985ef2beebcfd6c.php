@@ -46,12 +46,17 @@
 
     <div class="card">
 
+
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
 
             <!-- Search Form -->
             <div class="search-set">
                 <form method="GET" action="<?php echo e(route('superadmin.bookings.bookingByLetter.index')); ?>" class="d-flex input-group">
-                    <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search...">
+                        
+                    <input type="hidden" name="month" value="<?php echo e(request('month')); ?>">
+                    <input type="hidden" name="year" value="<?php echo e(request('year')); ?>">
+                    <input type="text" name="search" value="<?php echo e(request('search')); ?>"  id="autoSearch" class="form-control" placeholder="Search...">
+    
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
             </div>
@@ -59,6 +64,8 @@
             <!-- Month & Year Filter Form -->
             <div class="search-set">
                 <form method="GET" action="<?php echo e(route('superadmin.bookings.bookingByLetter.index')); ?>" class="d-flex input-group">
+                     
+                    <input type="hidden" name="search" value="<?php echo e(request('search')); ?>">
                     <!-- Month Filter -->
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
@@ -87,7 +94,16 @@
 
         </div>
 
+
         <div class="card-body p-0">
+            <div class="search-set mb-2 p-4">
+                <input
+                    type="text"
+                    id="localSearch"
+                    class="form-control"
+                    placeholder="Search in current page only..."
+                >
+            </div>
             <div class="table-responsive">
                 <table class="table">
                     <thead class="table-light">
@@ -187,7 +203,7 @@
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                             <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                <?php $__currentLoopData = [25,50,100]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $__currentLoopData = [25,50,100,500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <option value="<?php echo e($size); ?>" <?php echo e(request('perPage',25)==$size ? 'selected' : ''); ?>><?php echo e($size); ?></option>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
@@ -237,6 +253,52 @@
     /* Reduce gap between checkbox and Job Order by removing extra left padding on job-order cell */
     .table td.job-order-cell, .table th.job-order-cell { padding-left: 6px !important; }
 </style>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+    let typingTimer;
+    const delay = 400; // milliseconds
+    const minLength = 3;
+
+    const searchInput = document.getElementById('autoSearch');
+
+    if (searchInput) {
+        searchInput.addEventListener('keyup', function () {
+            clearTimeout(typingTimer);
+
+            typingTimer = setTimeout(() => {
+                const value = this.value.trim();
+
+                // Submit only if 3+ characters OR field is cleared
+                if (value.length >= minLength || value.length === 0) {
+                    this.form.submit();
+                }
+            }, delay);
+        });
+    }
+</script>
+<script>
+    const localSearchInput = document.getElementById('localSearch');
+
+    if (localSearchInput) {
+        localSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('.table-row');
+
+            rows.forEach(row => {
+                const text = row.getAttribute('data-search');
+
+                if (!query || text.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
+
 <?php $__env->stopPush(); ?>
 
 <?php $__env->stopSection(); ?>

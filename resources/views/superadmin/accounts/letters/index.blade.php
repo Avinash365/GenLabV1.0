@@ -206,11 +206,10 @@
                         <thead class="table-light">
                             <tr>
                                 <th><input type="checkbox" id="select-all"></th>
-                                <th style="width:180px;">Client Name</th>
-                                <th style="width:160px;">Reference No</th>
+                                <th style="width:350px;">Client Name</th>
+                                <th style="width:300px;">Reference No</th>
                                 <th>Marketing Person</th>
-                                <th>Show Letter</th>
-                                <th>Items</th>
+                                 
                                 <th>Assign Client</th>
                                 <th>Action</th>
                             </tr>
@@ -237,19 +236,28 @@
                                             {{ $booking->reference_no }}</div>
                                     </td>
                                     <td>{{ $booking->marketingPerson->name ?? '-' }}</td>
+                                   
+
+                                    <!-- Assign Client Dropdown -->
                                     <td>
-                                        @if($booking->upload_letter_path)
-                                            <a href="{{ url($booking->upload_letter_path) }}" target="_blank">View</a>
-                                        @else
-                                            -
-                                        @endif
+                                        <form action="{{ route('superadmin.clients.assignBooking', $booking->id) }}"
+                                            method="POST" class="d-flex client-assign-form">
+                                            @csrf
+                                            <div class="position-relative" style="min-width:180px;">
+                                                <input type="text" name="client_name_display" class="form-control client-search-input" autocomplete="off" placeholder="Search client" value="">
+                                                <input type="hidden" name="client_id" class="client-id-hidden" value="{{ $booking->client_id ?? '' }}">
+                                                <div class="dropdown-menu client-dropdown w-100" style="display:none; max-height:200px; overflow:auto;"></div>
+                                            </div>
+                                        </form>
                                     </td>
 
-                                    <!-- Items Modal -->
-                                    <td>
+                                    <!-- Actions -->
+                                    <td class="d-flex">
+                                         
+                                        <!-- Items Modal -->
                                         {{ $booking->items->count() }}
                                         @if($booking->items->count() > 0)
-                                            <a href="javascript:void(0);" data-bs-toggle="modal"
+                                            <a href="javascript:void(0);" class="me-2 p-2 border rounded" data-bs-toggle="modal"
                                                 data-bs-target="#itemsModal-{{ $booking->id }}">
                                                 <i data-feather="eye"></i>
                                             </a>
@@ -297,27 +305,16 @@
                                                 </div>
                                             </div>
                                         @endif
-                                    </td>
 
-                                    <!-- Assign Client Dropdown -->
-                                    <td>
-                                        <form action="{{ route('superadmin.clients.assignBooking', $booking->id) }}"
-                                            method="POST" class="d-flex">
-                                            @csrf
-                                            <select name="client_id" class="form-control me-2" style="width: 180px;">
-                                                <option value="">Select Client</option>
-                                                @foreach($clients as $client)
-                                                    <option value="{{ $client->id }}" {{ $booking->client_id == $client->id ? 'selected' : '' }}>
-                                                        {{ $client->name }}
-                                                    </option>
-                                                @endforeach
-                                            </select>
-                                            <button type="submit" class="btn btn-sm btn-success">Assign</button>
-                                        </form>
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td class="d-flex">
+                                        @if($booking->upload_letter_path)
+                                            <a href="{{ url($booking->upload_letter_path) }}" target="_blank" rel="noopener" class="me-2 p-2 border rounded" title="View Letter">
+                                                <i data-feather="file-text"></i>
+                                            </a>
+                                        @else
+                                            <span class="me-2 p-2 border rounded text-muted" title="No Letter">
+                                                <i data-feather="file-text"></i>
+                                            </span>
+                                        @endif
                                         <a href="{{ route('superadmin.bookings.edit', $booking->id) }}"
                                             class="me-2 p-2 border rounded">
                                             <i data-feather="edit"></i>
@@ -405,18 +402,19 @@
 
 @push('styles')
     <style>
-        /* Reuse truncate-cell + cell-inner pattern for letters table */
+        /* Allow client/reference columns to wrap and grow row height to show full content */
+        table.table th, table.table td { vertical-align: middle; overflow: visible; }
+
         .truncate-cell {
             max-width: 180px;
         }
 
         .truncate-cell .cell-inner {
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: block;
+            width: 100%;
+            overflow: visible;
             white-space: normal;
+            word-break: break-word;
         }
 
         @media (max-width: 992px) {
@@ -587,4 +585,62 @@ $(document).ready(function () {
             });
         </script>
     @endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Single client list available to all client-search inputs
+    window.__clientList = @json($clients->map(function($c){ return ['id' => $c->id, 'name' => $c->name]; }));
+
+    function renderItems(list){
+        if(!list.length) return '<span class="dropdown-item disabled">No results</span>';
+        return list.map(function(c){
+            return `<button type="button" class="dropdown-item" data-id="${c.id}" data-name="${c.name}">${c.name}</button>`;
+        }).join('');
+    }
+
+    document.querySelectorAll('.client-search-input').forEach(function(input){
+        const container = input.closest('.position-relative');
+        const dropdown = container.querySelector('.client-dropdown');
+        const hidden = container.querySelector('.client-id-hidden');
+        let debounceTimer = null;
+
+        input.addEventListener('input', function(){
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function(){
+                const q = input.value.trim().toLowerCase();
+                const results = q ? window.__clientList.filter(c => c.name.toLowerCase().includes(q)) : window.__clientList;
+                dropdown.innerHTML = renderItems(results);
+                dropdown.style.display = 'block';
+            }, 150);
+        });
+
+        // show all on focus
+        input.addEventListener('focus', function(){
+            if(!dropdown.innerHTML) dropdown.innerHTML = renderItems(window.__clientList);
+            dropdown.style.display = 'block';
+        });
+
+        // click selection
+        dropdown.addEventListener('click', function(e){
+            const btn = e.target.closest('button.dropdown-item');
+            if(!btn) return;
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            hidden.value = id;
+            input.value = name;
+            dropdown.style.display = 'none';
+            // submit parent form to assign
+            const form = input.closest('form');
+            if(form) form.submit();
+        });
+
+        // click outside to hide
+        document.addEventListener('click', function(e){
+            if(!container.contains(e.target)) dropdown.style.display = 'none';
+        });
+    });
+});
+</script>
+@endpush
 
