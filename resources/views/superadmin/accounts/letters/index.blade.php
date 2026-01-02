@@ -141,14 +141,29 @@
                         </div>
 
                         {{-- Client --}}
-                        <select name="client_id" class="form-control">
-                            <option value="">Select Client</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                    {{ $client->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="position-relative" style="width:220px;">
+                            <input type="text"
+                                class="form-control client-search-input"
+                                placeholder="Search client..."
+                                autocomplete="off">
+
+                            <input type="hidden" name="client_id"
+                                class="client-id-hidden"
+                                value="">
+
+                            <div class="dropdown-menu w-100 client-dropdown"
+                                style="max-height:500px; overflow:auto;">
+                                @foreach($clients as $client)
+                                    <button type="button"
+                                        class="dropdown-item client-option"
+                                        data-id="{{ $client->id }}"
+                                        data-name="{{ strtolower($client->name) }}">
+                                        {{ $client->name }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
+
 
                         <button class="btn btn-secondary" type="submit" title="Apply filters"><i class="fa fa-filter"></i></button>
                         <a href="{{ route('superadmin.accountBookingsLetters.index') }}"
@@ -586,5 +601,49 @@ $(document).ready(function () {
                 
             });
         </script>
+
+        <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.client-search-input').forEach(input => {
+
+        const wrapper   = input.closest('.position-relative');
+        const dropdown  = wrapper.querySelector('.client-dropdown');
+        const hidden    = wrapper.querySelector('.client-id-hidden');
+        const options   = dropdown.querySelectorAll('.client-option');
+
+        input.addEventListener('focus', () => {
+            dropdown.classList.add('show');
+        });
+
+        input.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+
+            options.forEach(opt => {
+                opt.style.display =
+                    opt.dataset.name.includes(query)
+                        ? 'block'
+                        : 'none';
+            });
+        });
+
+        options.forEach(opt => {
+            opt.addEventListener('click', () => {
+                input.value = opt.innerText;
+                hidden.value = opt.dataset.id;
+                dropdown.classList.remove('show');
+            });
+        });
+
+        document.addEventListener('click', e => {
+            if (!wrapper.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    });
+
+});
+</script>
+
     @endpush
 
