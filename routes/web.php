@@ -158,6 +158,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     Route::get('/vehicles/preview/{path}', [VehicleController::class, 'previewFile'])->where('path', '.*')->name('vehicles.preview');
     Route::post('/vehicles/{vehicle}/service', [VehicleController::class, 'storeService'])->name('vehicles.service.store');
     Route::get('/vehicles/download/{path}', [VehicleController::class, 'downloadFile'])->where('path', '.*')->name('vehicles.download');
+    Route::delete('/vehicles/{vehicle}', [VehicleController::class, 'destroy'])->name('vehicles.destroy');
 });
 
 

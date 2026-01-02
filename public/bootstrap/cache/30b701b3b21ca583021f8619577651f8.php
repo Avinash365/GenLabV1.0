@@ -30,6 +30,11 @@
     </div>
 
     <div class="row mb-3">
+        <div class="col-md-6"><strong>Insurance Expiry:</strong> <?php echo e(optional($vehicle->rc_expiry_date)->format('d - m - Y') ?? '-'); ?></div>
+        <div class="col-md-6"><strong>PUC Expiry:</strong> <?php echo e(optional($vehicle->puc_expiry_date)->format('d - m - Y') ?? '-'); ?></div>
+    </div>
+
+    <div class="row mb-3">
         <div class="col-md-6"><strong>Engine Number:</strong> <?php echo e($vehicle->engine_number ?? '-'); ?></div>
         <div class="col-md-6"><strong>Handed Over Person:</strong> <?php echo e($vehicle->handed_over_person ?? '-'); ?></div>
     </div>
@@ -50,7 +55,7 @@
         <tbody>
             <?php $__empty_1 = true; $__currentLoopData = $vehicle->services; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $s): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                 <tr>
-                    <td><?php echo e($s->service_date ? \Carbon\Carbon::parse($s->service_date)->format('Y-m-d') : '-'); ?></td>
+                    <td><?php echo e($s->service_date ? \Carbon\Carbon::parse($s->service_date)->format('d - m - Y') : '-'); ?></td>
                     <td><?php echo e($s->description); ?></td>
                     <td><?php echo e($s->kilometers); ?></td>
                     <td><?php echo e($s->total_amount); ?></td>

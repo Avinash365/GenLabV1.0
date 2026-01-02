@@ -1,5 +1,27 @@
 @extends('superadmin.layouts.app')
 
+@php
+    use Illuminate\Support\Facades\Auth;
+
+    // Prevent users with Marketing role (role name contains 'market') from accessing this page.
+    $currentUser = Auth::guard('web')->user() ?? Auth::user();
+    $roleName = null;
+    if ($currentUser && isset($currentUser->role)) {
+        $r = $currentUser->role;
+        if (is_object($r)) {
+            $roleName = $r->role_name ?? $r->name ?? null;
+        } else {
+            $roleName = $r;
+        }
+    }
+
+    if ($roleName && stripos($roleName, 'market') !== false) {
+        // redirect back to superadmin dashboard with a flash message
+        redirect()->route('superadmin.dashboard.index')->with('error', 'Access denied.')->send();
+        exit;
+    }
+@endphp
+
 @section('title', 'Create New Booking')
 
 @section('content')
@@ -28,7 +50,7 @@
                     </div>
                 </div> 
                 <div class="page-btn mt-0">
-                    <a href="" class="btn btn-secondary"><i data-feather="arrow-left" class="me-2"></i>Back to Dashboard</a>
+                    <a  href="{{ route('superadmin.dashboard.index') }}" class="btn btn-secondary  {{ Request::routeIs('superadmin.dashboard.index') ? 'active' : '' }}"><i data-feather="arrow-left" class="me-2"></i>Back to Dashboard</a>
                 </div>
             </div>
 
@@ -137,6 +159,7 @@
                                             </div>
                                         </div>
                                     </td>
+                                    
                                 </tr>
                                 @empty
                                 <tr>
@@ -145,8 +168,27 @@
                                 @endforelse
                             </tbody>
                         </table>
-               
-                     </div>
+
+                        <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
+                            <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                                @foreach(request()->except(['perPage','page']) as $key => $val)
+                                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                                @endforeach
+                                <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                    @foreach([25,50,100] as $size)
+                                        <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                            </form>
+                            <div class="pagination-scroll-wrapper">
+                                @if(method_exists($items, 'links'))
+                                    {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
                         </div> 
                     
                     </div>
@@ -248,8 +290,27 @@
                                 @endforelse
                             </tbody>
                         </table>
-               
-                     </div>
+
+                        <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
+                            <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                                @foreach(request()->except(['perPage','page']) as $key => $val)
+                                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                                @endforeach
+                                <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                    @foreach([25,50,100] as $size)
+                                        <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                            </form>
+                            <div class="pagination-scroll-wrapper">
+                                @if(method_exists($items, 'links'))
+                                    {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
                         </div> 
                     
                     </div>
@@ -458,6 +519,26 @@
                                             @endforelse
                                         </tbody>
                                     </table>
+
+                                    <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
+                                        <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                                            @foreach(request()->except(['perPage','page']) as $key => $val)
+                                                <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                                            @endforeach
+                                            <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                            <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                                @foreach([25,50,100] as $size)
+                                                    <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                                                @endforeach
+                                            </select>
+                                        </form>
+                                                    <div class="pagination-scroll-wrapper">
+                                                        @if(method_exists($invoices, 'links'))
+                                                            {{ $invoices->appends(request()->all())->links('pagination::bootstrap-5') }}
+                                                        @endif
+                                                    </div>
+                                    </div>
+
                              </div>
                         </div>
                     </div>
@@ -555,8 +636,27 @@
                                 @endforelse
                             </tbody>
                         </table>
-               
-                     </div>
+
+                        <div class="d-flex justify-content-between align-items-center p-3 flex-wrap gap-2">
+                            <form method="GET" action="{{ url()->current() }}" class="d-flex align-items-center gap-2">
+                                @foreach(request()->except(['perPage','page']) as $key => $val)
+                                    <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                                @endforeach
+                                <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                                    @foreach([25,50,100] as $size)
+                                        <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                                    @endforeach
+                                </select>
+                            </form>
+                            <div class="pagination-scroll-wrapper">
+                                @if(method_exists($items, 'links'))
+                                    {{ $items->appends(request()->all())->links('pagination::bootstrap-5') }}
+                                @endif
+                            </div>
+                        </div>
+
+                    </div>
                         </div> 
                     
                     </div>
@@ -573,3 +673,82 @@
 
 
 @endsection
+
+@push('styles')
+<style>
+    /* Make table content wrap; allow horizontal scroll when needed to avoid overlap */
+    .table-responsive { overflow-x: auto !important; }
+    .table { table-layout: auto !important; width: 100% !important; }
+    .table th, .table td {
+        white-space: normal !important;
+        word-break: break-word !important;
+        overflow-wrap: anywhere !important;
+        vertical-align: middle !important;
+    }
+    /* Ensure previously truncated cells show full content */
+    .truncate-cell .cell-inner {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        white-space: normal !important;
+        max-width: 100% !important;
+        overflow: visible !important;
+        text-overflow: unset !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        height: auto !important;
+        /* Prevent this cell's content from intercepting clicks meant for the action column */
+        pointer-events: none !important;
+    }
+    /* Increase row height slightly so wrapped content has room */
+    .table-row { min-height: 64px; }
+    .table td, .table th { padding: .85rem .6rem !important; }
+
+    /* Ensure table cells don't create invisible overlays and keep action buttons clickable */
+    .table td { position: relative; }
+    .table td.d-flex { z-index: 3; }
+    .table td.d-flex a, .table td.d-flex button { pointer-events: auto; z-index: 4; }
+    .truncate-cell .cell-inner { z-index: 1; }
+
+    @media (max-width: 768px) {
+        .table { font-size: .95rem; }
+        .table-row { min-height: 72px; }
+    }
+
+    /* Action column alignment: center buttons and match header */
+    .table th:last-child, .table td:last-child {
+        text-align: center !important;
+        vertical-align: middle !important;
+        width: 140px; /* fixed-ish width to keep layout consistent */
+        max-width: 160px;
+        white-space: nowrap; /* keep action buttons on single line */
+    }
+    /* Ensure the action cell is a flex container and centers its content vertically */
+    .table td.d-flex { display: flex !important; justify-content: center !important; gap: .5rem; align-items: center !important; padding-top: .85rem !important; padding-bottom: .85rem !important; }
+    .table td.d-flex > * { display: inline-flex; align-items: center; justify-content: center; margin: 0; }
+    /* Make sure header and tbody align the same */
+    .table thead th { vertical-align: middle !important; }
+    .table tbody tr { align-items: center; }
+
+    @media (max-width: 576px) {
+        .table th:last-child, .table td:last-child { width: 110px; max-width: 120px; }
+    }
+</style>
+@endpush
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Move any modals that are inside table cells to document.body so bootstrap backdrops/z-index work correctly.
+    document.querySelectorAll('table .modal').forEach(function(modalEl){
+        try{
+            if(modalEl.parentNode !== document.body){
+                document.body.appendChild(modalEl);
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+            }
+        }catch(e){ console.debug('modal move failed', e); }
+    });
+});
+</script>
+@endpush

@@ -315,7 +315,7 @@
                                     <li><a href="<?php echo e(route('superadmin.cashPayments.index')); ?>">Invoice Transaction</a></li>
                                     <li><a href="<?php echo e(route('superadmin.client-ledger.index')); ?>">Client Ledger</a></li>
                                     <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
-                                    <li><a href="#">Purchase Bill</a></li> 
+                                    <li><a href="<?php echo e(route('purchase.index')); ?>" >Purchase Bill</a></li> 
                                     <li><a href="<?php echo e(route('superadmin.bank.upload')); ?>">Bank Transactions</a></li>
                                     <li>
                                         <a href="<?php echo e(route('superadmin.accounts.payroll.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : ''); ?>">

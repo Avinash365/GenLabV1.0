@@ -30,6 +30,11 @@
     </div>
 
     <div class="row mb-3">
+        <div class="col-md-6"><strong>Insurance Expiry:</strong> {{ optional($vehicle->rc_expiry_date)->format('d - m - Y') ?? '-' }}</div>
+        <div class="col-md-6"><strong>PUC Expiry:</strong> {{ optional($vehicle->puc_expiry_date)->format('d - m - Y') ?? '-' }}</div>
+    </div>
+
+    <div class="row mb-3">
         <div class="col-md-6"><strong>Engine Number:</strong> {{ $vehicle->engine_number ?? '-' }}</div>
         <div class="col-md-6"><strong>Handed Over Person:</strong> {{ $vehicle->handed_over_person ?? '-' }}</div>
     </div>
@@ -50,7 +55,7 @@
         <tbody>
             @forelse($vehicle->services as $s)
                 <tr>
-                    <td>{{ $s->service_date ? \Carbon\Carbon::parse($s->service_date)->format('Y-m-d') : '-' }}</td>
+                    <td>{{ $s->service_date ? \Carbon\Carbon::parse($s->service_date)->format('d - m - Y') : '-' }}</td>
                     <td>{{ $s->description }}</td>
                     <td>{{ $s->kilometers }}</td>
                     <td>{{ $s->total_amount }}</td>

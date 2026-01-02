@@ -10,12 +10,13 @@ class Vehicle extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'engine_number', 'handed_over_person', 'rc_expiry_date', 'rc_copy_path', 'insurance_path', 'puc_path'
+        'name', 'engine_number', 'handed_over_person', 'rc_expiry_date', 'rc_copy_path', 'insurance_path', 'puc_path', 'puc_expiry_date'
     ];
 
-    protected $dates = ['rc_expiry_date'];
+    protected $dates = ['rc_expiry_date', 'puc_expiry_date'];
     protected $casts = [
         'rc_expiry_date' => 'date',
+        'puc_expiry_date' => 'date',
     ];
 
     public function services()

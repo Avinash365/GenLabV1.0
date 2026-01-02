@@ -66,7 +66,7 @@
         <tbody>
             @forelse($vehicle->services as $s)
                     <tr>
-                        <td>{{ $s->service_date ? \Carbon\Carbon::parse($s->service_date)->format('Y-m-d') : '-' }}</td>
+                        <td>{{ $s->service_date ? \Carbon\Carbon::parse($s->service_date)->format('d - m - Y') : '-' }}</td>
                         <td>{{ $s->description }}</td>
                         <td>{{ $s->kilometers }}</td>
                         <td>{{ $s->total_amount }}</td>

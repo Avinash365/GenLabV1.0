@@ -25,7 +25,7 @@
                 <h4 class="fw-bold">Create Booking</h4>
                 <h6>New Booking</h6>
             </div>
-        </div>
+        </div>  
         <ul class="table-top-head">
             <li><a data-bs-toggle="tooltip" data-bs-placement="top" title="Refresh"><i class="ti ti-refresh"></i></a></li>
             <li><a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a></li>
@@ -83,7 +83,6 @@
                                             <small class="text-danger"></small>
                                         <?php endif; ?>
                                 </div>
-
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
                                     <input type="text" class="form-control" name="report_issue_to" value="<?php echo e(old('report_issue_to')); ?>" placeholder="Enter person/team to report issue to" required >
@@ -115,7 +114,7 @@
                                 </div>
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
                                     <label class="form-label">Department<span class="text-danger">*</span></label>
-                                    <select class="form-select" name="department_id" required>
+                                    <select class="form-select" name="department_id" id="departmentSelect" required>
                                         <option value="">Select</option>
                                         <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $department): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                             <option value="<?php echo e($department->id); ?>"><?php echo e($department->name); ?></option>
@@ -141,6 +140,10 @@
                                     <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s')); ?>">
                                 </div> 
                             </div>
+                            <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none" id="misField">
+                                <label class="form-label">Sample Code<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="sample_code" placeholder="Enter MIS code">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -153,7 +156,7 @@
                     </h2>
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
-                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" required>
+                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" >
                         </div>
                     </div>
                 </div>
@@ -507,7 +510,22 @@
 
     });
 </script>
+<script>
+$(document).ready(function () {
 
+    $('#departmentSelect').on('change', function () {
+        let depName = $(this).find(':selected').text().trim().toLowerCase();
+
+        if (depName === 'bis') {
+            $('#misField').removeClass('d-none');
+        } else {
+            $('#misField').addClass('d-none');
+            $('#misField input').val('');
+        }
+    });
+
+});
+</script>
 
 <?php $__env->stopSection(); ?>
 
