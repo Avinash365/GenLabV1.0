@@ -416,9 +416,9 @@ document.addEventListener('DOMContentLoaded', function(){
     .marketing-filter-form .input-group .input-group-text { border-right: 0; }
     .marketing-filter-form .input-group .form-control { border-left: 0; }
 
-    /* Force fixed table layout so columns don't shift when long content wraps */
+    /* Keep a predictable column layout but allow rows to grow to fit content */
     table.table { table-layout: fixed; }
-    table.table th, table.table td { vertical-align: middle; }
+    table.table th, table.table td { vertical-align: middle; overflow: visible; }
 
     /* In the pending-items modal, allow auto layout and wrapping so full content shows */
     #pendingItemsModal table.table { table-layout: auto; }
@@ -433,25 +433,13 @@ document.addEventListener('DOMContentLoaded', function(){
     .table-responsive::-webkit-scrollbar { display: none; } /* Chrome, Safari, Opera */
     .table-responsive .table { margin-bottom: 0; }
 
-    /* Ensure cells respect overflow rules so content cannot push adjacent columns */
-    table.table td, table.table th { overflow: hidden; }
+     /* Allow table cells to expand vertically and wrap content. Use an inner wrapper
+         so long text will wrap within the column width and increase row height. */
+     .cell-inner { display:block; width:100%; overflow: visible; white-space: normal; word-break: break-word; }
 
-    /* Wrapper inside table cells to isolate overflow and allow clamping */
-    .cell-inner { display:block; width:100%; overflow:hidden; }
-
-    /* Truncate long text in specific cells to keep columns narrow
-       Show up to two lines and then ellipsis (multi-line clamp).
-       Applied to the inner wrapper for more reliable layout handling. */
-    .truncate-cell { max-width: 220px; }
-    .truncate-cell .cell-inner {
-        display: -webkit-box; /* required for webkit line-clamp */
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2; /* show up to two lines */
-        overflow: hidden;
-        text-overflow: ellipsis;
-        word-break: break-word;
-        white-space: normal; /* allow wrapping */
-    }
+     /* Limit width so columns remain reasonable while letting content wrap to multiple lines */
+     .truncate-cell { max-width: 220px; }
+     .truncate-cell .cell-inner { -webkit-box-orient: initial; -webkit-line-clamp: initial; }
     @media (max-width: 768px) {
         .truncate-cell { max-width: 140px; }
     }

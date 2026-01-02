@@ -1,4 +1,3 @@
-
 <?php $__env->startSection('title', 'Booking By Letter'); ?>
 <?php $__env->startSection('content'); ?>
 
@@ -19,7 +18,7 @@
     </div>
 <?php endif; ?> 
 
-<div class="content">
+<div class="content">   
     <div class="page-header">
         <div class="add-item d-flex">
             <div class="page-title">
