@@ -160,8 +160,19 @@
                                 </td>
                                 <td>{{ $b->reference_no }}</td>
                                 <td class="text-center">{{ $b->pending_items_count }}</td>
+                                @php
+                                    $pendingPayload = $items->where('new_booking_id', $b->id)->map(function($it){
+                                        return [
+                                            'job_order_no' => $it->job_order_no,
+                                            'sample_description' => $it->sample_description,
+                                            'sample_quality' => $it->sample_quality,
+                                            'particulars' => $it->particulars,
+                                            'receiver' => $it->receiver,
+                                        ];
+                                    })->values();
+                                @endphp
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='@json($pendingItemsPayload)' data-ref="{{ $b->reference_no }}" data-client="{{ $b->client_name }}" title="Show Pending Items"><i class="ti ti-eye"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='@json($pendingPayload)' data-ref="{{ $b->reference_no }}" data-client="{{ $b->client_name }}" title="Show Pending Items"><i class="ti ti-eye"></i></button>
                                 </td>
                                 <td class="action-cell">
                                     @php

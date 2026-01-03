@@ -116,26 +116,48 @@ $(document).ready(function(){
 
 	// Datatable
 	if($('.datatable').length > 0) {
-		$('.datatable').DataTable({
-			"bFilter": true,
-			"sDom": 'fBtlpi',  
-			"ordering": true,
-			"language": {
-				search: ' ',
-				sLengthMenu: '_MENU_',
-				searchPlaceholder: "Search",
-				sLengthMenu: 'Row Per Page _MENU_ Entries',
-				info: "_START_ - _END_ of _TOTAL_ items",
-				paginate: {
-					next: ' <i class=" fa fa-angle-right"></i>',
-					previous: '<i class="fa fa-angle-left"></i> '
-				},
-			 },
-			initComplete: (settings, json)=>{
-				$('.dataTables_filter').appendTo('#tableSearch');
-				$('.dataTables_filter').appendTo('.search-input');
+		// Avoid DataTables alert modal on column mismatch; log to console instead
+		if(window.jQuery && window.jQuery.fn && window.jQuery.fn.dataTable && window.jQuery.fn.dataTable.ext){
+			window.jQuery.fn.dataTable.ext.errMode = 'console';
+		}
 
-			},	
+		$('.datatable').each(function(){
+			const $tbl = $(this);
+			const headerCount = $tbl.find('thead th').length || 0;
+			// find first non-empty tr in tbody
+			const $firstRow = $tbl.find('tbody tr').filter(function(){ return $(this).find('td').length > 0; }).first();
+			const bodyCount = $firstRow.length ? $firstRow.find('td').length : 0;
+
+			if(headerCount === 0){
+				console.warn('DataTable init skipped: table has no header cells', $tbl);
+				return;
+			}
+
+			if(bodyCount && headerCount !== bodyCount){
+				console.warn('DataTable init skipped due to header/body column count mismatch', { headerCount, bodyCount, table: $tbl });
+				return;
+			}
+
+			$tbl.DataTable({
+				"bFilter": true,
+				"sDom": 'fBtlpi',
+				"ordering": true,
+				"language": {
+					search: ' ',
+					sLengthMenu: '_MENU_',
+					searchPlaceholder: "Search",
+					sLengthMenu: 'Row Per Page _MENU_ Entries',
+					info: "_START_ - _END_ of _TOTAL_ items",
+					paginate: {
+						next: ' <i class=" fa fa-angle-right"></i>',
+						previous: '<i class="fa fa-angle-left"></i> '
+					},
+				 },
+				initComplete: (settings, json)=>{
+					$('.dataTables_filter').appendTo('#tableSearch');
+					$('.dataTables_filter').appendTo('.search-input');
+				},
+			});
 		});
 	}
 
