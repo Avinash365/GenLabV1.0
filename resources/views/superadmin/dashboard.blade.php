@@ -399,9 +399,9 @@
 
     </div>
     @include('components.chatbot')
-    <link rel="stylesheet" href="/css/superadmin-dashboard.css">
-    <link rel="stylesheet" href="/css/chatbot.css">
+    <link rel="stylesheet" href="{{ asset('css/superadmin-dashboard.css') }}?v={{ @filemtime(public_path('css/superadmin-dashboard.css')) ?: time() }}">
+    <link rel="stylesheet" href="{{ asset('css/chatbot.css') }}?v={{ @filemtime(public_path('css/chatbot.css')) ?: time() }}">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/js/superadmin-dashboard.js" defer></script>
-    <script src="/js/chatbot.js"></script>
+    <script src="{{ asset('js/superadmin-dashboard.js') }}?v={{ @filemtime(public_path('js/superadmin-dashboard.js')) ?: time() }}" defer></script>
+    <script src="{{ asset('js/chatbot.js') }}?v={{ @filemtime(public_path('js/chatbot.js')) ?: time() }}"></script>
 @endsection
