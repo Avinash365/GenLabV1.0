@@ -159,8 +159,19 @@
                                 </td>
                                 <td><?php echo e($b->reference_no); ?></td>
                                 <td class="text-center"><?php echo e($b->pending_items_count); ?></td>
+                                <?php
+                                    $pendingPayload = $items->where('new_booking_id', $b->id)->map(function($it){
+                                        return [
+                                            'job_order_no' => $it->job_order_no,
+                                            'sample_description' => $it->sample_description,
+                                            'sample_quality' => $it->sample_quality,
+                                            'particulars' => $it->particulars,
+                                            'receiver' => $it->receiver,
+                                        ];
+                                    })->values();
+                                ?>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='<?php echo json_encode($pendingItemsPayload, 15, 512) ?>' data-ref="<?php echo e($b->reference_no); ?>" data-client="<?php echo e($b->client_name); ?>" title="Show Pending Items"><i class="ti ti-eye"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='<?php echo json_encode($pendingPayload, 15, 512) ?>' data-ref="<?php echo e($b->reference_no); ?>" data-client="<?php echo e($b->client_name); ?>" title="Show Pending Items"><i class="ti ti-eye"></i></button>
                                 </td>
                                 <td class="action-cell">
                                     <?php

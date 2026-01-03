@@ -668,17 +668,38 @@ function editLeave(leaveId) {
     console.log('Edit leave:', leaveId);
 }
 
-// Success/Error alerts
+// Success/Error alerts (use SweetAlert2)
 @if(session('success'))
-    alert('{{ session('success') }}');
+	Swal.fire({
+		icon: 'success',
+		title: @json(session('success')),
+		toast: true,
+		position: 'top-end',
+		showConfirmButton: false,
+		timer: 3000
+	});
 @endif
 
 @if(session('error'))
-	alert('{{ session('error') }}');
+	Swal.fire({
+		icon: 'error',
+		title: @json(session('error')),
+		toast: true,
+		position: 'top-end',
+		showConfirmButton: false,
+		timer: 4000
+	});
 @endif
 
 @if($errors->any())
-    alert('{{ $errors->first() }}');
+	Swal.fire({
+		icon: 'error',
+		title: $errors->first() ? @json($errors->first()) : 'Validation error',
+		toast: true,
+		position: 'top-end',
+		showConfirmButton: false,
+		timer: 4000
+	});
 @endif
 </script>
 
