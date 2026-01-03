@@ -142,15 +142,30 @@
                         </div>
 
                         
-                        <select name="client_id" class="form-control">
-                            <option value="">Select Client</option>
-                            <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                <option value="<?php echo e($client->id); ?>" <?php echo e(request('client_id') == $client->id ? 'selected' : ''); ?>>
-                                    <?php echo e($client->name); ?>
+                        <div class="position-relative" style="width:220px;">
+                            <input type="text"
+                                class="form-control client-search-input"
+                                placeholder="Search client..."
+                                autocomplete="off">
 
-                                </option>
-                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </select>
+                            <input type="hidden" name="client_id"
+                                class="client-id-hidden"
+                                value="">
+
+                            <div class="dropdown-menu w-100 client-dropdown"
+                                style="max-height:500px; overflow:auto;">
+                                <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <button type="button"
+                                        class="dropdown-item client-option"
+                                        data-id="<?php echo e($client->id); ?>"
+                                        data-name="<?php echo e(strtolower($client->name)); ?>">
+                                        <?php echo e($client->name); ?>
+
+                                    </button>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+                        </div>
+
 
                         <button class="btn btn-secondary" type="submit" title="Apply filters"><i class="fa fa-filter"></i></button>
                         <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
@@ -591,6 +606,50 @@ $(document).ready(function () {
                 
             });
         </script>
+
+        <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    document.querySelectorAll('.client-search-input').forEach(input => {
+
+        const wrapper   = input.closest('.position-relative');
+        const dropdown  = wrapper.querySelector('.client-dropdown');
+        const hidden    = wrapper.querySelector('.client-id-hidden');
+        const options   = dropdown.querySelectorAll('.client-option');
+
+        input.addEventListener('focus', () => {
+            dropdown.classList.add('show');
+        });
+
+        input.addEventListener('input', function () {
+            const query = this.value.toLowerCase();
+
+            options.forEach(opt => {
+                opt.style.display =
+                    opt.dataset.name.includes(query)
+                        ? 'block'
+                        : 'none';
+            });
+        });
+
+        options.forEach(opt => {
+            opt.addEventListener('click', () => {
+                input.value = opt.innerText;
+                hidden.value = opt.dataset.id;
+                dropdown.classList.remove('show');
+            });
+        });
+
+        document.addEventListener('click', e => {
+            if (!wrapper.contains(e.target)) {
+                dropdown.classList.remove('show');
+            }
+        });
+    });
+
+});
+</script>
+
     <?php $__env->stopPush(); ?>
 
 

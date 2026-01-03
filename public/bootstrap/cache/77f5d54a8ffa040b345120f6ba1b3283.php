@@ -93,7 +93,9 @@
             </div>
 
             <div class="table">
-                <div class="lr-no">Job Order No :- <span class="value1"><?php echo e($item->job_order_no); ?></span></div>
+                <div class="lr-no">Job Order No :-  <span class="value1"><?php echo e($item->job_order_no); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?php echo e($booking->m_s ?? ''); ?> </span>
+                   
+                </div>
                 <div class="lr-no">Job Order Date :- <span class="value2"><?php echo e(\Carbon\Carbon::parse($item->job_order_date)->format('d/m/Y')); ?></span></div>
                 <div class="lr-no">Sample Description :- <span class="value3"><?php echo e($item->sample_description); ?></span></div>
                 <div class="lr-no">Sample Quantity :- <span class="value4"><?php echo e($item->sample_quality ?? '-'); ?></span></div>
@@ -128,7 +130,9 @@
                 </div>
 
                 <div class="table">
-                    <div class="lr-no">Job Order No :- <span class="value1"><?php echo e($it->job_order_no); ?></span></div>
+                    <div class="lr-no">Job Order No :- <span class="value1"><?php echo e($it->job_order_no); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?php echo e($booking->m_s ?? ''); ?></span> 
+                       
+                    </div>
                     <div class="lr-no">Job Order Date :- <span class="value2"><?php echo e(\Carbon\Carbon::parse($it->job_order_date)->format('d/m/Y')); ?></span></div>
                     <div class="lr-no">Sample Description :- <span class="value3"><?php echo e($it->sample_description); ?></span></div>
                     <div class="lr-no">Sample Quantity :- <span class="value4"><?php echo e($it->sample_quality ?? '-'); ?></span></div>
