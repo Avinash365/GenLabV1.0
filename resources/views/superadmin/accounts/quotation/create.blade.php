@@ -45,13 +45,13 @@
         <input type="hidden" name="letterhead" id="input_letterhead">
 
         <div class="page-header d-flex justify-content-between align-items-center">
-            <div>
+            <div class="ms-2">
                 <h3 class="fw-bold">Quotation Report</h3>
                 <h6>Preview quotation in PDF Style</h6>
             </div>
-            <button type="submit" class="btn btn-danger">
+            <!-- <button type="submit" class="btn btn-danger">
                 <i class="fa fa-file-pdf me-2"></i>Download PDF
-            </button>
+            </button> -->
         </div>
 
         <div class="card mt-3">
@@ -190,6 +190,21 @@
     .editable.edited { background-color: #c2f0c2; }
     .noteditable { font-weight: bold; }
 </style>
+<style>
+    /* Marketing autocomplete floating on top */
+    #suggestions {
+        position: absolute;
+        z-index: 9999;
+        max-height: 250px;
+        overflow-y: auto;
+        width: auto;
+        min-width: 320px;
+        display: none;
+        background: #fff;
+        border: 1px solid #ddd;
+        border-radius: 4px; 
+    }
+</style>
 @endpush
 
 @push('scripts')
@@ -322,50 +337,103 @@ document.getElementById('removeRowBtn').addEventListener('click', function(){
 });
 
 // Marketing autocomplete
-document.addEventListener('DOMContentLoaded', function () {
+
+ document.addEventListener('DOMContentLoaded', function () {
     const input = document.getElementById('marketingInput');
     const suggestions = document.getElementById('suggestions');
 
-    input.addEventListener('input', function() {
-        const query = this.value.toLowerCase();
-        suggestions.innerHTML = '';
+    // input.addEventListener('input', function() {
+    //     const query = this.value.toLowerCase();
+    //     suggestions.innerHTML = '';
 
-        if(query.length > 0){
-            const filtered = users.filter(user => 
-                user.name.toLowerCase().includes(query) || 
-                user.user_code.toLowerCase().includes(query)
-            );
+    //     if(query.length > 0){
+    //         const filtered = users.filter(user => 
+    //             user.name.toLowerCase().includes(query) || 
+    //             user.user_code.toLowerCase().includes(query)
+    //         );
 
-            filtered.forEach(user => {
-                const item = document.createElement('a');
-                item.href = "#";
-                item.className = "list-group-item list-group-item-action";
-                item.dataset.id = user.id;
-                item.dataset.code = user.user_code;
-                item.textContent = `${user.name} (${user.user_code})`;
+    //         filtered.forEach(user => {
+    //             const item = document.createElement('a');
+    //             item.href = "#";
+    //             item.className = "list-group-item list-group-item-action";
+    //             item.dataset.id = user.id;
+    //             item.dataset.code = user.user_code;
+    //             item.textContent = `${user.name} (${user.user_code})`;
 
-                item.addEventListener('click', function(e){
-                    e.preventDefault();
-                    input.value = this.textContent;
-                    document.getElementById('td_marketing_person').textContent = this.textContent;
-                    suggestions.innerHTML = '';
+    //             item.addEventListener('click', function(e){
+    //                 e.preventDefault();
+    //                 input.value = this.textContent;
+    //                 document.getElementById('td_marketing_person').textContent = this.textContent;
+    //                 suggestions.innerHTML = '';
 
-                    let hidden = document.getElementById('selectedUser');
-                    if(!hidden){
-                        hidden = document.createElement('input');
-                        hidden.type = 'hidden';
-                        hidden.id = 'selectedUser';
-                        hidden.name = 'marketing_user_id';
-                        input.closest('form').appendChild(hidden);
-                    }
-                    hidden.value = this.dataset.id;
-                    hidden.dataset.code = this.dataset.code;
-                });
+    //                 let hidden = document.getElementById('selectedUser');
+    //                 if(!hidden){
+    //                     hidden = document.createElement('input');
+    //                     hidden.type = 'hidden';
+    //                     hidden.id = 'selectedUser';
+    //                     hidden.name = 'marketing_user_id';
+    //                     input.closest('form').appendChild(hidden);
+    //                 }
+    //                 hidden.value = this.dataset.id;
+    //                 hidden.dataset.code = this.dataset.code;
+    //             });
 
-                suggestions.appendChild(item);
-            });
-        }
+    //             suggestions.appendChild(item);
+    //         });
+    //     }
+    // });
+    input.addEventListener('input', function () {
+    const query = this.value.toLowerCase();
+    suggestions.innerHTML = '';
+
+    if (query.length === 0) {
+        suggestions.style.display = 'none';
+        return;
+    }
+
+    const rect = input.getBoundingClientRect();
+
+    suggestions.style.top = rect.bottom + window.scrollY + 'px';
+    suggestions.style.left = rect.left + window.scrollX + 'px';
+    suggestions.style.width = rect.width + 'px';
+    suggestions.style.display = 'block';
+
+    const filtered = users.filter(user =>
+        user.name.toLowerCase().includes(query) ||
+        user.user_code.toLowerCase().includes(query)
+    );
+
+    filtered.forEach(user => {
+        const item = document.createElement('a');
+        item.href = "#";
+        item.className = "list-group-item list-group-item-action";
+        item.dataset.id = user.id;
+        item.dataset.code = user.user_code;
+        item.textContent = `${user.name} (${user.user_code})`;
+
+        item.addEventListener('click', function (e) {
+            e.preventDefault();
+            input.value = this.textContent;
+            document.getElementById('td_marketing_person').textContent = this.textContent;
+            suggestions.style.display = 'none';
+
+            let hidden = document.getElementById('selectedUser');
+            if (!hidden) {
+                hidden = document.createElement('input');
+                hidden.type = 'hidden';
+                hidden.id = 'selectedUser';
+                hidden.name = 'marketing_user_id';
+                document.getElementById('quotationForm').appendChild(hidden);
+            }
+
+            hidden.value = this.dataset.id;
+            hidden.dataset.code = this.dataset.code;
+        });
+
+        suggestions.appendChild(item);
     });
+});
+
 });
 </script>
 @endpush
