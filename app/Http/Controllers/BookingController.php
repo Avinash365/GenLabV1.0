@@ -132,10 +132,11 @@ class BookingController extends Controller
 
                 // Add booking items if present
                 if ($request->has('booking_items')) {
-                    foreach ($request->booking_items as $item) {
-                        $booking->items()->create($item);
-                    }
-                }
+    foreach ($request->booking_items as $item) {
+        $item['status'] = $item['lab_analysis_code']; // always true
+        $booking->items()->create($item);
+    }
+}
 
                 return $booking;
             }); 
@@ -232,6 +233,7 @@ class BookingController extends Controller
                 // Insert new items if provided
                 if ($request->has('booking_items')) {
                     foreach ($request->booking_items as $item) {
+                        $item['status'] = $item['lab_analysis_code'];
                         $new_booking->items()->create($item);
                     } 
                 }

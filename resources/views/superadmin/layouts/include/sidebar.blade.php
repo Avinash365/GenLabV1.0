@@ -53,6 +53,8 @@
                 if ($uc) { $reportParams['marketing'] = $uc; }
             @endphp
 
+            <!-- Marketing Role Sidebar -------------------------------------------------------------------------->
+
             @if($isMarketing)
                 <ul>
                     <li class="submenu-open">
@@ -133,6 +135,13 @@
                                     <i class="ti ti-target fs-16 me-2"></i><span>Expense</span>
                                 </a>
                             </li>
+
+                            <li>
+                                <a href="{{ route('superadmin.quotations.index') }}" class="{{ Request::routeIs('superadmin.personal.expenses.*') ? 'active' : '' }}">
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
+                                </a>
+                            </li>
+                            
 
                             <li>
                                 @if(!empty($uc))
@@ -398,6 +407,7 @@
                                 <li><a href="{{ route('superadmin.marketing.expenses.approved', ['status' => 'pending']) }}" class="{{ (Request::routeIs('superadmin.marketing.expenses.approved') && request('status','pending') === 'pending') ? 'active' : '' }}">Approve Expenses</a></li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.approved', ['status' => 'approved']) }}" class="{{ (Request::routeIs('superadmin.marketing.expenses.approved') && request('status') === 'approved') ? 'active' : '' }}">Approved Expenses</a></li>
                                 <li><a href="{{ route('superadmin.marketing.expenses.rejected') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.rejected') ? 'active' : '' }}">Rejected Expenses</a></li>
+                                
                             </ul>
                         </li>
 

@@ -32,7 +32,7 @@
                         <th>#</th>
                         <th>Quotation No</th>
                         <th>Client Name</th>
-                        <th>Marketing Person</th>      
+                        <th>Marketing Person</th>   
                         <th>Client Gstin</th>
                         <th>Total Amount</th>
                         <th>Quotation Date</th>

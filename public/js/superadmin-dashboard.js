@@ -2,6 +2,8 @@
 (function(){
   if(typeof Chart === 'undefined') return;
 
+  const apiUrl = '/superadmin/dashboard/invoice-payment-chart';
+
   const ctx = document.getElementById('salesPurchaseChart');
   const donut = document.getElementById('customersDonut');
   const bookingTrend = document.getElementById('bookingTrend');
@@ -12,23 +14,7 @@
   const analystWorkloadChart = document.getElementById('analystWorkloadChart');
   if(!ctx) return; // page safety
 
-  const ranges = {
-    '1D': { labels: ['2 am','4 am','6 am','8 am','10 am','12 am','14 pm','16 pm','18 pm','20 pm','22 pm','24 pm'], points: 12 },
-    '1W': { labels: ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'], points: 7 },
-    '1M': { labels: Array.from({length: 30}, (_,i)=>`${i+1}`), points: 30 },
-    '3M': { labels: Array.from({length: 12}, (_,i)=>`W${i+1}`), points: 12 },
-    '6M': { labels: ['Jan','Feb','Mar','Apr','May','Jun'], points: 6 },
-    '1Y': { labels: ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'], points: 12 },
-  };
-
   function rnd(min,max){return Math.round(Math.random()*(max-min)+min)}
-  function buildData(points){
-    const sales = Array.from({length: points}, ()=>rnd(5,25));
-    const purchase = sales.map(v=> rnd(v+10, v+40)); // keep purchase taller to match look
-    return { sales, purchase };
-  }
-
-  function sum(arr){return arr.reduce((a,b)=>a+b,0)}
 
   const gradientSales = ctx.getContext('2d').createLinearGradient(0,0,0,300);
   gradientSales.addColorStop(0,'#ff8a26');
@@ -39,8 +25,9 @@
   gradientPurchase.addColorStop(1,'#ffd9b3');
 
   let currentRange = '1Y';
-  let { labels } = ranges[currentRange];
-  let { sales, purchase } = buildData(labels.length);
+  let labels = [];
+  let sales = [];
+  let purchase = [];
 
   const barChart = new Chart(ctx, {
     type: 'bar',
@@ -48,24 +35,24 @@
       labels,
       datasets: [
         {
-          label: 'Sales',
+          label: 'Payment (Done)',
           backgroundColor: gradientSales,
           data: sales,
           borderRadius: 6,
           barThickness: 'flex',
           categoryPercentage: 0.8,
           barPercentage: 0.6,
-          stack: 'stack-0'
+          stack: 'invoice-stack'
         },
         {
-          label: 'Purchase',
+          label: 'Remaining',
           backgroundColor: gradientPurchase,
           data: purchase,
           borderRadius: 6,
           barThickness: 'flex',
           categoryPercentage: 0.8,
           barPercentage: 0.6,
-          stack: 'stack-0'
+          stack: 'invoice-stack'
         }
       ]
     },
@@ -75,7 +62,12 @@
       plugins: {
         legend: { display: false },
         tooltip: {
-          callbacks: { label: (ctx)=>`${ctx.dataset.label}: ${ctx.parsed.y}K` }
+          callbacks: {
+            label: (ctx)=>{
+              const value = Number(ctx.parsed.y || 0);
+              return `${ctx.dataset.label}: ₹ ${value.toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+            }
+          }
         }
       },
       scales: {
@@ -83,31 +75,59 @@
         y: {
           stacked: true,
           ticks: {
-            callback: (val)=> `${val}K`
+            callback: (val)=> `₹ ${val}`
           }
         }
       }
     }
   });
 
-  function updateTotals(){
-    const totalS = sum(barChart.data.datasets[0].data);
-    const totalP = sum(barChart.data.datasets[1].data);
-    const elS = document.getElementById('totalSales');
-    const elP = document.getElementById('totalPurchase');
-    if(elS) elS.textContent = `${(totalS).toLocaleString()}K`;
-    if(elP) elP.textContent = `${(totalP).toLocaleString()}K`;
+  function setTotals(invoiceTotal, paymentTotal){
+    const elInvoice = document.getElementById('totalSales');
+    const elPayment = document.getElementById('totalPurchase');
+    if(elInvoice) elInvoice.textContent = `₹ ${Number(invoiceTotal || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
+    if(elPayment) elPayment.textContent = `₹ ${Number(paymentTotal || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   }
 
-  function setRange(range){
+  async function loadRange(range){
+    const url = `${apiUrl}?range=${encodeURIComponent(range)}`;
+    const res = await fetch(url, {
+      headers: { 'Accept': 'application/json' },
+      cache: 'no-store'
+    });
+    if(!res.ok) throw new Error(`Failed to load chart data (${res.status})`);
+    return await res.json();
+  }
+
+  async function setRange(range){
     currentRange = range;
-    const { labels, points } = ranges[range];
-    const d = buildData(points);
-    barChart.data.labels = labels;
-    barChart.data.datasets[0].data = d.sales;
-    barChart.data.datasets[1].data = d.purchase;
-    barChart.update();
-    updateTotals();
+    try {
+      const data = await loadRange(range);
+      barChart.data.labels = Array.isArray(data.labels) ? data.labels : [];
+      const invoiceArr = Array.isArray(data.invoice) ? data.invoice : [];
+      const paymentArr = Array.isArray(data.payment) ? data.payment : [];
+      const paidArr = paymentArr.map(v => Number(v || 0));
+      const remainingArr = invoiceArr.map((inv, i) => {
+        const invoiceVal = Number(inv || 0);
+        const paidVal = Number(paidArr[i] || 0);
+        return Math.max(0, invoiceVal - paidVal);
+      });
+      barChart.data.datasets[0].data = paidArr;
+      barChart.data.datasets[1].data = remainingArr;
+      barChart.update();
+      setTotals(data?.totals?.invoice, data?.totals?.payment);
+    } catch (e) {
+      // Fallback to demo data if API is unavailable
+      const fallbackLabels = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const demoInvoice = fallbackLabels.map(()=> rnd(5000, 25000));
+      const demoPayment = demoInvoice.map(v=> rnd(Math.max(0, v-8000), v));
+      barChart.data.labels = fallbackLabels;
+      const demoRemaining = demoInvoice.map((inv, i)=> Math.max(0, Number(inv||0) - Number(demoPayment[i]||0)));
+      barChart.data.datasets[0].data = demoPayment;
+      barChart.data.datasets[1].data = demoRemaining;
+      barChart.update();
+      setTotals(demoInvoice.reduce((a,b)=>a+b,0), demoPayment.reduce((a,b)=>a+b,0));
+    }
   }
 
   document.querySelectorAll('.range-toggle .btn').forEach(btn=>{
@@ -135,14 +155,15 @@
     });
   }
 
-  // initial totals
-  updateTotals();
   // default select 1Y button
   const defaultBtn = document.querySelector('.range-toggle .btn[data-range="1Y"]');
   if(defaultBtn){
     document.querySelectorAll('.range-toggle .btn').forEach(b=>b.classList.remove('active'));
     defaultBtn.classList.add('active');
   }
+
+  // initial load
+  setRange('1Y');
 
   // ============= Additional Widgets Aligned to Sidebar =============
   // Booking Trend (line chart)
