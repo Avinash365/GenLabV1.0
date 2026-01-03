@@ -11,6 +11,11 @@
             line-height: 1.4;
             /* padding: 20px 20px 0px 20px; bottom padding for footer */
             position: relative;
+
+            background-image: url("{{ public_path('assets/img/quotation/quotation.jpg') }}");
+            background-repeat: no-repeat;
+            background-position: center center;
+            background-size: cover;
         }
 
         /* Header image */
@@ -65,19 +70,19 @@
 <body>
 
     <!-- Header Image -->
-     @if($quotation->letterhead)
+     <!-- @if($quotation->letterhead)
         <img src="{{ public_path('assets/img/letterhead/hadding.png') }}" class="header-img">
-     @endif
+     @endif -->
 
     <!-- Footer Image -->
      @if($quotation->letterhead)
         <img src="{{ public_path('assets/img/letterhead/footer.png') }}" class="footer-img">
      @endif
     <!-- Header Section -->
-    <table class="header-table" style="margin-top:80px;">
+    <table class="header-table" style="margin-top:150px;">
         <tr>
             <td><strong>REF:</strong> {{ $quotation->quotation_no ?? '78787787878' }}</td>
-            <td class=""><strong>QUOTATION</strong></td>
+            <td class=""><strong></strong></td>
         </tr>
         <tr>
             <td></td>

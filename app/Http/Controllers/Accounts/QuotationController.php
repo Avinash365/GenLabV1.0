@@ -61,10 +61,12 @@ class QuotationController extends Controller
             'marketing_user_id' => 'required|exists:users,id',
             'quotation_data' => 'required|json',
         ]);
-
+        
         DB::beginTransaction(); // Start transaction
 
         try {
+
+
             $quotationData = json_decode($request->quotation_data, true);
             $marketingUser = User::findOrFail($request->marketing_user_id);
 
@@ -75,6 +77,12 @@ class QuotationController extends Controller
                     && !empty(trim($item['rate']));
             });
 
+
+            $generatedBy = Auth::id(); 
+            if (!User::where('id', $generatedBy)->exists()) {
+                $generatedBy = null; // automatically set NULL if user not found
+            }
+
             // Create the quotation
             Quotation::create([
                 'quotation_no' => $request->quotation_no,
@@ -84,7 +92,7 @@ class QuotationController extends Controller
                 'name_of_work' => $quotationData['name_of_work'] ?: null,
                 'bill_issue_to' => $quotationData['bill_issue_to'] ?: null, // preserves line breaks
                 'marketing_person_code' => $marketingUser->user_code,
-                'generated_by' => Auth::id(),
+                'generated_by' => $generatedBy,
                 'items' => $items, // only non-empty items
                 'total_amount' => $quotationData['totals']['total_amount'] ?: 0,
                 'discount_percent' => $quotationData['totals']['discount_percent'] ?: 0,
@@ -142,16 +150,20 @@ class QuotationController extends Controller
      */
     public function update(Request $request, Quotation $quotation)
     {
+       
+
         $letterhead = $request->input('letterhead');
 
         $request->validate([
             'marketing_user_id' => 'required|exists:users,id',
             'quotation_data' => 'required|json',
         ]);
-
+        // dd($request->all()); 
+        // exit; 
         DB::beginTransaction(); // Start transaction
 
         try {
+
             $quotationData = json_decode($request->quotation_data, true);
             $marketingUser = User::findOrFail($request->marketing_user_id);
 
@@ -161,8 +173,19 @@ class QuotationController extends Controller
                     && !empty(trim($item['qty'])) 
                     && !empty(trim($item['rate']));
             });
+            
+            // $generatedBy = Auth::id(); 
+            // if (!User::where('id', $generatedBy)->exists()) {
+            //     $generatedBy = null; // automatically set NULL if user not found
+            // }
 
             $quotation->update([
+                'quotation_no' => $request->quotation_no,
+                'quotation_date' => $request->quotation_date,
+                'client_name' => $quotationData['client_name'] ?: null,
+                'client_gstin' => $quotationData['client_gstin'] ?: null,
+                'name_of_work' => $quotationData['name_of_work'] ?: null,
+                'bill_issue_to' => $quotationData['bill_issue_to'] ?: null, // preserve newlines 
                 'marketing_person_code' => $marketingUser->user_code,
                 'items' => $items, // only non-empty items
                 'total_amount' => $quotationData['totals']['total_amount'] ?: 0,
@@ -177,26 +200,23 @@ class QuotationController extends Controller
                 'igst_amount' => $quotationData['totals']['igst_amount'] ?: 0,
                 'round_off' => $quotationData['totals']['round_off'] ?: 0,
                 'payable_amount' => $quotationData['totals']['payable_amount'] ?: 0,
-                'bill_issue_to' => $quotationData['bill_issue_to'] ?: null, // preserve newlines
                 'letterhead' => $letterhead
+
             ]);
 
             DB::commit(); // Commit transaction 
 
 
-            if ($marketingUser) {
-            SendMarketingNotificationJob::dispatch(
-                $marketingUser,
-                "Quotation Successfully Revised",
-                "Quotation No: {$quotation->quotation_no} has been reviewed and updated in the system.",
-                [
-                    "quotation_no" => $quotation->quotation_no, 
-                    "payable_amount" => $$quotationData['totals']['payable_amount'], 
-                ]
-            );
-        }
-
-
+            // if ($marketingUser) {
+            // SendMarketingNotificationJob::dispatch(
+            //     $marketingUser,
+            //     "Quotation Successfully Revised",
+            //     "Quotation No: {$quotation->quotation_no} has been reviewed and updated in the system.",
+            //     [
+            //         "quotation_no" => $quotation->quotation_no, 
+            //         "payable_amount" => $$quotationData['totals']['payable_amount'], 
+            //     ]
+            //);
             return redirect()->back()->with('success', 'Quotation updated successfully.');
 
         } catch (\Exception $e) {
