@@ -4,7 +4,21 @@
     <?php endif; ?>
     <div class="row mb-3">
         <div class="col-12">
-            <h5>Vehicle: <?php echo e($vehicle->name); ?></h5>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Vehicle: <?php echo e($vehicle->name); ?></h5>
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary edit-vehicle-btn"
+                    data-id="<?php echo e($vehicle->id); ?>"
+                    data-name="<?php echo e($vehicle->name); ?>"
+                    data-engine="<?php echo e($vehicle->engine_number); ?>"
+                    data-handed="<?php echo e($vehicle->handed_over_person); ?>"
+                    data-rc-expiry="<?php echo e(optional($vehicle->rc_expiry_date)->format('Y-m-d')); ?>"
+                    data-puc-expiry="<?php echo e(optional($vehicle->puc_expiry_date)->format('Y-m-d')); ?>"
+                >
+                    Update Profile
+                </button>
+            </div>
         </div>
     </div>
 
@@ -30,8 +44,8 @@
     </div>
 
     <div class="row mb-3">
-        <div class="col-md-6"><strong>Insurance Expiry:</strong> <?php echo e(optional($vehicle->rc_expiry_date)->format('d - m - Y') ?? '-'); ?></div>
-        <div class="col-md-6"><strong>PUC Expiry:</strong> <?php echo e(optional($vehicle->puc_expiry_date)->format('d - m - Y') ?? '-'); ?></div>
+        <div class="col-md-6"><strong>Insurance Expiry:</strong> <?php echo e(optional($vehicle->rc_expiry_date)->format('d-m-Y') ?? '-'); ?></div>
+        <div class="col-md-6"><strong>PUC Expiry:</strong> <?php echo e(optional($vehicle->puc_expiry_date)->format('d-m-Y') ?? '-'); ?></div>
     </div>
 
     <div class="row mb-3">

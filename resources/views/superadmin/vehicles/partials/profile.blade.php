@@ -4,7 +4,21 @@
     @endif
     <div class="row mb-3">
         <div class="col-12">
-            <h5>Vehicle: {{ $vehicle->name }}</h5>
+            <div class="d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">Vehicle: {{ $vehicle->name }}</h5>
+                <button
+                    type="button"
+                    class="btn btn-sm btn-outline-primary edit-vehicle-btn"
+                    data-id="{{ $vehicle->id }}"
+                    data-name="{{ $vehicle->name }}"
+                    data-engine="{{ $vehicle->engine_number }}"
+                    data-handed="{{ $vehicle->handed_over_person }}"
+                    data-rc-expiry="{{ optional($vehicle->rc_expiry_date)->format('Y-m-d') }}"
+                    data-puc-expiry="{{ optional($vehicle->puc_expiry_date)->format('Y-m-d') }}"
+                >
+                    Update Profile
+                </button>
+            </div>
         </div>
     </div>
 
@@ -30,8 +44,8 @@
     </div>
 
     <div class="row mb-3">
-        <div class="col-md-6"><strong>Insurance Expiry:</strong> {{ optional($vehicle->rc_expiry_date)->format('d - m - Y') ?? '-' }}</div>
-        <div class="col-md-6"><strong>PUC Expiry:</strong> {{ optional($vehicle->puc_expiry_date)->format('d - m - Y') ?? '-' }}</div>
+        <div class="col-md-6"><strong>Insurance Expiry:</strong> {{ optional($vehicle->rc_expiry_date)->format('d-m-Y') ?? '-' }}</div>
+        <div class="col-md-6"><strong>PUC Expiry:</strong> {{ optional($vehicle->puc_expiry_date)->format('d-m-Y') ?? '-' }}</div>
     </div>
 
     <div class="row mb-3">

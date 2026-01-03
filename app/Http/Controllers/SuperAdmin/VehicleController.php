@@ -82,6 +82,59 @@ class VehicleController extends Controller
         return redirect()->route('superadmin.vehicles.index')->with('success', 'Vehicle created');
     }
 
+    public function update(Request $request, Vehicle $vehicle)
+    {
+        $data = $request->validate([
+            'name' => 'required|string|max:255',
+            'engine_number' => 'nullable|string|max:255',
+            'handed_over_person' => 'nullable|string|max:255',
+            'rc_expiry_date' => 'nullable|date',
+            'puc_expiry_date' => 'nullable|date',
+            'rc_copy' => 'nullable|file',
+            'insurance' => 'nullable|file',
+            'puc' => 'nullable|file',
+        ]);
+
+        $vehicle->name = $data['name'];
+        $vehicle->engine_number = $data['engine_number'] ?? null;
+        $vehicle->handed_over_person = $data['handed_over_person'] ?? null;
+        $vehicle->rc_expiry_date = $data['rc_expiry_date'] ?? null;
+        $vehicle->puc_expiry_date = $data['puc_expiry_date'] ?? null;
+
+        if ($request->hasFile('rc_copy')) {
+            if (!empty($vehicle->rc_copy_path) && Storage::exists($vehicle->rc_copy_path)) {
+                Storage::delete($vehicle->rc_copy_path);
+            }
+            $vehicle->rc_copy_path = $request->file('rc_copy')->store('vehicles');
+        }
+        if ($request->hasFile('insurance')) {
+            if (!empty($vehicle->insurance_path) && Storage::exists($vehicle->insurance_path)) {
+                Storage::delete($vehicle->insurance_path);
+            }
+            $vehicle->insurance_path = $request->file('insurance')->store('vehicles');
+        }
+        if ($request->hasFile('puc')) {
+            if (!empty($vehicle->puc_path) && Storage::exists($vehicle->puc_path)) {
+                Storage::delete($vehicle->puc_path);
+            }
+            $vehicle->puc_path = $request->file('puc')->store('vehicles');
+        }
+
+        $vehicle->save();
+
+        if ($request->ajax() || $request->wantsJson()) {
+            $vehicle->load('services');
+            $html = view('superadmin.vehicles.partials.profile', compact('vehicle'))->render();
+            return response()->json([
+                'success' => true,
+                'message' => 'Vehicle updated',
+                'profile_html' => $html,
+            ]);
+        }
+
+        return redirect()->route('superadmin.vehicles.show', $vehicle->id)->with('success', 'Vehicle updated');
+    }
+
     public function show(Vehicle $vehicle)
     {
         $vehicle->load('services');

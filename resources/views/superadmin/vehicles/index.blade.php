@@ -251,6 +251,68 @@
     </div>
 </div>
 
+<!-- Edit Vehicle Modal -->
+<div class="modal fade" id="editVehicleModal" tabindex="-1" aria-labelledby="editVehicleModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editVehicleModalLabel">Update Profile</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form id="editVehicleForm" method="POST" enctype="multipart/form-data">
+                    @csrf
+                    @method('PUT')
+
+                    <div class="row g-2">
+                        <div class="col-12">
+                            <label class="form-label">Vehicle Name</label>
+                            <input type="text" name="name" class="form-control form-control-sm" required>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Engine Number</label>
+                            <input type="text" name="engine_number" class="form-control form-control-sm">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Handed Over Person</label>
+                            <input type="text" name="handed_over_person" class="form-control form-control-sm">
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label">Insurance Expiry Date</label>
+                            <input type="date" name="rc_expiry_date" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">PUC Expiry Date</label>
+                            <input type="date" name="puc_expiry_date" class="form-control form-control-sm">
+                        </div>
+
+                        <div class="col-md-4">
+                            <label class="form-label">RC Copy</label>
+                            <input type="file" name="rc_copy" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Insurance File</label>
+                            <input type="file" name="insurance" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">PUC File</label>
+                            <input type="file" name="puc" class="form-control form-control-sm">
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-end mt-3">
+                        <button type="button" class="btn btn-sm btn-secondary me-2" data-bs-dismiss="modal">Close</button>
+                        <button type="submit" class="btn btn-sm btn-success">Update</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- File Preview Modal -->
 <div class="modal fade" id="filePreviewModal" tabindex="-1" aria-labelledby="filePreviewModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-xl modal-dialog-centered">
@@ -480,6 +542,82 @@
                         bsModal.show();
                     });
             });
+        });
+    });
+</script>
+
+<script>
+    // Edit Vehicle: open modal from profile popup and submit via AJAX
+    document.addEventListener('DOMContentLoaded', function () {
+        const editVehicleModalEl = document.getElementById('editVehicleModal');
+        if (!editVehicleModalEl) return;
+
+        const editVehicleModal = new bootstrap.Modal(editVehicleModalEl);
+        const editForm = document.getElementById('editVehicleForm');
+        const updateTemplate = "{{ route('superadmin.vehicles.update', 0) }}";
+
+        const profileModalEl = document.getElementById('vehicleProfileModal');
+
+        document.addEventListener('click', function (e) {
+            const btn = e.target.closest('.edit-vehicle-btn');
+            if (!btn) return;
+
+            const id = btn.dataset.id;
+            editForm.action = updateTemplate.replace('/0', '/' + id);
+            editForm.querySelector('input[name="name"]').value = btn.dataset.name || '';
+            editForm.querySelector('input[name="engine_number"]').value = btn.dataset.engine || '';
+            editForm.querySelector('input[name="handed_over_person"]').value = btn.dataset.handed || '';
+            editForm.querySelector('input[name="rc_expiry_date"]').value = btn.dataset.rcExpiry || '';
+            editForm.querySelector('input[name="puc_expiry_date"]').value = btn.dataset.pucExpiry || '';
+            // clear file inputs
+            editForm.querySelectorAll('input[type="file"]').forEach(i => (i.value = ''));
+
+            // hide vehicle profile modal before opening edit modal (avoid stacked modals)
+            if (profileModalEl) {
+                const profileInstance = bootstrap.Modal.getInstance(profileModalEl) || new bootstrap.Modal(profileModalEl);
+                profileInstance.hide();
+            }
+
+            editVehicleModal.show();
+        });
+
+        editForm.addEventListener('submit', function (ev) {
+            ev.preventDefault();
+            const submitBtn = editForm.querySelector('button[type="submit"]');
+            if (submitBtn) submitBtn.disabled = true;
+
+            const fd = new FormData(editForm);
+            fetch(editForm.action, {
+                method: 'POST',
+                body: fd,
+                headers: { 'X-Requested-With': 'XMLHttpRequest' }
+            })
+                .then(r => r.json())
+                .then(data => {
+                    if (data && data.success) {
+                        editVehicleModal.hide();
+
+                        const profileBody = document.getElementById('vehicleProfileBody');
+                        if (profileBody && data.profile_html) {
+                            profileBody.innerHTML = data.profile_html;
+                            const alert = document.createElement('div');
+                            alert.className = 'alert alert-success';
+                            alert.textContent = data.message || 'Vehicle updated';
+                            profileBody.prepend(alert);
+                            setTimeout(() => { alert.remove(); }, 4000);
+                        }
+
+                        // re-open vehicle profile modal after updating
+                        if (profileModalEl) {
+                            const profileInstance = bootstrap.Modal.getInstance(profileModalEl) || new bootstrap.Modal(profileModalEl);
+                            profileInstance.show();
+                        }
+                        return;
+                    }
+                    alert((data && data.message) || 'Failed to update vehicle');
+                })
+                .catch(() => alert('Failed to update vehicle'))
+                .finally(() => { if (submitBtn) submitBtn.disabled = false; });
         });
     });
 </script>
