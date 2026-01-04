@@ -10,17 +10,17 @@ use App\Models\NewBooking;
 use App\Models\BookingItem;
 use App\Services\JobOrderService;
 use App\Models\User;
-use App\Enums\Role; 
-use App\Models\{Department,SpecialFeature}; 
+use App\Enums\Role;
+use App\Models\{Department, SpecialFeature};
 use App\Services\GetUserActiveDepartment;
 use App\Services\FileUploadService;
 use App\Jobs\GenerateBookingCards;
 use App\Services\BookingCardService;
-use App\Services\FCMService; 
+use App\Services\FCMService;
 use App\Jobs\SendMarketingNotificationJob;
 use Illuminate\Support\Facades\Cache;
- 
- 
+
+
 
 
 
@@ -28,21 +28,21 @@ class BookingController extends Controller
 {
     protected GetUserActiveDepartment $departmentService;
     protected FileUploadService $fileUploadService;
-    protected BookingCardService $bookingCardService;  
-    protected FCMService $fcmService; 
+    protected BookingCardService $bookingCardService;
+    protected FCMService $fcmService;
 
 
 
     public function __construct(
         GetUserActiveDepartment $departmentService,
-        FileUploadService $fileUploadService,  
-        BookingCardService $bookingCardService, 
+        FileUploadService $fileUploadService,
+        BookingCardService $bookingCardService,
         FCMService $fcmService
     ) {
         $this->departmentService = $departmentService;
         $this->fileUploadService = $fileUploadService;
-        $this->bookingCardService = $bookingCardService; 
-        $this->fcmService          = $fcmService; 
+        $this->bookingCardService = $bookingCardService;
+        $this->fcmService = $fcmService;
 
         $this->authorizeResource(NewBooking::class, 'new_booking');
     }
@@ -76,10 +76,10 @@ class BookingController extends Controller
         return view('superadmin.Bookings.newBooking', compact('departments', 'firstBackedBooking'));
     }
 
-   
+
 
     public function store(StoreBookingRequest $request)
-    {    
+    {
         try {
             // Determine creator dynamically
             if (auth('admin')->check()) {
@@ -93,30 +93,30 @@ class BookingController extends Controller
             }
 
             $booking = DB::transaction(function () use ($request, $creatorId, $creatorType) {
-                
+
                 $department = Department::find($request->department_id);
- 
+
                 $bookingData = $request->only([
                     'client_name',
                     'client_address',
                     'letter_date',
                     'job_order_date',
-                    'department_id', 
+                    'department_id',
                     'report_issue_to',
                     'reference_no',
                     'marketing_id',
                     'contact_no',
                     'contact_email',
-                    'name_of_work', 
+                    'name_of_work',
                     'hold_status',
-                    'payment_option',  
-                    'm_s', 
+                    'payment_option',
+                    'm_s',
                 ]);
                 if ($department && strtolower($department->name) === 'bis') {
                     $bookingData['sample_code'] = $request->sample_code;
                 }
 
-                $bookingData['created_by_id']   = $creatorId;
+                $bookingData['created_by_id'] = $creatorId;
                 $bookingData['created_by_type'] = $creatorType;
 
                 // File upload
@@ -133,33 +133,33 @@ class BookingController extends Controller
                 // Add booking items if present
                 if ($request->has('booking_items')) {
                     foreach ($request->booking_items as $item) {
-                        $item['status'] = $item['lab_analysis_code'];
+                        $item['status'] = $item['lab_analysis_code']; // always true
                         $booking->items()->create($item);
                     }
                 }
 
                 return $booking;
-            }); 
+            });
 
             // ---------------------------
             // SEND NOTIFICATION TO MARKETING USER
             // ---------------------------
             $marketingUser = User::where('user_code', $request->marketing_id)->first();
-            
+
             if ($marketingUser) {
                 SendMarketingNotificationJob::dispatch(
                     $marketingUser,
                     "New Booking assigned!",
                     "{$booking->client_name} with Ref_No :{$request->reference_no}",
                     [
-                        "client_name" => $booking->client_name, 
+                        "client_name" => $booking->client_name,
                         "booking_id" => $booking->id,
                         "updated_by" => auth()->id(),
-                        "status"     => $booking->status
+                        "status" => $booking->status
                     ]
                 );
             }
-            return $this->bookingCardService->renderCardsForBooking($booking);            
+            return $this->bookingCardService->renderCardsForBooking($booking);
 
         } catch (\Exception $e) {
             Log::error('Booking creation failed', [
@@ -182,10 +182,10 @@ class BookingController extends Controller
 
                 // Determine the creator
                 if (auth('admin')->check()) {
-                    $creatorId   = auth('admin')->id();
+                    $creatorId = auth('admin')->id();
                     $creatorType = 'App\\Models\\Admin';
                 } elseif (auth('web')->check()) {
-                    $creatorId   = auth('web')->id();
+                    $creatorId = auth('web')->id();
                     $creatorType = 'App\\Models\\User';
                 } else {
                     abort(403, 'Unauthorized');
@@ -205,17 +205,17 @@ class BookingController extends Controller
                     'marketing_id',
                     'contact_no',
                     'contact_email',
-                    'name_of_work', 
+                    'name_of_work',
                     'hold_status',
-                    'payment_option', 
-                    'm_s', 
+                    'payment_option',
+                    'm_s',
                 ]);
-                
+
                 if ($department && strtolower($department->name) === 'bis') {
                     $bookingData['sample_code'] = $request->sample_code;
                 }
 
-                $bookingData['created_by_id']   = $creatorId;
+                $bookingData['created_by_id'] = $creatorId;
                 $bookingData['created_by_type'] = $creatorType;
 
                 if ($request->hasFile('upload_letter_path')) {
@@ -224,7 +224,7 @@ class BookingController extends Controller
                         'bookings'
                     );
                 }
-                
+
                 $new_booking->update($bookingData);
 
                 // Remove all previous items
@@ -235,10 +235,10 @@ class BookingController extends Controller
                     foreach ($request->booking_items as $item) {
                         $item['status'] = $item['lab_analysis_code'];
                         $new_booking->items()->create($item);
-                    } 
+                    }
                 }
-            }); 
-        
+            });
+
 
             // ---------------------------
             // SEND NOTIFICATION TO MARKETING USER
@@ -253,10 +253,10 @@ class BookingController extends Controller
                     [
                         "booking_id" => $new_booking->id,
                         "updated_by" => auth()->user()->name ?? "System",
-                        "client_name" => $new_booking->client_name, 
+                        "client_name" => $new_booking->client_name,
                     ]
                 );
-            } 
+            }
 
             return redirect()
                 ->back()
@@ -278,27 +278,27 @@ class BookingController extends Controller
      */
     public function destroy(NewBooking $new_booking)
     {
-        try { 
+        try {
 
-            $marketingUser = User::where('user_code', $new_booking->marketing_id)->first(); 
-            $Ref_No =  $new_booking->reference_no; 
-            $booking_id = $new_booking->id; 
-            $client_name = $new_booking->client_name; 
+            $marketingUser = User::where('user_code', $new_booking->marketing_id)->first();
+            $Ref_No = $new_booking->reference_no;
+            $booking_id = $new_booking->id;
+            $client_name = $new_booking->client_name;
 
             DB::transaction(function () use ($new_booking) {
                 $new_booking->items()->delete();
                 $new_booking->delete();
-            }); 
-            
+            });
+
             SendMarketingNotificationJob::dispatch(
-                    $marketingUser,
-                    "Booking Deleted",
-                    "Booking Ref_No :{$Ref_No} has been deleted.",
-                    [
-                        "booking_id" => $booking_id,
-                        "updated_by" => auth()->user()->name ?? "System",
-                        "client_name" => $client_name, 
-                    ]
+                $marketingUser,
+                "Booking Deleted",
+                "Booking Ref_No :{$Ref_No} has been deleted.",
+                [
+                    "booking_id" => $booking_id,
+                    "updated_by" => auth()->user()->name ?? "System",
+                    "client_name" => $client_name,
+                ]
             );
 
             return redirect()
@@ -355,11 +355,11 @@ class BookingController extends Controller
 
         $users = Cache::remember($cacheKey, 30, function () use ($roleSlug, $term) {
             return User::whereHas('role', function ($q) use ($roleSlug) {
-                    $q->where('slug', $roleSlug);
-                })
+                $q->where('slug', $roleSlug);
+            })
                 ->where(function ($q) use ($term) {
                     $q->where('name', 'LIKE', "{$term}%")
-                    ->orWhere('user_code', 'LIKE', "{$term}%");
+                        ->orWhere('user_code', 'LIKE', "{$term}%");
                 })
                 ->limit(20)
                 ->get(['user_code', 'name'])
@@ -424,7 +424,7 @@ class BookingController extends Controller
 
             return back()->withErrors('Unable to load booking details.');
         }
-    } 
+    }
 
 
 }

@@ -20,6 +20,7 @@ use App\Models\CashLetterPayment;
 use App\Models\Approval;
 use App\Services\GetUserActiveDepartment;
 use Carbon\Carbon;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
@@ -95,6 +96,121 @@ class DashboardController extends Controller
             'department' => $departmentModel,
             'user' => $user,
             'payload' => $payload,
+        ]);
+    }
+
+    public function invoicePaymentChart(Request $request)
+    {
+        $range = (string) $request->query('range', '1Y');
+
+        // Align the start/end boundaries to the bucket granularity so the series includes
+        // the most recent bucket (e.g., current month for 1Y/6M).
+        $now = Carbon::now();
+        [$start, $end] = match ($range) {
+            '1D' => [$now->copy()->subHours(23)->startOfHour(), $now->copy()->endOfHour()],
+            '1W' => [$now->copy()->subDays(6)->startOfDay(), $now->copy()->endOfDay()],
+            '1M' => [$now->copy()->subDays(29)->startOfDay(), $now->copy()->endOfDay()],
+            '3M' => [$now->copy()->subWeeks(11)->startOfWeek(), $now->copy()->endOfWeek()],
+            '6M' => [$now->copy()->subMonths(5)->startOfMonth(), $now->copy()->endOfMonth()],
+            default => [$now->copy()->subMonths(11)->startOfMonth(), $now->copy()->endOfMonth()],
+        };
+
+        // Use created_at for grouping/filtering so the dashboard reflects when invoices
+        // were generated/updated in the system.
+        $dateExpr = 'created_at';
+
+        $groupExpr = match ($range) {
+            '1D' => 'DATE_FORMAT(created_at, "%Y-%m-%d %H")',
+            '1W', '1M' => 'DATE_FORMAT(created_at, "%Y-%m-%d")',
+            '3M' => 'DATE_FORMAT(created_at, "%x-W%v")',
+            '6M', '1Y' => 'DATE_FORMAT(created_at, "%Y-%m")',
+            default => 'DATE_FORMAT(created_at, "%Y-%m")',
+        };
+
+        // Expected invoices: exclude cancelled (status=2)
+        $invoiceRaw = Invoice::selectRaw($groupExpr . ' as k, COALESCE(SUM(CASE WHEN status != 2 THEN total_amount ELSE 0 END), 0) as amount')
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('k')
+            ->orderBy('k')
+            ->pluck('amount', 'k');
+
+        // Payment done: treat Paid(1) and Settled(4) as fully done.
+        $paymentRaw = Invoice::selectRaw($groupExpr . ' as k, COALESCE(SUM(CASE WHEN status IN (1, 4) THEN total_amount ELSE 0 END), 0) as amount')
+            ->whereBetween('created_at', [$start, $end])
+            ->groupBy('k')
+            ->orderBy('k')
+            ->pluck('amount', 'k');
+
+        $labels = [];
+        $invoiceSeries = [];
+        $paymentSeries = [];
+
+        if ($range === '1D') {
+            $cursor = $start->copy();
+            $limit = 24;
+            for ($i = 0; $i < $limit; $i++) {
+                $key = $cursor->format('Y-m-d H');
+                $labels[] = $cursor->format('ha');
+                $invoiceSeries[] = (float) ($invoiceRaw[$key] ?? 0);
+                $paymentSeries[] = (float) ($paymentRaw[$key] ?? 0);
+                $cursor->addHour();
+            }
+        } elseif ($range === '1W' || $range === '1M') {
+            $days = $range === '1W' ? 7 : 30;
+            $cursor = $start->copy();
+            for ($i = 0; $i < $days; $i++) {
+                $key = $cursor->format('Y-m-d');
+                $labels[] = $range === '1W' ? $cursor->format('D') : $cursor->format('d');
+                $invoiceSeries[] = (float) ($invoiceRaw[$key] ?? 0);
+                $paymentSeries[] = (float) ($paymentRaw[$key] ?? 0);
+                $cursor->addDay();
+            }
+        } elseif ($range === '3M') {
+            $cursor = $start->copy();
+            for ($i = 0; $i < 12; $i++) {
+                $key = $cursor->format('o-\WW');
+                $labels[] = 'W' . $cursor->format('W');
+                $invoiceSeries[] = (float) ($invoiceRaw[$key] ?? 0);
+                $paymentSeries[] = (float) ($paymentRaw[$key] ?? 0);
+                $cursor->addWeek();
+            }
+        } else {
+            $months = $range === '6M' ? 6 : 12;
+            $cursor = $start->copy();
+            for ($i = 0; $i < $months; $i++) {
+                $key = $cursor->format('Y-m');
+                $labels[] = $cursor->format('M');
+                $invoiceSeries[] = (float) ($invoiceRaw[$key] ?? 0);
+                $paymentSeries[] = (float) ($paymentRaw[$key] ?? 0);
+                $cursor->addMonth();
+            }
+        }
+
+        $expectedTotal = (float) Invoice::whereBetween('created_at', [$start, $end])
+            ->where('status', '!=', 2)
+            ->sum('total_amount');
+
+        $paidTotal = (float) Invoice::whereBetween('created_at', [$start, $end])
+            ->whereIn('status', [1, 4])
+            ->sum('total_amount');
+
+        $outstandingTotal = max(0.0, $expectedTotal - $paidTotal);
+
+        return response()->json([
+            'range' => $range,
+            'start' => $start->toDateTimeString(),
+            'end' => $end->toDateTimeString(),
+            'labels' => $labels,
+            'invoice' => $invoiceSeries,
+            'payment' => $paymentSeries,
+            'totals' => [
+                // For the dashboard, show remaining expected amount after subtracting paid.
+                'invoice' => $outstandingTotal,
+                'payment' => $paidTotal,
+                // Optional reference values (safe to ignore on frontend).
+                'expected' => $expectedTotal,
+                'outstanding' => $outstandingTotal,
+            ],
         ]);
     }
 

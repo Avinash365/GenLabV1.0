@@ -11,15 +11,15 @@
             
         </div>
 
-        <!-- Sales & Purchase + Overall Info -->
+        <!-- Invoice and Payment + Overall Info -->
         <div class="row g-3 mb-4">
-            <!-- Sales & Purchase -->
+            <!-- Invoice and Payment -->
             <div class="col-xl-8">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between flex-wrap gap-2">
                         <h5 class="mb-0 d-flex align-items-center gap-2">
                             <i class="ti ti-chart-bar"></i>
-                            Sales & Purchase
+                            Invoice and Payment
                         </h5>
                         <div class="range-toggle btn-group" role="group" aria-label="Time Range">
                             <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="1D">1D</button>
@@ -35,25 +35,25 @@
                             <div class="d-flex align-items-center gap-2">
                                 <span class="legend-dot legend-purchase"></span>
                                 <div>
-                                    <div class="text-muted small">Total Purchase</div>
-                                    <div id="totalPurchase" class="fw-semibold">0</div>
+                                    <div class="text-muted small">Total Invoice (Expected)</div>
+                                    <div id="totalSales" class="fw-semibold">0</div>
                                 </div>
                             </div>
                             <div class="d-flex align-items-center gap-2">
                                 <span class="legend-dot legend-sales"></span>
                                 <div>
-                                    <div class="text-muted small">Total Sales</div>
-                                    <div id="totalSales" class="fw-semibold">0</div>
+                                    <div class="text-muted small">Total Payment (Done)</div>
+                                    <div id="totalPurchase" class="fw-semibold">0</div>
                                 </div>
                             </div>
                         </div>
                         <div class="chart-container" style="height: 300px;">
-                            <canvas id="salesPurchaseChart" height="300" aria-label="Sales and Purchase Chart"></canvas>
+                            <canvas id="salesPurchaseChart" height="300" aria-label="Invoice and Payment Chart"></canvas>
                         </div>
                     </div>
                 </div>
             </div>
-            <!-- /Sales & Purchase -->
+            <!-- /Invoice and Payment -->
 
             <!-- Overall Information + Customers Overview -->
             <div class="col-xl-4">
@@ -113,7 +113,7 @@
             </div>
             <!-- /Overall Information + Customers Overview -->
         </div>
-        <!-- /Sales & Purchase + Overall Info -->
+        <!-- /Invoice and Payment + Overall Info -->
 
         <!-- Booking Trend & Status -->
         <div class="row g-3 mb-4">

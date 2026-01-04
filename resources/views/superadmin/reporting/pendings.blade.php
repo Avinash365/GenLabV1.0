@@ -135,14 +135,22 @@
         </div>
         @endif
         <div class="card-body p-0">
+            @php
+                $authUser = auth('admin')->user() ?: auth()->user();
+                $roleName = $authUser->role->role_name ?? $authUser->role ?? null;
+                $isMarketingUser = $roleName && stripos($roleName, 'market') !== false;
+            @endphp
             <div class="table-responsive">
                 @if(($mode ?? 'job') === 'reference')
-                    <table class="table table-striped">
+                    <table class="table table-striped auto-layout">
                         <thead class="table-light">
                             <tr>
                                 <th style="width:30px;"><label class="checkboxs"><input type="checkbox" id="select-all-ref"><span class="checkmarks"></span></label></th>
-                                <th style="width:220px;">Client Name</th>
+                                <th style="width:350px;">Client Name</th>
                                 <th>Reference No</th>
+                                @unless($isMarketingUser)
+                                    <th>Marketing Person</th>
+                                @endunless
                                 <th class="text-center">Pending Items</th>
                                 <th class="text-center" style="width:60px;">View</th>
                                 <th style="width:90px;">Action</th>
@@ -158,7 +166,21 @@
                                 <td class="truncate-cell">
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $b->client_name }}">{{ $b->client_name }}</div>
                                 </td>
-                                <td>{{ $b->reference_no }}</td>
+                                <td class="truncate-cell"><div class="cell-inner" data-bs-toggle="tooltip" title="{{ $b->reference_no }}">{{ $b->reference_no }}</div></td>
+                                @unless($isMarketingUser)
+                                    @php
+                                        $marketingName = null;
+                                        try{
+                                            if(isset($marketingPersons) && $marketingPersons instanceof \Illuminate\Support\Collection){
+                                                $mp = $marketingPersons->firstWhere('user_code', $b->marketing_id ?? '');
+                                                $marketingName = $mp->name ?? null;
+                                            }
+                                        }catch(\Exception $e){
+                                            $marketingName = null;
+                                        }
+                                    @endphp
+                                    <td class="truncate-cell"><div class="cell-inner" data-bs-toggle="tooltip" title="{{ $marketingName ?? ($b->marketing_name ?? $b->marketing_id ?? '-') }}">{{ $marketingName ?? ($b->marketing_name ?? $b->marketing_id ?? '-') }}</div></td>
+                                @endunless
                                 <td class="text-center">{{ $b->pending_items_count }}</td>
                                 @php
                                     $pendingPayload = $items->where('new_booking_id', $b->id)->map(function($it){
@@ -205,7 +227,7 @@
                                 </td>
                             </tr>
                         @empty
-                            <tr><td colspan="6" class="text-center">No pending bookings found.</td></tr>
+                            <tr><td colspan="{{ $isMarketingUser ? 6 : 7 }}" class="text-center">No pending bookings found.</td></tr>
                         @endforelse
                         </tbody>
                     </table>
@@ -433,6 +455,7 @@ document.addEventListener('DOMContentLoaded', function(){
 
     /* In the pending-items modal, allow auto layout and wrapping so full content shows */
     #pendingItemsModal table.table { table-layout: auto; }
+    .table.auto-layout { table-layout: auto; }
     #pendingItemsModal table.table th,
     #pendingItemsModal table.table td { white-space: normal; overflow: visible; }
 
