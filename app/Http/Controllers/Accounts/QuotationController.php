@@ -11,8 +11,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Services\NumberToWordsService;
-use Illuminate\Support\Facades\DB; 
-use App\Jobs\SendMarketingNotificationJob; 
+use Illuminate\Support\Facades\DB;
+use App\Jobs\SendMarketingNotificationJob;
 
 
 use App\Models\SiteSetting;
@@ -24,18 +24,115 @@ class QuotationController extends Controller
      * 
      */
 
-    protected $numberToWordsService; 
-    public function __construct(NumberToWordsService $numberToWordsService )
+    protected $numberToWordsService;
+    public function __construct(NumberToWordsService $numberToWordsService)
     {
-        $this->numberToWordsService = $numberToWordsService; 
+        $this->numberToWordsService = $numberToWordsService;
 
     }
 
-    public function index()
+    public function index(Request $request)
     {
-        $quotations = Quotation::with('generatedBy')->latest()->paginate(20);
-        return view('superadmin.accounts.quotation.index', compact('quotations'));
+        // Marketing persons dropdown
+        $marketingPersons = User::whereHas('role', function ($q) {
+            $q->where('slug', 'marketing_person');
+        })->get(['id', 'user_code', 'name']);
+
+        foreach ($marketingPersons as $person) {
+            $person->label = $person->user_code . ' - ' . $person->name;
+        }
+
+        $query = Quotation::with('generatedBy');
+
+        /** ------------------------------
+         * AUTH & MARKETING CONTEXT
+         * ------------------------------ */
+        $authUser = $request->user();
+        $isMarketing = false;
+
+        if ($authUser && isset($authUser->role)) {
+            $roleName = is_object($authUser->role)
+                ? ($authUser->role->role_name ?? $authUser->role->name ?? null)
+                : $authUser->role;
+
+            $isMarketing = $roleName && stripos($roleName, 'market') !== false;
+        }
+
+        $marketingCode = $request->marketing
+            ?? $request->user_code
+            ?? ($isMarketing ? ($authUser->user_code ?? null) : null);
+
+        // Auto filter for marketing users
+        if ($marketingCode) {
+            $query->where('marketing_person_code', $marketingCode);
+        }
+
+        /** ------------------------------
+         * MARKETING PERSON FILTER
+         * ------------------------------ */
+        if ($request->filled('marketing_person')) {
+            $query->where('marketing_person_code', $request->marketing_person);
+        }
+
+        /** ------------------------------
+         * USER CODE FILTER
+         * ------------------------------ */
+        if ($request->filled('user_code')) {
+            $query->where('marketing_person_code', $request->user_code);
+        }
+
+        /** ------------------------------
+         * CLIENT FILTER
+         * ------------------------------ */
+        if ($request->filled('client_name')) {
+            $query->where('client_name', 'like', "%{$request->client_name}%");
+        }
+
+        /** ------------------------------
+         * SEARCH FILTER
+         * ------------------------------ */
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+
+            $query->where(function ($q) use ($search) {
+                $q->where('quotation_no', 'like', "{$search}%")
+                    ->orWhere('client_name', 'like', "{$search}%");
+            });
+        }
+
+        /** ------------------------------
+         * MONTH & YEAR FILTER
+         * ------------------------------ */
+        if ($request->filled('month') || $request->filled('year')) {
+            $query->when($request->month, function ($q, $month) {
+                $q->whereMonth('quotation_date', $month);
+            })->when($request->year, function ($q, $year) {
+                $q->whereYear('quotation_date', $year);
+            });
+        }
+
+        /** ------------------------------
+         * SORTING
+         * ------------------------------ */
+        $query->orderBy('quotation_no', 'desc');
+
+        $quotations = $query->paginate(10)->withQueryString();
+
+        /** ------------------------------
+         * VIEW SELECTION (Marketing / Admin)
+         * ------------------------------ */
+        $useMarketingView = $request->context === 'marketing' || $isMarketing;
+
+        $view = $useMarketingView
+            ? 'superadmin.accounts.quotation.marketing.index'
+            : 'superadmin.accounts.quotation.index';
+
+        return view($view, compact(
+            'quotations',
+            'marketingPersons'
+        ));
     }
+
 
     /**
      * Show the form for creating a new quotation.
@@ -61,7 +158,7 @@ class QuotationController extends Controller
             'marketing_user_id' => 'required|exists:users,id',
             'quotation_data' => 'required|json',
         ]);
-        
+
         DB::beginTransaction(); // Start transaction
 
         try {
@@ -71,14 +168,14 @@ class QuotationController extends Controller
             $marketingUser = User::findOrFail($request->marketing_user_id);
 
             // Filter out empty items
-            $items = array_filter($quotationData['items'], function($item) {
-                return !empty(trim($item['description'])) 
-                    && !empty(trim($item['qty'])) 
+            $items = array_filter($quotationData['items'], function ($item) {
+                return !empty(trim($item['description']))
+                    && !empty(trim($item['qty']))
                     && !empty(trim($item['rate']));
             });
 
 
-            $generatedBy = Auth::id(); 
+            $generatedBy = Auth::id();
             if (!User::where('id', $generatedBy)->exists()) {
                 $generatedBy = null; // automatically set NULL if user not found
             }
@@ -113,12 +210,12 @@ class QuotationController extends Controller
 
 
             if ($marketingUser) {
-            SendMarketingNotificationJob::dispatch(
+                SendMarketingNotificationJob::dispatch(
                     $marketingUser,
                     "New Quotation Issued",
                     "Quotation No: {$request->quotation_no} has been generated and is now available for review.",
                     [
-                        "quotation_no" => $request->quotation_no, 
+                        "quotation_no" => $request->quotation_no,
                         "payable_amount" => $quotationData['totals']['payable_amount']
                     ]
                 );
@@ -129,11 +226,11 @@ class QuotationController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack(); // Rollback if any error occurs
-            Log::error('Quotation Store Error: '.$e->getMessage());
+            Log::error('Quotation Store Error: ' . $e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Something went wrong while creating the quotation.');
         }
     }
-    
+
     /**
      * Show the form for editing the specified quotation.
      */
@@ -150,7 +247,7 @@ class QuotationController extends Controller
      */
     public function update(Request $request, Quotation $quotation)
     {
-       
+
 
         $letterhead = $request->input('letterhead');
 
@@ -168,12 +265,12 @@ class QuotationController extends Controller
             $marketingUser = User::findOrFail($request->marketing_user_id);
 
             // Filter out empty items
-            $items = array_filter($quotationData['items'], function($item) {
-                return !empty(trim($item['description'])) 
-                    && !empty(trim($item['qty'])) 
+            $items = array_filter($quotationData['items'], function ($item) {
+                return !empty(trim($item['description']))
+                    && !empty(trim($item['qty']))
                     && !empty(trim($item['rate']));
             });
-            
+
             // $generatedBy = Auth::id(); 
             // if (!User::where('id', $generatedBy)->exists()) {
             //     $generatedBy = null; // automatically set NULL if user not found
@@ -221,7 +318,7 @@ class QuotationController extends Controller
 
         } catch (\Exception $e) {
             DB::rollBack(); // Rollback if any error occurs
-            Log::error('Quotation Update Error: '.$e->getMessage());
+            Log::error('Quotation Update Error: ' . $e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Something went wrong while updating the quotation.');
         }
     }
@@ -231,31 +328,48 @@ class QuotationController extends Controller
      */
     public function destroy(Quotation $quotation)
     {
-        try { 
-            
+        try {
+
             $quotation->delete();
             return redirect()->route('quotations.index')->with('success', 'Quotation deleted successfully.');
         } catch (\Exception $e) {
-            Log::error('Quotation Delete Error: '.$e->getMessage());
+            Log::error('Quotation Delete Error: ' . $e->getMessage());
             return redirect()->back()->with('error', 'Something went wrong while deleting the quotation.');
         }
     }
 
 
-    public function generateQuotations($id){ 
+    public function generateQuotations($id)
+    {
         $quotation = Quotation::with('generatedBy')->findOrFail($id);
         $items = $quotation->items ?? [];
-        $companyName = SiteSetting::value('company_name'); 
+        $companyName = SiteSetting::value('company_name');
 
-        $WordAmout = $this->numberToWordsService->convert($quotation->payable_amount); 
+        $WordAmout = $this->numberToWordsService->convert($quotation->payable_amount);
         $pdf = Pdf::loadView('superadmin.accounts.quotation.quotation_pdf', [
             'quotation' => $quotation,
-            'items'     => $quotation->items, 
-            'WordAmout' => $WordAmout, 
-            'companyName' =>$companyName
+            'items' => $quotation->items,
+            'WordAmout' => $WordAmout,
+            'companyName' => $companyName
         ]);
-    
-        return $pdf->stream('quotation_'.$quotation->id.'.pdf');
+
+        /**  ADD THIS BLOCK (same as invoice) */
+        $pdf->output();
+        $canvas = $pdf->getDomPDF()->getCanvas();
+        $fontMetrics = new \Dompdf\FontMetrics(
+            $canvas,
+            $pdf->getDomPDF()->getOptions()
+        );
+        // Position can be adjusted
+        $canvas->page_text(
+            500,      // X position
+            140,       // Y position
+            "Page {PAGE_NUM} of {PAGE_COUNT}",
+            $fontMetrics->getFont('Arial', 'normal'),
+            10
+        );
+
+        return $pdf->stream('quotation_' . $quotation->id . '.pdf');
     }
 
 }

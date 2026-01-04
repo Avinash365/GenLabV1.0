@@ -26,4 +26,11 @@ class Quotation extends Model
     {
         return $this->belongsTo(User::class, 'generated_by');
     }
+
+    public function marketingPerson()
+    {
+        return $this->belongsTo(User::class, 'marketing_person_code', 'user_code');
+    }
+
+
 }
