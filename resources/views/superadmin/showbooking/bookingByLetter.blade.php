@@ -55,7 +55,7 @@
                         {{-- Preserve month & year --}}
                     <input type="hidden" name="month" value="{{ request('month') }}">
                     <input type="hidden" name="year" value="{{ request('year') }}">
-                    <input type="text" name="search" value="{{ request('search') }}"  id="autoSearch" class="form-control" placeholder="Search...">
+                    <input type="text" name="search" value="{{ request('search') }}" id=" " class="form-control" placeholder="Search...">
     
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
@@ -119,7 +119,7 @@
                     </thead>
                     <tbody>
                         @forelse($items as $item)
-                        <tr>
+                        <tr class="table-row">
                             <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                             <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
                             <td class="truncate-cell">
@@ -260,20 +260,20 @@
 
     const searchInput = document.getElementById('autoSearch');
 
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function () {
-            clearTimeout(typingTimer);
+    // if (searchInput) {
+    //     searchInput.addEventListener('keyup', function () {
+    //         clearTimeout(typingTimer);
 
-            typingTimer = setTimeout(() => {
-                const value = this.value.trim();
+    //         typingTimer = setTimeout(() => {
+    //             const value = this.value.trim();
 
-                // Submit only if 3+ characters OR field is cleared
-                if (value.length >= minLength || value.length === 0) {
-                    this.form.submit();
-                }
-            }, delay);
-        });
-    }
+    //             // Submit only if 3+ characters OR field is cleared
+    //             if (value.length >= minLength || value.length === 0) {
+    //                 this.form.submit();
+    //             }
+    //         }, delay);
+    //     });
+    // }
 </script>
 <script>
     const localSearchInput = document.getElementById('localSearch');
@@ -281,12 +281,17 @@
     if (localSearchInput) {
         localSearchInput.addEventListener('input', function () {
             const query = this.value.toLowerCase().trim();
-            const rows = document.querySelectorAll('.table-row');
+            const rows = document.querySelectorAll('tbody .table-row');
 
             rows.forEach(row => {
-                const text = row.getAttribute('data-search');
+                const cells = row.querySelectorAll('td');
+                // exclude the Action column (last cell)
+                const searchableText = Array.from(cells)
+                    .slice(0, Math.max(0, cells.length - 1))
+                    .map(td => (td.innerText || '').toLowerCase())
+                    .join(' ');
 
-                if (!query || text.includes(query)) {
+                if (!query || searchableText.includes(query)) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';

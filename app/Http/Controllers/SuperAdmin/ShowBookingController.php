@@ -11,6 +11,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BookingsExport;
 use Illuminate\Support\Facades\Storage;
+use App\Models\User;
 
 
 class ShowBookingController extends Controller
@@ -45,14 +46,26 @@ class ShowBookingController extends Controller
             //  Optimized Search
             $query->when(strlen($search) >= 2, function ($q) use ($search) {
                 $q->where(function ($sub) use ($search) {
+                    $like = '%' . $search . '%';
 
                     if (is_numeric($search)) {
                         $sub->orWhere('id', (int) $search);
                     }
 
-                    $sub->orWhere('reference_no', 'like', $search . '%')
-                        ->orWhereHas('department', function ($deptQ) use ($search) {
-                            $deptQ->where('name', 'like', $search . '%');
+                    $sub->orWhere('reference_no', 'like', $like)
+                        ->orWhere('client_name', 'like', $like)
+                        ->orWhereHas('marketingPerson', function ($mpQ) use ($like) {
+                            $mpQ->where('name', 'like', $like);
+                        })
+                        ->orWhereHas('department', function ($deptQ) use ($like) {
+                            $deptQ->where('name', 'like', $like);
+                        })
+                        ->orWhereHas('items', function ($itemQ) use ($like) {
+                            $itemQ->where('job_order_no', 'like', $like)
+                                ->orWhere('sample_description', 'like', $like)
+                                ->orWhere('sample_quality', 'like', $like)
+                                ->orWhere('particulars', 'like', $like)
+                                ->orWhere('lab_analysis_code', 'like', $like);
                         });
                 });
             });
@@ -127,11 +140,15 @@ class ShowBookingController extends Controller
         $bookings = $query->latest()->paginate($perPage)->withQueryString();
 
         $departments = $this->departmentService->getDepartment();
+        $marketingPersons = User::whereHas('marketingBookings')
+            ->orderBy('name')
+            ->get(['id', 'name', 'user_code']);
 
         return view('superadmin.showbooking.showbooking', [
             'bookings' => $bookings,
             'department' => $department,
             'departments' => $departments,
+            'marketingPersons' => $marketingPersons,
             'search' => $request->input('search'),
             'month' => $request->input('month'),
             'year' => $request->input('year'),

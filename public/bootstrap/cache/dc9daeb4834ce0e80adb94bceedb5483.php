@@ -397,11 +397,11 @@
 
     </div>
     <?php echo $__env->make('components.chatbot', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
-    <link rel="stylesheet" href="/css/superadmin-dashboard.css">
-    <link rel="stylesheet" href="/css/chatbot.css">
+    <link rel="stylesheet" href="<?php echo e(asset('css/superadmin-dashboard.css')); ?>?v=<?php echo e(@filemtime(public_path('css/superadmin-dashboard.css')) ?: time()); ?>">
+    <link rel="stylesheet" href="<?php echo e(asset('css/chatbot.css')); ?>?v=<?php echo e(@filemtime(public_path('css/chatbot.css')) ?: time()); ?>">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-    <script src="/js/superadmin-dashboard.js" defer></script>
-    <script src="/js/chatbot.js"></script>
+    <script src="<?php echo e(asset('js/superadmin-dashboard.js')); ?>?v=<?php echo e(@filemtime(public_path('js/superadmin-dashboard.js')) ?: time()); ?>" defer></script>
+    <script src="<?php echo e(asset('js/chatbot.js')); ?>?v=<?php echo e(@filemtime(public_path('js/chatbot.js')) ?: time()); ?>"></script>
 <?php $__env->stopSection(); ?>
 
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/dashboard.blade.php ENDPATH**/ ?>

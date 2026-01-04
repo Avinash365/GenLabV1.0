@@ -28,10 +28,10 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.showbooking.exportPdf', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year')], fn($v) => filled($v)))); ?>" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+                <a href="<?php echo e(route('superadmin.showbooking.exportPdf', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v)))); ?>" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.showbooking.exportExcel', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year')], fn($v) => filled($v)))); ?>" data-bs-toggle="tooltip" title="Excel">
+                <a href="<?php echo e(route('superadmin.showbooking.exportExcel', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v)))); ?>" data-bs-toggle="tooltip" title="Excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
                         <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
                     </svg>
@@ -82,8 +82,12 @@
             </select>
 
             <button class="btn btn-outline-secondary" type="submit">Filter</button>
+
+            <?php if(request('search')): ?><input type="hidden" name="search" value="<?php echo e(request('search')); ?>"><?php endif; ?>
+            <?php if(request('marketing')): ?><input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>"><?php endif; ?>
         </form>
     </div>
+ 
 
 </div>
 
@@ -91,23 +95,48 @@
     
         <!--  Department filter buttons -->
         <div class="mb-4 mt-4 ms-3">
-            <div class="d-flex flex-wrap gap-2">
-                <a href="<?php echo e(route('superadmin.showbooking.showBooking')); ?>?search=<?php echo e(request('search')); ?>"
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <a href="<?php echo e(route('superadmin.showbooking.showBooking', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v)))); ?>"
                    class="btn btn-sm <?php echo e(!$department ? 'btn-primary' : 'btn-outline-primary'); ?>">
                     All
                 </a>
 
                 <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <a href="<?php echo e(route('superadmin.showbooking.showBooking', $dept->id)); ?>?search=<?php echo e(request('search')); ?>"
+                    <a href="<?php echo e(route('superadmin.showbooking.showBooking', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v)))); ?>"
                        class="btn btn-sm <?php echo e($department && $department->id == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
                         <?php echo e($dept->name); ?>
 
                     </a>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                <?php if(isset($marketingPersons) && $marketingPersons->count()): ?>
+                    <form method="GET" action="<?php echo e(route('superadmin.showbooking.showBooking', $department?->id)); ?>" class="ms-auto me-3 d-flex align-items-center">
+                        <?php if(request('search')): ?><input type="hidden" name="search" value="<?php echo e(request('search')); ?>"><?php endif; ?>
+                        <?php if(request('month')): ?><input type="hidden" name="month" value="<?php echo e(request('month')); ?>"><?php endif; ?>
+                        <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
+                        <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
+                            <option value="">Select Marketing Person</option>
+                            <?php $__currentLoopData = $marketingPersons; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($mp->user_code); ?>" <?php echo e(request('marketing') == $mp->user_code ? 'selected' : ''); ?>><?php echo e($mp->user_code); ?> - <?php echo e($mp->name); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
             </div>
         </div>
+        
 
         <div class="card-body p-0">
+
+        <div class="search-set mb-0 p-3">
+                <input
+                    type="text"
+                    id="localSearch"
+                    class="form-control"
+                    placeholder="Search in current page only..."
+                >
+            </div>
+            
             <div class="table-responsive">
                 <table class="table">
                     <thead class="table-light">
@@ -123,7 +152,7 @@
                     </thead>
                     <tbody>
                         <?php $__empty_1 = true; $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $booking): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <tr>
+                        <tr class="table-row">
                             <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                             <td class="truncate-cell client-col">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($booking->client_name); ?>"><?php echo e($booking->client_name); ?></div>
@@ -286,6 +315,33 @@
                 }
             </style>
             <?php $__env->stopPush(); ?>
+
+            <script>
+    const localSearchInput = document.getElementById('localSearch');
+
+    if (localSearchInput) {
+        localSearchInput.addEventListener('input', function () {
+            const query = this.value.toLowerCase().trim();
+            const rows = document.querySelectorAll('tbody .table-row');
+
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('td');
+                // exclude the Action column (last cell)
+                const searchableText = Array.from(cells)
+                    .slice(0, Math.max(0, cells.length - 1))
+                    .map(td => (td.innerText || '').toLowerCase())
+                    .join(' ');
+
+                if (!query || searchableText.includes(query)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+</script>
+
 
             <!-- Pagination -->
             <div class="p-3">

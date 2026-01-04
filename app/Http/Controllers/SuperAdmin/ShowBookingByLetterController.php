@@ -90,7 +90,16 @@ class ShowBookingByLetterController extends Controller
             $search = trim($search);
 
             $query->where(function ($q) use ($search) {
-                $q->where('job_order_no', 'like', $search . '%');
+                $like = '%' . $search . '%';
+
+                $q->where('job_order_no', 'like', $like)
+                    ->orWhere('sample_description', 'like', $like)
+                    ->orWhere('sample_quality', 'like', $like)
+                    ->orWhere('particulars', 'like', $like)
+                    ->orWhereHas('booking', function ($bq) use ($like) {
+                        $bq->where('client_name', 'like', $like)
+                            ->orWhere('reference_no', 'like', $like);
+                    });
             });
         }
         if (!empty($month)) {
