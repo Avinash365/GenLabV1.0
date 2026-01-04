@@ -109,14 +109,14 @@
                     <thead class="table-light">
                         <tr>
                             <th class="checkbox-col"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                            <th>Job Order No</th>
-                            <th style="width:180px;">Client Name</th>
-                            <th style="width:180px;">Reference No</th>
-                            <th style="width:240px;">Sample Description</th>
-                            <th style="width:90px;">Sample Quality</th>
-                            <th style="width:240px;">Particulars</th>
+                            <th class="job-order-col">Job Order No</th>
+                            <th class="client-col">Client Name</th>
+                            <th class="reference-col">Reference No</th>
+                            <th class="sample-desc-col">Sample Description</th>
+                            <th class="sample-quality-col">Sample Quality</th>
+                            <th class="particulars-col">Particulars</th>
   
-                            <th>Action</th>
+                            <th class="action-col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -222,6 +222,21 @@
 
 <?php $__env->startPush('styles'); ?>
 <style>
+    /* Keep table within viewport (no horizontal scrolling) */
+    .table-responsive { overflow-x: hidden; }
+    table.table { width: 100%; table-layout: fixed; }
+
+    /* Make cell content wrap instead of forcing horizontal overflow */
+    .table th,
+    .table td {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        vertical-align: top;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
     /* clamp/truncate wrappers used for client/sample/particulars */
     .truncate-cell { max-width: none; }
     .truncate-cell .cell-inner{
@@ -229,10 +244,16 @@
         white-space: normal;
         word-break: break-word;
     }
-        /* Sample Quality narrower and allow two-line wrap */
-        .sample-quality-cell { max-width: 90px; }
-        @media (max-width: 992px){ .sample-quality-cell { max-width: 70px; } }
-    @media (max-width: 992px){ .truncate-cell { max-width: 160px; } }
+
+    /* Percentage-based column widths (sum ~100%) */
+    th.checkbox-col, td.checkbox-col { width: 4%; }
+    th.job-order-col, td.job-order-cell { width: 12%; }
+    th.client-col, td.client-col { width: 14%; }
+    th.reference-col, td.reference-col { width: 12%; }
+    th.sample-desc-col { width: 20%; }
+    th.sample-quality-col { width: 8%; }
+    th.particulars-col { width: 20%; }
+    th.action-col, td.action-cell { width: 8%; }
 
     /* job order: allow wrapping so full content is visible */
     .job-order-cell{ max-width: none; white-space: normal; word-break: break-word; overflow: visible; }
@@ -245,7 +266,7 @@
     @media (max-width: 768px) { .checkbox-col { width: 40px; padding-left:4px; padding-right:4px; } }
 
     /* Action column alignment */
-    .action-cell { min-width: 140px; vertical-align: middle; }
+    .action-cell { vertical-align: middle; }
     .action-cell .d-flex { gap: 0.5rem; }
     .action-cell a, .action-cell button { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; }
     .action-cell a i, .action-cell button i { display:block; }

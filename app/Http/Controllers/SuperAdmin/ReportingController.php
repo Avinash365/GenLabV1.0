@@ -327,6 +327,7 @@ class ReportingController extends Controller
         $cutoff = now()->toDateString();
         $departmentId = $request->get('department');
         $marketing = $request->get('marketing'); // user_code of marketing person
+        $labAnalyst = $request->get('lab_analyst'); // user_code of lab analyst
         if ($this->isMarketingUser($user)) {
             $marketing = $marketing ?: ($user->user_code ?? null);
             if ($marketing) {
@@ -345,6 +346,13 @@ class ReportingController extends Controller
         }
         $marketingPersons = $marketingPersonsQuery->get(['id','name','user_code']);
 
+        $labAnalysts = \App\Models\User::whereHas('role', function ($q) {
+                $q->where('role_name', 'like', '%lab%analyst%');
+            })
+            ->orderBy('user_code')
+            ->orderBy('name')
+            ->get(['id','name','user_code']);
+
         $perPage = (int) $request->get('perPage', 25);
         if (!in_array($perPage, [25, 50, 100, 250, 500], true)) {
             $perPage = 25;
@@ -352,7 +360,7 @@ class ReportingController extends Controller
 
         if ($mode === 'reference') {
             // Aggregate by booking (reference_no) where at least one pending/overdue item
-            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $cutoff, $month, $year) {
+            $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $cutoff, $month, $year, $labAnalyst) {
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
@@ -372,6 +380,10 @@ class ReportingController extends Controller
                             $qq->whereYear('received_at', $year)->orWhereYear('created_at', $year);
                         });
                     }
+                }
+
+                if (!empty($labAnalyst)) {
+                    $q->where('lab_analysis_code', $labAnalyst);
                 }
             }])->with(['items' => function($q) use ($overdue, $cutoff, $month, $year){
                 if ($overdue) {
@@ -394,6 +406,11 @@ class ReportingController extends Controller
                     }
                 }
             }]);
+            if (!empty($labAnalyst)) {
+                $bookingQuery->whereHas('items', function ($qi) use ($labAnalyst) {
+                    $qi->where('lab_analysis_code', $labAnalyst);
+                });
+            }
             if ($departmentId) { $bookingQuery->where('department_id', $departmentId); }
             if ($marketing) { $bookingQuery->where('marketing_id', $marketing); }
             if ($search !== '') {
@@ -406,42 +423,58 @@ class ReportingController extends Controller
             // otherwise filter by received_at OR created_at.
             if ($month) {
                 if ($overdue) {
-                    $bookingQuery->whereHas('items', function($qi) use ($month, $cutoff){
+                    $bookingQuery->whereHas('items', function($qi) use ($month, $cutoff, $labAnalyst){
                         $qi->whereNull('issue_date')
                            ->where('lab_expected_date','!=','0000-00-00')
                            ->whereDate('lab_expected_date','<', $cutoff)
                            ->whereMonth('lab_expected_date', $month);
+
+                        if (!empty($labAnalyst)) {
+                            $qi->where('lab_analysis_code', $labAnalyst);
+                        }
                     });
                 } else {
-                    $bookingQuery->whereHas('items', function($qi) use ($month){
+                    $bookingQuery->whereHas('items', function($qi) use ($month, $labAnalyst){
                         $qi->where(function($qii) use ($month){
                             $qii->whereMonth('received_at', $month)
                                 ->orWhereMonth('created_at', $month);
                         });
+
+                        if (!empty($labAnalyst)) {
+                            $qi->where('lab_analysis_code', $labAnalyst);
+                        }
                     });
                 }
             }
             if ($year) {
                 if ($overdue) {
-                    $bookingQuery->whereHas('items', function($qi) use ($year, $cutoff){
+                    $bookingQuery->whereHas('items', function($qi) use ($year, $cutoff, $labAnalyst){
                         $qi->whereNull('issue_date')
                            ->where('lab_expected_date','!=','0000-00-00')
                            ->whereDate('lab_expected_date','<', $cutoff)
                            ->whereYear('lab_expected_date', $year);
+
+                        if (!empty($labAnalyst)) {
+                            $qi->where('lab_analysis_code', $labAnalyst);
+                        }
                     });
                 } else {
-                    $bookingQuery->whereHas('items', function($qi) use ($year){
+                    $bookingQuery->whereHas('items', function($qi) use ($year, $labAnalyst){
                         $qi->where(function($qii) use ($year){
                             $qii->whereYear('received_at', $year)
                                 ->orWhereYear('created_at', $year);
                         });
+
+                        if (!empty($labAnalyst)) {
+                            $qi->where('lab_analysis_code', $labAnalyst);
+                        }
                     });
                 }
             }
             $bookingQuery->having('pending_items_count','>',0)->latest('id');
             $bookings = $bookingQuery->paginate($perPage)->withQueryString();
             $items = collect();
-            return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing'));
+            return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing','labAnalysts','labAnalyst'));
         } else {
             $q = BookingItem::query()->with(['booking']);
             if ($overdue) {
@@ -460,6 +493,10 @@ class ReportingController extends Controller
             }
             if ($marketing) {
                 $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
+            }
+
+            if (!empty($labAnalyst)) {
+                $q->where('lab_analysis_code', $labAnalyst);
             }
             if ($search !== '') {
                 $q->where(function($qq) use ($search) {
@@ -485,7 +522,7 @@ class ReportingController extends Controller
             $q->latest('id');
             $items = $q->paginate($perPage)->withQueryString();
             $bookings = collect();
-            return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing'));
+            return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing','labAnalysts','labAnalyst'));
         }
     }
 
@@ -497,6 +534,7 @@ class ReportingController extends Controller
         $year = $request->has('year') ? (int) $request->get('year') : null;
         $departmentId = $request->get('department');
         $marketing = $request->get('marketing');
+        $labAnalyst = $request->get('lab_analyst');
         if ($this->isMarketingUser($user)) {
             $marketing = $marketing ?: ($user->user_code ?? null);
             if ($marketing) {
@@ -521,6 +559,10 @@ class ReportingController extends Controller
         }
         if ($marketing) {
             $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
+        }
+
+        if (!empty($labAnalyst)) {
+            $q->where('lab_analysis_code', $labAnalyst);
         }
         if ($search !== '') {
             $q->where(function($qq) use ($search) {
@@ -556,21 +598,189 @@ class ReportingController extends Controller
 
     public function pendingsExportPdf(Request $request)
     {
-        $items = $this->buildPendingsQuery($request)->latest('id')->get();
+        $perPage = (int) $request->get('perPage', 10);
+        if ($perPage < 1) { $perPage = 10; }
+        if ($perPage > 500) { $perPage = 500; }
+        $page = (int) $request->get('page', 1);
+        if ($page < 1) { $page = 1; }
+
+        $mode = $request->get('mode', 'job');
+        if (!in_array($mode, ['job', 'reference'], true)) {
+            $mode = 'job';
+        }
+
+        if ($mode === 'reference') {
+            $bookingsPaginator = $this->buildPendingsBookingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
+            $bookings = collect($bookingsPaginator->items());
+
+            $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('superadmin.reporting.pendings_reference_pdf', [
+                'bookings' => $bookings,
+                'search' => $request->get('search'),
+                'month' => $request->get('month'),
+                'year' => $request->get('year'),
+                'department' => $request->get('department'),
+                'marketing' => $request->get('marketing'),
+                'lab_analyst' => $request->get('lab_analyst'),
+                'overdue' => $request->boolean('overdue'),
+            ])->setPaper('a4', 'landscape');
+
+            return $pdf->download('pending_reports_by_reference.pdf');
+        }
+
+        $itemsPaginator = $this->buildPendingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
+        $items = collect($itemsPaginator->items());
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('superadmin.reporting.pendings_pdf', [
             'items' => $items,
             'search' => $request->get('search'),
             'month' => $request->get('month'),
             'year' => $request->get('year'),
             'department' => $request->get('department'),
+            'marketing' => $request->get('marketing'),
+            'lab_analyst' => $request->get('lab_analyst'),
+            'overdue' => $request->boolean('overdue'),
         ])->setPaper('a4','landscape');
-        return $pdf->stream('pending_reports.pdf');
+        return $pdf->download('pending_reports_by_job.pdf');
     }
 
     public function pendingsExportExcel(Request $request)
     {
-        $items = $this->buildPendingsQuery($request)->latest('id')->get();
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingItemsExport($items), 'pending_reports.xlsx');
+        $perPage = (int) $request->get('perPage', 10);
+        if ($perPage < 1) { $perPage = 10; }
+        if ($perPage > 500) { $perPage = 500; }
+        $page = (int) $request->get('page', 1);
+        if ($page < 1) { $page = 1; }
+
+        $mode = $request->get('mode', 'job');
+        if (!in_array($mode, ['job', 'reference'], true)) {
+            $mode = 'job';
+        }
+
+        if ($mode === 'reference') {
+            $bookingsPaginator = $this->buildPendingsBookingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
+            $bookings = collect($bookingsPaginator->items());
+            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingBookingsExport($bookings), 'pending_reports_by_reference.xlsx');
+        }
+
+        $itemsPaginator = $this->buildPendingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
+        $items = collect($itemsPaginator->items());
+        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingItemsExport($items), 'pending_reports_by_job.xlsx');
+    }
+
+    protected function buildPendingsBookingsQuery(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $search = trim((string) $request->get('search'));
+        $month = $request->has('month') ? (int) $request->get('month') : null;
+        $year = $request->has('year') ? (int) $request->get('year') : null;
+        $overdue = $request->boolean('overdue');
+        $cutoff = now()->toDateString();
+        $departmentId = $request->get('department');
+        $marketing = $request->get('marketing');
+        $labAnalyst = $request->get('lab_analyst');
+
+        if ($this->isMarketingUser($user)) {
+            $marketing = $marketing ?: ($user->user_code ?? null);
+            if ($marketing) {
+                $request->merge(['marketing' => $marketing]);
+            }
+        }
+
+        if ($month !== null && ($month < 1 || $month > 12)) { $month = null; }
+        if ($year !== null && ($year < 2000 || $year > 2100)) { $year = null; }
+
+        $bookingQuery = \App\Models\NewBooking::query()
+            ->with(['marketingPerson'])
+            ->withCount(['items as pending_items_count' => function ($q) use ($overdue, $cutoff, $month, $year, $labAnalyst) {
+                if ($overdue) {
+                    $q->whereNull('issue_date')
+                        ->where('lab_expected_date', '!=', '0000-00-00')
+                        ->whereDate('lab_expected_date', '<', $cutoff);
+                    if ($month) { $q->whereMonth('lab_expected_date', $month); }
+                    if ($year) { $q->whereYear('lab_expected_date', $year); }
+                } else {
+                    $q->whereNull('issue_date');
+                    if ($month) {
+                        $q->where(function ($qq) use ($month) {
+                            $qq->whereMonth('received_at', $month)->orWhereMonth('created_at', $month);
+                        });
+                    }
+                    if ($year) {
+                        $q->where(function ($qq) use ($year) {
+                            $qq->whereYear('received_at', $year)->orWhereYear('created_at', $year);
+                        });
+                    }
+                }
+
+                if (!empty($labAnalyst)) {
+                    $q->where('lab_analysis_code', $labAnalyst);
+                }
+            }]);
+
+        if ($departmentId) {
+            $bookingQuery->where('department_id', $departmentId);
+        }
+        if (!empty($marketing)) {
+            $bookingQuery->where('marketing_id', $marketing);
+        }
+        if (!empty($labAnalyst)) {
+            $bookingQuery->whereHas('items', function ($qi) use ($labAnalyst) {
+                $qi->where('lab_analysis_code', $labAnalyst);
+            });
+        }
+        if ($search !== '') {
+            $bookingQuery->where(function ($qq) use ($search) {
+                $qq->where('client_name', 'like', "%{$search}%")
+                    ->orWhere('reference_no', 'like', "%{$search}%");
+            });
+        }
+
+        if ($month) {
+            if ($overdue) {
+                $bookingQuery->whereHas('items', function ($qi) use ($month, $cutoff, $labAnalyst) {
+                    $qi->whereNull('issue_date')
+                        ->where('lab_expected_date', '!=', '0000-00-00')
+                        ->whereDate('lab_expected_date', '<', $cutoff)
+                        ->whereMonth('lab_expected_date', $month);
+                    if (!empty($labAnalyst)) {
+                        $qi->where('lab_analysis_code', $labAnalyst);
+                    }
+                });
+            } else {
+                $bookingQuery->whereHas('items', function ($qi) use ($month, $labAnalyst) {
+                    $qi->where(function ($qii) use ($month) {
+                        $qii->whereMonth('received_at', $month)->orWhereMonth('created_at', $month);
+                    });
+                    if (!empty($labAnalyst)) {
+                        $qi->where('lab_analysis_code', $labAnalyst);
+                    }
+                });
+            }
+        }
+
+        if ($year) {
+            if ($overdue) {
+                $bookingQuery->whereHas('items', function ($qi) use ($year, $cutoff, $labAnalyst) {
+                    $qi->whereNull('issue_date')
+                        ->where('lab_expected_date', '!=', '0000-00-00')
+                        ->whereDate('lab_expected_date', '<', $cutoff)
+                        ->whereYear('lab_expected_date', $year);
+                    if (!empty($labAnalyst)) {
+                        $qi->where('lab_analysis_code', $labAnalyst);
+                    }
+                });
+            } else {
+                $bookingQuery->whereHas('items', function ($qi) use ($year, $labAnalyst) {
+                    $qi->where(function ($qii) use ($year) {
+                        $qii->whereYear('received_at', $year)->orWhereYear('created_at', $year);
+                    });
+                    if (!empty($labAnalyst)) {
+                        $qi->where('lab_analysis_code', $labAnalyst);
+                    }
+                });
+            }
+        }
+
+        return $bookingQuery->having('pending_items_count', '>', 0);
     }
 
     /**

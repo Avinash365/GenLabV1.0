@@ -141,6 +141,7 @@ class ShowBookingController extends Controller
 
         $departments = $this->departmentService->getDepartment();
         $marketingPersons = User::whereHas('marketingBookings')
+            ->orderBy('user_code')
             ->orderBy('name')
             ->get(['id', 'name', 'user_code']);
 

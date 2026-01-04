@@ -10,13 +10,17 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="PDF"><i class="ti ti-file-type-pdf"></i></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page']))); ?>" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="Excel"><i class="ti ti-file-spreadsheet"></i></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page']))); ?>" data-bs-toggle="tooltip" title="Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
+                        <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
+                    </svg>
+                </a>
             </li>
-            <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
+            <li style="margin-right:22px;">
+                <a href="<?php echo e(route('superadmin.reporting.pendings', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage']))); ?>" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
             </li>
         </ul>
     </div>
@@ -37,6 +41,7 @@
                     <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
                     
                     <?php if(request('marketing')): ?><input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>"><?php endif; ?>
+                    <?php if(request('lab_analyst')): ?><input type="hidden" name="lab_analyst" value="<?php echo e(request('lab_analyst')); ?>"><?php endif; ?>
                     <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
@@ -51,6 +56,7 @@
                             'month' => request('month'),
                             'year' => request('year'),
                             'marketing' => request('marketing'),
+                            'lab_analyst' => request('lab_analyst'),
                         ];
                         // Always set overdue=1 for Out of Expected Date, remove for others
                         $onParams = array_filter($base + ['overdue' => 1], function($v){ return !is_null($v) && $v !== ''; });
@@ -67,6 +73,9 @@
                     <?php endif; ?>
                     <?php if(request('marketing')): ?>
                         <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
+                    <?php endif; ?>
+                    <?php if(request('lab_analyst')): ?>
+                        <input type="hidden" name="lab_analyst" value="<?php echo e(request('lab_analyst')); ?>">
                     <?php endif; ?>
                     <input type="hidden" name="overdue" id="overdueInput" value="<?php echo e(request('overdue') ? 1 : ''); ?>">
                     <select name="month" class="form-control">
@@ -89,9 +98,9 @@
         <div class="px-3 pb-3">
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 <?php $currentDept = request('department'); ?>
-                <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e(!$currentDept ? 'btn-warning text-white' : 'btn-outline-warning'); ?>">All</a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'lab_analyst'=>request('lab_analyst'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e(!$currentDept ? 'btn-warning text-white' : 'btn-outline-warning'); ?>">All</a>
                 <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e((int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning'); ?>"><?php echo e($dept->name); ?></a>
+                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'lab_analyst'=>request('lab_analyst'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e((int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning'); ?>"><?php echo e($dept->name); ?></a>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 <?php if(isset($marketingPersons) && $marketingPersons->count()): ?>
                     <?php
@@ -111,6 +120,9 @@
                         <?php if($lockedMarketingCode): ?>
                             <input type="hidden" name="marketing" value="<?php echo e($lockedMarketingCode); ?>">
                         <?php endif; ?>
+                        <?php if(request('lab_analyst')): ?>
+                            <input type="hidden" name="lab_analyst" value="<?php echo e(request('lab_analyst')); ?>">
+                        <?php endif; ?>
                         <div class="input-group input-group-sm me-2" style="min-width:220px;">
                             <button type="button" id="localSearchBtn" class="input-group-text bg-white border-end-0" style="cursor:pointer;" aria-label="Focus search">
                                 <i class="ti ti-search"></i>
@@ -125,8 +137,19 @@
                                 <option value="<?php echo e($mp->user_code); ?>" <?php echo e(request('marketing') == $mp->user_code ? 'selected' : ''); ?>><?php echo e($mp->user_code); ?> - <?php echo e($mp->name); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
+                        <?php if(isset($labAnalysts) && $labAnalysts->count()): ?>
+                            <select name="lab_analyst" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
+                                <option value="">Select Lab Analyst</option>
+                                <?php $__currentLoopData = $labAnalysts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $la): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($la->user_code); ?>" <?php echo e(request('lab_analyst') == $la->user_code ? 'selected' : ''); ?>><?php echo e($la->user_code); ?> - <?php echo e($la->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        <?php endif; ?>
                         <?php if(request('marketing') && !$lockedMarketingCode): ?>
-                            <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm btn-outline-secondary">Clear</a>
+                            <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue'),'lab_analyst'=>request('lab_analyst')]))); ?>" class="btn btn-sm btn-outline-secondary">Clear</a>
+                        <?php endif; ?>
+                        <?php if(request('lab_analyst')): ?>
+                            <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue'),'marketing'=>request('marketing')]))); ?>" class="btn btn-sm btn-outline-secondary">Clear</a>
                         <?php endif; ?>
                     </form>
                 <?php endif; ?>

@@ -19,12 +19,12 @@ class PendingItemsExport implements FromCollection, WithHeadings
                 $it->sample_description,
                 $it->sample_quality,
                 $it->particulars,
-                optional($it->received_at)->format('Y-m-d H:i'),
+                $it->status,
             ];
         });
     }
     public function headings(): array
     {
-        return ['#','Job Order No','Client Name','Sample Description','Sample Quality','Particulars','Received At'];
+        return ['#','Job Order No','Client Name','Sample Description','Sample Quality','Particulars','Status'];
     }
 }

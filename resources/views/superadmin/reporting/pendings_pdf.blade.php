@@ -19,33 +19,65 @@
         @if(!empty($department)) Department ID: <strong>{{ $department }}</strong><br>@endif
         Generated: {{ now()->format('Y-m-d H:i') }}
     </p>
-    <table>
-        <thead>
+    <!doctype html>
+    <html>
+    <head>
+        <meta charset="utf-8">
+        <title>Pending Reports (By Job)</title>
+        <style>
+            body { font-family: DejaVu Sans, sans-serif; font-size: 12px; }
+            table { width: 100%; border-collapse: collapse; }
+            th, td { border: 1px solid #333; padding: 6px; vertical-align: top; }
+            th { background: #f3f3f3; }
+            .muted { color: #555; font-size: 11px; }
+            .title { font-size: 16px; font-weight: bold; margin-bottom: 6px; }
+            .filters { margin-bottom: 10px; }
+        </style>
+    </head>
+    <body>
+        <div class="title">Pending Reports (By Job Order)</div>
+
+        <div class="filters muted">
+            <div>
+                Search: {{ $search ?: '-' }} |
+                Month: {{ $month ?: '-' }} |
+                Year: {{ $year ?: '-' }} |
+                Department: {{ $department ?: '-' }} |
+                Marketing: {{ $marketing ?: '-' }} |
+                Lab Analyst: {{ $lab_analyst ?: '-' }} |
+                Overdue: {{ !empty($overdue) ? 'Yes' : 'No' }}
+            </div>
+        </div>
+
+        <table>
+            <thead>
             <tr>
-                <th>#</th>
-                <th>Job Order No</th>
-                <th>Client</th>
-                <th>Sample Description</th>
-                <th>Sample Quality</th>
-                <th>Particulars</th>
-                <th>Received At</th>
+                <th style="width: 6%">#</th>
+                <th style="width: 16%">Job Order No</th>
+                <th style="width: 18%">Client Name</th>
+                <th style="width: 22%">Sample Description</th>
+                <th style="width: 14%">Sample Quality</th>
+                <th style="width: 16%">Particulars</th>
+                <th style="width: 8%">Status</th>
             </tr>
-        </thead>
-        <tbody>
+            </thead>
+            <tbody>
             @forelse($items as $i => $item)
                 <tr>
-                    <td>{{ $i+1 }}</td>
+                    <td>{{ $i + 1 }}</td>
                     <td>{{ $item->job_order_no }}</td>
-                    <td>{{ $item->booking?->client_name ?? '-' }}</td>
+                    <td>{{ optional($item->booking)->client_name }}</td>
                     <td>{{ $item->sample_description }}</td>
                     <td>{{ $item->sample_quality }}</td>
                     <td>{{ $item->particulars }}</td>
-                    <td>{{ optional($item->received_at)->format('Y-m-d H:i') }}</td>
+                    <td>{{ $item->status }}</td>
                 </tr>
             @empty
-                <tr><td colspan="7" style="text-align:center;">No pending records.</td></tr>
+                <tr>
+                    <td colspan="7" style="text-align:center;">No data found</td>
+                </tr>
             @endforelse
-        </tbody>
-    </table>
-</body>
-</html>
+            </tbody>
+        </table>
+    </body>
+    </html>
