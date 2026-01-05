@@ -63,7 +63,7 @@
                   <th>#</th>
                   <th>Party Name</th>
                   <th>Cheque Date</th>
-                  <th class="text-end">Amount</th>
+                  <th class="text-end">Amount /-</th>
                   <th>Deposit Date</th>
                   <th>Deposit Person</th>
                   <th>Deposit Status</th>
@@ -78,7 +78,7 @@
                   <th>Date</th>
                   <th>Purpose</th>
                   <th>Handed Over To</th>
-                  <th class="text-end">Amount</th>
+                  <th class="text-end">Amount /-</th>
                   <th>Status</th>
                   <th class="text-end">Action</th>
                 </tr>
@@ -91,7 +91,7 @@
                     <td>{{ $cheques->firstItem() + $i }}</td>
                     <td>{{ $chq->received_party_name ?? '-' }}</td>
                     <td>{{ optional($chq->received_cheque_date)->format('d M Y') }}</td>
-                    <td class="text-end">{{ number_format($chq->received_amount ?? $chq->amount, 2) }}</td>
+                      <td class="text-end">{{ number_format($chq->received_amount ?? $chq->amount, 2) }} /-</td>
                     <td>{{ optional($chq->deposit_date)->format('d M Y') ?? 'N/A' }}</td>
                     <td>{{ $chq->deposit_person ?? 'N/A' }}</td>
                     <td>
@@ -117,7 +117,7 @@
                     <td>{{ optional($chq->date)->format('d M Y') }}</td>
                     <td>{{ $chq->purpose }}</td>
                     <td>{{ $chq->handed_over_to }}</td>
-                    <td class="text-end">{{ number_format($chq->amount, 2) }}</td>
+                      <td class="text-end">{{ number_format($chq->amount, 2) }} /-</td>
                     <td><span class="badge bg-{{ $chq->status==='issued' ? 'warning' : ($chq->status==='received' ? 'success' : 'secondary') }}">{{ ucfirst($chq->status) }}</span></td>
                     <td class="text-end">
                       <div class="btn-group btn-group-sm" role="group" style="gap:5px;">

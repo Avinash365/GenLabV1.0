@@ -30,6 +30,7 @@ class ChequeTemplateController extends Controller
             'positions.*.left' => ['required', 'integer', 'min:0'],
             'positions.*.font_size' => ['nullable', 'integer', 'min:8', 'max:72'],
             'positions.*.letter_spacing' => ['nullable', 'numeric'],
+            'positions.*.is_bold' => ['nullable', 'boolean'],
             'delete_fields' => ['nullable','array'],
             'delete_fields.*' => ['string'],
         ]);
@@ -42,6 +43,7 @@ class ChequeTemplateController extends Controller
                     'left' => $item['left'],
                     'font_size' => $item['font_size'] ?? 14,
                     'letter_spacing' => $item['letter_spacing'] ?? null,
+                    'is_bold' => (bool) ($item['is_bold'] ?? false),
                 ]
             );
         }
@@ -57,7 +59,7 @@ class ChequeTemplateController extends Controller
 
     public function fetch(Bank $bank)
     {
-    $templates = $bank->templates()->get(['field_name', 'top', 'left', 'font_size', 'letter_spacing']);
+    $templates = $bank->templates()->get(['field_name', 'top', 'left', 'font_size', 'letter_spacing', 'is_bold']);
         return response()->json($templates);
     }
 }

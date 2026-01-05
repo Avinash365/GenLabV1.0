@@ -1069,13 +1069,26 @@
             });
         });
 
-        // Auto-save issue date when user selects a date from the picker
+        // Save issue date ONLY when user hits Enter (no auto-save on date picker selection)
         document.querySelectorAll('.issue-date-input').forEach(function(input) {
-            if (input.dataset.boundIssue === '1') return;
-            input.dataset.boundIssue = '1';
-            input.addEventListener('change', function() {
-                const val = input.value;
-                if (!val) return;
+            if (input.dataset.boundIssueEnter === '1') return;
+            input.dataset.boundIssueEnter = '1';
+
+            input.addEventListener('keydown', function(ev) {
+                if (ev.key !== 'Enter') return;
+                ev.preventDefault();
+
+                const val = (input.value || '').trim();
+                if (!val) {
+                    if (window.Swal) {
+                        Swal.fire({ icon: 'warning', title: 'Issue Date required', text: 'Please enter/select an issue date, then press Enter to save.' });
+                    } else {
+                        alert('Please enter/select an issue date, then press Enter to save.');
+                    }
+                    input.focus();
+                    return;
+                }
+
                 const cell = input.closest('.issue-date-cell');
                 const id = cell ? cell.getAttribute('data-id') : null;
                 if (!id) return;
@@ -1096,7 +1109,6 @@
                     if (data && data.ok) {
                         const cellStatus = document.querySelector('.status-cell[data-id="' + id + '"]');
                         if (cellStatus) {
-                            // When an issue date is saved we mark the status as Report Generated
                             cellStatus.textContent = 'Report Generated';
                         }
                         const row = input.closest('tr');
@@ -1111,7 +1123,6 @@
                             const ts = selectEl.tomSelectInstance;
                             if (ts && typeof ts.enable === 'function') ts.enable();
                         }
-                        // Update receive button state
                         const btn = document.querySelector('.receive-toggle-btn[data-id="' + id + '"]');
                         if (btn) {
                             btn.textContent = 'Received';

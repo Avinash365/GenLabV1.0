@@ -17,6 +17,7 @@ class ChequeTemplate extends Model
         'left',
         'font_size',
         'letter_spacing',
+        'is_bold',
     ];
 
     /**

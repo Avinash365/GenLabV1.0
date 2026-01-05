@@ -53,7 +53,7 @@
             @php
               $defaults = [
                 'payee_name' => ['top'=>90,'left'=>80,'label'=>'Payee'],
-                'date' => ['top'=>30,'left'=>635,'label'=>'Date'],
+                'date' => ['top'=>30,'left'=>635,'label'=>'date'],
                 'amount_number' => ['top'=>150,'left'=>650,'label'=>'Amount (₹)'],
                 'amount_words' => ['top'=>120,'left'=>130,'label'=>'Amount in words'],
               ];
@@ -76,14 +76,15 @@
                 $fontSize = $t->font_size ?? 16;
                 $label = $sample[$name];
                 $ls = $t->letter_spacing ?? null;
+                $isBold = (bool) ($t->is_bold ?? false);
               @endphp
-              <div class="draggable-field" data-field="{{ $name }}" data-group="date-text" style="top: {{ $posTop }}px; left: {{ $posLeft }}px; font-size: {{ $fontSize }}px; {{ $ls !== null ? 'letter-spacing: '.$ls.'px;' : '' }} {{ $name==='date' && $dateBoxesEnabled ? 'display:none;' : '' }}">
+              <div class="draggable-field" data-field="{{ $name }}" data-group="date-text" style="top: {{ $posTop }}px; left: {{ $posLeft }}px; font-size: {{ $fontSize }}px; {{ $ls !== null ? 'letter-spacing: '.$ls.'px;' : '' }} {{ $isBold ? 'font-weight:700;' : '' }} {{ $name==='date' && $dateBoxesEnabled ? 'display:none;' : '' }}">
                 <span class="field-label">{{ ucfirst(str_replace('_',' ', $name)) }}</span>
                 <span class="placeholder">{{ $label }}</span>
               </div>
             @endforeach
 
-            {{-- Date boxes (8 digits) --}}
+            {{-- date boxes (8 digits) --}}
             @php $dateDefaults = ['top'=> $defaults['date']['top'], 'left'=> $defaults['date']['left'], 'step'=>18, 'font'=>16]; @endphp
             @for($i=1;$i<=8;$i++)
               @php
@@ -93,9 +94,10 @@
                 $left = $t->left ?? ($dateDefaults['left'] + ($i-1)*$dateDefaults['step']);
                 $fs = $t->font_size ?? $dateDefaults['font'];
                 $digit = $dateDigits[$i-1] ?? '';
+                $isBold = (bool) ($t->is_bold ?? false);
               @endphp
-              <div class="draggable-field" data-field="{{ $key }}" data-group="date-box" style="top: {{ $top }}px; left: {{ $left }}px; font-size: {{ $fs }}px; {{ $dateBoxesEnabled ? '' : 'display:none;' }}">
-                <span class="field-label">Date {{ $i }}</span>
+              <div class="draggable-field" data-field="{{ $key }}" data-group="date-box" style="top: {{ $top }}px; left: {{ $left }}px; font-size: {{ $fs }}px; {{ $isBold ? 'font-weight:700;' : '' }} {{ $dateBoxesEnabled ? '' : 'display:none;' }}">
+                <span class="field-label">  {{ $i }}</span>
                 <span class="placeholder">{{ $digit }}</span>
               </div>
             @endfor
@@ -109,7 +111,7 @@
         <div class="card-header"><h5 class="card-title mb-0">Field Settings</h5></div>
         <div class="card-body">
           <div class="mb-3">
-            <label class="form-label">Date Type</label>
+            <label class="form-label">date Type</label>
             <select id="dateType" class="form-select">
               <option value="text" {{ $dateBoxesEnabled ? '' : 'selected' }}>Text (single field)</option>
               <option value="boxes" {{ $dateBoxesEnabled ? 'selected' : '' }}>Boxes (8 digits)</option>
@@ -122,6 +124,11 @@
           <div class="mb-3">
             <label class="form-label">Font Size (px)</label>
             <input type="number" id="fontSize" class="form-control" min="8" max="72" value="14">
+          </div>
+
+          <div class="mb-3 form-check">
+            <input type="checkbox" id="isBold" class="form-check-input">
+            <label class="form-check-label" for="isBold">Bold</label>
           </div>
           
           <div class="mb-3">
@@ -158,11 +165,14 @@
     $('#posTop').val(Math.round(pos.top));
     $('#posLeft').val(Math.round(pos.left));
     $('#fontSize').val(parseInt($el.css('font-size'),10));
+    const fw = $el.css('font-weight');
+    const isBold = (fw === 'bold') || (parseInt(fw, 10) >= 600);
+    $('#isBold').prop('checked', !!isBold);
     const ls = $el.css('letter-spacing');
     $('#letterSpacing').val(ls && ls !== 'normal' ? parseFloat(ls) : '');
   }
 
-  function toggleDateGroup(mode){
+  function toggledateGroup(mode){
     if (mode === 'boxes'){
       $('[data-group="date-text"]').hide();
       $('[data-group="date-box"]').show();
@@ -229,14 +239,15 @@
     $img.on('load', function(){ setupDraggable(); });
   }
 
-  toggleDateGroup($dateType.val());
-  $dateType.on('change', function(){ toggleDateGroup(this.value); });
+  toggledateGroup($dateType.val());
+  $dateType.on('change', function(){ toggledateGroup(this.value); });
 
   $('#applySettings').on('click', function(){
     if(!$active) return;
     const top = parseInt($('#posTop').val(),10) || 0;
     const left = parseInt($('#posLeft').val(),10) || 0;
     const fs = parseInt($('#fontSize').val(),10) || 14;
+    const isBold = !!$('#isBold').prop('checked');
     const lsRaw = $('#letterSpacing').val();
     const ls = lsRaw === '' ? null : parseFloat(lsRaw);
     const parentW = $canvas.width();
@@ -245,7 +256,7 @@
     const h = $active.outerHeight();
     const clampedLeft = clamp(left, 0, Math.max(0, parentW - w));
     const clampedTop = clamp(top, 0, Math.max(0, parentH - h));
-    $active.css({ top: clampedTop+'px', left: clampedLeft+'px', fontSize: fs+'px', letterSpacing: (ls===null? 'normal' : ls+'px') });
+    $active.css({ top: clampedTop+'px', left: clampedLeft+'px', fontSize: fs+'px', fontWeight: (isBold ? '700' : '400'), letterSpacing: (ls===null? 'normal' : ls+'px') });
 
     if (window.Swal) {
       Swal.fire({ icon: 'success', title: 'Applied', text: 'Position updated for "' + ($active.data('field')) + '"', timer: 1200, showConfirmButton: false });
@@ -259,12 +270,16 @@
       const $el = $(this); const pos = $el.position();
       const field = $el.data('field');
       const ls = $el.css('letter-spacing');
+      const fw = $el.css('font-weight');
+      const isBold = (fw === 'bold') || (parseInt(fw, 10) >= 600);
       payload.push({
         field_name: field,
         top: Math.round(pos.top),
         left: Math.round(pos.left),
         font_size: parseInt($el.css('font-size'),10) || 14,
         letter_spacing: (ls && ls !== 'normal') ? parseFloat(ls) : null,
+        // Send as 1/0 so Laravel's boolean validator passes even after form serialization
+        is_bold: isBold ? 1 : 0,
       });
     });
 

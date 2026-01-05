@@ -73,7 +73,7 @@
           @php
             $fields = [
               'payee_name' => $cheque->payee_name,
-              'amount_number' => number_format($cheque->amount, 2),
+              'amount_number' => number_format($cheque->amount, 2) . ' /-',
               'amount_words' => $cheque->amount_in_words,
             ];
             $hasDateBoxes = $templates->has('date_1');
@@ -85,13 +85,15 @@
               $t = $templates[$name] ?? null;
               $top = $t->top ?? 0; $left = $t->left ?? 0; $fs = ($t->font_size ?? 14);
               $ls = isset($t->letter_spacing) ? $t->letter_spacing : null;
+              $isBold = (bool) ($t->is_bold ?? false);
             @endphp
             <div class="overlay-field"
                  data-field="{{ $name }}"
                  data-top="{{ $top }}"
                  data-left="{{ $left }}"
                  data-font-size="{{ $fs }}"
-                 {{ $ls !== null ? 'data-letter-spacing='.$ls : '' }}>
+                 {{ $ls !== null ? 'data-letter-spacing='.$ls : '' }}
+                 data-font-weight="{{ $isBold ? '700' : '400' }}">
                  {{ $value }}
             </div>
           @endforeach
@@ -104,12 +106,14 @@
                 $key = 'date_'.$i; $val = $digits[$i-1] ?? '';
                 $t = $templates[$key] ?? null;
                 $top = $t->top ?? 0; $left = $t->left ?? 0; $fs = ($t->font_size ?? 14);
+                $isBold = (bool) ($t->is_bold ?? false);
               @endphp
               <div class="overlay-field"
                    data-field="{{ $key }}"
                    data-top="{{ $top }}"
                    data-left="{{ $left }}"
-                   data-font-size="{{ $fs }}">
+                   data-font-size="{{ $fs }}"
+                   data-font-weight="{{ $isBold ? '700' : '400' }}">
                    {{ $val }}
               </div>
             @endfor
@@ -119,13 +123,15 @@
               $top = $t->top ?? 0; $left = $t->left ?? 0; $fs = ($t->font_size ?? 14);
               $ls = isset($t->letter_spacing) ? $t->letter_spacing : null;
               $value = optional($cheque->date)->format('d/m/Y');
+              $isBold = (bool) ($t->is_bold ?? false);
             @endphp
             <div class="overlay-field"
                  data-field="date"
                  data-top="{{ $top }}"
                  data-left="{{ $left }}"
                  data-font-size="{{ $fs }}"
-                 {{ $ls !== null ? 'data-letter-spacing='.$ls : '' }}>
+                 {{ $ls !== null ? 'data-letter-spacing='.$ls : '' }}
+                 data-font-weight="{{ $isBold ? '700' : '400' }}">
                  {{ $value }}
             </div>
           @endif
@@ -139,7 +145,7 @@
               <div><strong>Cheque No:</strong> {{ $cheque->cheque_no }}</div>
               <div><strong>Payee:</strong> {{ $cheque->payee_name }}</div>
               <div><strong>Date:</strong> {{ optional($cheque->date)->format('d M Y') ?: '—' }}</div>
-              <div><strong>Amount:</strong> {{ number_format($cheque->amount,2) }}</div>
+              <div><strong>Amount:</strong> {{ number_format($cheque->amount,2) }} /-</div>
               <div><strong>In words:</strong> {{ $cheque->amount_in_words }}</div>
               @if(!$bank)
                 <div class="alert alert-warning mt-3">No template found for bank "{{ $cheque->bank }}". Set it under Accounts → Cheque Template.</div>
@@ -177,9 +183,13 @@
       const left = parseFloat(el.getAttribute('data-left')) || 0;
       const fs = parseFloat(el.getAttribute('data-font-size')) || 14;
       const lsAttr = el.getAttribute('data-letter-spacing');
+      const fwAttr = el.getAttribute('data-font-weight');
       el.style.top = (top * scaleY) + 'px';
       el.style.left = (left * scaleX) + 'px';
       el.style.fontSize = (fs * scaleY) + 'px';
+      if (fwAttr !== null) {
+        el.style.fontWeight = String(fwAttr);
+      }
       if (lsAttr !== null) {
         const ls = parseFloat(lsAttr);
         if (!isNaN(ls)) {
