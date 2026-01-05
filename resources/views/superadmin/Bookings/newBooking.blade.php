@@ -59,7 +59,7 @@
                                     </div>
                                 </div>
                                 <div class="col-sm-6 col-12">
-                                    <label class="form-label">Client Address <span class="text-danger">*</span></label>
+                                    <label class="form-label">Client Address <span class="text-danger"></span></label>
                                     <textarea class="form-control" name="client_address" rows="3" placeholder="📍 Enter client's full address" >{{ old('client_address') }}</textarea>
                                 </div>
                             </div>
@@ -84,8 +84,8 @@
                                         @endif
                                 </div>
                                 <div class="col-sm-4 col-12">
-                                    <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="report_issue_to" value="{{ old('report_issue_to') }}" placeholder="Enter person/team to report issue to" required >
+                                    <label class="form-label">Report Issue To <span class="text-danger"></span></label>
+                                    <input type="text" class="form-control" name="report_issue_to" value="{{ old('report_issue_to') }}" placeholder="Enter person/team to report issue to" >
                                 </div>
                             </div>
 
@@ -104,8 +104,8 @@
                                 </div>
                                 
                                 <div class="col-lg-4 col-sm-6 col-12">
-                                    <label class="form-label">Contact No <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="contact_no" value="{{ old('contact_no') }}" required>
+                                    <label class="form-label">Contact No <span class="text-danger"></span></label>
+                                    <input type="text" class="form-control" name="contact_no" value="{{ old('contact_no') }}" >
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
@@ -132,11 +132,11 @@
                             </div> 
                             <div class="row">   
                                 <div class="col-sm-8 col-12 mt-3">
-                                    <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
+                                    <label class="form-label">Name Of Work <span class="text-danger"></span></label>
                                     <input type="text" class="form-control" name="name_of_work" placeholder="Enter work name" value="{{ old('name_of_work') }}">
                                 </div>    
                                 <div class="col-sm-4 col-12 mt-3">
-                                    <label class="form-label">M.S <span class="text-danger">*</span></label>
+                                    <label class="form-label">M.S <span class="text-danger"></span></label>
                                     <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="{{ old('m_s') }}">
                                 </div> 
                             </div>
@@ -151,12 +151,12 @@
                 <div class="accordion-item border mb-4">
                     <h2 class="accordion-header" id="headingUploadLetter">
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#uploadLetter" aria-expanded="true">
-                            <h5 class="d-flex align-items-center"> <i data-feather="image" class="text-primary me-2"></i>Upload Letter </h5>
+                            <h5 class="d-flex align-items-center"> <i data-feather="image" class="text-primary me-2"></i>Upload Letter* </h5>
                         </div>
                     </h2>
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
-                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" >
+                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" required>
                         </div>
                     </div>
                 </div>

@@ -26,13 +26,17 @@
                     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 bg-light border-bottom">
                         <h3 class="card-title mb-0">User List</h3>
                         <div class="d-flex flex-wrap align-items-center gap-3 ms-auto">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="userTableSearch" class="me-1 mb-0 small">Search:</label>
+                                <input type="text" id="userTableSearch" class="form-control form-control-sm" style="width: 320px; max-width: 100%;" placeholder="Type to filter…" autocomplete="off">
+                            </div>
                             <form method="GET" action="{{ route('superadmin.users.index') }}" class="d-flex align-items-center gap-2 mb-0">
                                 @foreach(request()->except(['perPage','page']) as $key => $val)
                                     <input type="hidden" name="{{ $key }}" value="{{ $val }}">
                                 @endforeach
                                 <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                                 <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                    @foreach([25,50,100] as $size)
+                                    @foreach([25,50,100, 250] as $size)
                                         <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
                                     @endforeach
                                 </select>
@@ -44,7 +48,7 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-bordered table-striped mb-0">
+                            <table id="usersTable" class="table table-bordered table-striped mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width: 20%;">User Code</th>
@@ -248,7 +252,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted">No users found.</td>
+                                            <td colspan="5" class="text-center text-muted">No users found.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -264,3 +268,41 @@
 
 
 @endsection
+
+@push('scripts')
+<script>
+(function () {
+    const searchInput = document.getElementById('userTableSearch');
+    const table = document.getElementById('usersTable');
+    if (!searchInput || !table) return;
+
+    const tbody = table.tBodies && table.tBodies[0];
+    if (!tbody) return;
+
+    const getRowText = (row) => {
+        const cells = row.cells;
+        if (!cells || cells.length < 3) return '';
+        // Only search core columns to avoid matching hidden modal markup in other cells.
+        return (
+            (cells[0].innerText || '') + ' ' +
+            (cells[1].innerText || '') + ' ' +
+            (cells[2].innerText || '')
+        ).toLowerCase();
+    };
+
+    const applyFilter = () => {
+        const query = (searchInput.value || '').trim().toLowerCase();
+        const rows = Array.from(tbody.rows);
+        if (!query) {
+            rows.forEach((row) => { row.style.display = ''; });
+            return;
+        }
+        rows.forEach((row) => {
+            row.style.display = getRowText(row).includes(query) ? '' : 'none';
+        });
+    };
+
+    searchInput.addEventListener('input', applyFilter);
+})();
+</script>
+@endpush

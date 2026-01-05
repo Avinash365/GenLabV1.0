@@ -31,7 +31,7 @@ class StoreBookingRequest extends FormRequest
             'client_address' => 'nullable|string',
             'letter_date' => 'required|string',
             'job_order_date' => 'nullable',
-            'report_issue_to' => 'required|string|max:255',
+            'report_issue_to' => 'nullable|string|max:255',
             'department_id' => 'required|exists:departments,id',
             'payment_option' => 'required|in:bill,without_bill',
             'm_s' => 'nullable|string|max:255',

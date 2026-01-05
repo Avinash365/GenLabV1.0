@@ -26,13 +26,17 @@
                     <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2 bg-light border-bottom">
                         <h3 class="card-title mb-0">User List</h3>
                         <div class="d-flex flex-wrap align-items-center gap-3 ms-auto">
+                            <div class="d-flex align-items-center gap-2">
+                                <label for="userTableSearch" class="me-1 mb-0 small">Search:</label>
+                                <input type="text" id="userTableSearch" class="form-control form-control-sm" style="width: 320px; max-width: 100%;" placeholder="Type to filter…" autocomplete="off">
+                            </div>
                             <form method="GET" action="<?php echo e(route('superadmin.users.index')); ?>" class="d-flex align-items-center gap-2 mb-0">
                                 <?php $__currentLoopData = request()->except(['perPage','page']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($val); ?>">
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                                 <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
-                                    <?php $__currentLoopData = [25,50,100]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <?php $__currentLoopData = [25,50,100, 250]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <option value="<?php echo e($size); ?>" <?php echo e(request('perPage',25)==$size ? 'selected' : ''); ?>><?php echo e($size); ?></option>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                                 </select>
@@ -45,7 +49,7 @@
                     </div>
                     <div class="card-body p-0">
                         <div class="table-responsive">
-                            <table class="table table-bordered table-striped mb-0">
+                            <table id="usersTable" class="table table-bordered table-striped mb-0">
                                 <thead class="table-light">
                                     <tr>
                                         <th style="width: 20%;">User Code</th>
@@ -268,7 +272,7 @@
                                         </tr>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                                         <tr>
-                                            <td colspan="4" class="text-center text-muted">No users found.</td>
+                                            <td colspan="5" class="text-center text-muted">No users found.</td>
                                         </tr>
                                     <?php endif; ?>
                                 </tbody>
@@ -284,5 +288,43 @@
 
 
 <?php $__env->stopSection(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+(function () {
+    const searchInput = document.getElementById('userTableSearch');
+    const table = document.getElementById('usersTable');
+    if (!searchInput || !table) return;
+
+    const tbody = table.tBodies && table.tBodies[0];
+    if (!tbody) return;
+
+    const getRowText = (row) => {
+        const cells = row.cells;
+        if (!cells || cells.length < 3) return '';
+        // Only search core columns to avoid matching hidden modal markup in other cells.
+        return (
+            (cells[0].innerText || '') + ' ' +
+            (cells[1].innerText || '') + ' ' +
+            (cells[2].innerText || '')
+        ).toLowerCase();
+    };
+
+    const applyFilter = () => {
+        const query = (searchInput.value || '').trim().toLowerCase();
+        const rows = Array.from(tbody.rows);
+        if (!query) {
+            rows.forEach((row) => { row.style.display = ''; });
+            return;
+        }
+        rows.forEach((row) => {
+            row.style.display = getRowText(row).includes(query) ? '' : 'none';
+        });
+    };
+
+    searchInput.addEventListener('input', applyFilter);
+})();
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/users/index.blade.php ENDPATH**/ ?>

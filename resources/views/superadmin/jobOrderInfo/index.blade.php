@@ -25,6 +25,30 @@
 @section('title', 'Create New Booking')
 
 @section('content')
+@php
+    // These values are identical across the booking items on this page, so we show them once per table.
+    $firstItem = null;
+    if (isset($items)) {
+        if (is_object($items) && method_exists($items, 'getCollection')) {
+            $firstItem = $items->getCollection()->first();
+        } elseif (is_iterable($items)) {
+            foreach ($items as $it) { $firstItem = $it; break; }
+        }
+    }
+    $pageClientName = $firstItem?->booking?->client_name ?? '-';
+    $pageReferenceNo = $firstItem?->booking?->reference_no ?? '-';
+
+    $firstInvoice = null;
+    if (isset($invoices)) {
+        if (is_object($invoices) && method_exists($invoices, 'getCollection')) {
+            $firstInvoice = $invoices->getCollection()->first();
+        } elseif (is_iterable($invoices)) {
+            foreach ($invoices as $inv) { $firstInvoice = $inv; break; }
+        }
+    }
+    $invoiceClientName = $firstInvoice?->relatedBooking?->client?->name ?? '-';
+    $invoiceReferenceNo = $firstInvoice?->relatedBooking?->reference_no ?? '-';
+@endphp
 @if ($errors->any())
     <div class="alert alert-danger">
         <ul class="mb-0">
@@ -82,13 +106,20 @@
                         <table class="table">
                             <thead class="table-light">
                                 <tr>
-                                    <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                                    <th>Job Order No</th>
-                                    <th style="width:180px;">Client Name</th>
-                                    <th style="width:180px;">Reference No</th>
+                                    <th colspan="7" class="bg-white">
+                                        <div class="d-flex flex-wrap gap-3">
+                                            <span><strong>Client Name:</strong> {{ $pageClientName }}</span>
+                                            <span><strong>Reference No:</strong> {{ $pageReferenceNo }}</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                                <tr>
+                                    <th style="width:40px;"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                                    <th style="width:150px;">Job Order No</th>
                                     <th style="width:240px;">Sample Description</th>
                                     <th style="width:90px;">Sample Quality</th>
                                     <th style="width:240px;">Particulars</th>
+                                    <th style="width:120px;">Status</th>
         
                                     <th>Action</th>
                                 </tr>
@@ -99,21 +130,15 @@
                                     class="table-row"
                                     data-search="{{ strtolower(
                                         $item->job_order_no . ' ' .
-                                        ($item->booking?->client_name ?? '') . ' ' .
                                         $item->sample_description . ' ' .
                                         $item->sample_quality . ' ' .
-                                        $item->particulars
+                                        $item->particulars . ' ' .
+                                        (trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
                                     ) }}" 
                                 >
 
                                     <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                                     <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
-                                    </td>
-                                    <td class="truncate-cell">
-                                        <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
-                                    </td>
                                     <td class="truncate-cell">
                                         <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
                                     </td>
@@ -122,6 +147,11 @@
                                     </td>
                                     <td class="truncate-cell">
                                         <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                    </td>
+
+                                    <td>
+                                        @php($statusText = trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
+                                        <span class="badge bg-secondary">{{ $statusText }}</span>
                                     </td>
                                 
                                 
@@ -234,13 +264,20 @@
                             <table class="table">
                                 <thead class="table-light">
                                     <tr>
-                                        <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                                        <th>Job Order No</th>
-                                        <th style="width:180px;">Client Name</th>
-                                        <th style="width:180px;">Reference No</th>
+                                        <th colspan="7" class="bg-white">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <span><strong>Client Name:</strong> {{ $pageClientName }}</span>
+                                                <span><strong>Reference No:</strong> {{ $pageReferenceNo }}</span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width:40px;"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                                        <th style="width:150px;">Job Order No</th>
                                         <th style="width:240px;">Sample Description</th>
                                         <th style="width:90px;">Sample Quality</th>
                                         <th style="width:240px;">Particulars</th>
+                                        <th style="width:120px;">Status</th>
             
                                         <th>Action</th>
                                     </tr>
@@ -251,21 +288,15 @@
                                         class="table-row"
                                         data-search="{{ strtolower(
                                             $item->job_order_no . ' ' .
-                                            ($item->booking?->client_name ?? '') . ' ' .
                                             $item->sample_description . ' ' .
                                             $item->sample_quality . ' ' .
-                                            $item->particulars
+                                            $item->particulars . ' ' .
+                                            (trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
                                         ) }}" 
                                     >
 
                                         <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                                         <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
-                                        <td class="truncate-cell">
-                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
-                                        </td>
-                                        <td class="truncate-cell">
-                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
-                                        </td>
                                         <td class="truncate-cell">
                                             <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
                                         </td>
@@ -274,6 +305,11 @@
                                         </td>
                                         <td class="truncate-cell">
                                             <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                        </td>
+
+                                        <td>
+                                            @php($statusText = trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
+                                            <span class="badge bg-secondary">{{ $statusText }}</span>
                                         </td>
                                     
                                     
@@ -359,6 +395,14 @@
                             <div class="table-responsive">
                                          <table class="table table-hover align-middle">
                                         <thead class="table-light">
+                                            <tr>
+                                                <th colspan="10" class="bg-white">
+                                                    <div class="d-flex flex-wrap gap-3">
+                                                        <span><strong>Client Name:</strong> {{ $invoiceClientName }}</span>
+                                                        <span><strong>Reference No:</strong> {{ $invoiceReferenceNo }}</span>
+                                                    </div>
+                                                </th>
+                                            </tr>
                                             <tr>
                                                 <th>#</th>
                                                 <th>Invoice No</th>
@@ -598,13 +642,20 @@
                             <table class="table">
                                 <thead class="table-light">
                                     <tr>
-                                        <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                                        <th>Job Order No</th>
-                                        <th style="width:180px;">Client Name</th>
-                                        <th style="width:180px;">Reference No</th>
+                                        <th colspan="7" class="bg-white">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <span><strong>Client Name:</strong> {{ $pageClientName }}</span>
+                                                <span><strong>Reference No:</strong> {{ $pageReferenceNo }}</span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width:40px;"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                                        <th style="width:150px;">Job Order No</th>
                                         <th style="width:240px;">Sample Description</th>
                                         <th style="width:90px;">Sample Quality</th>
                                         <th style="width:240px;">Particulars</th>
+                                        <th style="width:120px;">Status</th>
             
                                         <th>Action</th>
                                     </tr>
@@ -615,21 +666,15 @@
                                         class="table-row"
                                         data-search="{{ strtolower(
                                             $item->job_order_no . ' ' .
-                                            ($item->booking?->client_name ?? '') . ' ' .
                                             $item->sample_description . ' ' .
                                             $item->sample_quality . ' ' .
-                                            $item->particulars
+                                            $item->particulars . ' ' .
+                                            (trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
                                         ) }}" 
                                     >
 
                                         <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                                         <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
-                                        <td class="truncate-cell">
-                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
-                                        </td>
-                                        <td class="truncate-cell">
-                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
-                                        </td>
                                         <td class="truncate-cell">
                                             <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
                                         </td>
@@ -638,6 +683,11 @@
                                         </td>
                                         <td class="truncate-cell">
                                             <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                        </td>
+
+                                        <td>
+                                            @php($statusText = trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
+                                            <span class="badge bg-secondary">{{ $statusText }}</span>
                                         </td>
                                     
                     
@@ -729,13 +779,20 @@
                             <table class="table">
                                 <thead class="table-light">
                                     <tr>
-                                        <th><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                                        <th>Job Order No</th>
-                                        <th style="width:180px;">Client Name</th>
-                                        <th style="width:180px;">Reference No</th>
-                                        <th style="width:240px;">Sample Description</th>
+                                        <th colspan="7" class="bg-white">
+                                            <div class="d-flex flex-wrap gap-3">
+                                                <span><strong>Client Name:</strong> {{ $pageClientName }}</span>
+                                                <span><strong>Reference No:</strong> {{ $pageReferenceNo }}</span>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                    <tr>
+                                        <th style="width:40px;"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
+                                        <th style="width:150px;">Job Order No</th>
+                                        <th style="width:250px;">Sample Description</th>
                                         <th style="width:90px;">Sample Quality</th>
                                         <th style="width:240px;">Particulars</th>
+                                        <th style="width:120px;">Status</th>
             
                                         <th>Action</th>
                                     </tr>
@@ -746,21 +803,15 @@
                                         class="table-row"
                                         data-search="{{ strtolower(
                                             $item->job_order_no . ' ' .
-                                            ($item->booking?->client_name ?? '') . ' ' .
                                             $item->sample_description . ' ' .
                                             $item->sample_quality . ' ' .
-                                            $item->particulars
+                                            $item->particulars . ' ' .
+                                            (trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
                                         ) }}" 
                                     >
 
                                         <td><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                                         <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
-                                        <td class="truncate-cell">
-                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
-                                        </td>
-                                        <td class="truncate-cell">
-                                            <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
-                                        </td>
                                         <td class="truncate-cell">
                                             <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
                                         </td>
@@ -769,6 +820,11 @@
                                         </td>
                                         <td class="truncate-cell">
                                             <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
+                                        </td>
+
+                                        <td>
+                                            @php($statusText = trim((string)($item->status ?? '')) !== '' ? $item->status : 'pending')
+                                            <span class="badge bg-secondary">{{ $statusText }}</span>
                                         </td>
                                     
                     

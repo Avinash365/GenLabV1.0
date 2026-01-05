@@ -28,11 +28,11 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                @php $q = http_build_query(array_filter(request()->only(['search','month','year']))); @endphp
+                @php $q = http_build_query(array_filter(request()->only(['search','month','year','department','marketing']))); @endphp
                 <a href="{{ route('superadmin.bookings.bookingByLetter.exportPdf') }}{{ $q ? ('?'.$q) : '' }}" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                @php $q = http_build_query(array_filter(request()->only(['search','month','year']))); @endphp
+                @php $q = http_build_query(array_filter(request()->only(['search','month','year','department','marketing']))); @endphp
                 <a href="{{ route('superadmin.bookings.bookingByLetter.exportExcel') }}{{ $q ? ('?'.$q) : '' }}" data-bs-toggle="tooltip" title="Excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
                         <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
@@ -55,6 +55,8 @@
                         {{-- Preserve month & year --}}
                     <input type="hidden" name="month" value="{{ request('month') }}">
                     <input type="hidden" name="year" value="{{ request('year') }}">
+                    <input type="hidden" name="department" value="{{ request('department') }}">
+                    <input type="hidden" name="marketing" value="{{ request('marketing') }}">
                     <input type="text" name="search" value="{{ request('search') }}" id=" " class="form-control" placeholder="Search...">
     
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
@@ -66,6 +68,8 @@
                 <form method="GET" action="{{ route('superadmin.bookings.bookingByLetter.index') }}" class="d-flex input-group">
                      {{-- Preserve search --}}
                     <input type="hidden" name="search" value="{{ request('search') }}">
+                    <input type="hidden" name="department" value="{{ request('department') }}">
+                    <input type="hidden" name="marketing" value="{{ request('marketing') }}">
                     <!-- Month Filter -->
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
@@ -92,9 +96,43 @@
 
         </div>
 
+        <!--  Department filter buttons -->
+        <div class="mb-4 mt-4 ms-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <a href="{{ route('superadmin.bookings.bookingByLetter.index', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v))) }}"
+                   class="btn btn-sm {{ empty($department) ? 'btn-primary' : 'btn-outline-primary' }}">
+                    All
+                </a>
+
+                @if(isset($departments) && $departments->count())
+                    @foreach($departments as $dept)
+                        <a href="{{ route('superadmin.bookings.bookingByLetter.index', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v))) }}"
+                           class="btn btn-sm {{ !empty($department) && $department->id == $dept->id ? 'btn-primary' : 'btn-outline-primary' }}">
+                            {{ $dept->name }}
+                        </a>
+                    @endforeach
+                @endif
+
+                @if(isset($marketingPersons) && $marketingPersons->count())
+                    <form method="GET" action="{{ route('superadmin.bookings.bookingByLetter.index') }}" class="ms-auto me-3 d-flex align-items-center">
+                        @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
+                        @if(request('month'))<input type="hidden" name="month" value="{{ request('month') }}">@endif
+                        @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
+                        @if(request('department'))<input type="hidden" name="department" value="{{ request('department') }}">@endif
+                        <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
+                            <option value="">Select Marketing Person</option>
+                            @foreach($marketingPersons as $mp)
+                                <option value="{{ $mp->user_code }}" {{ request('marketing') == $mp->user_code ? 'selected' : '' }}>{{ $mp->user_code }} - {{ $mp->name }}</option>
+                            @endforeach
+                        </select>
+                    </form>
+                @endif
+            </div>
+        </div>
+
 
         <div class="card-body p-0">
-            <div class="search-set mb-2 p-4">
+            <div class="search-set px-4 py-2">
                 <input
                     type="text"
                     id="localSearch"
