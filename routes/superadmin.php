@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CalibrationController;
 use App\Http\Controllers\ISCodeController;
-use App\Http\Controllers\OtpAuthController; 
+use App\Http\Controllers\OtpAuthController;
 use App\Http\Controllers\JobOrderController;
 
 use App\Http\Controllers\SuperAdmin\DashboardController;
@@ -299,6 +299,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
         Route::post('clients/{client}/assign-booking', [ClientController::class, 'assignBooking'])->name('clients.assignBooking');
+        Route::post('/clients/assign-bulk-bookings', [ClientController::class, 'assignBulkBookings'])->name('clients.assignBulkBookings');
 
         Route::get('client-ledger', [ClientLedgerController::class, 'index'])->name('client-ledger.index');
         Route::get('client-ledger/{id}', [ClientLedgerController::class, 'show'])->name('client-ledger.show');
@@ -863,105 +864,108 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 });
 
 
-// list of clients
-Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');
-Route::get('/invoices/list', [ListController::class, 'invoices'])->name('api.invoices.list');
-Route::get('/refnos/list', [ListController::class, 'refNos'])->name('api.refnos.list');
 
-Route::get('/test/list', [ListController::class, 'view'])->name('test.list');
+Route::middleware(['multi_auth:web,admin'])->group(function () {
+    // list of clients
+    Route::get('/clients/list', [ListController::class, 'clients'])->name('api.clients.list');
+    Route::get('/invoices/list', [ListController::class, 'invoices'])->name('api.invoices.list');
+    Route::get('/refnos/list', [ListController::class, 'refNos'])->name('api.refnos.list');
 
-
-
-//report editor
-Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index')->middleware('permission:report-format.create');
-Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save')->middleware('permission:report-format.create');
-Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete')->middleware('permission:report-format.delete');
-
-// report genration
-Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])
-    ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf');
-
-Route::post('generateReportPDF/editor/28days', [ReportEditorController::class, 'generatePdf28Days'])
-    ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf28Days');
-
-Route::post('generateReportPDF/word/', [ReportEditorController::class, 'generateReportWord'])
-    ->middleware('permission:report-generate.create')->name('generateReportPDF.generateReportWord');
-
-Route::get('generateReportPDF/generate/{item}/{type?}', [ReportEditorController::class, 'generate'])
-    ->middleware('permission:report-generate.view')->name('generateReportPDF.generate');
-
-
-Route::get('generateReportPDF/edit/{pivotId}/{type?}', [ReportEditorController::class, 'editReport'])
-    ->middleware('permission:report-generate.edit')->name('generateReportPDF.editReport');
-
-Route::get('/view-pdf/{filename}', [ReportEditorController::class, 'viewPdf'])->name('viewPdf');
-
-
-Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
-Route::get('/report/varification/{no}', [ReportEditorController::class, 'varify'])->name('varification.view');
-
-Route::post('/reports/live-preview', [ReportEditorController::class, 'livePreview'])
-    ->name('reports.livePreview');
-Route::post('/download-qr', [ReportEditorController::class, 'downloadQR'])->name('download.qr');
+    Route::get('/test/list', [ListController::class, 'view'])->name('test.list');
 
 
 
-Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
-Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');
+    //report editor
+    Route::get('/editor', [ReportEditorController::class, 'index'])->name('editor.index')->middleware('permission:report-format.create');
+    Route::post('/editor/save', [ReportEditorController::class, 'save'])->name('editor.save')->middleware('permission:report-format.create');
+    Route::delete('/editor/delete/{id}', [ReportEditorController::class, 'destroy'])->name('editor.delete')->middleware('permission:report-format.delete');
+
+    // report genration
+    Route::post('generateReportPDF/editor/', [ReportEditorController::class, 'generateReportPDF'])
+        ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf');
+
+    Route::post('generateReportPDF/editor/28days', [ReportEditorController::class, 'generatePdf28Days'])
+        ->middleware('permission:report-generate.create')->name('generateReportPDF.generatePdf28Days');
+
+    Route::post('generateReportPDF/word/', [ReportEditorController::class, 'generateReportWord'])
+        ->middleware('permission:report-generate.create')->name('generateReportPDF.generateReportWord');
+
+    Route::get('generateReportPDF/generate/{item}/{type?}', [ReportEditorController::class, 'generate'])
+        ->middleware('permission:report-generate.view')->name('generateReportPDF.generate');
+
+
+    Route::get('generateReportPDF/edit/{pivotId}/{type?}', [ReportEditorController::class, 'editReport'])
+        ->middleware('permission:report-generate.edit')->name('generateReportPDF.editReport');
+
+    Route::get('/view-pdf/{filename}', [ReportEditorController::class, 'viewPdf'])->name('viewPdf');
+
+
+    Route::get('/booking/{bookingId}/download-merged-pdf', [ReportEditorController::class, 'downloadMergedBookingPDF'])->name('booking.downloadMergedPDF');
+    Route::get('/report/varification/{no}', [ReportEditorController::class, 'varify'])->name('varification.view');
+
+    Route::post('/reports/live-preview', [ReportEditorController::class, 'livePreview'])
+        ->name('reports.livePreview');
+    Route::post('/download-qr', [ReportEditorController::class, 'downloadQR'])->name('download.qr');
 
 
 
-// email route
-Route::get('/email/{id?}', [EmailController::class, 'index'])->name('email.index');
-Route::post('/email/store', [EmailController::class, 'store'])->name('email.store');
-Route::get('/emails/fetch/{id}', [EmailController::class, 'fetchInbox'])->name('emails.fetch');
-Route::get('/emails/{id}/reply/{uid}/{type?}', [EmailController::class, 'reply'])->name('emails.reply');
-Route::get('/ajax-switch/{id}', [EmailController::class, 'ajaxSwitch'])->name('email.ajaxSwitch');
-Route::post('/emails/reply', [EmailController::class, 'sendReply'])->name('emails.sendReply');
-Route::post('/emails/send', [EmailController::class, 'send'])->name('emails.send');
+    Route::get('/document/new', [OnlyOfficeController::class, 'newDocument'])->name('onlyoffice.new');
+    Route::post('/document/save', [OnlyOfficeController::class, 'save'])->name('onlyoffice.save');
 
-// Route::get('/emails/sendEmail/{id}', [EmailController::class, 'getSentEmails'])->name('emails.allSendEmail');
+
+
+    // email route
+    Route::get('/email/{id?}', [EmailController::class, 'index'])->name('email.index');
+    Route::post('/email/store', [EmailController::class, 'store'])->name('email.store');
+    Route::get('/emails/fetch/{id}', [EmailController::class, 'fetchInbox'])->name('emails.fetch');
+    Route::get('/emails/{id}/reply/{uid}/{type?}', [EmailController::class, 'reply'])->name('emails.reply');
+    Route::get('/ajax-switch/{id}', [EmailController::class, 'ajaxSwitch'])->name('email.ajaxSwitch');
+    Route::post('/emails/reply', [EmailController::class, 'sendReply'])->name('emails.sendReply');
+    Route::post('/emails/send', [EmailController::class, 'send'])->name('emails.send');
+
+    // Route::get('/emails/sendEmail/{id}', [EmailController::class, 'getSentEmails'])->name('emails.allSendEmail');
 // Route::get('/emails/sentEmail/{id}/{uid}/{type?}', [EmailController::class, 'getSentEmailByUid'])->name('emails.sent.show');
 
-Route::get('/email/sentEmail/{id?}', [EmailController::class, 'sentIndex'])->name('email.allSentEmail');
+    Route::get('/email/sentEmail/{id?}', [EmailController::class, 'sentIndex'])->name('email.allSentEmail');
 
-Route::post('/emails/{id}/reply', [EmailController::class, 'replyOnEmail'])->name('emails.replyOnEmail');
+    Route::post('/emails/{id}/reply', [EmailController::class, 'replyOnEmail'])->name('emails.replyOnEmail');
 
-// delete email from list route
-Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
+    // delete email from list route
+    Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
 
-Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
-Route::get('invoices/{invoice}/download', [GenerateInvoiceStatusController::class, 'downloadInvoice'])->name('invoices.download');
+    Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
+    Route::get('invoices/{invoice}/download', [GenerateInvoiceStatusController::class, 'downloadInvoice'])->name('invoices.download');
 
-Route::get('/invoices/missing', [InvoiceController::class, 'missingInvoices'])->name('invoices.missing');
+    Route::get('/invoices/missing', [InvoiceController::class, 'missingInvoices'])->name('invoices.missing');
 
 
-Route::prefix('manual-invoice-payment')
-    ->name('manual-invoice-payment.')
-    ->group(function () {
+    Route::prefix('manual-invoice-payment')
+        ->name('manual-invoice-payment.')
+        ->group(function () {
 
-        Route::post('/', [ManualInvoicePaymentController::class, 'store'])->name('store');
-        Route::put('{id}', [ManualInvoicePaymentController::class, 'update'])->name('update');
-        Route::delete('{id}', [ManualInvoicePaymentController::class, 'destroy'])->name('destroy');
+            Route::post('/', [ManualInvoicePaymentController::class, 'store'])->name('store');
+            Route::put('{id}', [ManualInvoicePaymentController::class, 'update'])->name('update');
+            Route::delete('{id}', [ManualInvoicePaymentController::class, 'destroy'])->name('destroy');
+        });
+
+    Route::prefix('purchase')->name('purchase.')->group(function () {
+        Route::get('/', [PurchaseBillController::class, 'index'])->name('index');
+        Route::get('/upload', [PurchaseBillController::class, 'create'])->name('create');
+        Route::post('/', [PurchaseBillController::class, 'store'])->name('store');
+        Route::put('/{id}', [PurchaseBillController::class, 'update'])->name('update');
+        Route::delete('/{id}', [PurchaseBillController::class, 'destroy'])->name('destroy');
     });
 
-Route::prefix('purchase')->name('purchase.')->group(function () {
-    Route::get('/', [PurchaseBillController::class, 'index'])->name('index');
-    Route::get('/upload', [PurchaseBillController::class, 'create'])->name('create');
-    Route::post('/', [PurchaseBillController::class, 'store'])->name('store');
-    Route::put('/{id}', [PurchaseBillController::class, 'update'])->name('update');
-    Route::delete('/{id}', [PurchaseBillController::class, 'destroy'])->name('destroy');
+
+    Route::get(
+        '/job-order/{jobOrderNumber}/items',
+        [JobOrderController::class, 'index']
+    )->name('job-order.items');
+
+    Route::get('/job-order/search', function (Request $request) {
+        return redirect()->route(
+            'job-order.items',
+            ['jobOrderNumber' => $request->jobOrderNumber]
+        );
+    })->name('job-order.search');
 });
-
-
-Route::get(
-    '/job-order/{jobOrderNumber}/items',
-    [JobOrderController::class, 'index']
-)->name('job-order.items');
-
-Route::get('/job-order/search', function (Request $request) {
-    return redirect()->route(
-        'job-order.items',
-        ['jobOrderNumber' => $request->jobOrderNumber]
-    );
-})->name('job-order.search');

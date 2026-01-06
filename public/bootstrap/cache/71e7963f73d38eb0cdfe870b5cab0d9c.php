@@ -28,11 +28,11 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <?php $q = http_build_query(array_filter(request()->only(['search','month','year']))); ?>
+                <?php $q = http_build_query(array_filter(request()->only(['search','month','year','department','marketing']))); ?>
                 <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.exportPdf')); ?><?php echo e($q ? ('?'.$q) : ''); ?>" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <?php $q = http_build_query(array_filter(request()->only(['search','month','year']))); ?>
+                <?php $q = http_build_query(array_filter(request()->only(['search','month','year','department','marketing']))); ?>
                 <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.exportExcel')); ?><?php echo e($q ? ('?'.$q) : ''); ?>" data-bs-toggle="tooltip" title="Excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
                         <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
@@ -55,7 +55,9 @@
                         
                     <input type="hidden" name="month" value="<?php echo e(request('month')); ?>">
                     <input type="hidden" name="year" value="<?php echo e(request('year')); ?>">
-                    <input type="text" name="search" value="<?php echo e(request('search')); ?>"  id="autoSearch" class="form-control" placeholder="Search...">
+                    <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
+                    <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
+                    <input type="text" name="search" value="<?php echo e(request('search')); ?>" id=" " class="form-control" placeholder="Search...">
     
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
@@ -66,6 +68,8 @@
                 <form method="GET" action="<?php echo e(route('superadmin.bookings.bookingByLetter.index')); ?>" class="d-flex input-group">
                      
                     <input type="hidden" name="search" value="<?php echo e(request('search')); ?>">
+                    <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
+                    <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
                     <!-- Month Filter -->
                     <select name="month" class="form-control">
                         <option value="">Select Month</option>
@@ -94,9 +98,44 @@
 
         </div>
 
+        <!--  Department filter buttons -->
+        <div class="mb-4 mt-4 ms-3">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
+                <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v)))); ?>"
+                   class="btn btn-sm <?php echo e(empty($department) ? 'btn-primary' : 'btn-outline-primary'); ?>">
+                    All
+                </a>
+
+                <?php if(isset($departments) && $departments->count()): ?>
+                    <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing')], fn($v) => filled($v)))); ?>"
+                           class="btn btn-sm <?php echo e(!empty($department) && $department->id == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
+                            <?php echo e($dept->name); ?>
+
+                        </a>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                <?php endif; ?>
+
+                <?php if(isset($marketingPersons) && $marketingPersons->count()): ?>
+                    <form method="GET" action="<?php echo e(route('superadmin.bookings.bookingByLetter.index')); ?>" class="ms-auto me-3 d-flex align-items-center">
+                        <?php if(request('search')): ?><input type="hidden" name="search" value="<?php echo e(request('search')); ?>"><?php endif; ?>
+                        <?php if(request('month')): ?><input type="hidden" name="month" value="<?php echo e(request('month')); ?>"><?php endif; ?>
+                        <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
+                        <?php if(request('department')): ?><input type="hidden" name="department" value="<?php echo e(request('department')); ?>"><?php endif; ?>
+                        <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
+                            <option value="">Select Marketing Person</option>
+                            <?php $__currentLoopData = $marketingPersons; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($mp->user_code); ?>" <?php echo e(request('marketing') == $mp->user_code ? 'selected' : ''); ?>><?php echo e($mp->user_code); ?> - <?php echo e($mp->name); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </form>
+                <?php endif; ?>
+            </div>
+        </div>
+
 
         <div class="card-body p-0">
-            <div class="search-set mb-2 p-4">
+            <div class="search-set px-4 py-2">
                 <input
                     type="text"
                     id="localSearch"
@@ -109,19 +148,19 @@
                     <thead class="table-light">
                         <tr>
                             <th class="checkbox-col"><label class="checkboxs"><input type="checkbox" id="select-all"><span class="checkmarks"></span></label></th>
-                            <th>Job Order No</th>
-                            <th style="width:180px;">Client Name</th>
-                            <th style="width:180px;">Reference No</th>
-                            <th style="width:240px;">Sample Description</th>
-                            <th style="width:90px;">Sample Quality</th>
-                            <th style="width:240px;">Particulars</th>
+                            <th class="job-order-col">Job Order No</th>
+                            <th class="client-col">Client Name</th>
+                            <th class="reference-col">Reference No</th>
+                            <th class="sample-desc-col">Sample Description</th>
+                            <th class="sample-quality-col">Sample Quality</th>
+                            <th class="particulars-col">Particulars</th>
   
-                            <th>Action</th>
+                            <th class="action-col">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <tr>
+                        <tr class="table-row">
                             <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
                             <td class="job-order-cell" data-bs-toggle="tooltip" title="<?php echo e($item->job_order_no); ?>"><?php echo e($item->job_order_no); ?></td>
                             <td class="truncate-cell">
@@ -222,6 +261,21 @@
 
 <?php $__env->startPush('styles'); ?>
 <style>
+    /* Keep table within viewport (no horizontal scrolling) */
+    .table-responsive { overflow-x: hidden; }
+    table.table { width: 100%; table-layout: fixed; }
+
+    /* Make cell content wrap instead of forcing horizontal overflow */
+    .table th,
+    .table td {
+        white-space: normal;
+        word-break: break-word;
+        overflow-wrap: anywhere;
+        vertical-align: top;
+        padding-left: 8px;
+        padding-right: 8px;
+    }
+
     /* clamp/truncate wrappers used for client/sample/particulars */
     .truncate-cell { max-width: none; }
     .truncate-cell .cell-inner{
@@ -229,10 +283,16 @@
         white-space: normal;
         word-break: break-word;
     }
-        /* Sample Quality narrower and allow two-line wrap */
-        .sample-quality-cell { max-width: 90px; }
-        @media (max-width: 992px){ .sample-quality-cell { max-width: 70px; } }
-    @media (max-width: 992px){ .truncate-cell { max-width: 160px; } }
+
+    /* Percentage-based column widths (sum ~100%) */
+    th.checkbox-col, td.checkbox-col { width: 4%; }
+    th.job-order-col, td.job-order-cell { width: 12%; }
+    th.client-col, td.client-col { width: 14%; }
+    th.reference-col, td.reference-col { width: 12%; }
+    th.sample-desc-col { width: 20%; }
+    th.sample-quality-col { width: 8%; }
+    th.particulars-col { width: 20%; }
+    th.action-col, td.action-cell { width: 8%; }
 
     /* job order: allow wrapping so full content is visible */
     .job-order-cell{ max-width: none; white-space: normal; word-break: break-word; overflow: visible; }
@@ -245,7 +305,7 @@
     @media (max-width: 768px) { .checkbox-col { width: 40px; padding-left:4px; padding-right:4px; } }
 
     /* Action column alignment */
-    .action-cell { min-width: 140px; vertical-align: middle; }
+    .action-cell { vertical-align: middle; }
     .action-cell .d-flex { gap: 0.5rem; }
     .action-cell a, .action-cell button { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; }
     .action-cell a i, .action-cell button i { display:block; }
@@ -263,20 +323,20 @@
 
     const searchInput = document.getElementById('autoSearch');
 
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function () {
-            clearTimeout(typingTimer);
+    // if (searchInput) {
+    //     searchInput.addEventListener('keyup', function () {
+    //         clearTimeout(typingTimer);
 
-            typingTimer = setTimeout(() => {
-                const value = this.value.trim();
+    //         typingTimer = setTimeout(() => {
+    //             const value = this.value.trim();
 
-                // Submit only if 3+ characters OR field is cleared
-                if (value.length >= minLength || value.length === 0) {
-                    this.form.submit();
-                }
-            }, delay);
-        });
-    }
+    //             // Submit only if 3+ characters OR field is cleared
+    //             if (value.length >= minLength || value.length === 0) {
+    //                 this.form.submit();
+    //             }
+    //         }, delay);
+    //     });
+    // }
 </script>
 <script>
     const localSearchInput = document.getElementById('localSearch');
@@ -284,12 +344,17 @@
     if (localSearchInput) {
         localSearchInput.addEventListener('input', function () {
             const query = this.value.toLowerCase().trim();
-            const rows = document.querySelectorAll('.table-row');
+            const rows = document.querySelectorAll('tbody .table-row');
 
             rows.forEach(row => {
-                const text = row.getAttribute('data-search');
+                const cells = row.querySelectorAll('td');
+                // exclude the Action column (last cell)
+                const searchableText = Array.from(cells)
+                    .slice(0, Math.max(0, cells.length - 1))
+                    .map(td => (td.innerText || '').toLowerCase())
+                    .join(' ');
 
-                if (!query || text.includes(query)) {
+                if (!query || searchableText.includes(query)) {
                     row.style.display = '';
                 } else {
                     row.style.display = 'none';

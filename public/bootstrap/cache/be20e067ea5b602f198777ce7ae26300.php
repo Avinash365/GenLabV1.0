@@ -75,7 +75,9 @@
             border-right: 1px solid #000 !important;
         }
 
-
+        .text-bold{
+             font-weight: bold;
+        }
         .invoice-preview th {
             background: #e9ecef;
             font-weight: bold;

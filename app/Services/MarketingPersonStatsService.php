@@ -40,7 +40,7 @@ class MarketingPersonStatsService
                     SUM(amount) as total_item_amount,
                     COUNT(*) as total_items
                 FROM booking_items
-                WHERE deleted_at IS NULL
+                WHERE deleted_at IS NULL    
                 GROUP BY new_booking_id
             ) as bi'), 'nb.id', '=', 'bi.new_booking_id')
             ->selectRaw("

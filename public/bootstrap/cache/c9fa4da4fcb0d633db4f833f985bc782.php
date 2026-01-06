@@ -57,6 +57,10 @@
             word-wrap: break-word;
         }
 
+        .bank-table{
+            font-weight: bold;
+        }
+
         /* Remove all borders inside the row */
         tr.item-row td {
             border-top: none !important;

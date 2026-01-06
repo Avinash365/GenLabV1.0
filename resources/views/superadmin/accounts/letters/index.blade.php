@@ -85,7 +85,9 @@
                         id="invoiceFilterForm"
                         action="{{ route('superadmin.accountBookingsLetters.index') }}"
                         class="d-flex input-group gap-2">
-
+                        
+                         <input type="hidden" name="per_page" id="per_page_hidden"
+                        value="{{ request('per_page', 25) }}">
                         {{-- Preserve department --}}
                         <input type="hidden" name="department_id" value="{{ request('department_id') }}">
 
@@ -140,6 +142,7 @@
                             </div>
                         </div>
 
+
                         {{-- Client --}}
                         <div class="position-relative" style="width:220px;">
                             <input type="text"
@@ -163,7 +166,6 @@
                                 @endforeach
                             </div>
                         </div>
-
 
                         <button class="btn btn-secondary" type="submit" title="Apply filters"><i class="fa fa-filter"></i></button>
                         <a href="{{ route('superadmin.accountBookingsLetters.index') }}"
@@ -217,6 +219,8 @@
                         >
                     </div>
 
+
+
                     <table class="table">
                         <thead class="table-light">
                             <tr>
@@ -241,7 +245,7 @@
                                         )
                                      }}"
                                     >
-                                    <td><input type="checkbox"></td>
+                                    <td><input type="checkbox" class="row-checkbox" data-id="{{ $booking->id }}"></td>
                                     <td class="truncate-cell">
                                         <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $booking->client_name }}">
                                             {{ $booking->client_name }}</div>
@@ -255,7 +259,7 @@
 
                                     <!-- Assign Client Dropdown -->
                                     <td>
-                                        <form action="{{ route('superadmin.clients.assignBooking', $booking->id) }}"
+                                        <form action="{{ route('superadmin.clients.assignBooking', parameters: $booking->id) }}"
                                             method="POST" class="d-flex client-assign-form">
                                             @csrf
                                             <div class="position-relative" style="min-width:180px;">
@@ -376,11 +380,50 @@
                     {{ $bookings->appends(request()->query())->links('pagination::bootstrap-5') }}
                 </div>
             </div>
+            <div class="ms-2 d-flex justify-content-between">
+                        
+                    <form method="POST"
+      action="{{ route('superadmin.clients.assignBulkBookings') }}"
+      id="bulkAssignForm"
+      class="d-flex align-items-center gap-2 mb-2">
+
+    @csrf
+
+    <!-- Selected IDs will auto-submit via checkboxes -->
+    
+    <!-- Client search -->
+    <div class="position-relative" style="min-width:250px;">
+        <input type="text"
+               class="form-control bulk-client-input"
+               placeholder="Search client..."
+               autocomplete="off">
+
+        <input type="hidden"
+               name="client_id"
+               class="bulk-client-id">
+
+        <div class="dropdown-menu w-100 bulk-client-dropdown"
+             style="max-height:300px; overflow:auto;"></div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Assign Selected
+    </button>
+</form>
+                        <select id="perPageSelect" class="form-control mb-2 me-2" style="width:120px">
+                                @foreach([2,10, 25, 50, 100, 500] as $size)
+                                    <option value="{{ $size }}"
+                                        {{ request('per_page', 25) == $size ? 'selected' : '' }}>
+                                        {{ $size }} / page
+                                    </option>
+                                @endforeach
+                        </select>
+                </div>
         </div>
     </div>
 
     <!-- 🔹 Client Registration Modal -->
-    <div class="modal fade" id="registerClientModal" tabindex="-1">
+    <div class="modal fade" id="registerClientModal" tabindex="-1" >
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <form action="{{ route('superadmin.clients.store') }}" method="POST">
@@ -702,4 +745,123 @@ document.addEventListener('DOMContentLoaded', function(){
 });
 </script>
 @endpush
+
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* -----------------------
+     | SELECT ALL CHECKBOX
+     ----------------------- */
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    }
+
+    /* -----------------------
+     | BULK ASSIGN FORM SUBMIT
+     ----------------------- */
+    const bulkForm = document.getElementById('bulkAssignForm');
+    if (bulkForm) {
+        bulkForm.addEventListener('submit', function (e) {
+            // Remove any existing hidden booking_ids inputs
+            bulkForm.querySelectorAll('input[name="booking_ids[]"]').forEach(input => input.remove());
+
+            // Add hidden inputs for selected bookings
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'booking_ids[]';
+                    hiddenInput.value = cb.dataset.id;
+                    bulkForm.appendChild(hiddenInput);
+                }
+            });
+
+            // Check if any selected
+            const selectedCount = bulkForm.querySelectorAll('input[name="booking_ids[]"]').length;
+            if (selectedCount === 0) {
+                e.preventDefault();
+                alert('Please select at least one booking to assign.');
+                return;
+            }
+        });
+    }
+
+    /* -----------------------
+     | BULK CLIENT AUTOCOMPLETE
+     ----------------------- */
+    const clients = @json($clients->map(fn($c)=>['id'=>$c->id,'name'=>$c->name]));
+
+    const input   = document.querySelector('.bulk-client-input');
+    const hidden  = document.querySelector('.bulk-client-id');
+    const dropdown = document.querySelector('.bulk-client-dropdown');
+
+    function render(list) {
+        if (!list.length) {
+            dropdown.innerHTML = `<span class="dropdown-item disabled">No results</span>`;
+            return;
+        }
+        dropdown.innerHTML = list.map(c =>
+            `<button type="button"
+                     class="dropdown-item"
+                     data-id="${c.id}"
+                     data-name="${c.name}">
+                ${c.name}
+            </button>`
+        ).join('');
+    }
+
+    input.addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        render(clients.filter(c => c.name.toLowerCase().includes(q)));
+        dropdown.classList.add('show');
+    });
+
+    input.addEventListener('focus', () => {
+        render(clients);
+        dropdown.classList.add('show');
+    });
+
+    dropdown.addEventListener('click', function (e) {
+        const btn = e.target.closest('.dropdown-item');
+        if (!btn) return;
+
+        input.value = btn.dataset.name;
+        hidden.value = btn.dataset.id;
+        dropdown.classList.remove('show');
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!input.closest('.position-relative').contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+});
+</script>
+
+
+        <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const mainForm = document.getElementById('invoiceFilterForm');
+    const perPageSelect = document.getElementById('perPageSelect');
+    const hiddenPerPage = document.getElementById('per_page_hidden');
+
+    if (!mainForm || !perPageSelect || !hiddenPerPage) return;
+
+    perPageSelect.addEventListener('change', function () {
+        hiddenPerPage.value = this.value;
+        mainForm.submit();
+    });
+
+});
+</script>
+@endpush
+
 

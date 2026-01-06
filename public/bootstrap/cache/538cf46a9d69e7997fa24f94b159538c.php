@@ -41,6 +41,7 @@
             word-wrap: break-word;
         }
 
+
         /* Remove all borders inside the row */
         tr.item-row td {
             border-top: none !important;
@@ -152,6 +153,7 @@
         }
         .bank-table {
             page-break-inside: avoid;
+            font-weight: bold;
         }
 
 

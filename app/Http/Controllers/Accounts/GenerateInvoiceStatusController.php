@@ -38,6 +38,9 @@ class GenerateInvoiceStatusController extends Controller
 
     public function index(Request $request, Department $department = null)
     {
+       
+        
+
         $query = NewBooking::with(['items', 'department', 'marketingPerson', 'client'])
             ->where('payment_option', $request->payment_option ?? 'bill')
             ->whereNotNull('client_id')
@@ -118,7 +121,11 @@ class GenerateInvoiceStatusController extends Controller
             $query->whereYear('job_order_date', $request->year);
         }
 
-        $bookings = $query->latest()->paginate(10);
+        $perPage = (int) $request->get('per_page', 25); // default 25
+
+        $perPage = in_array($perPage, [2,10, 25, 50, 100, 500]) ? $perPage : 25;
+
+        $bookings = $query->latest()->paginate($perPage);
 
         $bookings->appends($request->all());
 
@@ -194,7 +201,7 @@ class GenerateInvoiceStatusController extends Controller
             }
 
             $booking->invoice_no = $booking->generatedInvoice?->invoice_no
-                ?? $this->billingService->generateInvoiceNo();
+                ?? $this->billingService->generateInvoiceNo($prefix);
         }
 
         $gstinApiUrl = config('services.gstin.url');
@@ -302,8 +309,8 @@ class GenerateInvoiceStatusController extends Controller
     public function generateInvoice(GenerateInvoiceRequest $request)
     {
         try {
-
-
+            
+            
             $invoiceType = $request->input('invoice_type');
             $invoiceData = $this->billingService->generateInvoiceData($request);
 
@@ -482,7 +489,7 @@ class GenerateInvoiceStatusController extends Controller
                     // STEP 2: SKIP invalid rows
                     ->filter(function ($row) {
 
-                        // ❌ Skip if job order is null AND qty = 0 AND rate = 0
+                        //  Skip if job order is null AND qty = 0 AND rate = 0
                         if (
                             is_null($row['jobOrderNo']) &&
                             $row['qty'] === 0 &&
