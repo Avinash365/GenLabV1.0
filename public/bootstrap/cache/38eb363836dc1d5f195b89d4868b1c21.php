@@ -443,55 +443,68 @@
             $('#totalItems').text('Total Items: ' + count);
         }
 
-        $('#addItemBtn').on('click', function(){
-            const $first = $('#itemsContainer .item-group:first');
-            const $clone = $first.clone();
-            const index = $('#itemsContainer .item-group').length;
+        $('#addItemBtn').on('click', function () {
+    const $first = $('#itemsContainer .item-group:first');
+    const $clone = $first.clone();
+    const index = $('#itemsContainer .item-group').length;
 
-            $clone.find('input, select').each(function(){
-                const name = $(this).attr('name');
-                if(name) $(this).attr('name', name.replace(/\d+/, index));
+    const $prev = $('#itemsContainer .item-group').eq(index - 1);
 
-                // Prefill all except amount, job_order_no, lab_analysis_input
-                if($(this).hasClass('amount')) {
-                    const prevAmount = $('#itemsContainer .item-group').eq(index-1).find('.amount').val();
-                    $(this).val(prevAmount || '');
-                } 
-                else if($(this).hasClass('job_order_no')) {
-                    // Auto-increment job order number
-                    const prevJob = $('#itemsContainer .item-group').eq(index-1).find('.job_order_no').val();
-                    let prefix = '';
-                    let num = 1;
+    $clone.find('input, select').each(function () {
+        const name = $(this).attr('name');
+        if (name) {
+            $(this).attr('name', name.replace(/\d+/, index));
+        }
 
-                    if(prevJob) {
-                        const match = prevJob.match(/^(\D*)(\d+)$/);
-                        if(match){
-                            prefix = match[1];
-                            num = parseInt(match[2]) + 1;
-                        } else {
-                            prefix = prevJob;
-                        }
-                    }
-                    $(this).val(prefix + num.toString().padStart(3,'0')); // e.g., AB-001 -> AB-002
-                } 
-                else if($(this).is('input[type=text]')) {
-                    // keep value as is (prefilled)
-                } 
-                else if($(this).is('select')) {
-                    $(this).prop('selectedIndex',0);
+        // ===== 1️ JOB ORDER NUMBER (AUTO INCREMENT) =====
+        if ($(this).hasClass('job_order_no')) {
+
+            const prevJob = $prev.find('.job_order_no').val();
+            let prefix = '';
+            let num = 1;
+
+            if (prevJob) {
+                const match = prevJob.match(/^(\D*)(\d+)$/);
+                if (match) {
+                    prefix = match[1];
+                    num = parseInt(match[2], 10) + 1;
+                } else {
+                    prefix = prevJob;
                 }
-            });
+            }
 
-            $clone.find('.remove-item').show();
-            $('#itemsContainer').append($clone);
+            $(this).val(prefix + num.toString().padStart(3, '0'));
+        }
 
-            attachLabAnalysis($clone.find('.lab_analysis_input'));
-            attachJobOrderSearch($clone.find('.job_order_no'));
-            attachReferenceSearch($clone.find('.reference_no_input'));
+        // ===== 2️ DATE FIELD 1 =====
+        else if ($(this).hasClass('start_date')) {
+            $(this).val($prev.find('.start_date').val());
+        }
 
-            updateTotalItems(); // Update total items
-        });
+        // ===== 3️ DATE FIELD 2 =====
+        else if ($(this).hasClass('end_date')) {
+            $(this).val($prev.find('.end_date').val());
+        }
 
+        // ===== RESET EVERYTHING ELSE =====
+        else if ($(this).is('select')) {
+            $(this).prop('selectedIndex', 0);
+        } else {
+            $(this).val('');
+        }
+    });
+
+    $clone.find('.remove-item').show();
+    $('#itemsContainer').append($clone);
+
+    attachLabAnalysis($clone.find('.lab_analysis_input'));
+    attachJobOrderSearch($clone.find('.job_order_no'));
+    attachReferenceSearch($clone.find('.reference_no_input'));
+
+    updateTotalItems();
+});
+
+        
         $('#itemsContainer').on('click','.remove-item', function(){
             if($('#itemsContainer .item-group').length > 1){
                 $(this).closest('.item-group').remove();

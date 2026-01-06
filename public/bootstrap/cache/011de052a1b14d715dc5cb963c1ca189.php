@@ -53,6 +53,8 @@
                 if ($uc) { $reportParams['marketing'] = $uc; }
             ?>
 
+            <!-- Marketing Role Sidebar -------------------------------------------------------------------------->
+
             <?php if($isMarketing): ?>
                 <ul>
                     <li class="submenu-open">
@@ -133,6 +135,13 @@
                                     <i class="ti ti-target fs-16 me-2"></i><span>Expense</span>
                                 </a>
                             </li>
+
+                            <li>
+                                <a href="<?php echo e(route('superadmin.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
+                                </a>
+                            </li>
+                            
 
                             <li>
                                 <?php if(!empty($uc)): ?>
@@ -399,6 +408,7 @@
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved', ['status' => 'pending'])); ?>" class="<?php echo e((Request::routeIs('superadmin.marketing.expenses.approved') && request('status','pending') === 'pending') ? 'active' : ''); ?>">Approve Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved', ['status' => 'approved'])); ?>" class="<?php echo e((Request::routeIs('superadmin.marketing.expenses.approved') && request('status') === 'approved') ? 'active' : ''); ?>">Approved Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.rejected')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.rejected') ? 'active' : ''); ?>">Rejected Expenses</a></li>
+                                
                             </ul>
                         </li>
 

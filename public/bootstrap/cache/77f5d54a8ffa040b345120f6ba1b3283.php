@@ -93,7 +93,7 @@
             </div>
 
             <div class="table">
-                <div class="lr-no">Job Order No :-  <span class="value1"><?php echo e($item->job_order_no); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?php echo e($booking->m_s ?? ''); ?> </span>
+                <div class="lr-no">Job Order No :-  <span class="value1"><?php echo e($item->job_order_no); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?php echo e($booking->sample_code ?? ''); ?> </span>
                    
                 </div>
                 <div class="lr-no">Job Order Date :- <span class="value2"><?php echo e(\Carbon\Carbon::parse($item->job_order_date)->format('d/m/Y')); ?></span></div>
@@ -130,7 +130,7 @@
                 </div>
 
                 <div class="table">
-                    <div class="lr-no">Job Order No :- <span class="value1"><?php echo e($it->job_order_no); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?php echo e($booking->m_s ?? ''); ?></span> 
+                    <div class="lr-no">Job Order No :- <span class="value1"><?php echo e($it->job_order_no); ?>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<?php echo e($booking->sample_code ?? ''); ?></span> 
                        
                     </div>
                     <div class="lr-no">Job Order Date :- <span class="value2"><?php echo e(\Carbon\Carbon::parse($it->job_order_date)->format('d/m/Y')); ?></span></div>

@@ -168,13 +168,15 @@ class GenerateInvoiceStatusController extends Controller
 
     public function edit(string $bookingId)
     {
+        $prefix = "ITLPL-"; 
+
         if ($bookingId == 0) {
             // Empty booking object
             $booking = (object) [
                 'id' => 0,
                 'items' => collect(),
                 'generatedInvoice' => null,
-                'invoice_no' => $this->billingService->generateInvoiceNo()
+                'invoice_no' => $this->billingService->generateInvoiceNo($prefix)
             ];
         } else {
             $booking = NewBooking::with('items', 'generatedInvoice', 'client')->find($bookingId);
