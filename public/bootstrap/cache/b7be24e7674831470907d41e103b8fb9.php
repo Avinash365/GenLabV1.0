@@ -89,6 +89,24 @@
                     <label class="form-label">Client Name</label>
                     <input type="text" class="form-control" value="<?php echo e($header['client_name']); ?>" readonly>
                 </div>
+                <?php
+                    $marketingName = '';
+                    if (isset($header['marketing_person'])) {
+                        $mp = $header['marketing_person'];
+                        if (is_string($mp)) {
+                            $marketingName = $mp;
+                        } elseif (is_array($mp)) {
+                            $marketingName = $mp['name'] ?? ($mp['full_name'] ?? '');
+                        } elseif (is_object($mp)) {
+                            $marketingName = $mp->name ?? $mp->full_name ?? '';
+                        }
+                    }
+                    $marketingName = $marketingName ?: ($header['marketing_name'] ?? $header['marketing_person_name'] ?? $header['marketing'] ?? '');
+                ?>
+                <div class="col-md-3">
+                    <label class="form-label">Marketing Person</label>
+                    <input type="text" class="form-control" value="<?php echo e($marketingName); ?>" readonly>
+                </div>
                 <div class="col-md-3">
                     <label class="form-label">Job Order Date</label>
                     <input type="date" class="form-control" value="<?php echo e($header['job_order_date']); ?>" readonly>
@@ -117,27 +135,29 @@
                     <label class="form-label">M/s</label>
                     <input type="text" class="form-control" value="<?php echo e($header['ms']); ?>" readonly>
                 </div>
+                <?php
+                    $__first = $items->first();
+                    $__singleLetter = $__first?->booking?->upload_letter_path ?: null;
+                ?>
                 
                 <?php
-                    $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $job]) : '';
+                    $letterKey = $header['reference_no'] ?? $job;
+                    $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $letterKey]) : '';
                 ?>
                 <div class="col-md-6">
                     <label class="form-label">Uploaded Reports</label>
                     <form method="POST" action="#" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="<?php echo e($listRoute); ?>">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="job" value="<?php echo e($job); ?>">
-                        <div class="d-flex gap-2 align-items-center">
+                        <div class="d-flex gap-5 align-items-center">
                             <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" <?php echo e(empty($listRoute) ? 'disabled' : ''); ?>>
                                 View
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
+                            <button type="button" class="btn btn-outline-secondary" id="show-letter-btn" <?php echo e(empty($__singleLetter) ? 'disabled' : ''); ?>>Show Letter</button>
                         </div>
                     </form>
                 </div>
-                <?php
-                    $__first = $items->first();
-                    $__singleLetter = $__first?->booking?->upload_letter_path ? asset('storage/'.$__first->booking->upload_letter_path) : null;
-                ?>
                 <?php if($__singleLetter): ?>
                     <input type="hidden" id="single-letter-url" value="<?php echo e($__singleLetter); ?>">
                 <?php endif; ?>
@@ -148,6 +168,11 @@
 
     <div class="card">
         <div class="card-body">
+            <div class="d-flex justify-content-end mb-2">
+                <div style="max-width: 320px; width: 100%;">
+                    <input type="text" id="localSearchInput" class="form-control form-control-sm" placeholder="Search in table...">
+                </div>
+            </div>
             <div class="table-responsive">
                 <table class="table table-striped">
                     <thead>
@@ -211,9 +236,28 @@
             </div>
 
             <div class="d-flex justify-content-between align-items-center mt-3">
+                <div class="d-flex align-items-center gap-3">
+                    <form id="perpage-form" method="GET" action="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="d-inline-flex align-items-center gap-2">
+                        <?php $__currentLoopData = request()->except(['perPage','page']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $k => $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <?php if(is_array($v)): ?>
+                                <?php $__currentLoopData = $v; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <input type="hidden" name="<?php echo e($k); ?>[]" value="<?php echo e($val); ?>">
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            <?php else: ?>
+                                <input type="hidden" name="<?php echo e($k); ?>" value="<?php echo e($v); ?>">
+                            <?php endif; ?>
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        <label class="small text-muted mb-0">Rows:</label>
+                        <select name="perPage" id="perPageSelect" class="form-select form-select-sm">
+                            <?php $__currentLoopData = [25,50,100,250]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $n): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($n); ?>" <?php echo e(request()->get('perPage',25) == $n ? 'selected' : ''); ?>><?php echo e($n); ?></option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </form>
                     <div>
-                    <?php echo e($items->links('pagination::bootstrap-5')); ?>
+                        <?php echo e($items->appends(request()->all())->links('pagination::bootstrap-5')); ?>
 
+                    </div>
                 </div>
                 <div class="d-flex gap-2">
                     <?php
@@ -252,6 +296,35 @@
         const safeJson = async (resp) => { try { const ct = resp.headers.get('content-type')||''; if (ct.includes('application/json')) return await resp.json(); return null; } catch(e){ return null; } };
         const escHtml = (s) => { if (s === null || s === undefined) return ''; return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); };
 
+        // Local table search (client-side)
+        const localSearchInput = document.getElementById('localSearchInput');
+        const tableBody = document.querySelector('table.table tbody');
+        const applyLocalSearch = () => {
+            if (!tableBody) return;
+            const q = (localSearchInput ? localSearchInput.value : '').trim().toLowerCase();
+            const rows = Array.from(tableBody.querySelectorAll('tr'));
+            rows.forEach(tr => {
+                // Skip "No items found" row
+                if (tr.children && tr.children.length === 1) return;
+                const hay = (tr.innerText || '').toLowerCase();
+                tr.style.display = (!q || hay.includes(q)) ? '' : 'none';
+            });
+        };
+        if (localSearchInput && localSearchInput.dataset.bound !== '1') {
+            localSearchInput.dataset.bound = '1';
+            localSearchInput.addEventListener('input', applyLocalSearch);
+        }
+
+        // Per-page selector (same UX as Received)
+        const perPageSelect = document.getElementById('perPageSelect');
+        if (perPageSelect && perPageSelect.dataset.bound !== '1') {
+            perPageSelect.dataset.bound = '1';
+            perPageSelect.addEventListener('change', function () {
+                const f = document.getElementById('perpage-form');
+                if (f) f.submit();
+            });
+        }
+
         // Ensure SweetAlert is available before using it
         const ensureSwal = () => new Promise((resolve) => {
                 if (window.Swal) return resolve();
@@ -264,6 +337,7 @@
     // Upload/View Letters handlers (same as Received)
     const uploadForm = document.getElementById('upload-letters-form');
     const viewLettersBtn = document.getElementById('view-letters-btn');
+    const showLetterBtn = document.getElementById('show-letter-btn');
     const lettersModalEl = document.getElementById('lettersModal');
     const lettersListEl = document.getElementById('letters-list');
     const lettersCountBadge = document.getElementById('letters-count-badge');
@@ -287,6 +361,13 @@
             }
             if (viewLettersBtn) viewLettersBtn.disabled = !cnt;
         } catch (e) {}
+    }
+
+    function openBookingLetter() {
+        const single = document.getElementById('single-letter-url');
+        if (single && single.value) {
+            window.open(single.value, '_blank');
+        }
     }
     async function loadLetters(showModal = true) {
         try {
@@ -397,6 +478,10 @@
         viewLettersBtn.dataset.bound = '1';
         viewLettersBtn.addEventListener('click', function() { loadLetters(true); });
     }
+    if (showLetterBtn && showLetterBtn.dataset.bound !== '1') {
+        showLetterBtn.dataset.bound = '1';
+        showLetterBtn.addEventListener('click', function() { openBookingLetter(); });
+    }
     refreshLettersCount();
 
     const selectAll = document.getElementById('select-all');
@@ -407,6 +492,9 @@
         rowChecks().forEach(cb => { cb.checked = selectAll.checked; });
       });
     }
+
+        // Apply initial search (if browser restores input value)
+        applyLocalSearch();
 
     document.querySelectorAll('.dispatch-toggle-btn').forEach(function(btn){
       if (btn.dataset.bound === '1') return;

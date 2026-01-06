@@ -28,7 +28,7 @@ class ReportingController extends Controller
             $perPage = 25;
         }
 
-        $baseQuery = BookingItem::query()->with(['booking', 'analyst', 'receivedBy']);
+        $baseQuery = BookingItem::query()->with(['booking.marketingPerson', 'analyst', 'receivedBy']);
 
         $header = null;
         if ($job !== '') {
@@ -1041,6 +1041,11 @@ class ReportingController extends Controller
         if ($month !== null && ($month < 1 || $month > 12)) { $month = null; }
         if ($year !== null && ($year < 2000 || $year > 2100)) { $year = null; }
 
+        $perPage = (int) $request->get('perPage', 25);
+        if (!in_array($perPage, [25, 50, 100, 250], true)) {
+            $perPage = 25;
+        }
+
         $baseQuery = BookingItem::query()->with(['booking', 'analyst', 'receivedBy']);
 
         // Quick list of Job Order Nos that are In Account but not yet Dispatched
@@ -1068,20 +1073,21 @@ class ReportingController extends Controller
                     'job_order_date'    => optional($b->job_order_date)->format('Y-m-d'),
                     'issue_date'        => optional($firstItem->issue_date)->format('Y-m-d'),
                     'reference_no'      => $b->reference_no,
+                    'marketing_person'  => optional($b->marketingPerson)->name,
                     'sample_description'=> $firstItem->sample_description,
                     'name_of_work'      => $b->client_address,
                     'issued_to'         => $b->report_issue_to,
                     'ms'                => $b->contractor_name,
                 ];
 
-                $items = $b->items()->with(['booking', 'analyst', 'receivedBy'])->latest('id')->paginate(20)->withQueryString();
+                $items = $b->items()->with(['booking.marketingPerson', 'analyst', 'receivedBy'])->latest('id')->paginate($perPage)->withQueryString();
 
                 return view('superadmin.reporting.dispatch', compact('items', 'job', 'header', 'readyJobs', 'month', 'year', 'status'));
             }
         }
 
         // Default view: show items filtered by status, with optional month/year
-        $q = BookingItem::query()->with(['booking', 'analyst', 'receivedBy']);
+        $q = BookingItem::query()->with(['booking.marketingPerson', 'analyst', 'receivedBy']);
         if ($status === 'dispatched') {
             $q->whereNotNull('dispatched_at');
             if ($month) { $q->whereMonth('dispatched_at', $month); }
@@ -1092,7 +1098,7 @@ class ReportingController extends Controller
             if ($year) { $q->whereYear('account_received_at', $year); }
         }
         $q->latest('id');
-        $items = $q->paginate(20)->withQueryString();
+        $items = $q->paginate($perPage)->withQueryString();
         return view('superadmin.reporting.dispatch', compact('items', 'job', 'header', 'readyJobs', 'month', 'year', 'status'));
     }
 
