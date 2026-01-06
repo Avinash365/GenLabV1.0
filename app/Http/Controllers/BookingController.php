@@ -110,8 +110,9 @@ class BookingController extends Controller
                     'name_of_work',
                     'hold_status',
                     'payment_option',
-                    'm_s',
+                    'm_s'
                 ]);
+                // dd($request->all());    
                 if ($department && strtolower($department->name) === 'bis') {
                     $bookingData['sample_code'] = $request->sample_code;
                 }
@@ -130,6 +131,7 @@ class BookingController extends Controller
                 //new booking
                 $booking = NewBooking::create($bookingData);
 
+               
                 // Add booking items if present
                 if ($request->has('booking_items')) {
                     foreach ($request->booking_items as $item) {
