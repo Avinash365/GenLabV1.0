@@ -79,6 +79,16 @@ class ReportingLettersController extends Controller
 
         $letters = array_values($lettersMap);
 
+        // Enforce: one report file per reference (keep only the latest if multiples exist)
+        if (count($letters) > 1) {
+            usort($letters, function ($a, $b) {
+                $ta = strtotime((string)($a['uploaded_at'] ?? '')) ?: 0;
+                $tb = strtotime((string)($b['uploaded_at'] ?? '')) ?: 0;
+                return $tb <=> $ta;
+            });
+            $letters = [ $letters[0] ];
+        }
+
         return response()->json([
             'ok' => true,
             'reference' => $resolvedReference,
@@ -92,21 +102,33 @@ class ReportingLettersController extends Controller
     {
         $validated = $request->validate([
             'job' => ['required', 'string', 'max:255'],
-            'letters' => ['required'],
-            'letters.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:20480'], // 20MB each
+            'letters' => ['required', 'array', 'min:1', 'max:1'],
+            // max is in KB -> 250MB = 250 * 1024 = 256000 KB
+            'letters.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:256000'],
         ]); 
 
         [$jobKey] = $this->resolveLetterKey($validated['job']);
         $fallbackKey = $this->sanitizeJob($validated['job']);
         $dir = "public/letters/{$jobKey}";
 
+        // Enforce: only one file per reference by deleting any existing report files first.
+        $metaPath = $dir.'/_meta.json';
+        try {
+            if (Storage::exists($dir)) {
+                foreach (Storage::files($dir) as $p) {
+                    $b = basename($p);
+                    if ($b === '_meta.json' || str_starts_with($b, '_')) {
+                        continue;
+                    }
+                    Storage::delete($p);
+                }
+            }
+        } catch (Throwable $e) {
+            // best effort
+        }
+
         $uploaded = [];
         $meta = [];
-        $metaPath = $dir.'/_meta.json';
-        if (Storage::exists($metaPath)) {
-            $rawMeta = json_decode(Storage::get($metaPath), true);
-            if (is_array($rawMeta)) $meta = $rawMeta;
-        }
 
         // Who is uploading?
         $user = auth()->user() ?: auth('admin')->user();

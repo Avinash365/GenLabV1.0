@@ -151,7 +151,7 @@
                             <th class="sample-desc-col">Sample Description</th>
                             <th class="sample-quality-col">Sample Quality</th>
                             <th class="particulars-col">Particulars</th>
-  
+                            <th class="status-col">Status</th>
                             <th class="action-col">Action</th>
                         </tr>
                     </thead>
@@ -175,24 +175,40 @@
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->particulars }}">{{ $item->particulars }}</div>
                             </td>
+                            <td class="status-cell">
+                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->status ?? '-' }}">{{ $item->status ?? '-' }}</div>
+                            </td>
                            
                            
                             <td class="action-cell">
                                 <div class="d-flex justify-content-end align-items-center">
+                                    @php
+                                        $letterUrl = $item->booking?->upload_letter_path;
+                                    @endphp
+                                    @if(!empty($letterUrl))
+                                        <a href="{{ $letterUrl }}" target="_blank" rel="noopener" class="action-icon p-2 border rounded d-flex align-items-center justify-content-center text-decoration-none" title="View Letter" aria-label="View letter">
+                                            <i data-feather="file-text"></i>
+                                        </a>
+                                    @else
+                                        <span class="action-icon p-2 border rounded d-flex align-items-center justify-content-center text-muted" title="No Letter" aria-label="No letter">
+                                            <i data-feather="file-text"></i>
+                                        </span>
+                                    @endif
+
                                     <a href="{{ route('superadmin.bookings.cards.single', [$item->booking->id, $item->id]) }}"
                                        target="_blank"
-                                       class="border rounded d-flex align-items-center p-2 text-decoration-none"
+                                       class="action-icon border rounded d-flex align-items-center p-2 text-decoration-none"
                                        aria-label="View booking">
                                         <i data-feather="eye" class="feather-eye"></i>
                                     </a>
 
                                     <a href="{{ route('superadmin.bookings.edit', $item->booking->id ?? 0) }}"
-                                       class="border rounded d-flex align-items-center p-2 text-decoration-none"
+                                       class="action-icon border rounded d-flex align-items-center p-2 text-decoration-none"
                                        aria-label="Edit booking">
                                         <i data-feather="edit" class="feather-edit"></i>
                                     </a>
 
-                                    <button type="button" class="border rounded d-flex align-items-center p-2 btn-delete"
+                                    <button type="button" class="action-icon border rounded d-flex align-items-center p-2 btn-delete"
                                             data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $item->id }}"
                                             aria-label="Delete item">
                                         <i data-feather="trash-2" class="feather-trash-2"></i>
@@ -224,7 +240,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="10" class="text-center">No items found.</td>
+                            <td colspan="9" class="text-center">No items found.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -283,12 +299,13 @@
     /* Percentage-based column widths (sum ~100%) */
     th.checkbox-col, td.checkbox-col { width: 4%; }
     th.job-order-col, td.job-order-cell { width: 12%; }
-    th.client-col, td.client-col { width: 14%; }
-    th.reference-col, td.reference-col { width: 12%; }
-    th.sample-desc-col { width: 20%; }
+    th.client-col, td.client-col { width: 13%; }
+    th.reference-col, td.reference-col { width: 11%; }
+    th.sample-desc-col { width: 17%; }
     th.sample-quality-col { width: 8%; }
-    th.particulars-col { width: 20%; }
-    th.action-col, td.action-cell { width: 8%; }
+    th.particulars-col { width: 17%; }
+    th.status-col, td.status-cell { width: 8%; }
+    th.action-col, td.action-cell { width: 10%; }
 
     /* job order: allow wrapping so full content is visible */
     .job-order-cell{ max-width: none; white-space: normal; word-break: break-word; overflow: visible; }
@@ -302,9 +319,9 @@
 
     /* Action column alignment */
     .action-cell { vertical-align: middle; }
-    .action-cell .d-flex { gap: 0.5rem; }
-    .action-cell a, .action-cell button { display:inline-flex; align-items:center; justify-content:center; width:38px; height:38px; }
-    .action-cell a i, .action-cell button i { display:block; }
+    .action-cell .d-flex { gap: 0.5rem; flex-wrap: wrap; }
+    .action-cell .action-icon { display:inline-flex; align-items:center; justify-content:center; width:34px; height:34px; }
+    .action-cell .action-icon i { display:block; }
 
     /* Reduce gap between checkbox and Job Order by removing extra left padding on job-order cell */
     .table td.job-order-cell, .table th.job-order-cell { padding-left: 6px !important; }
