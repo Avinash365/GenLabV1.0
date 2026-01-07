@@ -46,6 +46,7 @@
             border-spacing: 0 4px;
             margin-top: 20px;
             font-size: 12px;
+            font-weight: bold;
         }
         .bank-table td {
             padding: 6px 4px;

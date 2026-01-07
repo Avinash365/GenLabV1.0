@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
-use App\Models\NewBooking;   // ✅ use NewBooking instead of Booking
+use App\Models\NewBooking;   //  use NewBooking instead of Booking
 use Illuminate\Http\Request;
 
 class ClientController extends Controller
@@ -67,4 +67,39 @@ class ClientController extends Controller
         }
     }
 
+
+    // public function assignBulkBookings(Request $request)
+    // {
+        
+    //     dd($request->all()); 
+    //     exit; 
+    //     $request->validate([
+    //         'booking_ids' => 'required|array',
+    //         'booking_ids.*' => 'exists:bookings,id',
+    //         'client_id' => 'required|exists:clients,id',
+    //     ]);
+
+    //     NewBooking::whereIn('id', $request->booking_ids)
+    //         ->update([
+    //             'client_id' => $request->client_id
+    //         ]);
+
+    //     return back()->with('success', 'Client assigned successfully!');
+    // }
+
+    public function assignBulkBookings(Request $request)
+    {
+        $request->validate([
+            'booking_ids'   => 'required|array',
+            'booking_ids.*' => 'exists:new_bookings,id',
+            'client_id'     => 'required|exists:clients,id',
+        ]);
+
+        NewBooking::whereIn('id', $request->booking_ids)
+            ->update([
+                'client_id' => $request->client_id
+            ]);
+
+        return back()->with('success', 'Client assigned successfully!');
+    }
 }

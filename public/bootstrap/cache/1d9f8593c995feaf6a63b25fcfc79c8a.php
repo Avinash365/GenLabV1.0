@@ -116,6 +116,11 @@
             background: #f9f9f9;
         }
 
+  
+        .bank-table{
+            font-weight: bold;
+        }
+
         /* ================= COLUMN WIDTHS ================= */
         .invoice-preview .col-left {
             width: 30%;
@@ -407,36 +412,36 @@
                         <tbody>
                             <tr>
                                 <th class="text-start">INSTRUCTIONS:</th>
-                                <td colspan="2" id="td_bank_instructions">
+                                <td colspan="2" id="td_bank_instructions" class="text-bold">
                                     <?php echo e($bankInfo->instructions ?? 'ABCSVHGVGHVSVGHSVD'); ?>
 
                                 </td>
                             </tr>
                             <tr>
                                 <th class="text-start">BANK NAME:</th>
-                                <td id="td_bank_name"><?php echo e($bankInfo->bank_name ?? 'SBI'); ?></td>
-                                <td class="text-centre text-uppercase">For <?php echo e($companyName ?? ''); ?></td>
+                                <td id="td_bank_name" class="text-bold"><?php echo e($bankInfo->bank_name ?? 'SBI'); ?></td>
+                                <td class="text-centre text-uppercase" class="text-bold">For <?php echo e($companyName ?? ''); ?></td>
                             </tr>
                             <tr>
                                 <th class="text-start">ACCOUNT NO:</th>
-                                <td id="td_account_no"><?php echo e($bankInfo->account_no ?? ''); ?></td>
+                                <td id="td_account_no" class="text-bold"><?php echo e($bankInfo->account_no ?? ''); ?></td>
                                 <td rowspan="5" class="text-bottom">Authorised Signatory</td>
                             </tr>
                             <tr>
                                 <th class="text-start">BRANCH:</th>
-                                <td class="text-uppercase" id="td_branch_name"><?php echo e($bankInfo->branch ?? ''); ?></td>
+                                <td class="text-uppercase" id="td_branch_name" class="text-bold"><?php echo e($bankInfo->branch ?? ''); ?></td>
                             </tr>
                             <tr>
                                 <th class="text-start">IFSC CODE:</th>
-                                <td class="text-uppercase" id="td_ifsc_code"><?php echo e($bankInfo->ifsc_code ?? ''); ?></td>
+                                <td class="text-uppercase" id="td_ifsc_code" class="text-bold"><?php echo e($bankInfo->ifsc_code ?? ''); ?></td>
                             </tr>
                             <tr>
                                 <th class="text-start">PAN NO:</th>
-                                <td class="text-uppercase" id="td_pan_no"><?php echo e($bankInfo->pan_no ?? ''); ?></td>
+                                <td class="text-uppercase" id="td_pan_no" class="text-bold"><?php echo e($bankInfo->pan_no ?? ''); ?></td>
                             </tr>
                             <tr>
                                 <th class="text-start">GSTIN:</th>
-                                <td class="text-uppercase" id="td_gstin"><?php echo e($bankInfo->gstin ?? ''); ?></td>
+                                <td class="text-uppercase" id="td_gstin" class="text-bold"><?php echo e($bankInfo->gstin ?? ''); ?></td>
                             </tr>
                         </tbody>
                     </table>

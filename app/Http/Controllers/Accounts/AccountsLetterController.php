@@ -25,6 +25,9 @@ class AccountsLetterController extends Controller
 
     public function index(Request $request)
     {
+
+
+
         $search = $request->input('search');
         $month  = $request->input('month');
         $year   = $request->input('year');
@@ -32,6 +35,11 @@ class AccountsLetterController extends Controller
         $paymentOption = $request->input('payment_option') ?? "bill";
         $clientId     = $request->input('client_id');
         $marketingPerson = $request->input('marketing_person') ??'';
+
+         $perPage = (int) $request->get('per_page', 25); // default 25
+
+        $perPage = in_array($perPage, [2,10, 25, 50, 100, 500]) ? $perPage : 25; 
+
 
 
         $query = NewBooking::with(['items', 'department', 'marketingPerson']);
@@ -83,7 +91,7 @@ class AccountsLetterController extends Controller
             $query->where('marketing_id', $marketingPerson); 
         }
 
-        $bookings = $query->latest()->paginate(10);
+        $bookings = $query->latest()->paginate($perPage);
         $clients = Client::latest()->get(); 
         $departments = $this->departmentService->getDepartment();
 

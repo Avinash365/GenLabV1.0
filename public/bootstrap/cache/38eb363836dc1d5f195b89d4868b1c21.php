@@ -58,7 +58,7 @@
                                     </div>
                                 </div>
                                 <div class="col-sm-6 col-12">
-                                    <label class="form-label">Client Address <span class="text-danger">*</span></label>
+                                    <label class="form-label">Client Address <span class="text-danger"></span></label>
                                     <textarea class="form-control" name="client_address" rows="3" placeholder="📍 Enter client's full address" ><?php echo e(old('client_address')); ?></textarea>
                                 </div>
                             </div>
@@ -84,8 +84,8 @@
                                         <?php endif; ?>
                                 </div>
                                 <div class="col-sm-4 col-12">
-                                    <label class="form-label">Report Issue To <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="report_issue_to" value="<?php echo e(old('report_issue_to')); ?>" placeholder="Enter person/team to report issue to" required >
+                                    <label class="form-label">Report Issue To <span class="text-danger"></span></label>
+                                    <input type="text" class="form-control" name="report_issue_to" value="<?php echo e(old('report_issue_to')); ?>" placeholder="Enter person/team to report issue to" >
                                 </div>
                             </div>
 
@@ -104,8 +104,8 @@
                                 </div>
                                 
                                 <div class="col-lg-4 col-sm-6 col-12">
-                                    <label class="form-label">Contact No <span class="text-danger">*</span></label>
-                                    <input type="text" class="form-control" name="contact_no" value="<?php echo e(old('contact_no')); ?>" required>
+                                    <label class="form-label">Contact No <span class="text-danger"></span></label>
+                                    <input type="text" class="form-control" name="contact_no" value="<?php echo e(old('contact_no')); ?>" >
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
@@ -132,11 +132,11 @@
                             </div> 
                             <div class="row">   
                                 <div class="col-sm-8 col-12 mt-3">
-                                    <label class="form-label">Name Of Work <span class="text-danger">*</span></label>
+                                    <label class="form-label">Name Of Work <span class="text-danger"></span></label>
                                     <input type="text" class="form-control" name="name_of_work" placeholder="Enter work name" value="<?php echo e(old('name_of_work')); ?>">
                                 </div>    
                                 <div class="col-sm-4 col-12 mt-3">
-                                    <label class="form-label">M.S <span class="text-danger">*</span></label>
+                                    <label class="form-label">M.S <span class="text-danger"></span></label>
                                     <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s')); ?>">
                                 </div> 
                             </div>
@@ -151,12 +151,12 @@
                 <div class="accordion-item border mb-4">
                     <h2 class="accordion-header" id="headingUploadLetter">
                         <div class="accordion-button collapsed bg-white" data-bs-toggle="collapse" data-bs-target="#uploadLetter" aria-expanded="true">
-                            <h5 class="d-flex align-items-center"> <i data-feather="image" class="text-primary me-2"></i>Upload Letter </h5>
+                            <h5 class="d-flex align-items-center"> <i data-feather="image" class="text-primary me-2"></i>Upload Letter* </h5>
                         </div>
                     </h2>
                     <div id="uploadLetter" class="accordion-collapse collapse show" aria-labelledby="headingUploadLetter">
                         <div class="accordion-body border-top">
-                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" >
+                            <input type="file" name="upload_letter_path" class="form-control" accept="image/*,.pdf" required>
                         </div>
                     </div>
                 </div>
@@ -443,68 +443,55 @@
             $('#totalItems').text('Total Items: ' + count);
         }
 
-        $('#addItemBtn').on('click', function () {
-    const $first = $('#itemsContainer .item-group:first');
-    const $clone = $first.clone();
-    const index = $('#itemsContainer .item-group').length;
+        $('#addItemBtn').on('click', function(){
+            const $first = $('#itemsContainer .item-group:first');
+            const $clone = $first.clone();
+            const index = $('#itemsContainer .item-group').length;
 
-    const $prev = $('#itemsContainer .item-group').eq(index - 1);
+            $clone.find('input, select').each(function(){
+                const name = $(this).attr('name');
+                if(name) $(this).attr('name', name.replace(/\d+/, index));
 
-    $clone.find('input, select').each(function () {
-        const name = $(this).attr('name');
-        if (name) {
-            $(this).attr('name', name.replace(/\d+/, index));
-        }
+                // Prefill all except amount, job_order_no, lab_analysis_input
+                if($(this).hasClass('amount')) {
+                    const prevAmount = $('#itemsContainer .item-group').eq(index-1).find('.amount').val();
+                    $(this).val(prevAmount || '');
+                } 
+                else if($(this).hasClass('job_order_no')) {
+                    // Auto-increment job order number
+                    const prevJob = $('#itemsContainer .item-group').eq(index-1).find('.job_order_no').val();
+                    let prefix = '';
+                    let num = 1;
 
-        // ===== 1️ JOB ORDER NUMBER (AUTO INCREMENT) =====
-        if ($(this).hasClass('job_order_no')) {
-
-            const prevJob = $prev.find('.job_order_no').val();
-            let prefix = '';
-            let num = 1;
-
-            if (prevJob) {
-                const match = prevJob.match(/^(\D*)(\d+)$/);
-                if (match) {
-                    prefix = match[1];
-                    num = parseInt(match[2], 10) + 1;
-                } else {
-                    prefix = prevJob;
+                    if(prevJob) {
+                        const match = prevJob.match(/^(\D*)(\d+)$/);
+                        if(match){
+                            prefix = match[1];
+                            num = parseInt(match[2]) + 1;
+                        } else {
+                            prefix = prevJob;
+                        }
+                    }
+                    $(this).val(prefix + num.toString().padStart(3,'0')); // e.g., AB-001 -> AB-002
+                } 
+                else if($(this).is('input[type=text]')) {
+                    // keep value as is (prefilled)
+                } 
+                else if($(this).is('select')) {
+                    $(this).prop('selectedIndex',0);
                 }
-            }
+            });
 
-            $(this).val(prefix + num.toString().padStart(3, '0'));
-        }
+            $clone.find('.remove-item').show();
+            $('#itemsContainer').append($clone);
 
-        // ===== 2️ DATE FIELD 1 =====
-        else if ($(this).hasClass('start_date')) {
-            $(this).val($prev.find('.start_date').val());
-        }
+            attachLabAnalysis($clone.find('.lab_analysis_input'));
+            attachJobOrderSearch($clone.find('.job_order_no'));
+            attachReferenceSearch($clone.find('.reference_no_input'));
 
-        // ===== 3️ DATE FIELD 2 =====
-        else if ($(this).hasClass('end_date')) {
-            $(this).val($prev.find('.end_date').val());
-        }
+            updateTotalItems(); // Update total items
+        });
 
-        // ===== RESET EVERYTHING ELSE =====
-        else if ($(this).is('select')) {
-            $(this).prop('selectedIndex', 0);
-        } else {
-            $(this).val('');
-        }
-    });
-
-    $clone.find('.remove-item').show();
-    $('#itemsContainer').append($clone);
-
-    attachLabAnalysis($clone.find('.lab_analysis_input'));
-    attachJobOrderSearch($clone.find('.job_order_no'));
-    attachReferenceSearch($clone.find('.reference_no_input'));
-
-    updateTotalItems();
-});
-
-        
         $('#itemsContainer').on('click','.remove-item', function(){
             if($('#itemsContainer .item-group').length > 1){
                 $(this).closest('.item-group').remove();

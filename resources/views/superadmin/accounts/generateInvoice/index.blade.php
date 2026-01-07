@@ -116,6 +116,9 @@
                         action="{{ route('superadmin.bookingInvoiceStatuses.index') }}"
                         class="d-flex align-items-center justify-content-between w-100 gap-3 flex-wrap">
 
+                        <input type="hidden" name="per_page" id="per_page_hidden"
+                        value="{{ request('per_page', 25) }}">
+
                         {{-- SEARCH --}}
                          <input type="hidden" name="department" value="{{ request('department', $department ?? '')}}">
 
@@ -388,6 +391,7 @@
                                 </tbody>
                             </table>
                         </div>
+                  
                         <!-- Pagination -->
                         <div class="p-3">
                             {{ $bookings->appends(request()->all())->links('pagination::bootstrap-5') }}
@@ -398,6 +402,14 @@
                     <button type="submit" form="bulkInvoiceForm" class="btn btn-primary">
                         Generate Invoice for Selected
                     </button>
+                        <select id="perPageSelect" class="form-control" style="width:120px">
+                                @foreach([10, 25, 50, 100, 500] as $size)
+                                    <option value="{{ $size }}"
+                                        {{ request('per_page', 25) == $size ? 'selected' : '' }}>
+                                        {{ $size }} / page
+                                    </option>
+                                @endforeach
+                        </select>
                 </div>
             </div>
       
@@ -491,8 +503,9 @@
 document.addEventListener('DOMContentLoaded', function () {
 
     const form = document.getElementById('invoiceFilterForm');
+   
     if (!form) return;
-
+    
     /* -----------------------------
      | AUTO SUBMIT ON SELECT CHANGE
      ----------------------------- */
@@ -501,6 +514,7 @@ document.addEventListener('DOMContentLoaded', function () {
             form.submit();
         });
     });
+
 
     /* -----------------------------
      | AUTO SUBMIT ON SEARCH (NO LAG)
@@ -555,6 +569,23 @@ document.addEventListener('DOMContentLoaded', function () {
                 });
             }
         </script>
+
+        <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const mainForm = document.getElementById('invoiceFilterForm');
+    const perPageSelect = document.getElementById('perPageSelect');
+    const hiddenPerPage = document.getElementById('per_page_hidden');
+
+    if (!mainForm || !perPageSelect || !hiddenPerPage) return;
+
+    perPageSelect.addEventListener('change', function () {
+        hiddenPerPage.value = this.value;
+        mainForm.submit();
+    });
+
+});
+</script>
 @endpush
 
 @endsection

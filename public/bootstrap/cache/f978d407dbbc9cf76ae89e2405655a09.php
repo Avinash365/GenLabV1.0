@@ -84,7 +84,9 @@
                         id="invoiceFilterForm"
                         action="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
                         class="d-flex input-group gap-2">
-
+                        
+                         <input type="hidden" name="per_page" id="per_page_hidden"
+                        value="<?php echo e(request('per_page', 25)); ?>">
                         
                         <input type="hidden" name="department_id" value="<?php echo e(request('department_id')); ?>">
 
@@ -141,6 +143,7 @@
                             </div>
                         </div>
 
+
                         
                         <div class="position-relative" style="width:220px;">
                             <input type="text"
@@ -165,7 +168,6 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </div>
                         </div>
-
 
                         <button class="btn btn-secondary" type="submit" title="Apply filters"><i class="fa fa-filter"></i></button>
                         <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
@@ -220,15 +222,16 @@
                         >
                     </div>
 
+
+
                     <table class="table">
                         <thead class="table-light">
                             <tr>
                                 <th><input type="checkbox" id="select-all"></th>
-                                <th style="width:180px;">Client Name</th>
-                                <th style="width:160px;">Reference No</th>
+                                <th style="width:350px;">Client Name</th>
+                                <th style="width:300px;">Reference No</th>
                                 <th>Marketing Person</th>
-                                <th>Show Letter</th>
-                                <th>Items</th>
+                                 
                                 <th>Assign Client</th>
                                 <th>Action</th>
                             </tr>
@@ -243,7 +246,7 @@
 
                                         )); ?>"
                                     >
-                                    <td><input type="checkbox"></td>
+                                    <td><input type="checkbox" class="row-checkbox" data-id="<?php echo e($booking->id); ?>"></td>
                                     <td class="truncate-cell">
                                         <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($booking->client_name); ?>">
                                             <?php echo e($booking->client_name); ?></div>
@@ -253,20 +256,29 @@
                                             <?php echo e($booking->reference_no); ?></div>
                                     </td>
                                     <td><?php echo e($booking->marketingPerson->name ?? '-'); ?></td>
+                                   
+
+                                    <!-- Assign Client Dropdown -->
                                     <td>
-                                        <?php if($booking->upload_letter_path): ?>
-                                            <a href="<?php echo e(url($booking->upload_letter_path)); ?>" target="_blank">View</a>
-                                        <?php else: ?>
-                                            -
-                                        <?php endif; ?>
+                                        <form action="<?php echo e(route('superadmin.clients.assignBooking', parameters: $booking->id)); ?>"
+                                            method="POST" class="d-flex client-assign-form">
+                                            <?php echo csrf_field(); ?>
+                                            <div class="position-relative" style="min-width:180px;">
+                                                <input type="text" name="client_name_display" class="form-control client-search-input" autocomplete="off" placeholder="Search client" value="">
+                                                <input type="hidden" name="client_id" class="client-id-hidden" value="<?php echo e($booking->client_id ?? ''); ?>">
+                                                <div class="dropdown-menu client-dropdown w-100" style="display:none; max-height:200px; overflow:auto;"></div>
+                                            </div>
+                                        </form>
                                     </td>
 
-                                    <!-- Items Modal -->
-                                    <td>
+                                    <!-- Actions -->
+                                    <td class="d-flex">
+                                         
+                                        <!-- Items Modal -->
                                         <?php echo e($booking->items->count()); ?>
 
                                         <?php if($booking->items->count() > 0): ?>
-                                            <a href="javascript:void(0);" data-bs-toggle="modal"
+                                            <a href="javascript:void(0);" class="me-2 p-2 border rounded" data-bs-toggle="modal"
                                                 data-bs-target="#itemsModal-<?php echo e($booking->id); ?>">
                                                 <i data-feather="eye"></i>
                                             </a>
@@ -315,28 +327,16 @@
                                                 </div>
                                             </div>
                                         <?php endif; ?>
-                                    </td>
 
-                                    <!-- Assign Client Dropdown -->
-                                    <td>
-                                        <form action="<?php echo e(route('superadmin.clients.assignBooking', $booking->id)); ?>"
-                                            method="POST" class="d-flex">
-                                            <?php echo csrf_field(); ?>
-                                            <select name="client_id" class="form-control me-2" style="width: 180px;">
-                                                <option value="">Select Client</option>
-                                                <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                                    <option value="<?php echo e($client->id); ?>" <?php echo e($booking->client_id == $client->id ? 'selected' : ''); ?>>
-                                                        <?php echo e($client->name); ?>
-
-                                                    </option>
-                                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                            </select>
-                                            <button type="submit" class="btn btn-sm btn-success">Assign</button>
-                                        </form>
-                                    </td>
-
-                                    <!-- Actions -->
-                                    <td class="d-flex">
+                                        <?php if($booking->upload_letter_path): ?>
+                                            <a href="<?php echo e(url($booking->upload_letter_path)); ?>" target="_blank" rel="noopener" class="me-2 p-2 border rounded" title="View Letter">
+                                                <i data-feather="file-text"></i>
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="me-2 p-2 border rounded text-muted" title="No Letter">
+                                                <i data-feather="file-text"></i>
+                                            </span>
+                                        <?php endif; ?>
                                         <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>"
                                             class="me-2 p-2 border rounded">
                                             <i data-feather="edit"></i>
@@ -384,11 +384,50 @@
 
                 </div>
             </div>
+            <div class="ms-2 d-flex justify-content-between">
+                        
+                    <form method="POST"
+      action="<?php echo e(route('superadmin.clients.assignBulkBookings')); ?>"
+      id="bulkAssignForm"
+      class="d-flex align-items-center gap-2 mb-2">
+
+    <?php echo csrf_field(); ?>
+
+    <!-- Selected IDs will auto-submit via checkboxes -->
+    
+    <!-- Client search -->
+    <div class="position-relative" style="min-width:250px;">
+        <input type="text"
+               class="form-control bulk-client-input"
+               placeholder="Search client..."
+               autocomplete="off">
+
+        <input type="hidden"
+               name="client_id"
+               class="bulk-client-id">
+
+        <div class="dropdown-menu w-100 bulk-client-dropdown"
+             style="max-height:300px; overflow:auto;"></div>
+    </div>
+
+    <button type="submit" class="btn btn-primary">
+        Assign Selected
+    </button>
+</form>
+                        <select id="perPageSelect" class="form-control mb-2 me-2" style="width:120px">
+                                <?php $__currentLoopData = [2,10, 25, 50, 100, 500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($size); ?>"
+                                        <?php echo e(request('per_page', 25) == $size ? 'selected' : ''); ?>>
+                                        <?php echo e($size); ?> / page
+                                    </option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                </div>
         </div>
     </div>
 
     <!-- 🔹 Client Registration Modal -->
-    <div class="modal fade" id="registerClientModal" tabindex="-1">
+    <div class="modal fade" id="registerClientModal" tabindex="-1" >
         <div class="modal-dialog modal-lg modal-dialog-centered">
             <div class="modal-content">
                 <form action="<?php echo e(route('superadmin.clients.store')); ?>" method="POST">
@@ -425,18 +464,19 @@
 
 <?php $__env->startPush('styles'); ?>
     <style>
-        /* Reuse truncate-cell + cell-inner pattern for letters table */
+        /* Allow client/reference columns to wrap and grow row height to show full content */
+        table.table th, table.table td { vertical-align: middle; overflow: visible; }
+
         .truncate-cell {
             max-width: 180px;
         }
 
         .truncate-cell .cell-inner {
-            display: -webkit-box;
-            -webkit-box-orient: vertical;
-            -webkit-line-clamp: 2;
-            overflow: hidden;
-            text-overflow: ellipsis;
+            display: block;
+            width: 100%;
+            overflow: visible;
             white-space: normal;
+            word-break: break-word;
         }
 
         @media (max-width: 992px) {
@@ -651,6 +691,183 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
     <?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Single client list available to all client-search inputs
+    window.__clientList = <?php echo json_encode($clients->map(function($c){ return ['id' => $c->id, 'name' => $c->name]; }), 512) ?>;
+
+    function renderItems(list){
+        if(!list.length) return '<span class="dropdown-item disabled">No results</span>';
+        return list.map(function(c){
+            return `<button type="button" class="dropdown-item" data-id="${c.id}" data-name="${c.name}">${c.name}</button>`;
+        }).join('');
+    }
+
+    document.querySelectorAll('.client-search-input').forEach(function(input){
+        const container = input.closest('.position-relative');
+        const dropdown = container.querySelector('.client-dropdown');
+        const hidden = container.querySelector('.client-id-hidden');
+        let debounceTimer = null;
+
+        input.addEventListener('input', function(){
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function(){
+                const q = input.value.trim().toLowerCase();
+                const results = q ? window.__clientList.filter(c => c.name.toLowerCase().includes(q)) : window.__clientList;
+                dropdown.innerHTML = renderItems(results);
+                dropdown.style.display = 'block';
+            }, 150);
+        });
+
+        // show all on focus
+        input.addEventListener('focus', function(){
+            if(!dropdown.innerHTML) dropdown.innerHTML = renderItems(window.__clientList);
+            dropdown.style.display = 'block';
+        });
+
+        // click selection
+        dropdown.addEventListener('click', function(e){
+            const btn = e.target.closest('button.dropdown-item');
+            if(!btn) return;
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            hidden.value = id;
+            input.value = name;
+            dropdown.style.display = 'none';
+            // submit parent form to assign
+            const form = input.closest('form');
+            if(form) form.submit();
+        });
+
+        // click outside to hide
+        document.addEventListener('click', function(e){
+            if(!container.contains(e.target)) dropdown.style.display = 'none';
+        });
+    });
+});
+</script>
+<?php $__env->stopPush(); ?>
+
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    /* -----------------------
+     | SELECT ALL CHECKBOX
+     ----------------------- */
+    const selectAll = document.getElementById('select-all');
+    const checkboxes = document.querySelectorAll('.row-checkbox');
+
+    if (selectAll) {
+        selectAll.addEventListener('change', function () {
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+    }
+
+    /* -----------------------
+     | BULK ASSIGN FORM SUBMIT
+     ----------------------- */
+    const bulkForm = document.getElementById('bulkAssignForm');
+    if (bulkForm) {
+        bulkForm.addEventListener('submit', function (e) {
+            // Remove any existing hidden booking_ids inputs
+            bulkForm.querySelectorAll('input[name="booking_ids[]"]').forEach(input => input.remove());
+
+            // Add hidden inputs for selected bookings
+            checkboxes.forEach(cb => {
+                if (cb.checked) {
+                    const hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'booking_ids[]';
+                    hiddenInput.value = cb.dataset.id;
+                    bulkForm.appendChild(hiddenInput);
+                }
+            });
+
+            // Check if any selected
+            const selectedCount = bulkForm.querySelectorAll('input[name="booking_ids[]"]').length;
+            if (selectedCount === 0) {
+                e.preventDefault();
+                alert('Please select at least one booking to assign.');
+                return;
+            }
+        });
+    }
+
+    /* -----------------------
+     | BULK CLIENT AUTOCOMPLETE
+     ----------------------- */
+    const clients = <?php echo json_encode($clients->map(fn($c)=>['id'=>$c->id, 'name'=>$c->name]), 512) ?>;
+
+    const input   = document.querySelector('.bulk-client-input');
+    const hidden  = document.querySelector('.bulk-client-id');
+    const dropdown = document.querySelector('.bulk-client-dropdown');
+
+    function render(list) {
+        if (!list.length) {
+            dropdown.innerHTML = `<span class="dropdown-item disabled">No results</span>`;
+            return;
+        }
+        dropdown.innerHTML = list.map(c =>
+            `<button type="button"
+                     class="dropdown-item"
+                     data-id="${c.id}"
+                     data-name="${c.name}">
+                ${c.name}
+            </button>`
+        ).join('');
+    }
+
+    input.addEventListener('input', function () {
+        const q = this.value.toLowerCase();
+        render(clients.filter(c => c.name.toLowerCase().includes(q)));
+        dropdown.classList.add('show');
+    });
+
+    input.addEventListener('focus', () => {
+        render(clients);
+        dropdown.classList.add('show');
+    });
+
+    dropdown.addEventListener('click', function (e) {
+        const btn = e.target.closest('.dropdown-item');
+        if (!btn) return;
+
+        input.value = btn.dataset.name;
+        hidden.value = btn.dataset.id;
+        dropdown.classList.remove('show');
+    });
+
+    document.addEventListener('click', function (e) {
+        if (!input.closest('.position-relative').contains(e.target)) {
+            dropdown.classList.remove('show');
+        }
+    });
+});
+</script>
+
+
+        <script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const mainForm = document.getElementById('invoiceFilterForm');
+    const perPageSelect = document.getElementById('perPageSelect');
+    const hiddenPerPage = document.getElementById('per_page_hidden');
+
+    if (!mainForm || !perPageSelect || !hiddenPerPage) return;
+
+    perPageSelect.addEventListener('change', function () {
+        hiddenPerPage.value = this.value;
+        mainForm.submit();
+    });
+
+});
+</script>
+<?php $__env->stopPush(); ?>
+
 
 
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/letters/index.blade.php ENDPATH**/ ?>
