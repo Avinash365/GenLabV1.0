@@ -71,7 +71,7 @@
                     <label class="form-label">Job Card No.</label>
                     <input type="text" class="form-control" value="{{ $header['job_card_no'] }}" readonly>
                 </div> -->
-                <div class="col-md-8">
+                <div class="col-md-9">
                     <label class="form-label">Client Name</label>
                     <input type="text" class="form-control" value="{{ $header['client_name'] }}" readonly>
                 </div>
@@ -90,7 +90,7 @@
                     }
                     $marketingName = $marketingName ?: ($header['marketing_name'] ?? $header['marketing_person_name'] ?? $header['marketing'] ?? '');
                 @endphp
-                <div class="col-md-4">
+                <div class="col-md-3">
                     <label class="form-label">Marketing Person</label>
                     <input type="text" class="form-control" value="{{ $marketingName }}" readonly>
                 </div>
@@ -114,11 +114,11 @@
                     <label class="form-label">Name of Work <small class="text-muted ms-1">(auto-save)</small></label>
                     <input type="text" class="form-control header-edit-input" value="{{ $header['name_of_work'] }}" data-header-field="name_of_work" autocomplete="off">
                 </div>
-                <div class="col-md-4">
+                <div class="col-md-7">
                     <label class="form-label">Issued To</label>
                     <input type="text" class="form-control header-edit-input" value="{{ $header['issued_to'] }}" data-header-field="issued_to" autocomplete="off">
                 </div>
-                <div class="col-md-8">
+                <div class="col-md-5">
                     <label class="form-label">M/s</label>
                     <input type="text" class="form-control header-edit-input" value="{{ $header['ms'] }}" data-header-field="ms" autocomplete="off">
                 </div>
@@ -128,42 +128,41 @@
                     $uploadRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.upload') ? route('superadmin.reporting.letters.upload') : '#';
                     $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $letterKey]) : '';
                 @endphp
-                <div class="col-md-6" data-letters-widget>
+                <div class="col-md-5">
                     <label class="form-label">Upload Report</label>
-                    <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" class="d-flex gap-2 align-items-start flex-wrap" data-letters-upload-form data-list-url="{{ $listRoute }}">
+                    <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="{{ $listRoute }}" data-letters-upload-form="1">
                         @csrf
                         <input type="hidden" name="job" value="{{ $letterKey }}">
                         <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" {{ $uploadRoute === '#' ? 'disabled' : '' }}>
                         <div class="d-flex gap-2 align-items-center">
                             <button type="submit" class="btn btn-primary" {{ $uploadRoute === '#' ? 'disabled' : '' }}>Upload</button>
-                            <button type="button" class="btn btn-outline-secondary position-relative" data-letters-view-btn {{ empty($listRoute) ? 'disabled' : '' }}>
+                            <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" {{ empty($listRoute) ? 'disabled' : '' }}>
                                 View
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" data-letters-count-badge style="display:none;">0</span>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
                         </div>
-                        <small class="text-muted d-block mt-2">You can upload multiple files (up to 250MB each).</small>
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
                     </form>
                 </div> 
-                <div class="col-md-6" data-letters-widget>
+                <div class="col-md-4">
                     <label class="form-label">Upload docx</label>
-                    <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" class="d-flex gap-2 align-items-start flex-wrap" data-letters-upload-form data-list-url="{{ $listRoute }}">
+                    <form method="POST" action="{{ $uploadRoute }}" enctype="multipart/form-data" id="upload-docs-form" class="d-flex gap-2 align-items-start flex-wrap" data-letters-upload-form="1">
                         @csrf
                         <input type="hidden" name="job" value="{{ $letterKey }}">
-                        <input type="file" name="letters[]" id="upload-docx-input" class="form-control" multiple accept=".doc,.docx" {{ $uploadRoute === '#' ? 'disabled' : '' }}>
+                        <input type="file" name="letters[]" id="upload-docs-input" class="form-control" multiple accept=".doc,.docx" {{ $uploadRoute === '#' ? 'disabled' : '' }}>
                         <div class="d-flex gap-2 align-items-center">
                             <button type="submit" class="btn btn-primary" {{ $uploadRoute === '#' ? 'disabled' : '' }}>Upload</button>
-                            <button type="button" class="btn btn-outline-secondary position-relative" data-letters-view-btn {{ empty($listRoute) ? 'disabled' : '' }}>
+                             <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" {{ empty($listRoute) ? 'disabled' : '' }}>
                                 View
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" data-letters-count-badge style="display:none;">0</span>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
                         </div>
-                        <small class="text-muted d-block mt-2">You can upload multiple files (up to 250MB each).</small>
+                        <small class="text-muted d-block mt-2">You can upload multiple files.</small>
                     </form>
                 </div>
                 @php
                     $__first = $items->first();
-                    // Use direct URL/path stored in DB (no storage/ rewriting)
-                    $__singleLetter = $__first?->booking?->upload_letter_path ? (string) $__first->booking->upload_letter_path : null;
+                    $__singleLetter = $__first?->booking?->upload_letter_path ? asset('storage/'.$__first->booking->upload_letter_path) : null;
                 @endphp
                 @if($__singleLetter)
                     <input type="hidden" id="single-letter-url" value="{{ $__singleLetter }}">
@@ -365,26 +364,14 @@
                     @php
                         $first = $items->first();
                         $letter = $first?->booking?->upload_letter_path;
-                        // Use direct URL/path stored in DB (no storage/ rewriting)
-                        $letterUrl = $letter ? (string) $letter : null;
                         $allReceived = $items->count() > 0;
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
                     @endphp
-                    
-                    <form method="POST" action="{{ route('superadmin.reporting.submitAll') }}" id="submit-all-form" class="d-inline-flex align-items-center gap-2 d-none">
-                        @csrf
-                        <label class="small text-muted mb-0">Issue Date:</label>
-                        <input type="date" id="bulk-issue-date" class="form-control bulk-action-input">
-                    </form>
-
-                    @if($letterUrl)
-                        <a href="{{ $letterUrl }}" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
+                    @if($letter)
+                        <a href="{{ asset('storage/'.$letter) }}" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
                     @else
                         <button class="btn btn-outline-secondary bulk-action-btn" type="button" disabled>Show Letter</button>
                     @endif
-
-                    
-
                     <form method="POST" action="{{ route('superadmin.reporting.receiveAll') }}" id="receive-all-form" class="d-inline">
                         @csrf
                         <input type="hidden" name="job" value="{{ $letterKey ?? $job }}">
@@ -763,34 +750,34 @@
             }).catch((err) => console.warn(err));
         };
 
-        // Upload/View Letters handlers (supports multiple widgets on the page)
-        const letterWidgets = Array.from(document.querySelectorAll('[data-letters-widget]'));
+        // Upload/View Letters handlers
+        const uploadForms = Array.from(document.querySelectorAll('form[data-letters-upload-form="1"]'));
+        const viewLettersBtn = document.getElementById('view-letters-btn');
         const lettersModalEl = document.getElementById('lettersModal');
         const lettersListEl = document.getElementById('letters-list');
-        const refreshLettersCount = async (widget) => {
-            try {
-                const form = widget ? widget.querySelector('form[data-letters-upload-form]') : null;
-                const viewBtn = widget ? widget.querySelector('[data-letters-view-btn]') : null;
-                const badge = widget ? widget.querySelector('[data-letters-count-badge]') : null;
+        const lettersCountBadge = document.getElementById('letters-count-badge');
 
-                if (!form) return;
-                const listUrl = form.getAttribute('data-list-url');
+        const getListUrl = () => {
+            const form = uploadForms.find(f => !!f.getAttribute('data-list-url'));
+            return form ? (form.getAttribute('data-list-url') || '') : '';
+        };
+        async function refreshLettersCount() {
+            try {
+                const listUrl = getListUrl();
                 if (!listUrl) return;
                 const resp = await fetch(listUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await resp.json();
                 const cnt = (data && typeof data.count === 'number') ? data.count : (Array.isArray(data.letters) ? data.letters.length : 0);
-                if (badge) {
-                    if (cnt > 0) { badge.style.display = ''; badge.textContent = String(cnt); }
-                    else { badge.style.display = 'none'; badge.textContent = '0'; }
+                if (lettersCountBadge) {
+                    if (cnt > 0) { lettersCountBadge.style.display = ''; lettersCountBadge.textContent = String(cnt); }
+                    else { lettersCountBadge.style.display = 'none'; lettersCountBadge.textContent = '0'; }
                 }
-                if (viewBtn) viewBtn.disabled = !cnt;
+                if (viewLettersBtn) viewLettersBtn.disabled = !cnt;
             } catch (e) {}
-        };
-
-        async function loadLetters(widget, showModal = true) {
+        }
+        async function loadLetters(showModal = true) {
             try {
-                const form = widget ? widget.querySelector('form[data-letters-upload-form]') : null;
-                const listUrl = form ? form.getAttribute('data-list-url') : '';
+                const listUrl = getListUrl();
                 if (!listUrl) {
                     const single = document.getElementById('single-letter-url');
                     if (single && single.value) window.open(single.value, '_blank');
@@ -930,51 +917,47 @@
                         }
                     } catch (_) {}
                 }
-                if (widget) refreshLettersCount(widget);
+                refreshLettersCount();
             } catch (_) {}
         }
-
-        letterWidgets.forEach((widget) => {
-            const form = widget.querySelector('form[data-letters-upload-form]');
-            const viewBtn = widget.querySelector('[data-letters-view-btn]');
-
-            if (form && form.dataset.bound !== '1' && form.getAttribute('action') !== '#') {
-                form.dataset.bound = '1';
-                form.addEventListener('submit', function(ev) {
-                    ev.preventDefault();
-                    const btn = form.querySelector('button[type="submit"]');
-                    const token = form.querySelector('input[name="_token"]')?.value || '';
-                    const fd = new FormData(form);
-                    if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
-                    LoadingOverlay.wrap(async () => {
-                        const resp = await fetch(form.action, {
-                            method: 'POST',
-                            headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
-                            body: fd
-                        });
-                        return resp.json().catch(() => null);
-                    }, 'Uploading files...').then(function(data) {
-                        if (data && data.ok) {
-                            if (window.Swal) { Swal.fire({ icon: 'success', title: 'Uploaded', text: 'Files uploaded successfully.' }); }
-                            loadLetters(widget, false);
-                            refreshLettersCount(widget);
-                            form.reset();
-                        } else {
-                            if (window.Swal) { Swal.fire({ icon: 'error', title: 'Failed', text: (data && data.message) || 'Upload failed.' }); }
-                        }
-                    }).catch(function() {
-                        if (window.Swal) { Swal.fire({ icon: 'error', title: 'Failed', text: 'Upload failed.' }); }
-                    }).finally(function() { if (btn) { btn.disabled = false; btn.textContent = 'Upload'; } });
-                });
-            }
-
-            if (viewBtn && viewBtn.dataset.bound !== '1') {
-                viewBtn.dataset.bound = '1';
-                viewBtn.addEventListener('click', function() { loadLetters(widget, true); });
-            }
-
-            refreshLettersCount(widget);
+        uploadForms.forEach((form) => {
+            if (form.dataset.bound === '1') return;
+            if (form.getAttribute('action') === '#') return;
+            form.dataset.bound = '1';
+            form.addEventListener('submit', function(ev) {
+                ev.preventDefault();
+                const btn = form.querySelector('button[type="submit"]');
+                const token = form.querySelector('input[name="_token"]') ? form.querySelector('input[name="_token"]').value : '';
+                const fd = new FormData(form);
+                if (btn) { btn.disabled = true; btn.textContent = 'Uploading...'; }
+                LoadingOverlay.wrap(async () => {
+                    const resp = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 'X-CSRF-TOKEN': token, 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+                        body: fd
+                    });
+                    return resp.json().catch(() => null);
+                }, 'Uploading files...').then(function(data) {
+                    if (data && data.ok) {
+                        if (window.Swal) { Swal.fire({ icon: 'success', title: 'Uploaded', text: 'Files uploaded successfully.' }); }
+                        // Refresh list/count without forcing a modal open
+                        loadLetters(false);
+                        refreshLettersCount();
+                        try { form.reset(); } catch (_) {}
+                    } else {
+                        if (window.Swal) { Swal.fire({ icon: 'error', title: 'Failed', text: (data && data.message) || 'Upload failed.' }); }
+                    }
+                }).catch(function() {
+                    if (window.Swal) { Swal.fire({ icon: 'error', title: 'Failed', text: 'Upload failed.' }); }
+                }).finally(function() { if (btn) { btn.disabled = false; btn.textContent = 'Upload'; } });
+            });
         });
+        if (viewLettersBtn && viewLettersBtn.dataset.bound !== '1') {
+            viewLettersBtn.dataset.bound = '1';
+            viewLettersBtn.addEventListener('click', function() { loadLetters(true); });
+        }
+        // initial count
+        refreshLettersCount();
 
         document.querySelectorAll('.receive-toggle-btn').forEach(function(btn) {
             if (btn.dataset.bound === '1') return; // avoid double-binding
@@ -1166,70 +1149,8 @@
         const receiveAllForm = document.getElementById('receive-all-form');
         const receiveAllBtn = document.getElementById('receive-all-btn');
         const submitAllForm = document.getElementById('submit-all-form');
-        const bulkIssueDateInput = document.getElementById('bulk-issue-date');
-
-        let bulkIssueManualEditing = false;
-
-        const submitBulkIssueDate = (dateVal) => {
-            const checked = Array.from(document.querySelectorAll('.row-select-checkbox:checked')).map(cb => cb.value);
-            if (!checked.length) {
-                if (window.Swal) {
-                    Swal.fire({ icon: 'warning', title: 'No rows selected', text: 'Please select one or more rows first.' });
-                } else {
-                    alert('Please select one or more rows first.');
-                }
-                return;
-            }
-            if (!dateVal) return;
-
-            // Reflect chosen date into selected rows' inputs (UI)
-            checked.forEach((id) => {
-                const cell = document.querySelector('.issue-date-cell[data-id="' + id + '"]');
-                const input = cell ? cell.querySelector('.issue-date-input') : null;
-                if (input) {
-                    input.value = dateVal;
-                    input.classList.remove('d-none');
-                    input.disabled = false;
-                }
-            });
-
-            const items = checked.map((id) => ({ id: Number(id), issue_date: dateVal }));
-            const csrf = submitAllForm ? (submitAllForm.querySelector('input[name="_token"]')?.value || '') : '';
-            if (!submitAllForm || !csrf) {
-                window.location.reload();
-                return;
-            }
-
-            LoadingOverlay.wrap(() => fetch(submitAllForm.action, {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': csrf,
-                    'Content-Type': 'application/json',
-                    'Accept': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify({ items })
-            }).then(safeJson), 'Submitting issue dates...').then(data => {
-                if (data && data.ok) {
-                    checked.forEach((id) => {
-                        const cellStatus = document.querySelector('.status-cell[data-id="' + id + '"]');
-                        if (cellStatus) cellStatus.textContent = 'Report Generated';
-                        const btn = document.querySelector('.receive-toggle-btn[data-id="' + id + '"]');
-                        if (btn) {
-                            btn.textContent = 'Received';
-                            btn.setAttribute('data-mode', 'submit');
-                            btn.style.backgroundColor = '#FE9F43';
-                            btn.style.borderColor = '#FE9F43';
-                        }
-                    });
-                    if (window.Swal) {
-                        Swal.fire({ icon: 'success', title: 'Saved', text: 'Issue Date applied to selected rows.' });
-                    }
-                } else {
-                    window.location.reload();
-                }
-            }).catch(() => window.location.reload());
-        };
+        const submitAllBtn = document.getElementById('submit-all-btn');
+        const submitAllPayload = document.getElementById('submit-all-payload');
         if (receiveAllForm && receiveAllForm.dataset.bound !== '1') {
             receiveAllForm.dataset.bound = '1';
             receiveAllForm.addEventListener('submit', function(ev) {
@@ -1373,45 +1294,48 @@
         // initial state
         updateSelectionButtons();
 
-        if (bulkIssueDateInput && bulkIssueDateInput.dataset.bound !== '1') {
-            bulkIssueDateInput.dataset.bound = '1';
-
-            // Mark as manual editing when user types (so change on blur won't auto-save)
-            bulkIssueDateInput.addEventListener('keydown', function(ev) {
-                if (ev.key === 'Enter') {
-                    ev.preventDefault();
-                    const dateVal = (bulkIssueDateInput.value || '').trim();
-                    if (!dateVal) return;
-                    bulkIssueManualEditing = false;
-                    submitBulkIssueDate(dateVal);
-                    return;
-                }
-                if (ev.key === 'Tab' || ev.key === 'Shift' || ev.key === 'Escape') return;
-                bulkIssueManualEditing = true;
+        if (submitAllBtn && submitAllBtn.dataset.bound !== '1') {
+            submitAllBtn.dataset.bound = '1';
+            submitAllBtn.addEventListener('click', function() {
+                const items = Array.from(document.querySelectorAll('form.receive-form')).map(function(f) {
+                    const id = f.getAttribute('data-id');
+                    const input = document.querySelector('.issue-date-cell[data-id="' + id + '"] .issue-date-input');
+                    return { id: Number(id), issue_date: input ? input.value || null : null };
+                });
+                const csrf = submitAllForm.querySelector('input[name="_token"]').value;
+                LoadingOverlay.wrap(() => fetch(submitAllForm.action, {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': csrf,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({ items })
+                }).then(safeJson), 'Submitting issue dates...').then(data => {
+                    if (data && data.ok) {
+                        if (window.Swal) {
+                            Swal.fire({ icon: 'success', title: 'Saved', text: 'All Issue Dates submitted.' });
+                        }
+                    } else {
+                        window.location.reload();
+                    }
+                }).catch(() => window.location.reload());
             });
-
-            // Auto-save only when user selects a date via picker (or any non-manual change)
-            bulkIssueDateInput.addEventListener('change', function() {
-                updateSelectionButtons();
-                const dateVal = (bulkIssueDateInput.value || '').trim();
-                if (!dateVal) return;
-                if (bulkIssueManualEditing) return;
-                submitBulkIssueDate(dateVal);
-            });
-
-            bulkIssueDateInput.addEventListener('input', updateSelectionButtons);
         }
 
         // Toggle bulk buttons depending on whether any row still has Receive
     function updateBulkButtons() {
             const anyReceive = !!document.querySelector('.receive-toggle-btn[data-mode="receive"]');
-            if (!receiveAllBtn || !submitAllForm) return;
+            if (!receiveAllBtn || !submitAllBtn) return;
             if (anyReceive) {
         receiveAllBtn.classList.remove('d-none');
-        if (submitAllForm) submitAllForm.classList.add('d-none');
+        submitAllBtn.classList.add('d-none');
             } else {
         receiveAllBtn.classList.add('d-none');
-        if (submitAllForm) submitAllForm.classList.remove('d-none');
+        submitAllBtn.classList.remove('d-none');
+        submitAllBtn.style.backgroundColor = '#FE9F43';
+        submitAllBtn.style.borderColor = '#FE9F43';
         submitAllBtn.style.color = '#fff';
             }
         }
@@ -1522,7 +1446,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Initialize for both inputs
   handleFilePreview('upload-letters-input', 'file-preview-list');
-    handleFilePreview('upload-docx-input', 'doc-preview-list');
+    handleFilePreview('upload-docs-input', 'doc-preview-list');
 });
 </script>
 
@@ -1542,26 +1466,6 @@ document.addEventListener('DOMContentLoaded', () => {
         align-items: center;
         justify-content: center;
         line-height: 1.2 !important;
-    }
-
-    /* Bulk action inputs match the buttons */
-    .bulk-action-input {
-        height: 44px !important;
-        border-radius: 8px !important;
-        padding: 0 14px !important;
-        font-weight: 600;
-        max-width: 180px;
-        width: 180px;
-        flex: 0 0 180px;
-    }
-
-    /* Header upload widgets: keep inputs/buttons aligned */
-    [data-letters-widget] form[data-letters-upload-form] > input[type="file"].form-control {
-        flex: 1 1 360px;
-        min-width: 280px;
-    }
-    [data-letters-widget] form[data-letters-upload-form] > .d-flex {
-        flex: 0 0 auto;
     }
     /* Sharper button appearance */
     .receive-toggle-btn {
