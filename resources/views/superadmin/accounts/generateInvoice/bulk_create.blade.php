@@ -297,7 +297,7 @@
                                         {{ $allLetterDates ?? ''}}
                                     </td> -->
                                 <th class="text-start">Ref. No & Date:</th>
-                                <td colspan="3" contenteditable="false" id="td_reference_block">
+                                <td colspan="3" contenteditable="true" id="td_reference_block">
                                     {!! $refDateLines !!}
                                 </td>
                             </tr>

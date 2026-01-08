@@ -38,7 +38,7 @@ class StoreBookingRequest extends FormRequest
             'reference_no' => [
                 'required',
                 'string',
-                'max:50',
+                'max:500',
                 $bookingId
                 ? Rule::unique('new_bookings', 'reference_no')->ignore($bookingId)
                 : 'unique:new_bookings,reference_no',

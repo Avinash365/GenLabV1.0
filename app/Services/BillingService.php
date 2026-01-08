@@ -138,7 +138,7 @@ class BillingService
         return $invoiceId;
     }
 
-    public function generateInvoiceNo($prefix = 'ITL/25-26/', $start = 1001)
+    public function generateInvoiceNo($prefix = 'ITLPL-', $start = 1001)
     {
         // Get the last invoice record
         $lastInvoice = \DB::table('invoices')

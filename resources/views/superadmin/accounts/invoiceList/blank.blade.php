@@ -29,7 +29,7 @@
 <div class="row g-4 p-4">
 
     <!-- CARD 1: GSTIN SEARCH -->
-    <div class="col-lg-4">
+    <div class="col-lg-4" hidden>
         <div class="card shadow-sm border-0">
             <div class="card-header bg-primary text-white fw-bold">
                 GSTIN Lookup
@@ -61,7 +61,7 @@
     </div>
 
     <!-- CARD 2: MARKETING PERSON / CLIENT / REF NO -->
-    <div class="col-lg-8">
+    <div class="col-lg-12">
         <div class="card shadow-sm border-0">
             <div class="card-header bg-secondary text-white fw-bold">
                 Booking Related Details
@@ -87,7 +87,7 @@
                     </div>
 
                     <!-- Client Search -->
-                    <div class="col-md-6 position-relative">
+                    <div class="col-md-6 position-relative" hidden>
                         <label class="form-label">Select Client</label>
                         <input type="text"
                                id="clientInput"
@@ -104,7 +104,7 @@
                     </div>
 
                     <!-- Reference Numbers -->
-                    <div class="col-12 position-relative">
+                    <div class="col-12 position-relative" hidden>
                         <label class="form-label">Reference Numbers</label>
 
                         <!-- Selected Tags -->
@@ -175,7 +175,7 @@
         <input type="hidden" id="td_invoice_id" name="invoice_id" value="">
 
         <div class="page-header d-flex justify-content-between align-items-center">
-            <div class="page-title">
+            <div class="page-title ms-2">
                 <h4 class="fw-bold text-uppercase">Blank Invoice</h4>
                 <h6>PDF</h6>
             </div>
