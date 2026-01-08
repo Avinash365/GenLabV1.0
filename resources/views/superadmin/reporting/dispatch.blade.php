@@ -203,10 +203,17 @@
                                             <div class="small text-muted">{{ $item->storage_description }}</div>
                                         @endif
                                     @elseif($item->dispatched_at)
-                                        <div class="fw-semibold">Dispatched</div>
-                                        @if(!empty($item->dispatch_by))
-                                            <div class="small text-muted">By: {{ $item->dispatch_by }}</div>
-                                        @endif
+                                        <div class="dispatch-details-trigger text-decoration-underline" style="cursor:pointer"
+                                             data-by="{{ $item->dispatch_by ?? '' }}"
+                                             data-person="{{ $item->dispatch_person_name ?? '' }}"
+                                             data-assign="{{ $item->dispatch_assignment_no ?? '' }}"
+                                             data-comment="{{ $item->dispatch_comment ?? '' }}"
+                                             data-at="{{ $item->dispatched_at }}">
+                                            <div class="fw-semibold">Dispatched</div>
+                                            @if(!empty($item->dispatch_by))
+                                                <div class="small text-muted">By: {{ $item->dispatch_by }}</div>
+                                            @endif
+                                        </div>
                                     @elseif($item->analyst)
                                         {{ $item->status }}
                                     @else
@@ -335,6 +342,46 @@
                 s.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
                 s.onload = () => resolve();
                 document.head.appendChild(s);
+        });
+
+        // Global delegate for dispatch details click
+        document.addEventListener('click', async function(e) {
+            const trigger = e.target.closest('.dispatch-details-trigger');
+            if (!trigger) return;
+            
+            e.preventDefault();
+            e.stopPropagation();
+
+            const meta = {
+                by: trigger.getAttribute('data-by') || '-',
+                person: trigger.getAttribute('data-person') || '-',
+                assign: trigger.getAttribute('data-assign') || '-',
+                comment: trigger.getAttribute('data-comment') || '',
+                at: trigger.getAttribute('data-at') || '-'
+            };
+
+            await ensureSwal();
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'Dispatch Information',
+                    width: 500,
+                    html: `
+                        <div class="text-start">
+                            <table class="table table-sm table-borderless mb-0">
+                                <tbody>
+                                    <tr><th class="text-muted" style="width:130px">Dispatched At:</th><td>${escHtml(meta.at)}</td></tr>
+                                    <tr><th class="text-muted">Dispatch By:</th><td>${escHtml(meta.by)}</td></tr>
+                                    <tr><th class="text-muted">Person Name:</th><td>${escHtml(meta.person)}</td></tr>
+                                    <tr><th class="text-muted">Assignment No:</th><td>${escHtml(meta.assign)}</td></tr>
+                                    ${meta.comment ? `<tr><th class="text-muted">Comment:</th><td class="text-break">${escHtml(meta.comment)}</td></tr>` : ''}
+                                </tbody>
+                            </table>
+                        </div>
+                    `,
+                    confirmButtonText: 'Close',
+                    confirmButtonColor: '#092C4C'
+                });
+            }
         });
 
     // Upload/View Letters handlers (same as Received)
@@ -636,10 +683,16 @@
                 if (data && data.ok) {
                     const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
                     if (cell) {
-                        cell.innerHTML = '<div class="fw-semibold">Dispatched</div>';
-                        if (meta.dispatch_by) {
-                            cell.innerHTML += '<div class="small text-muted">By: ' + escHtml(meta.dispatch_by) + '</div>';
-                        }
+                        const by = meta.dispatch_by || '';
+                        const innerHtml = '<div class="fw-semibold">Dispatched</div>' +
+                            (by ? '<div class="small text-muted">By: ' + escHtml(by) + '</div>' : '');
+                             
+                        cell.innerHTML = '<div class="dispatch-details-trigger text-decoration-underline" style="cursor:pointer" ' +
+                                            'data-by="' + escHtml(by) + '" ' +
+                                            'data-person="' + escHtml(meta.dispatch_person_name || '') + '" ' +
+                                            'data-assign="' + escHtml(meta.dispatch_assignment_no || '') + '" ' +
+                                            'data-comment="' + escHtml(meta.dispatch_comment || '') + '" ' +
+                                            'data-at="Just now">' + innerHtml + '</div>';
                     }
                     btn.textContent = 'Dispatched';
                     btn.setAttribute('disabled','disabled');
@@ -791,10 +844,16 @@
                     selected.forEach(id => {
                             const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
                             if (cell) {
-                                cell.innerHTML = '<div class="fw-semibold">Dispatched</div>';
-                                if (meta.dispatch_by) {
-                                    cell.innerHTML += '<div class="small text-muted">By: ' + escHtml(meta.dispatch_by) + '</div>';
-                                }
+                                const by = meta.dispatch_by || '';
+                                const innerHtml = '<div class="fw-semibold">Dispatched</div>' +
+                                    (by ? '<div class="small text-muted">By: ' + escHtml(by) + '</div>' : '');
+                                     
+                                cell.innerHTML = '<div class="dispatch-details-trigger text-decoration-underline" style="cursor:pointer" ' +
+                                                    'data-by="' + escHtml(by) + '" ' +
+                                                    'data-person="' + escHtml(meta.dispatch_person_name || '') + '" ' +
+                                                    'data-assign="' + escHtml(meta.dispatch_assignment_no || '') + '" ' +
+                                                    'data-comment="' + escHtml(meta.dispatch_comment || '') + '" ' +
+                                                    'data-at="Just now">' + innerHtml + '</div>';
                             }
                     const btn = document.querySelector('.dispatch-toggle-btn[data-id="' + id + '"]');
                         if (btn) { btn.textContent = 'Dispatched'; btn.setAttribute('disabled','disabled'); btn.style.backgroundColor = '#FE9F43'; btn.style.borderColor = '#FE9F43'; }
