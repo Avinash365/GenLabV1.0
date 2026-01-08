@@ -314,4 +314,46 @@ class ReportingLettersController extends Controller
 
         abort(404);
     }
+
+    // Delete a specific letter/file
+    public function destroy(Request $request, string $job, string $filename)
+    {
+        [$safeJob] = $this->resolveLetterKey($job);
+        // Also check if raw job was used as a key
+        $fallbackKey = $this->sanitizeJob($job);
+        $candidates = array_values(array_unique(array_filter([$safeJob, $fallbackKey])));
+
+        $filename = basename($filename);
+        if ($filename === '_meta.json' || str_starts_with($filename, '_')) {
+             return response()->json(['ok' => false, 'message' => 'Cannot delete system files'], 403);
+        }
+
+        $deleted = false;
+        foreach ($candidates as $key) {
+            $dir = "public/letters/{$key}";
+            $path = "{$dir}/{$filename}";
+            if (Storage::exists($path)) {
+                Storage::delete($path);
+                $deleted = true;
+
+                // Also try to cleanup meta
+                $metaPath = $dir.'/_meta.json';
+                if (Storage::exists($metaPath)) {
+                    try {
+                        $rawMeta = json_decode(Storage::get($metaPath), true);
+                        if (is_array($rawMeta) && isset($rawMeta[$filename])) {
+                            unset($rawMeta[$filename]);
+                            Storage::put($metaPath, json_encode($rawMeta, JSON_PRETTY_PRINT));
+                        }
+                    } catch (\Throwable $e) {}
+                }
+            }
+        }
+
+        if ($deleted) {
+            return response()->json(['ok' => true, 'message' => 'File deleted']);
+        }
+
+        return response()->json(['ok' => false, 'message' => 'File not found'], 404);
+    }
 }

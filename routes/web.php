@@ -70,6 +70,9 @@ Route::middleware(['web', 'multi_auth:web,admin'])
     Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
         ->where('filename', '.*')
         ->name('letters.show');
+    Route::delete('/letters/delete/{job}/{filename}', [ReportingLettersController::class, 'destroy'])
+        ->where('filename', '.*')
+        ->name('letters.destroy');
 
     Route::get('/hold-cancel', [HoldCancelController::class, 'index'])->name('holdcancel.index');
     Route::post('/hold/{id}', [HoldCancelController::class, 'hold'])->name('hold');
