@@ -4,12 +4,14 @@ namespace App\Http\Controllers\MobileControllers\Auth;
 
 use App\Http\Controllers\Controller;
 
+use Illuminate\Container\Attributes\Log;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 use App\Models\User; 
 use App\Models\MarketingPersonDeviceToken; 
+// use  \App\Models\MarketingPersonDeviceToken 
 
 class UserAuthController extends Controller
 {
@@ -51,12 +53,21 @@ class UserAuthController extends Controller
             'device_token' => 'nullable|string'
         ]);
 
-        $user = auth('api')->user();
+        // $user = auth('api')->user();
 
-        $user->deviceTokens()
-            ->where('device_token', $request->device_token)
-            ->delete();
+        // $user->deviceTokens()
+        //     ->where('device_token', $request->device_token)
+        //     ->delete();
 
+         // If device token is provided, delete directly by token
+        if ($request->filled('device_token')) {
+                MarketingPersonDeviceToken::where(
+                'device_token',
+                $request->device_token
+            )->delete();
+        }
+
+        // Log::info(''. $request->device_token); 
         // Logout user session token
         Auth::guard('api')->logout();
 
