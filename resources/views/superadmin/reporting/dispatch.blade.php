@@ -203,7 +203,10 @@
                                             <div class="small text-muted">{{ $item->storage_description }}</div>
                                         @endif
                                     @elseif($item->dispatched_at)
-                                        Dispatched
+                                        <div class="fw-semibold">Dispatched</div>
+                                        @if(!empty($item->dispatch_by))
+                                            <div class="small text-muted">By: {{ $item->dispatch_by }}</div>
+                                        @endif
                                     @elseif($item->analyst)
                                         {{ $item->status }}
                                     @else
@@ -632,7 +635,12 @@
                 const data = await safeJson(resp);
                 if (data && data.ok) {
                     const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
-                    if (cell) cell.textContent = 'Dispatched';
+                    if (cell) {
+                        cell.innerHTML = '<div class="fw-semibold">Dispatched</div>';
+                        if (meta.dispatch_by) {
+                            cell.innerHTML += '<div class="small text-muted">By: ' + escHtml(meta.dispatch_by) + '</div>';
+                        }
+                    }
                     btn.textContent = 'Dispatched';
                     btn.setAttribute('disabled','disabled');
                     btn.style.backgroundColor = '#FE9F43';
@@ -782,7 +790,12 @@
                 // Update UI
                     selected.forEach(id => {
                             const cell = document.querySelector('.status-cell[data-id="' + id + '"]');
-                            if (cell) cell.textContent = 'Dispatched';
+                            if (cell) {
+                                cell.innerHTML = '<div class="fw-semibold">Dispatched</div>';
+                                if (meta.dispatch_by) {
+                                    cell.innerHTML += '<div class="small text-muted">By: ' + escHtml(meta.dispatch_by) + '</div>';
+                                }
+                            }
                     const btn = document.querySelector('.dispatch-toggle-btn[data-id="' + id + '"]');
                         if (btn) { btn.textContent = 'Dispatched'; btn.setAttribute('disabled','disabled'); btn.style.backgroundColor = '#FE9F43'; btn.style.borderColor = '#FE9F43'; }
                 });
