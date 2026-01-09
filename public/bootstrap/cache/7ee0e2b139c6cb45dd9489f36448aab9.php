@@ -161,7 +161,15 @@
                 </div>
                 <?php
                     $__first = $items->first();
-                    $__singleLetter = $__first?->booking?->upload_letter_path ? asset('storage/'.$__first->booking->upload_letter_path) : null;
+                    $__letterPath = $__first?->booking?->upload_letter_path;
+                    $__singleLetter = null;
+                    if ($__letterPath) {
+                        if (filter_var($__letterPath, FILTER_VALIDATE_URL)) {
+                            $__singleLetter = $__letterPath;
+                        } else {
+                            $__singleLetter = asset('storage/'.$__letterPath);
+                        }
+                    }
                 ?>
                 <?php if($__singleLetter): ?>
                     <input type="hidden" id="single-letter-url" value="<?php echo e($__singleLetter); ?>">
@@ -368,9 +376,18 @@
                         $letter = $first?->booking?->upload_letter_path;
                         $allReceived = $items->count() > 0;
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
+
+                        $letterUrl = '#';
+                        if ($letter) {
+                             if (filter_var($letter, FILTER_VALIDATE_URL)) {
+                                 $letterUrl = $letter;
+                             } else {
+                                 $letterUrl = asset('storage/'.$letter);
+                             }
+                        }
                     ?>
                     <?php if($letter): ?>
-                        <a href="<?php echo e(asset('storage/'.$letter)); ?>" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
+                        <a href="<?php echo e($letterUrl); ?>" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
                     <?php else: ?>
                         <button class="btn btn-outline-secondary bulk-action-btn" type="button" disabled>Show Letter</button>
                     <?php endif; ?>
@@ -511,7 +528,6 @@
             </div>
         </div>
     </div>
-
 </div>
 
 

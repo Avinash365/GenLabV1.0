@@ -38,7 +38,9 @@
     <?php if($showPerson): ?>
         <td><?php echo e($personLabel); ?></td>
     <?php endif; ?>
-    <td><?php echo e($expense->description ? \Illuminate\Support\Str::limit($expense->description, 80) : '-'); ?></td>
+    <?php if(isset($showDescription) && $showDescription): ?>
+        <td><?php echo e($expense->description ? \Illuminate\Support\Str::limit($expense->description, 80) : '-'); ?></td>
+    <?php endif; ?>
     <td><?php echo e(number_format($expense->amount, 2)); ?></td>
     <?php if(!$isApprovalPage): ?>
         <td class="text-success"><?php echo e(number_format($displayApproved, 2)); ?></td>

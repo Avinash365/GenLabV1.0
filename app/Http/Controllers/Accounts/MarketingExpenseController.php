@@ -1396,10 +1396,7 @@ class MarketingExpenseController extends Controller
                 $summary->approval_summary_path = $groupExpenses->pluck('approval_summary_path')->filter()->first();
             }
 
-            $rowHtml = view('superadmin.marketing.expenses._row', [
-                'expense' => $summary,
-                'isApprovalPage' => true,
-            ])->render();
+            $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $summary, 'isApprovalPage' => true, 'showDescription' => true])->render();
 
             $displayApproved = $summary ? (($summary->status === 'approved') ? (float) $summary->amount : (float) $summary->approved_amount) : 0.0;
             $displayDue = $summary ? max(0, (float) $summary->amount - $displayApproved) : 0.0;
@@ -1437,7 +1434,7 @@ class MarketingExpenseController extends Controller
         ]);
 
         $expense->load(['marketingPerson','approver']);
-        $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true])->render();
+        $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'showDescription' => true])->render();
 
         return response()->json([
             'success' => true,
@@ -1495,7 +1492,7 @@ class MarketingExpenseController extends Controller
 
             $summary = $this->buildPersonalMonthlySummaries($groupExpenses)->first();
 
-            $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $summary, 'isApprovalPage' => true])->render();
+            $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $summary, 'isApprovalPage' => true, 'showDescription' => true])->render();
 
             return response()->json([
                 'success' => true,
@@ -1517,7 +1514,7 @@ class MarketingExpenseController extends Controller
         ]);
 
         $expense->load(['marketingPerson','approver']);
-        $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true])->render();
+        $rowHtml = view('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'showDescription' => true])->render();
 
         return response()->json([
             'success' => true,
