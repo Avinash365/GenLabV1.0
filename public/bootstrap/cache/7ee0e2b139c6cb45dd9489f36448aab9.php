@@ -370,7 +370,10 @@
 
                     </div>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="d-flex gap-2 align-items-center" id="bulk-issue-section">
+                        <input type="date" id="bulk-issue-input" class="form-control" style="width:140px; height: 44px;">
+                    </div>
                     <?php
                         $first = $items->first();
                         $letter = $first?->booking?->upload_letter_path;
@@ -391,7 +394,7 @@
                     <?php else: ?>
                         <button class="btn btn-outline-secondary bulk-action-btn" type="button" disabled>Show Letter</button>
                     <?php endif; ?>
-                    <form method="POST" action="<?php echo e(route('superadmin.reporting.receiveAll')); ?>" id="receive-all-form" class="d-inline">
+                    <form method="POST" action="<?php echo e(route('superadmin.reporting.receiveAll')); ?>" id="receive-all-form" style="display: contents;">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="job" value="<?php echo e($letterKey ?? $job); ?>">
                         <button class="btn bulk-action-btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
@@ -1527,13 +1530,63 @@
         // Selection handlers: update Receive All button enabled state
         const selectAllCheckbox = document.getElementById('select-all-checkbox');
         const updateSelectionButtons = () => {
-            const anyChecked = !!document.querySelector('.row-select-checkbox:checked');
+             const anyChecked = !!document.querySelector('.row-select-checkbox:checked');
             if (receiveAllBtn) receiveAllBtn.disabled = !anyChecked;
             if (receiveAllBtn) {
                 if (anyChecked) receiveAllBtn.classList.remove('disabled');
                 else receiveAllBtn.classList.add('disabled');
             }
         };
+
+        const bulkIssueInput = document.getElementById('bulk-issue-input');
+        if (bulkIssueInput) {
+            const handleBulkUpdate = async () => {
+                 const dateVal = bulkIssueInput.value;
+                 if (!dateVal) return; // ignore empty
+
+                const selected = Array.from(document.querySelectorAll('.row-select-checkbox:checked'));
+                if (!selected.length) return;
+                
+                 // Do update without confirmation
+                 const doBulkUpdate = async () => {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                     const promises = selected.map(cb => {
+                        const id = cb.value;
+                         const cell = document.querySelector(`.issue-date-cell[data-id="${id}"]`);
+                        const dateInput = cell ? cell.querySelector('input') : null;
+                         const url = dateInput ? dateInput.dataset.updateUrl : null;
+                        if (!url) return Promise.resolve(false);
+
+                         return fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRF-TOKEN': csrf,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                             },
+                             body: new URLSearchParams({ issue_date: dateVal })
+                        }).then(r => r.ok).catch(() => false);
+                    });
+                    await Promise.all(promises);
+                     window.location.reload();
+                };
+
+                if (window.LoadingOverlay) {
+                    LoadingOverlay.wrap(doBulkUpdate, 'Updating issue dates...');
+                } else {
+                    doBulkUpdate();
+                 }
+            };
+            
+            // Trigger on Enter
+             bulkIssueInput.addEventListener('keydown', (ev) => {
+                 if (ev.key === 'Enter') {
+                     ev.preventDefault();
+                    handleBulkUpdate();
+                 }
+            });
+        }
         // bind change events for row checkboxes
         document.querySelectorAll('.row-select-checkbox').forEach(cb => {
             if (cb.dataset.bound === '1') return;

@@ -187,6 +187,9 @@
                                 <div class="d-flex justify-content-end align-items-center">
                                     <?php
                                         $letterUrl = $item->booking?->upload_letter_path;
+                                        if (!empty($letterUrl) && !str_starts_with($letterUrl, 'http') && !str_starts_with($letterUrl, '/')) {
+                                            $letterUrl = asset('uploads/bookings/' . $letterUrl);
+                                        }
                                     ?>
                                     <?php if(!empty($letterUrl)): ?>
                                         <a href="<?php echo e($letterUrl); ?>" target="_blank" rel="noopener" class="action-icon p-2 border rounded d-flex align-items-center justify-content-center text-decoration-none" title="View Letter" aria-label="View letter">
