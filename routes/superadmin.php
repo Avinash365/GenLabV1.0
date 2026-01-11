@@ -843,6 +843,11 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/view-by-letter', [ReportingController::class, 'viewByLetter'])->name('viewByLetter');
         Route::get('/view-by-job-order', [ReportingController::class, 'viewByJobOrder'])->name('viewByJobOrder');
 
+        // Analyst Activities
+        Route::get('/analyst-activities', [\App\Http\Controllers\SuperAdmin\AnalystActivityController::class, 'index'])->name('analyst-activities.index');
+        Route::post('/analyst-activities/transfer', [\App\Http\Controllers\SuperAdmin\AnalystActivityController::class, 'transferJob'])->name('analyst-activities.transfer');
+
+
         Route::patch('/header/{booking}', [ReportingController::class, 'updateHeader'])->name('header.update');
 
         Route::post('/reporting/assign/{item}', [ReportingController::class, 'assignReport'])->name('assignReport');

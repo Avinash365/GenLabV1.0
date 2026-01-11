@@ -124,12 +124,15 @@ class ShowBookingByLetterController extends Controller
                     });
             });
         }
+        // Determine whether to filter by job_order_date or created_at
+        $dateColumn = $request->boolean('use_created_at') ? 'created_at' : 'job_order_date';
+
         if (!empty($month)) {
-            $query->whereMonth('lab_expected_date', $month);
+            $query->whereMonth($dateColumn, $month);
         }
 
         if (!empty($year)) {
-            $query->whereYear('lab_expected_date', $year);
+            $query->whereYear($dateColumn, $year);
         }
 
         // If marketing filter is provided (expects user_code), limit to bookings for that marketing person
