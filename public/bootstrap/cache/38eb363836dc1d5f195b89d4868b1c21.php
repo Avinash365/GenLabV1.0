@@ -360,7 +360,7 @@
         // ------------------------------------------------------
         // 3️ JOB ORDER AUTOCOMPLETE
         // ------------------------------------------------------
-        function attachJobOrderSearch($in   put){
+        function attachJobOrderSearch($input){
             const $dropdown = $input.siblings('.jobOrderList');
 
             $input.off('keyup').on('keyup', debounce(function() {
@@ -528,5 +528,4 @@ $(document).ready(function () {
 </script>
 
 <?php $__env->stopSection(); ?>
-
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/Bookings/newBooking.blade.php ENDPATH**/ ?>
