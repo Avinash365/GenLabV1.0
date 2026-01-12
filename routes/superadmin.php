@@ -202,6 +202,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::get('/booking/{bookingId}/cards', [BookingController::class, 'showBookingCards'])->name('cards.all');
             Route::get('/booking/{bookingId}/cards/{itemId}', [BookingController::class, 'showBookingCards'])->name('cards.single');
+            
+            Route::patch('/bookings/{id}/payment-option',[BookingController::class, 'changePaymentOption'])->name('change.payment.option');
         });
 
     //Product

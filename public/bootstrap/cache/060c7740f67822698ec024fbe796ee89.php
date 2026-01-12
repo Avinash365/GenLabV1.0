@@ -102,15 +102,15 @@
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12">
-                                    <label class="form-label">Contact No <span class="text-danger">*</span></label>
+                                    <label class="form-label">Contact No <span class="text-danger"></span></label>
                                     <input type="text" class="form-control" name="contact_no" 
-                                        value="<?php echo e(old('contact_no', $booking->contact_no)); ?>" required>
+                                        value="<?php echo e(old('contact_no', $booking->contact_no)); ?>" >
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
-                                    <label class="form-label">Contact Email <span class="text-danger">*</span></label>
+                                    <label class="form-label">Contact Email <span class="text-danger"></span></label>
                                     <input type="email" class="form-control" name="contact_email" 
-                                        value="<?php echo e(old('contact_email', $booking->contact_email)); ?>" required>
+                                        value="<?php echo e(old('contact_email', $booking->contact_email)); ?>" >
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
@@ -361,6 +361,97 @@ $(document).ready(function () {
 
 });
 </script>
+
+<script>
+$(document).ready(function () {
+
+    // -------------------------------
+    // Debounce helper
+    // -------------------------------
+    function debounce(fn, delay = 400) {
+        let timer;
+        return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
+
+    let ajaxRequests = {};
+
+    function abortOldRequest(key) {
+        if (ajaxRequests[key]) {
+            ajaxRequests[key].abort();
+        }
+    }
+
+    // -------------------------------
+    // JOB ORDER SEARCH FUNCTION
+    // -------------------------------
+    function attachJobOrderSearch($input) {
+        const $dropdown = $input.siblings('.jobOrderList');
+
+        $input.off('keyup').on('keyup', debounce(function () {
+            const query = $input.val().trim();
+
+            if (query.length < 2) {
+                $dropdown.hide();
+                return;
+            }
+
+            abortOldRequest('job_orders');
+
+            ajaxRequests.job_orders = $.ajax({
+                url: "<?php echo e(route('superadmin.bookings.get.job.orders')); ?>",
+                data: { term: query },
+                success: function (data) {
+                    let html = data.length
+                        ? data.map(item =>
+                            `<button type="button" class="dropdown-item">${item}</button>`
+                          ).join('')
+                        : `<span class="dropdown-item disabled">No results</span>`;
+
+                    $dropdown.html(html).show();
+                }
+            });
+        }, 400));
+
+        $dropdown.off('click').on('click', 'button', function () {
+            $input.val($(this).text());
+            $dropdown.hide();
+        });
+    }
+
+    // -------------------------------
+    // INITIALIZE FOR EXISTING ITEMS
+    // -------------------------------
+    $('.job_order_no').each(function () {
+        attachJobOrderSearch($(this));
+    });
+
+    // -------------------------------
+    // WHEN ADD ITEM BUTTON CLICKED
+    // -------------------------------
+    $('#addItemBtn').on('click', function () {
+        setTimeout(function () {
+            $('#itemsContainer .item-group:last .job_order_no').each(function () {
+                attachJobOrderSearch($(this));
+            });
+        }, 100);
+    });
+
+    // -------------------------------
+    // CLOSE DROPDOWN ON OUTSIDE CLICK
+    // -------------------------------
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.job_order_no, .jobOrderList').length) {
+            $('.jobOrderList').hide();
+        }
+    });
+
+});
+</script>
+
+
 
 
 <?php $__env->stopSection(); ?>

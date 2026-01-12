@@ -131,7 +131,7 @@ class BookingController extends Controller
                 //new booking
                 $booking = NewBooking::create($bookingData);
 
-               
+
                 // Add booking items if present
                 if ($request->has('booking_items')) {
                     foreach ($request->booking_items as $item) {
@@ -431,4 +431,24 @@ class BookingController extends Controller
     }
 
 
+    public function changePaymentOption(Request $request, $id)
+    {
+        $request->validate([
+            'type' => ['required', 'in:bill,without_bill,old_bill'],
+        ]);
+
+        $booking = NewBooking::findOrFail($id);
+
+        $this->authorize('update', $booking);
+
+        if ($booking->payment_option === $request->type) {
+            return back()->with('success', 'Payment option already set');
+        }
+
+        $booking->update([
+            'payment_option' => $request->type,
+        ]);
+
+        return back()->with('success', 'Payment option updated successfully');
+    }
 }

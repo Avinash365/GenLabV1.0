@@ -459,6 +459,31 @@
                 <div class="card-header fw-semibold d-flex align-items-center gap-2">
                     ⚙️ Invoice Settings
                 </div>
+                <div class="mb-3 p-3">
+                <label class="fw-semibold mb-2 d-block">
+                    📄 Booking Letters
+                </label>
+
+                @foreach($bookings as $index => $b)
+                    @if(!empty($b->upload_letter_path))
+                        <a href="{{ $b->upload_letter_path }}"
+                        target="_blank"
+                        class="d-flex align-items-center gap-2 p-2 mb-1 border rounded text-decoration-none"
+                        title="View Letter">
+
+                            <i data-feather="file-text"></i>
+
+                            <span class="small">
+                                {{ $b->reference_no ?? 'Letter ' . ($index + 1) }}
+                            </span>
+                        </a>
+                    @endif
+                @endforeach
+
+                @if($bookings->whereNotNull('upload_letter_path')->count() === 0)
+                    <div class="text-muted small">No letters uploaded</div>
+                @endif
+            </div>
                 <!--  Make body scrollable -->
                 <div class="card-body invoice-settings-body">
 

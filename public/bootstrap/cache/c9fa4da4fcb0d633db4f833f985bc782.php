@@ -471,6 +471,32 @@
                 <div class="card-header fw-semibold d-flex align-items-center gap-2">
                     ⚙️ Invoice Settings
                 </div>
+                <div class="mb-3 p-3">
+                <label class="fw-semibold mb-2 d-block">
+                    📄 Booking Letters
+                </label>
+
+                <?php $__currentLoopData = $bookings; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $b): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php if(!empty($b->upload_letter_path)): ?>
+                        <a href="<?php echo e($b->upload_letter_path); ?>"
+                        target="_blank"
+                        class="d-flex align-items-center gap-2 p-2 mb-1 border rounded text-decoration-none"
+                        title="View Letter">
+
+                            <i data-feather="file-text"></i>
+
+                            <span class="small">
+                                <?php echo e($b->reference_no ?? 'Letter ' . ($index + 1)); ?>
+
+                            </span>
+                        </a>
+                    <?php endif; ?>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                <?php if($bookings->whereNotNull('upload_letter_path')->count() === 0): ?>
+                    <div class="text-muted small">No letters uploaded</div>
+                <?php endif; ?>
+            </div>
                 <!--  Make body scrollable -->
                 <div class="card-body invoice-settings-body">
 

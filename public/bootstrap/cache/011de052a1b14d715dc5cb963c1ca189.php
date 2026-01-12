@@ -56,6 +56,13 @@
             <!-- Marketing Role Sidebar -------------------------------------------------------------------------->
 
             <?php if($isMarketing): ?>
+                <?php
+                    // Active state helpers for Marketing Sidebar
+                    $marketingBookingActive = Request::routeIs('superadmin.bookings.bookingByLetter.marketing') || 
+                                              Request::routeIs('superadmin.showbooking.marketing.*');
+                    
+                    $marketingReportsActive = Request::routeIs('superadmin.reporting.*');
+                ?>
                 <ul>
                     <li class="submenu-open">
                         <h6 class="submenu-hdr">Main</h6>
@@ -66,9 +73,9 @@
                                 </a>
                             </li>
 
-                            <li class="submenu <?php echo e(Request::routeIs('superadmin.bookings.bookingByLetter.marketing') || Request::routeIs('superadmin.showbooking.marketing.*') ? 'submenu-open' : ''); ?>">
-                                <a href="#"><i class="ti ti-calendar fs-16 me-2"></i><span>Booking</span><span class="menu-arrow"></span></a>
-                                <ul>
+                            <li class="submenu <?php echo e($marketingBookingActive ? 'submenu-open' : ''); ?>">
+                                <a href="#" class="<?php echo e($marketingBookingActive ? 'active subdrop' : ''); ?>"><i class="ti ti-calendar fs-16 me-2"></i><span>Booking</span><span class="menu-arrow"></span></a>
+                                <ul style="<?php echo e($marketingBookingActive ? 'display: block;' : 'display: none;'); ?>">
                                     <li>
                                         <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.marketing', $bookingParams)); ?>" class="<?php echo e(Request::routeIs('superadmin.bookings.bookingByLetter.marketing') ? 'active' : ''); ?>">
                                             Show Booking
@@ -82,9 +89,9 @@
                                 </ul>
                             </li>
 
-                            <li class="submenu <?php echo e(Request::routeIs('superadmin.reporting.*') ? 'submenu-open' : ''); ?>">
-                                <a href="#"><i class="ti ti-report fs-16 me-2"></i><span>Reports</span><span class="menu-arrow"></span></a>
-                                <ul>
+                            <li class="submenu <?php echo e($marketingReportsActive ? 'submenu-open' : ''); ?>">
+                                <a href="#" class="<?php echo e($marketingReportsActive ? 'active subdrop' : ''); ?>"><i class="ti ti-report fs-16 me-2"></i><span>Reports</span><span class="menu-arrow"></span></a>
+                                <ul style="<?php echo e($marketingReportsActive ? 'display: block;' : 'display: none;'); ?>">
                                     <li>
                                         <a href="<?php echo e(route('superadmin.reporting.viewByJobOrder', $reportParams)); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.viewByJobOrder') ? 'active' : ''); ?>">
                                             View By Job Order No
@@ -159,6 +166,80 @@
                     </li>
                 </ul>
             <?php else: ?>
+                <?php
+                    // Active state helpers for Main Sidebar
+                    
+                    // All Booking
+                    $allBookingActive = Request::routeIs('superadmin.bookings.*') || 
+                                        Request::routeIs('superadmin.showbooking.*');
+
+                    // Inventory
+                    $inventoryActive = Request::routeIs('superadmin.products.*') || 
+                                       Request::routeIs('superadmin.viewproduct.*') || 
+                                       Request::routeIs('superadmin.categories.*') || 
+                                       Request::routeIs('superadmin.store.*') || 
+                                       Request::routeIs('superadmin.supplier.*') || 
+                                       Request::routeIs('superadmin.unit.*') || 
+                                       Request::routeIs('superadmin.purchaselist.*') || 
+                                       Request::routeIs('superadmin.issue.*');
+
+                    // Reporting
+                    $reportingActive = Request::routeIs('superadmin.reporting.*');
+
+                    // HR (already partially defined as $hrMenuOpen below, but let's consolidate)
+                    $hrActive = Request::routeIs('superadmin.employees.*') || 
+                                Request::routeIs('superadmin.leave.*') || 
+                                Request::routeIs('superadmin.hr.*');
+
+                    // Accounts
+                    $accountsActive = Request::routeIs('superadmin.accounts.*') || 
+                                      Request::routeIs('superadmin.accountBookingsLetters.*') || 
+                                      Request::routeIs('superadmin.cheques.*') || 
+                                      Request::routeIs('superadmin.banks.*') || 
+                                      Request::routeIs('superadmin.cheque-templates.*') || 
+                                      Request::routeIs('superadmin.bookingInvoiceStatuses.*') || 
+                                      Request::routeIs('superadmin.invoices.*') || 
+                                      Request::routeIs('superadmin.blank-invoices.*') || 
+                                      Request::routeIs('superadmin.quotations.*') || 
+                                      Request::routeIs('superadmin.cashLetterTransactions.*') || 
+                                      Request::routeIs('superadmin.cashPayments.*') || 
+                                      Request::routeIs('superadmin.client-ledger.*') || 
+                                      Request::routeIs('superadmin.marketing-person-ledger.*') || 
+                                      Request::routeIs('purchase.*') || 
+                                      Request::routeIs('superadmin.purchase_bills.*') || 
+                                      Request::routeIs('superadmin.vouchers.*');
+
+                    // Attachments
+                    $attachmentsActive = Request::routeIs('superadmin.iscodes.*') || 
+                                         Request::routeIs('superadmin.calibrations.*') || 
+                                         Request::routeIs('superadmin.profiles.*') || 
+                                         Request::routeIs('superadmin.approvals.*') || 
+                                         Request::routeIs('superadmin.importantLetter.*') || 
+                                         Request::routeIs('superadmin.documents.*') ||
+                                         Request::routeIs('superadmin.attachments.*'); // keep fallback
+
+                    // Expenses
+                    $expensesActive = Request::routeIs('superadmin.marketing.*') || 
+                                      Request::routeIs('superadmin.personal.*') || 
+                                      Request::routeIs('superadmin.office.*');
+
+                    // Transportation
+                    $transportationActive = Request::routeIs('superadmin.meter-reading.*') || 
+                                            Request::routeIs('superadmin.vehicles.*');
+                    
+                    // Settings
+                    $settingsActive = Request::routeIs('superadmin.settingsection.*') || 
+                                      Request::routeIs('superadmin.websettings.*') || 
+                                      Request::routeIs('superadmin.payment-settings.*') || 
+                                      Request::routeIs('superadmin.departments.*');
+
+                    // Role Management
+                    $roleMgmtActive = Request::routeIs('superadmin.roles.*');
+                    
+                    // User Management
+                    $userMgmtActive = Request::routeIs('superadmin.users.*');
+
+                ?>
                 <ul>
                     <li class="submenu-open">
                         <h6 class="submenu-hdr">Main</h6>
@@ -173,9 +254,9 @@
                         <!-- All Booking --> 
 
                     <?php if($user && ($user instanceof Admin || $user->hasPermission('booking.view'))): ?>
-                        <li class="submenu <?php echo e(Request::routeIs('superadmin.bookings.*') || Request::routeIs('superadmin.showbooking.*') ? 'submenu-open' : ''); ?>">
-                            <a href="#"><i class="ti ti-calendar fs-16 me-2"></i><span>All Booking</span><span class="menu-arrow"></span></a>
-                            <ul>
+                        <li class="submenu <?php echo e($allBookingActive ? 'submenu-open' : ''); ?>">
+                            <a href="#" class="<?php echo e($allBookingActive ? 'active subdrop' : ''); ?>"><i class="ti ti-calendar fs-16 me-2"></i><span>All Booking</span><span class="menu-arrow"></span></a>
+                            <ul style="<?php echo e($allBookingActive ? 'display: block;' : 'display: none;'); ?>">
                                 <li><a href="<?php echo e(route('superadmin.bookings.newbooking')); ?>" class="<?php echo e(Request::routeIs('superadmin.bookings.newbooking') ? 'active' : ''); ?>">New Booking</a></li>
                                 <li><a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.bookings.bookingByLetter.index') ? 'active' : ''); ?>">Show Booking</a></li>
                                 <li><a href="<?php echo e(route('superadmin.showbooking.showBooking')); ?>" class="<?php echo e(Request::routeIs('superadmin.showbooking.showBooking') ? 'active' : ''); ?>">Booking By Letter</a></li>
@@ -196,10 +277,10 @@
                     <!-- Inventory --> 
                     <?php if($user && ($user instanceof Admin || $user->hasPermission('inventory.view'))): ?>
                         <!-- Inventory -->
-                        <li class="submenu <?php echo e(Request::routeIs('superadmin.products.*') || Request::routeIs('superadmin.categories.*') || Request::routeIs('superadmin.store.*') || Request::routeIs('superadmin.supplier.*') || Request::routeIs('superadmin.unit.*') || Request::routeIs('superadmin.purchaselist.*') || Request::routeIs('superadmin.issue.*') ? 'submenu-open' : ''); ?>">
-                            <a href="#"><i class="ti ti-calendar fs-16 me-2"></i><span>Inventory</span><span class="menu-arrow"></span></a>
-                            <ul>
-                                <li><a href="<?php echo e(route('superadmin.viewproduct.viewProduct')); ?>" class="<?php echo e(Request::routeIs('superadmin.products.addProduct') ? 'active' : ''); ?>">Product</a></li>
+                        <li class="submenu <?php echo e($inventoryActive ? 'submenu-open' : ''); ?>">
+                            <a href="#" class="<?php echo e($inventoryActive ? 'active subdrop' : ''); ?>"><i class="ti ti-calendar fs-16 me-2"></i><span>Inventory</span><span class="menu-arrow"></span></a>
+                            <ul style="<?php echo e($inventoryActive ? 'display: block;' : 'display: none;'); ?>">
+                                <li><a href="<?php echo e(route('superadmin.viewproduct.viewProduct')); ?>" class="<?php echo e(Request::routeIs('superadmin.viewproduct.viewProduct') ? 'active' : ''); ?>">Product</a></li>
                                 <li><a href="<?php echo e(route('superadmin.categories.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.categories.index') ? 'active' : ''); ?>">Category</a></li>
                                 <li><a href="<?php echo e(route('superadmin.store.Store')); ?>" class="<?php echo e(Request::routeIs('superadmin.store.Store') ? 'active' : ''); ?>">Store</a></li>
                                 <li><a href="<?php echo e(route('superadmin.supplier.Supplier')); ?>" class="<?php echo e(Request::routeIs('superadmin.supplier.Supplier') ? 'active' : ''); ?>">Supplier</a></li>
@@ -214,15 +295,15 @@
 
                     <?php if($user && ($user instanceof Admin || $user->hasPermission('reporting.view'))): ?>
                         <!-- Reporting -->
-                        <li class="submenu <?php echo e(Request::routeIs('superadmin.reporting.*') ? 'submenu-open' : ''); ?>">
-                            <a href="#"><i class="ti ti-report fs-16 me-2"></i><span>Reporting</span><span class="menu-arrow"></span></a>
-                            <ul>
+                        <li class="submenu <?php echo e($reportingActive ? 'submenu-open' : ''); ?>">
+                            <a href="#" class="<?php echo e($reportingActive ? 'active subdrop' : ''); ?>"><i class="ti ti-report fs-16 me-2"></i><span>Reporting</span><span class="menu-arrow"></span></a>
+                            <ul style="<?php echo e($reportingActive ? 'display: block;' : 'display: none;'); ?>">
                                 <li><a href="<?php echo e(route('superadmin.reporting.received')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.received') ? 'active' : ''); ?>">Received</a></li>
                                 <li><a href="<?php echo e(route('superadmin.reporting.holdcancel.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.holdcancel.*') ? 'active' : ''); ?>">Hold & Cancel</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Reported</a></li>
                                 <li><a href="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.pendings') ? 'active' : ''); ?>">Pendings</a></li>
                                 <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Print & Upload</a></li>
-                                <li><a href="#" class="<?php echo e(Request::routeIs('#') ? 'active' : ''); ?>">Export PDF</a></li>
+                                <li><a href="<?php echo e(route('superadmin.reporting.analyst-activities.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.analyst-activities.index') ? 'active' : ''); ?>">Analyst Activities</a></li>
                                 <li>
                                     <a href="<?php echo e(route('superadmin.reporting.report-formats.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.report-formats.*') ? 'active' : ''); ?>">Upload Report Format</a>
                                 </li>
@@ -253,15 +334,12 @@
 
                         <?php
                             $showLeaveMenu = $user && ($user instanceof Admin || $user->hasPermission('leave.view'));
-                            $hrMenuOpen = Request::routeIs('superadmin.employees.*')
-                                || Request::routeIs('superadmin.leave.*')
-                                || Request::routeIs('superadmin.hr.*');
                         ?>
-                        <li class="submenu <?php echo e($hrMenuOpen ? 'submenu-open' : ''); ?>">
-                            <a href="javascript:void(0)">
+                        <li class="submenu <?php echo e($hrActive ? 'submenu-open' : ''); ?>">
+                            <a href="javascript:void(0)" class="<?php echo e($hrActive ? 'active subdrop' : ''); ?>">
                                 <i class="ti ti-briefcase fs-16 me-2"></i><span>HR</span><span class="menu-arrow"></span>
                             </a>
-                            <ul>
+                            <ul style="<?php echo e($hrActive ? 'display: block;' : 'display: none;'); ?>">
                                 <li>
                                     <a href="<?php echo e(route('superadmin.employees.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.employees.*') ? 'active' : ''); ?>">
                                         Employees
@@ -289,9 +367,9 @@
 
                         <!-- Accounts --> 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('account.edit'))): ?>
-                            <li class="submenu <?php echo e(Request::routeIs('superadmin.accounts.*') ? 'submenu-open' : ''); ?>">
-                                <a href="#"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
-                                <ul>
+                            <li class="submenu <?php echo e($accountsActive ? 'submenu-open' : ''); ?>">
+                                <a href="#" class="<?php echo e($accountsActive ? 'active subdrop' : ''); ?>"><i class="ti ti-credit-card fs-16 me-2"></i><span>Accounts</span><span class="menu-arrow"></span></a>
+                                <ul style="<?php echo e($accountsActive ? 'display: block;' : 'display: none;'); ?>">
                                     <li>
                                         <a href="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accountBookingsLetters.*') ? 'active' : ''); ?>">
                                             All Letters
@@ -348,13 +426,13 @@
                                 $user->hasPermission('letter.view') ||
                                 $user->hasPermission('document.view')
                             )): ?>
-                            <li class="submenu <?php echo e(Request::routeIs('superadmin.attachments.*') ? 'submenu-open' : ''); ?>">
-                                <a href="javascript:void(0)">
+                            <li class="submenu <?php echo e($attachmentsActive ? 'submenu-open' : ''); ?>">
+                                <a href="javascript:void(0)" class="<?php echo e($attachmentsActive ? 'active subdrop' : ''); ?>">
                                     <i class="ti ti-credit-card fs-16 me-2"></i>
                                     <span>Attachments</span>
                                     <span class="menu-arrow"></span>
                                 </a>
-                                <ul> 
+                                <ul style="<?php echo e($attachmentsActive ? 'display: block;' : 'display: none;'); ?>"> 
                                     <?php if($user instanceof \App\Models\Admin || $user->hasPermission('iscode.view')): ?>
                                         <li>
                                             <a href="<?php echo e(route('superadmin.iscodes.index')); ?>"
@@ -393,13 +471,13 @@
                                 <i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span>
                             </a>
                         </li> -->
-                        <li class="submenu <?php echo e(Request::routeIs('superadmin.marketing.*') ? 'submenu-open' : ''); ?>">
-                            <a href="javascript:void(0)">
+                        <li class="submenu <?php echo e($expensesActive ? 'submenu-open' : ''); ?>">
+                            <a href="javascript:void(0)" class="<?php echo e($expensesActive ? 'active subdrop' : ''); ?>">
                                 <i class="ti ti-target fs-16 me-2"></i>
                                 <span>Expenses</span>
                                 <span class="menu-arrow"></span>
                             </a>
-                            <ul>
+                            <ul style="<?php echo e($expensesActive ? 'display: block;' : 'display: none;'); ?>">
                                 <li>
                                     <a href="<?php echo e(route('superadmin.personal.expenses.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">Personal Expenses</a>
                                 </li>
@@ -412,13 +490,13 @@
                             </ul>
                         </li>
 
-                        <li class="submenu <?php echo e(Request::routeIs('superadmin.marketing.*') ? 'submenu-open' : ''); ?>">
-                            <a href="javascript:void(0)">
+                        <li class="submenu <?php echo e($transportationActive ? 'submenu-open' : ''); ?>">
+                            <a href="javascript:void(0)" class="<?php echo e($transportationActive ? 'active subdrop' : ''); ?>">
                                 <i class="fa fa-bus fs-16 me-2"></i>
                                 <span>Transportaion</span>
                                 <span class="menu-arrow"></span>
                             </a>
-                            <ul>
+                            <ul style="<?php echo e($transportationActive ? 'display: block;' : 'display: none;'); ?>">
                                 <li>
                                     <a href="<?php echo e(route('superadmin.meter-reading.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.meter-reading.*') ? 'active' : ''); ?>">
                                     <i class="ti ti-file-text fs-16 me-2"></i><span>Meter Reading</span>
@@ -451,13 +529,13 @@
                                 || $user->hasPermission('department.edit') 
                                 || $user->hasPermission('department.create'))): ?>
                                 
-                                <li class="submenu <?php echo e((Request::routeIs('superadmin.settingsection.*') || Request::routeIs('superadmin.websettings.*')) ? 'submenu-open' : ''); ?>">
-                                    <a href="javascript:void(0)">
+                                <li class="submenu <?php echo e($settingsActive ? 'submenu-open' : ''); ?>">
+                                    <a href="javascript:void(0)" class="<?php echo e($settingsActive ? 'active subdrop' : ''); ?>">
                                         <i class="ti ti-tools fs-16 me-2"></i>
                                         <span>Settings</span>   
                                         <span class="menu-arrow"></span>
                                     </a>                              
-                                    <ul>
+                                    <ul style="<?php echo e($settingsActive ? 'display: block;' : 'display: none;'); ?>">
                                         
                                         <?php if($user instanceof \App\Models\Admin || $user->hasPermission('web-settings.view')): ?>
                                             <li>
@@ -503,13 +581,13 @@
                                         $user->hasPermission('role.delete')
                                     )): ?>
                                         <h6 class="submenu-hdr mt-4">Roles and Permission Management</h6>
-                                        <li class="submenu <?php echo e(Request::routeIs('superadmin.roles.*') ? 'submenu-open' : ''); ?>">
-                                            <a href="javascript:void(0)">
+                                        <li class="submenu <?php echo e($roleMgmtActive ? 'submenu-open' : ''); ?>">
+                                            <a href="javascript:void(0)" class="<?php echo e($roleMgmtActive ? 'active subdrop' : ''); ?>">
                                                 <i class="ti ti-user-edit fs-16 me-2"></i>
                                                 <span>Role Management</span>
                                                 <span class="menu-arrow"></span>
                                             </a>
-                                            <ul>
+                                            <ul style="<?php echo e($roleMgmtActive ? 'display: block;' : 'display: none;'); ?>">
                                                 
                                                 <?php if($user && ($user instanceof \App\Models\Admin || $user->hasPermission('role.create'))): ?>
                                                     <li>
@@ -534,11 +612,11 @@
                                 <?php endif; ?>
 
 
-                        <li class="submenu <?php echo e(Request::routeIs('superadmin.users.*') ? 'submenu-open' : ''); ?>"> 
+                        <li class="submenu <?php echo e($userMgmtActive ? 'submenu-open' : ''); ?>"> 
                              <?php if($user && ($user instanceof Admin || $user->hasPermission('user.view'))): ?>
         
-                                <a href="#"><i class="ti ti-brand-apple-arcade fs-16 me-2"></i><span>User Management</span><span class="menu-arrow"></span></a>
-                                <ul> 
+                                <a href="#" class="<?php echo e($userMgmtActive ? 'active subdrop' : ''); ?>"><i class="ti ti-brand-apple-arcade fs-16 me-2"></i><span>User Management</span><span class="menu-arrow"></span></a>
+                                <ul style="<?php echo e($userMgmtActive ? 'display: block;' : 'display: none;'); ?>"> 
                                     <?php if($user && ($user instanceof Admin || $user->hasPermission('user.create'))): ?>
                                         <li>
                                             <a href="<?php echo e(route('superadmin.users.create')); ?>" class="<?php echo e(Request::routeIs('superadmin.users.create') ? 'active' : ''); ?>">Create</a>
