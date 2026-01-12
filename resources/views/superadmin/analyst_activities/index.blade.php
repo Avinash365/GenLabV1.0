@@ -67,11 +67,11 @@
     <div class="card">
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-hover table-striped">
+                <table class="table table-hover table-striped text-nowrap align-middle">
                     <thead class="table-light">
                         <tr>
                             <!-- 1. Checkbox -->
-                            <th width="5%">
+                            <th width="5%" class="text-center">
                                 <input type="checkbox" class="form-check-input" id="check-all">
                             </th>
                             <!-- 2. Job No / Order No -->
@@ -79,40 +79,46 @@
                             <!-- 3. Sample Description -->
                             <th>Sample Description</th>
                             <!-- 4. Quantity -->
-                            <th>Quantity</th>
+                            <th class="text-center">Quantity</th>
                             <!-- 5. Lab Expected Date -->
-                            <th>Lab Expected Date</th>
+                            <th class="text-center">Lab Expected Date</th>
                             <!-- 6. Date / Time -->
-                            <th>Date / Time</th>
+                            <th class="text-center">Date / Time</th>
                             <!-- 7. Action -->
-                            <th width="15%">Action</th>
+                            <th width="15%" class="text-center">Action</th>
                         </tr>
                     </thead>
                     <tbody>
                         @forelse($jobOrders as $job)
-                        <tr>
-                            <td>
+                        <tr class="{{ !empty($job->hold_reason) ? 'table-warning row-held' : '' }}" id="row-{{ $job->id }}">
+                            <td class="text-center">
                                 <input type="checkbox" class="form-check-input job-checkbox" value="{{ $job->id }}">
                             </td>
                             <td class="fw-medium">
-                                {{ $job->reference_no ?? $job->id }}
+                                {{ $job->job_order_no ?? '-' }}
                             </td>
-                            <td>{{ $job->sample_code }}</td> <!-- Assuming sample_code is description or Sample Name -->
-                            <td>
-                                {{-- Quantity placeholder --}}
-                                1
+                            <td class="text-wrap" style="min-width: 250px; max-width: 450px;">
+                                {{ $job->sample_description }}
                             </td>
-                            <td>
-                                {{-- Lab Expected Date placeholder --}}
-                                {{ $job->job_order_date ? $job->job_order_date->addDays(3)->format('Y-m-d') : '-' }}
+                            <td class="text-center">
+                                <span class="badge bg-light text-dark border">1</span>
                             </td>
-                            <td>
+                            <td class="text-center">
+                                {{ $job->lab_expected_date ? $job->lab_expected_date->format('Y-m-d') : '-' }}
+                            </td>
+                            <td class="text-center">
                                 {{ $job->created_at->format('Y-m-d H:i') }}
                             </td>
                             <td>
-                                <div class="d-flex gap-2">
+                                <div class="d-flex justify-content-center gap-2">
                                     <!-- View Letter -->
-                                    <a href="#" class="btn btn-icon btn-sm btn-info-light" title="View Letter">
+                                    @php
+                                        $letterUrl = $job->booking?->upload_letter_path;
+                                    @endphp
+                                    <a href="{{ $letterUrl ? url($letterUrl) : '#' }}" 
+                                       target="{{ $letterUrl ? '_blank' : '_self' }}" 
+                                       class="btn btn-icon btn-sm btn-info-light {{ !$letterUrl ? 'disabled opacity-50' : '' }}" 
+                                       title="{{ $letterUrl ? 'View Letter' : 'No Letter Uploaded' }}">
                                         <i class="ti ti-eye"></i>
                                     </a>
                                     <!-- Transfer -->
@@ -120,9 +126,15 @@
                                         <i class="ti ti-arrow-right"></i>
                                     </a>
                                     <!-- Hold -->
-                                    <a href="#" class="btn btn-icon btn-sm btn-danger-light" title="Hold">
+                                    <button type="button" 
+                                            class="btn btn-icon btn-sm {{ !empty($job->hold_reason) ? 'btn-secondary' : 'btn-danger-light' }} btn-toggle-hold" 
+                                            title="{{ !empty($job->hold_reason) ? 'Unhold' : 'Hold' }}"
+                                            data-id="{{ $job->id }}"
+                                            data-held="{{ !empty($job->hold_reason) ? '1' : '0' }}"
+                                            data-hold-url="{{ route('superadmin.reporting.hold', $job->id) }}"
+                                            data-unhold-url="{{ route('superadmin.reporting.unhold', $job->id) }}">
                                         <i class="ti ti-player-pause"></i>
-                                    </a>
+                                    </button>
                                 </div>
                             </td>
                         </tr>
@@ -159,18 +171,41 @@
     </div>
 </div>
 
-<!-- Add Job Modal (Placeholder) -->
+<!-- Add Job Modal -->
 <div class="modal fade" id="addJobModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
-        <div class="modal-content">
+        <form action="{{ route('superadmin.reporting.analyst-activities.assign') }}" method="POST" class="modal-content">
+            @csrf
             <div class="modal-header">
-                <h5 class="modal-title">Add Job Order</h5>
+                <h5 class="modal-title">Assign Job Order to Analyst</h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p>Form to add job details will go here.</p>
+                <div class="mb-3">
+                    <label for="assign_analyst_id" class="form-label fw-bold">Select Analyst</label>
+                    <select name="analyst_id" id="assign_analyst_id" class="form-select select2" required style="width: 100%;">
+                        <option value="">-- Choose Analyst --</option>
+                        @foreach($analysts as $analyst)
+                            <option value="{{ $analyst->id }}" {{ request('analyst_id') == $analyst->id ? 'selected' : '' }}>
+                                {{ $analyst->name }}
+                            </option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="job_order_no" class="form-label fw-bold">Job Order No(s)</label>
+                    <div class="form-control d-flex flex-wrap gap-2 align-items-center" id="tag-container" onclick="document.getElementById('tag-input').focus()" style="min-height: 70px; cursor: text;">
+                        <input type="text" id="tag-input" class="border-0 bg-transparent p-0" style="outline: none; min-width: 150px; flex-grow: 1;" placeholder="Type job no & hit Enter or Comma">
+                    </div>
+                    <input type="hidden" name="job_order_no" id="hidden_job_order_no">
+                    <small class="text-muted">Type a Job Order No and press Enter or Comma to add.</small>
+                </div>
             </div>
-        </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary me-2" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" class="btn btn-primary">Assign Job</button>
+            </div>
+        </form>
     </div>
 </div>
 
@@ -207,11 +242,39 @@
 @endsection
 
 @push('scripts')
+<style>
+    /* Force background color for held rows, overriding table-striped */
+    .row-held td {
+        background-color: #fff3cd !important;
+    }
+    /* Make rows clickable */
+    tbody tr {
+        cursor: pointer;
+    }
+</style>
 <script>
     // Check All functionality
     document.getElementById('check-all').addEventListener('change', function() {
         const checkboxes = document.querySelectorAll('.job-checkbox');
         checkboxes.forEach(cb => cb.checked = this.checked);
+    });
+
+    // Row Click to Toggle Checkbox
+    document.querySelectorAll('tbody tr').forEach(row => {
+        row.addEventListener('click', function(e) {
+            // Prevent triggering if clicked on checkbox, button, or link
+            if (e.target.closest('input[type="checkbox"]') || 
+                e.target.closest('button') || 
+                e.target.closest('a') ||
+                e.target.closest('.d-flex.gap-2')) { 
+                return;
+            }
+
+            const checkbox = this.querySelector('.job-checkbox');
+            if (checkbox) {
+                checkbox.checked = !checkbox.checked;
+            }
+        });
     });
 
     // Transfer Button Click
@@ -235,6 +298,7 @@
         document.getElementById('transfer_job_ids').value = selected.join(',');
         
         // Show Modal
+        const transferModalInfo = document.getElementById('transferJobModal');
         const transferModal = new bootstrap.Modal(transferModalInfo);
         transferModal.show();
     });
@@ -249,6 +313,272 @@
             const transferModalInfo = document.getElementById('transferJobModal');
             const transferModal = new bootstrap.Modal(transferModalInfo);
             transferModal.show();
+        });
+    });
+
+    // --- Tag Input System for Job Orders ---
+    const tagContainer = document.getElementById('tag-container');
+    const tagInput = document.getElementById('tag-input');
+    const hiddenInput = document.getElementById('hidden_job_order_no');
+    
+    // Store tags in a Set to prevent duplicates easily, or just an array
+    let tags = [];
+
+    function updateHiddenInput() {
+        hiddenInput.value = tags.join('\n'); // Join with newline for backend processing
+    }
+
+    function createTagElement(label) {
+        const div = document.createElement('div');
+        div.className = 'badge bg-primary d-flex align-items-center p-2';
+        div.style.fontSize = '0.9rem';
+        
+        const span = document.createElement('span');
+        span.textContent = label;
+        
+        const closeBtn = document.createElement('i');
+        closeBtn.className = 'ti ti-x ms-2';
+        closeBtn.style.cursor = 'pointer';
+        closeBtn.onclick = function(e) {
+            e.stopPropagation(); // Prevent container click event
+            removeTag(label, div);
+        };
+        
+        div.appendChild(span);
+        div.appendChild(closeBtn);
+        return div;
+    }
+
+    function removeTag(label, element) {
+        tags = tags.filter(t => t !== label);
+        element.remove();
+        updateHiddenInput();
+    }
+
+    function addTag(label) {
+        // Clean input
+        label = label.trim();
+        if (label === "") return;
+        
+        // Check for duplicates
+        if (tags.includes(label)) {
+            // Optional: visual feedback for duplicate
+            tagInput.value = '';
+            return;
+        }
+        
+        tags.push(label);
+        const tagElement = createTagElement(label);
+        tagContainer.insertBefore(tagElement, tagInput);
+        updateHiddenInput();
+        tagInput.value = '';
+    }
+
+    // Event Listeners
+    tagInput.addEventListener('keydown', function(e) {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            addTag(this.value);
+        } else if (e.key === 'Backspace' && this.value === '' && tags.length > 0) {
+            // Remove last tag
+            const lastTagLabel = tags[tags.length - 1];
+            tags.pop();
+            // Remove the second to last child (last child is the input itself)
+            // Or just clear all and re-render? No, direct removal is better.
+             // The badges are inserted before the input. So the last badge is the previous sibling of input
+             const lastBadge = tagInput.previousElementSibling;
+             if (lastBadge) lastBadge.remove();
+             updateHiddenInput();
+        }
+    });
+
+    // Add tag on blur too, if there's text left
+    tagInput.addEventListener('blur', function() {
+        if (this.value.trim() !== "") {
+            addTag(this.value);
+        }
+    });
+
+    // Handle Paste (e.g. pasting "A, B, C")
+    tagInput.addEventListener('paste', function(e) {
+        e.preventDefault();
+        const text = (e.clipboardData || window.clipboardData).getData('text');
+        const items = text.split(/[\n,]+/); // Split by newline or comma
+        items.forEach(item => addTag(item));
+    });
+
+    // Reset on Modal Close
+    const addJobModal = document.getElementById('addJobModal');
+    addJobModal.addEventListener('hidden.bs.modal', function () {
+        tags = [];
+        hiddenInput.value = '';
+        tagInput.value = '';
+        // Remove all badges
+        const badges = tagContainer.querySelectorAll('.badge');
+        badges.forEach(b => b.remove());
+    });
+
+    // --- Hold / Unhold Functionality ---
+    document.addEventListener('DOMContentLoaded', async function() {
+        const csrfToken = document.querySelector('meta[name="csrf-token"]') ? document.querySelector('meta[name="csrf-token"]').getAttribute('content') : '';
+
+        // Ensure Swal is loaded handled by layout or check if needed
+        const ensureSwal = async () => {
+             if (!window.Swal) {
+                await new Promise(resolve => {
+                    const script = document.createElement('script');
+                    script.src = 'https://cdn.jsdelivr.net/npm/sweetalert2@11';
+                    script.onload = resolve;
+                    document.head.appendChild(script);
+                });
+            }
+        };
+
+        // --- Session Flash Messages ---
+        @if(session('success'))
+            await ensureSwal();
+            Swal.fire({
+                icon: 'success',
+                title: 'Success',
+                text: "{!! addslashes(session('success')) !!}",
+                confirmButtonClass: 'btn btn-primary',
+                buttonsStyling: false
+            });
+        @endif
+        @if(session('error'))
+            await ensureSwal();
+            Swal.fire({
+                icon: 'error',
+                title: 'Error',
+                text: "{!! addslashes(session('error')) !!}",
+                confirmButtonClass: 'btn btn-primary',
+                buttonsStyling: false
+            });
+        @endif
+        @if(session('warning'))
+            await ensureSwal();
+            Swal.fire({
+                icon: 'warning',
+                title: 'Warning',
+                text: "{!! addslashes(session('warning')) !!}",
+                confirmButtonClass: 'btn btn-primary',
+                buttonsStyling: false
+            });
+        @endif
+
+        document.querySelectorAll('.btn-toggle-hold').forEach(btn => {
+            btn.addEventListener('click', async function() {
+                await ensureSwal();
+                
+                const isHeld = this.getAttribute('data-held') === '1';
+                const id = this.getAttribute('data-id');
+                const holdUrl = this.getAttribute('data-hold-url');
+                const unholdUrl = this.getAttribute('data-unhold-url');
+                const row = document.getElementById('row-' + id);
+                
+                if (isHeld) {
+                    // UNHOLD Logic
+                    try {
+                        const resp = await fetch(unholdUrl, {
+                            method: 'POST',
+                            headers: {
+                                'X-CSRF-TOKEN': csrfToken,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                            }
+                        });
+                        const data = await resp.json();
+                        
+                        if (data.ok) {
+                            // Update UI
+                            this.setAttribute('data-held', '0');
+                            this.classList.remove('btn-secondary');
+                            this.classList.add('btn-danger-light');
+                            this.setAttribute('title', 'Hold');
+                            if (row) {
+                                row.classList.remove('table-warning');
+                                row.classList.remove('row-held');
+                            }
+                            Swal.fire({
+                                icon: 'success',
+                                title: 'Unheld!',
+                                text: 'Job Order has been unheld.',
+                                timer: 1500,
+                                showConfirmButton: false
+                            });
+                        } else {
+                            Swal.fire('Error', 'Failed to unhold job.', 'error');
+                        }
+                    } catch (e) {
+                         console.error(e);
+                         Swal.fire('Error', 'An error occurred.', 'error');
+                    }
+                    
+                } else {
+                    // HOLD Logic
+                    const { value: reason } = await Swal.fire({
+                        title: 'Hold Job Order',
+                        input: 'textarea',
+                        inputLabel: 'Reason',
+                        inputPlaceholder: 'Enter reason for holding...',
+                        inputAttributes: {
+                            'aria-label': 'Type your reason here'
+                        },
+                        showCancelButton: true,
+                        inputValidator: (value) => {
+                            if (!value) {
+                                return 'You need to write something!'
+                            }
+                        }
+                    });
+
+                    if (reason) {
+                        try {
+                            const params = new URLSearchParams();
+                            params.append('reason', reason);
+
+                            const resp = await fetch(holdUrl, {
+                                method: 'POST',
+                                headers: {
+                                    'X-CSRF-TOKEN': csrfToken,
+                                    'Content-Type': 'application/x-www-form-urlencoded',
+                                    'Accept': 'application/json',
+                                    'X-Requested-With': 'XMLHttpRequest'
+                                },
+                                body: params
+                            });
+                            
+                            const data = await resp.json();
+
+                            if (data.ok) {
+                                // Update UI
+                                this.setAttribute('data-held', '1');
+                                this.classList.remove('btn-danger-light');
+                                this.classList.add('btn-secondary');
+                                this.setAttribute('title', 'Unhold');
+                                
+                                if (row) {
+                                    row.classList.add('table-warning');
+                                    row.classList.add('row-held');
+                                }
+                                
+                                Swal.fire({
+                                    icon: 'success',
+                                    title: 'Held!',
+                                    text: 'Job Order has been put on hold.',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            } else {
+                                Swal.fire('Error', 'Failed to hold job.', 'error');
+                            }
+                        } catch (e) {
+                            console.error(e);
+                            Swal.fire('Error', 'An error occurred.', 'error');
+                        }
+                    }
+                }
+            });
         });
     });
 </script>

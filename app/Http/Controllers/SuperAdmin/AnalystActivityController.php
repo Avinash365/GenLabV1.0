@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\User;
 use App\Models\NewBooking;
+use App\Models\BookingItem;
 use App\Models\Role; 
 
 class AnalystActivityController extends Controller
@@ -22,16 +23,13 @@ class AnalystActivityController extends Controller
              $analysts = User::all();
         }
 
-        $query = NewBooking::query();
+        $query = BookingItem::with('booking');
 
         // Filter by Analyst
         if ($request->filled('analyst_id')) {
             $analystUser = User::find($request->analyst_id);
             if ($analystUser && $analystUser->user_code) {
-                // Filter bookings where at least one item is assigned to this analyst
-                $query->whereHas('items', function($q) use ($analystUser) {
-                    $q->where('lab_analysis_code', $analystUser->user_code);
-                });
+                $query->where('lab_analysis_code', $analystUser->user_code);
             }
         }
 
@@ -39,10 +37,12 @@ class AnalystActivityController extends Controller
         if ($request->has('search') && $request->search) {
              $search = $request->search;
              $query->where(function($q) use ($search) {
-                 $q->where('id', 'like', "%{$search}%")
-                   ->orWhere('sample_code', 'like', "%{$search}%")
-                   ->orWhere('client_name', 'like', "%{$search}%")
-                   ->orWhere('reference_no', 'like', "%{$search}%");
+                 $q->where('job_order_no', 'like', "%{$search}%")
+                   ->orWhere('sample_description', 'like', "%{$search}%")
+                   ->orWhereHas('booking', function($b) use ($search) {
+                        $b->where('client_name', 'like', "%{$search}%")
+                          ->orWhere('reference_no', 'like', "%{$search}%");
+                   });
              });
         }
         
@@ -59,6 +59,56 @@ class AnalystActivityController extends Controller
         return redirect()->back()->with('success', 'Job creation function to be implemented');
     }
 
+    public function assignJob(Request $request)
+    {
+        $request->validate([
+            'analyst_id' => 'required|exists:users,id',
+            'job_order_no' => 'required|string',
+        ]);
+
+        $analyst = User::findOrFail($request->analyst_id);
+         if (!$analyst->user_code) {
+             return redirect()->back()->with('error', 'Selected analyst does not have a user code.');
+        }
+
+        // Parse input: split by comma, newline, or whitespace
+        $inputJobOrders = preg_split('/[\s,]+/', $request->job_order_no, -1, PREG_SPLIT_NO_EMPTY);
+        $inputJobOrders = array_unique($inputJobOrders); // Remove duplicates from input
+
+        if (empty($inputJobOrders)) {
+            return redirect()->back()->with('error', 'No valid Job Order Numbers provided.');
+        }
+
+        // Find existing booking items
+        $bookingItems = BookingItem::whereIn('job_order_no', $inputJobOrders)->get();
+        $foundJobOrders = $bookingItems->pluck('job_order_no')->toArray();
+
+        // Calculate missing
+        $missingJobOrders = array_diff($inputJobOrders, $foundJobOrders);
+
+        // Update found items
+        if ($bookingItems->isNotEmpty()) {
+            BookingItem::whereIn('job_order_no', $foundJobOrders)
+                ->update(['lab_analysis_code' => $analyst->user_code]);
+        }
+
+        // Construct message
+        $successCount = $bookingItems->count();
+        $message = "";
+
+        if ($successCount > 0) {
+            $message .= "{$successCount} Job Order(s) successfully assigned to {$analyst->name}. ";
+        }
+
+        if (!empty($missingJobOrders)) {
+            $missingStr = implode(', ', $missingJobOrders);
+            $message .= "Warning: The following Job Order Numbers were not found: {$missingStr}";
+            return redirect()->back()->with($successCount > 0 ? 'warning' : 'error', $message);
+        }
+
+        return redirect()->back()->with('success', $message);
+    }
+
     public function transferJob(Request $request) 
     {
         $request->validate([
@@ -73,21 +123,11 @@ class AnalystActivityController extends Controller
              return redirect()->back()->with('error', 'Target analyst does not have a user code.');
         }
 
-        // Logic: Transfer all items in the selected bookings to the new analyst
-        // Or should we only transfer items currently assigned to the filtered analyst (if any)?
-        // For simplicity, let's assume "Transfer Job" means reassigning the whole Job Order's items to the new analyst.
+        // Logic: Transfer selected items to the new analyst
+        // We are now operating on BookingItem IDs directly.
         
-        // Find bookings
-        $bookings = NewBooking::whereIn('id', $jobIds)->get();
-        
-        $count = 0;
-        foreach ($bookings as $booking) {
-            foreach ($booking->items as $item) {
-                $item->lab_analysis_code = $targetAnalyst->user_code;
-                $item->save();
-                $count++;
-            }
-        }
+        $count = BookingItem::whereIn('id', $jobIds)
+                    ->update(['lab_analysis_code' => $targetAnalyst->user_code]);
 
         return redirect()->back()->with('success', "Successfully transferred {$count} items to {$targetAnalyst->name}.");
     }
