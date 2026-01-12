@@ -131,6 +131,8 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
     Route::get('{user_code}/personal/expenses', [MarketingPersonInfo::class, 'personalExpensesListApi'])->name('api.marketing.personal.expenses.list');
     Route::post('{user_code}/personal/expenses', [MarketingPersonInfo::class, 'personalExpensesStoreApi'])->name('api.marketing.personal.expenses.store');
 
+
+
 });
 
 // Checked-in (Cleared) personal/approved exports listing (paginated)

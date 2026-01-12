@@ -442,9 +442,27 @@
         {{-- ================= EDIT PANEL (RIGHT SIDE) ================= --}}
         <div class="col-lg-3">
             <div class="card shadow-sm position-sticky invoice-settings-card">
-                <div class="card-header fw-semibold d-flex align-items-center gap-2">
+                <div class="card-header fw-semibold d-flex justify-content-between align-items-center ">
                     ⚙️ Invoice Settings
                 </div>
+                <div class="mb-3 p-3">
+                <label class="fw-semibold mb-2 d-block">
+                    📄 Booking Letters
+                </label>
+                    @if(!empty($booking->upload_letter_path))
+                        <a href="{{ $booking->upload_letter_path }}"
+                        target="_blank"
+                        class="d-flex align-items-center gap-2 p-2 mb-1 border rounded text-decoration-none"
+                        title="View Letter">
+
+                            <i data-feather="file-text"></i>
+
+                            <span class="small">
+                                {{ $booking->reference_no ?? 'Letter ' . (1) }}
+                            </span>
+                        </a>
+                    @endif
+            </div>
                 <!--  Make body scrollable -->
                 <div class="card-body invoice-settings-body">
 

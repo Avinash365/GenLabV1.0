@@ -360,7 +360,7 @@
         // ------------------------------------------------------
         // 3️ JOB ORDER AUTOCOMPLETE
         // ------------------------------------------------------
-        function attachJobOrderSearch($input){
+        function attachJobOrderSearch($in   put){
             const $dropdown = $input.siblings('.jobOrderList');
 
             $input.off('keyup').on('keyup', debounce(function() {

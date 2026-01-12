@@ -231,8 +231,8 @@
                                 <th style="width:350px;">Client Name</th>
                                 <th style="width:300px;">Reference No</th>
                                 <th>Marketing Person</th>
-                                 
                                 <th>Assign Client</th>
+                                <th>Payment</th>
                                 <th>Action</th>
                             </tr>
                         </thead>
@@ -270,6 +270,39 @@
                                             </div>
                                         </form>
                                     </td>
+                                   <td>
+    <form method="POST"
+          action="<?php echo e(route('superadmin.bookings.change.payment.option', $booking->id)); ?>"
+          class="d-inline">
+        <?php echo csrf_field(); ?>
+        <?php echo method_field('PATCH'); ?>
+
+        <input type="hidden"
+               name="type"
+               value="<?php echo e($booking->payment_option === 'bill' ? 'without_bill' : 'bill'); ?>">
+
+        <button type="submit"
+                class="me-2 border rounded d-flex align-items-center p-2 btn btn-link text-danger"
+                    <?php echo e($booking->payment_option === 'bill'
+                        ? 'btn-success'
+                        : 'btn-outline-secondary'); ?>"
+                title="Toggle Payment Option">
+
+            <?php if($booking->payment_option === 'bill'): ?>
+                <i data-feather="refresh-cw"
+                class="text-success"
+                title="Change to Without Bill"></i>
+                 
+            <?php else: ?>
+                <i data-feather="refresh-cw"
+                class="text-secondary"
+                title="Change to Bill"></i>
+            <?php endif; ?>
+        </button>
+    </form>
+</td>
+
+
 
                                     <!-- Actions -->
                                     <td class="d-flex">
