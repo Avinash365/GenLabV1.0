@@ -11,10 +11,10 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page'])) }}" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+                <a href="{{ route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page'])) }}" class="download-link" data-type="pdf" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page'])) }}" data-bs-toggle="tooltip" title="Excel">
+                <a href="{{ route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page'])) }}" class="download-link" data-type="excel" data-bs-toggle="tooltip" title="Excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
                         <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
                     </svg>
@@ -397,6 +397,66 @@ document.addEventListener('DOMContentLoaded', function(){
                 }
             }
             modal().show();
+        });
+    });
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadLinks = document.querySelectorAll('.download-link');
+    downloadLinks.forEach(link => {
+        link.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            // Show overlay
+            if(window.LoadingOverlay) {
+                window.LoadingOverlay.show('Generating Report', 'Please wait while we prepare your download...');
+            }
+
+            try {
+                const response = await fetch(link.href);
+                if(!response.ok) throw new Error('Download failed: ' + response.statusText);
+                
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                
+                // Try to extract filename from Content-Disposition header
+                let fileName = 'report';
+                const contentDisposition = response.headers.get('Content-Disposition');
+                if (contentDisposition) {
+                    const idx = contentDisposition.indexOf('filename=');
+                    if (idx !== -1) {
+                        let f = contentDisposition.substring(idx + 9);
+                        if (f.startsWith('"') && f.endsWith('"')) {
+                            f = f.substring(1, f.length - 1);
+                        }
+                        fileName = f;
+                    }
+                }
+                
+                // Fallback filename if extraction failed
+                if (fileName === 'report') {
+                     const isPdf = link.getAttribute('data-type') === 'pdf';
+                     fileName = isPdf ? 'pending_reports.pdf' : 'pending_reports.xlsx';
+                }
+
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('Download error:', error);
+                // Optionally show an error toast here
+            } finally {
+                // Always hide overlay
+                if(window.LoadingOverlay) {
+                    window.LoadingOverlay.hide();
+                }
+            }
         });
     });
 });

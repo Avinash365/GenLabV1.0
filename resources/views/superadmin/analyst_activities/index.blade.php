@@ -104,10 +104,10 @@
                                 <span class="badge bg-light text-dark border">1</span>
                             </td>
                             <td class="text-center">
-                                {{ $job->lab_expected_date ? $job->lab_expected_date->format('Y-m-d') : '-' }}
+                                {{ $job->lab_expected_date && $job->lab_expected_date instanceof \DateTime ? $job->lab_expected_date->format('Y-m-d') : ($job->lab_expected_date ?? '-') }}
                             </td>
                             <td class="text-center">
-                                {{ $job->created_at->format('Y-m-d H:i') }}
+                                {{ $job->created_at && $job->created_at instanceof \DateTime ? $job->created_at->format('Y-m-d H:i') : ($job->created_at ?? '-') }}
                             </td>
                             <td>
                                 <div class="d-flex justify-content-center gap-2">

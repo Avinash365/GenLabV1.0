@@ -15,16 +15,18 @@ class PendingItemsExport implements FromCollection, WithHeadings
             return [
                 $i+1,
                 $it->job_order_no,
-                optional($it->booking)->client_name,
+                // Client Name removed
                 $it->sample_description,
                 $it->sample_quality,
                 $it->particulars,
+                $it->lab_expected_date ? $it->lab_expected_date->format('Y-m-d') : '-',
+                $it->updated_at ? $it->updated_at->format('Y-m-d H:i') : '-',
                 $it->status,
             ];
         });
     }
     public function headings(): array
     {
-        return ['#','Job Order No','Client Name','Sample Description','Sample Quality','Particulars','Status'];
+        return ['#','Job Order No','Sample Description','Sample Quality','Particulars','Lab Expected Date','Updated At','Status'];
     }
 }

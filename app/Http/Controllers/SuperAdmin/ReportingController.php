@@ -689,7 +689,7 @@ class ReportingController extends Controller
         if ($year !== null && ($year < 2000 || $year > 2100)) { $year = null; }
 
         $bookingQuery = \App\Models\NewBooking::query()
-            ->with(['marketingPerson'])
+            ->with(['marketingPerson', 'items'])
             ->withCount(['items as pending_items_count' => function ($q) use ($overdue, $cutoff, $month, $year, $labAnalyst) {
                 if ($overdue) {
                     $q->whereNull('issue_date')

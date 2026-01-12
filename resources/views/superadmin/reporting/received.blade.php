@@ -1595,6 +1595,27 @@
                 updateSelectionButtons();
             });
         });
+
+        // Row click to toggle checkbox
+        document.querySelectorAll('#table-body tr').forEach(row => {
+            if (row.dataset.boundRowClick === '1') return;
+            row.dataset.boundRowClick = '1';
+            
+            row.addEventListener('click', (e) => {
+                // Ignore clicks on interactive elements
+                if (e.target.closest('button, a, input, select, textarea, label, .ts-wrapper')) {
+                    return;
+                }
+
+                const checkbox = row.querySelector('.row-select-checkbox');
+                if (checkbox) {
+                    checkbox.checked = !checkbox.checked;
+                    // Trigger change event manually so listeners update the UI
+                    checkbox.dispatchEvent(new Event('change'));
+                }
+            });
+        });
+
         if (selectAllCheckbox) {
             if (!selectAllCheckbox.dataset.bound) {
                 selectAllCheckbox.dataset.bound = '1';
@@ -1951,6 +1972,11 @@ document.addEventListener('DOMContentLoaded', () => {
     /* Date input sizing alignment */
     .issue-date-input { max-width: 180px; }
     .table td, .table th { vertical-align: middle; }
+
+    /* Make rows clickable */
+    #table-body tr {
+        cursor: pointer;
+    }
 
     /* tab container */
     /* Container styling */

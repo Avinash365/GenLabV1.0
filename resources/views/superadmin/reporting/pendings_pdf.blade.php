@@ -54,11 +54,12 @@
             <tr>
                 <th style="width: 6%">#</th>
                 <th style="width: 16%">Job Order No</th>
-                <th style="width: 18%">Client Name</th>
-                <th style="width: 22%">Sample Description</th>
-                <th style="width: 14%">Sample Quality</th>
-                <th style="width: 16%">Particulars</th>
-                <th style="width: 8%">Status</th>
+                <th style="width: 20%">Sample Description</th>
+                <th style="width: 12%">Sample Quality</th>
+                <th style="width: 12%">Particulars</th>
+                <th style="width: 12%">Lab Expected Date</th>
+                <th style="width: 12%">Updated At</th>
+                <th style="width: 10%">Status</th>
             </tr>
             </thead>
             <tbody>
@@ -66,15 +67,16 @@
                 <tr>
                     <td>{{ $i + 1 }}</td>
                     <td>{{ $item->job_order_no }}</td>
-                    <td>{{ optional($item->booking)->client_name }}</td>
                     <td>{{ $item->sample_description }}</td>
                     <td>{{ $item->sample_quality }}</td>
                     <td>{{ $item->particulars }}</td>
+                    <td>{{ $item->lab_expected_date ? $item->lab_expected_date->format('Y-m-d') : '-' }}</td>
+                    <td>{{ $item->updated_at ? $item->updated_at->format('Y-m-d H:i') : '-' }}</td>
                     <td>{{ $item->status }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" style="text-align:center;">No data found</td>
+                    <td colspan="8" style="text-align:center;">No data found</td>
                 </tr>
             @endforelse
             </tbody>

@@ -89,7 +89,10 @@ class AnalystActivityController extends Controller
         // Update found items
         if ($bookingItems->isNotEmpty()) {
             BookingItem::whereIn('job_order_no', $foundJobOrders)
-                ->update(['lab_analysis_code' => $analyst->user_code]);
+                ->update([
+                    'lab_analysis_code' => $analyst->user_code,
+                    'status' => '' . $analyst->name
+                ]);
         }
 
         // Construct message
@@ -127,7 +130,10 @@ class AnalystActivityController extends Controller
         // We are now operating on BookingItem IDs directly.
         
         $count = BookingItem::whereIn('id', $jobIds)
-                    ->update(['lab_analysis_code' => $targetAnalyst->user_code]);
+                    ->update([
+                        'lab_analysis_code' => $targetAnalyst->user_code,
+                        'status' => 'Assigned to ' . $targetAnalyst->name
+                    ]);
 
         return redirect()->back()->with('success', "Successfully transferred {$count} items to {$targetAnalyst->name}.");
     }

@@ -32,24 +32,29 @@
         <thead>
             <tr>
                 <th style="width: 6%">#</th>
-                <th style="width: 34%">Client Name</th>
-                <th style="width: 22%">Reference No</th>
-                <th style="width: 26%">Marketing Person</th>
-                <th style="width: 12%">Pending Items</th>
+                <th style="width: 24%">Reference No</th>
+                <th style="width: 20%">Marketing Person</th>
+                <th style="width: 20%">Updated At</th>
+                <th style="width: 20%">Lab Expected Date</th>
+                <th style="width: 10%">Pending Items</th>
             </tr>
         </thead>
         <tbody>
             @forelse($bookings as $i => $b)
+                @php
+                    $maxDate = $b->items->count() > 0 ? $b->items->max('lab_expected_date') : null;
+                @endphp
                 <tr>
                     <td>{{ $i + 1 }}</td>
-                    <td>{{ $b->client_name }}</td>
                     <td>{{ $b->reference_no }}</td>
                     <td>{{ optional($b->marketingPerson)->name ?: '-' }}</td>
+                    <td>{{ $b->updated_at ? $b->updated_at->format('Y-m-d H:i') : '-' }}</td>
+                    <td>{{ $maxDate ? $maxDate->format('Y-m-d') : '-' }}</td>
                     <td style="text-align: right;">{{ (int) $b->pending_items_count }}</td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="5" style="text-align:center;">No data found</td>
+                    <td colspan="6" style="text-align:center;">No data found</td>
                 </tr>
             @endforelse
         </tbody>

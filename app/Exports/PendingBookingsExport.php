@@ -26,9 +26,10 @@ class PendingBookingsExport implements FromCollection, WithHeadings, WithMapping
     {
         return [
             '#',
-            'Client Name',
             'Reference No',
             'Marketing Person',
+            'Updated At',
+            'Lab Expected Date',
             'Pending Items',
         ];
     }
@@ -38,11 +39,14 @@ class PendingBookingsExport implements FromCollection, WithHeadings, WithMapping
         static $i = 0;
         $i++;
 
+        $maxDate = $booking->items->count() > 0 ? $booking->items->max('lab_expected_date') : null;
+
         return [
             $i,
-            $booking->client_name,
             $booking->reference_no,
             optional($booking->marketingPerson)->name ?: '-',
+            $booking->updated_at ? $booking->updated_at->format('Y-m-d H:i') : '-',
+            $maxDate ? $maxDate->format('Y-m-d') : '-',
             (int) ($booking->pending_items_count ?? 0),
         ];
     }
