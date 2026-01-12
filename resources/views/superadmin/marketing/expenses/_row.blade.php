@@ -38,7 +38,9 @@
     @if($showPerson)
         <td>{{ $personLabel }}</td>
     @endif
-    <td>{{ $expense->description ? \Illuminate\Support\Str::limit($expense->description, 80) : '-' }}</td>
+    @if(isset($showDescription) && $showDescription)
+        <td>{{ $expense->description ? \Illuminate\Support\Str::limit($expense->description, 80) : '-' }}</td>
+    @endif
     <td>{{ number_format($expense->amount, 2) }}</td>
     @if(!$isApprovalPage)
         <td class="text-success">{{ number_format($displayApproved, 2) }}</td>

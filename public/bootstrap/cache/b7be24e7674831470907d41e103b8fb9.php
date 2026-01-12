@@ -193,14 +193,7 @@
                                 <td><?php echo e($item->booking->client_name ?? '-'); ?></td>
                                 <td><?php echo e($item->sample_description); ?></td>
                                 <td class="status-cell" data-id="<?php echo e($item->id); ?>">
-                                    <?php if(!empty($item->storage_no) || !empty($item->storage_description)): ?>
-                                        <?php if(!empty($item->storage_no)): ?>
-                                            <div class="fw-semibold">Storage: <?php echo e($item->storage_no); ?></div>
-                                        <?php endif; ?>
-                                        <?php if(!empty($item->storage_description)): ?>
-                                            <div class="small text-muted"><?php echo e($item->storage_description); ?></div>
-                                        <?php endif; ?>
-                                    <?php elseif($item->dispatched_at): ?>
+                                    <?php if($item->dispatched_at): ?>
                                         <div class="dispatch-details-trigger text-decoration-underline" style="cursor:pointer"
                                              data-by="<?php echo e($item->dispatch_by ?? ''); ?>"
                                              data-person="<?php echo e($item->dispatch_person_name ?? ''); ?>"
@@ -208,10 +201,17 @@
                                              data-comment="<?php echo e($item->dispatch_comment ?? ''); ?>"
                                              data-at="<?php echo e($item->dispatched_at); ?>">
                                             <div class="fw-semibold">Dispatched</div>
-                                            <?php if(!empty($item->dispatch_by)): ?>
+                                            <?php if($item->dispatch_by): ?>
                                                 <div class="small text-muted">By: <?php echo e($item->dispatch_by); ?></div>
                                             <?php endif; ?>
                                         </div>
+                                    <?php elseif(!empty($item->storage_no) || !empty($item->storage_description)): ?>
+                                        <?php if(!empty($item->storage_no)): ?>
+                                            <div class="fw-semibold">Storage: <?php echo e($item->storage_no); ?></div>
+                                        <?php endif; ?>
+                                        <?php if(!empty($item->storage_description)): ?>
+                                            <div class="small text-muted"><?php echo e($item->storage_description); ?></div>
+                                        <?php endif; ?>
                                     <?php elseif($item->analyst): ?>
                                         <?php echo e($item->status); ?>
 

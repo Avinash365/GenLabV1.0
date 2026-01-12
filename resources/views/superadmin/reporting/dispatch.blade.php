@@ -195,14 +195,7 @@
                                 <td>{{ $item->booking->client_name ?? '-' }}</td>
                                 <td>{{ $item->sample_description }}</td>
                                 <td class="status-cell" data-id="{{ $item->id }}">
-                                    @if(!empty($item->storage_no) || !empty($item->storage_description))
-                                        @if(!empty($item->storage_no))
-                                            <div class="fw-semibold">Storage: {{ $item->storage_no }}</div>
-                                        @endif
-                                        @if(!empty($item->storage_description))
-                                            <div class="small text-muted">{{ $item->storage_description }}</div>
-                                        @endif
-                                    @elseif($item->dispatched_at)
+                                    @if($item->dispatched_at)
                                         <div class="dispatch-details-trigger text-decoration-underline" style="cursor:pointer"
                                              data-by="{{ $item->dispatch_by ?? '' }}"
                                              data-person="{{ $item->dispatch_person_name ?? '' }}"
@@ -210,10 +203,17 @@
                                              data-comment="{{ $item->dispatch_comment ?? '' }}"
                                              data-at="{{ $item->dispatched_at }}">
                                             <div class="fw-semibold">Dispatched</div>
-                                            @if(!empty($item->dispatch_by))
+                                            @if($item->dispatch_by)
                                                 <div class="small text-muted">By: {{ $item->dispatch_by }}</div>
                                             @endif
                                         </div>
+                                    @elseif(!empty($item->storage_no) || !empty($item->storage_description))
+                                        @if(!empty($item->storage_no))
+                                            <div class="fw-semibold">Storage: {{ $item->storage_no }}</div>
+                                        @endif
+                                        @if(!empty($item->storage_description))
+                                            <div class="small text-muted">{{ $item->storage_description }}</div>
+                                        @endif
                                     @elseif($item->analyst)
                                         {{ $item->status }}
                                     @else

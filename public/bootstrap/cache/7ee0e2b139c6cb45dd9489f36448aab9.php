@@ -125,10 +125,11 @@
                     $letterKey = $header['reference_no'] ?? $job;
                     $uploadRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.upload') ? route('superadmin.reporting.letters.upload') : '#';
                     $listRoute = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.index') ? route('superadmin.reporting.letters.index', ['job' => $letterKey]) : '';
+                    $deleteRouteTpl = \Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.destroy') ? route('superadmin.reporting.letters.destroy', ['job' => $letterKey, 'filename' => 'FILENAME_PLACEHOLDER']) : '';
                 ?>
                 <div class="col-md-5">
                     <label class="form-label">Upload Report</label>
-                    <form method="POST" action="<?php echo e($uploadRoute); ?>" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="<?php echo e($listRoute); ?>" data-letters-upload-form="1">
+                    <form method="POST" action="<?php echo e($uploadRoute); ?>" enctype="multipart/form-data" id="upload-letters-form" class="d-flex gap-2 align-items-start flex-wrap" data-list-url="<?php echo e($listRoute); ?>" data-letters-upload-form="1" data-delete-url-tpl="<?php echo e($deleteRouteTpl); ?>">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="job" value="<?php echo e($letterKey); ?>">
                         <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>
@@ -144,15 +145,15 @@
                 </div> 
                 <div class="col-md-4">
                     <label class="form-label">Upload docx</label>
-                    <form method="POST" action="<?php echo e($uploadRoute); ?>" enctype="multipart/form-data" id="upload-docs-form" class="d-flex gap-2 align-items-start flex-wrap" data-letters-upload-form="1">
+                    <form method="POST" action="<?php echo e($uploadRoute); ?>" enctype="multipart/form-data" id="upload-docs-form" class="d-flex gap-2 align-items-start flex-wrap" data-letters-upload-form="1" data-list-url="<?php echo e($listRoute); ?>" data-delete-url-tpl="<?php echo e($deleteRouteTpl); ?>">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="job" value="<?php echo e($letterKey); ?>">
                         <input type="file" name="letters[]" id="upload-docs-input" class="form-control" multiple accept=".doc,.docx" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>
                         <div class="d-flex gap-2 align-items-center">
                             <button type="submit" class="btn btn-primary" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>Upload</button>
-                             <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" <?php echo e(empty($listRoute) ? 'disabled' : ''); ?>>
+                             <button type="button" class="btn btn-outline-secondary position-relative" id="view-docs-btn" <?php echo e(empty($listRoute) ? 'disabled' : ''); ?>>
                                 View
-                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
+                                <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="docs-count-badge" style="display:none;">0</span>
                             </button>
                         </div>
                         <small class="text-muted d-block mt-2">You can upload multiple files.</small>
@@ -160,7 +161,15 @@
                 </div>
                 <?php
                     $__first = $items->first();
-                    $__singleLetter = $__first?->booking?->upload_letter_path ? asset('storage/'.$__first->booking->upload_letter_path) : null;
+                    $__letterPath = $__first?->booking?->upload_letter_path;
+                    $__singleLetter = null;
+                    if ($__letterPath) {
+                        if (filter_var($__letterPath, FILTER_VALIDATE_URL)) {
+                            $__singleLetter = $__letterPath;
+                        } else {
+                            $__singleLetter = asset('storage/'.$__letterPath);
+                        }
+                    }
                 ?>
                 <?php if($__singleLetter): ?>
                     <input type="hidden" id="single-letter-url" value="<?php echo e($__singleLetter); ?>">
@@ -279,7 +288,7 @@
                                         }
                                     ?>
                                     <div class="issue-date issue-date-cell d-none" data-id="<?php echo e($item->id); ?>">
-                                        <input type="date" class="form-control issue-date-input" value="<?php echo e($issueValue); ?>">
+                                        <input type="date" class="form-control issue-date-input" value="<?php echo e($issueValue); ?>" data-update-url="<?php echo e(route('superadmin.reporting.receive', $item->id)); ?>" data-csrf="<?php echo e(csrf_token()); ?>">
                                     </div>
 
                                 </td>
@@ -361,19 +370,31 @@
 
                     </div>
                 </div>
-                <div class="d-flex gap-2">
+                <div class="d-flex gap-2 align-items-center">
+                    <div class="d-flex gap-2 align-items-center" id="bulk-issue-section">
+                        <input type="date" id="bulk-issue-input" class="form-control" style="width:140px; height: 44px;">
+                    </div>
                     <?php
                         $first = $items->first();
                         $letter = $first?->booking?->upload_letter_path;
                         $allReceived = $items->count() > 0;
                         foreach ($items as $it) { if (!$it->received_at) { $allReceived = false; break; } }
+
+                        $letterUrl = '#';
+                        if ($letter) {
+                             if (filter_var($letter, FILTER_VALIDATE_URL)) {
+                                 $letterUrl = $letter;
+                             } else {
+                                 $letterUrl = asset('storage/'.$letter);
+                             }
+                        }
                     ?>
                     <?php if($letter): ?>
-                        <a href="<?php echo e(asset('storage/'.$letter)); ?>" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
+                        <a href="<?php echo e($letterUrl); ?>" target="_blank" class="btn btn-outline-secondary bulk-action-btn">Show Letter</a>
                     <?php else: ?>
                         <button class="btn btn-outline-secondary bulk-action-btn" type="button" disabled>Show Letter</button>
                     <?php endif; ?>
-                    <form method="POST" action="<?php echo e(route('superadmin.reporting.receiveAll')); ?>" id="receive-all-form" class="d-inline">
+                    <form method="POST" action="<?php echo e(route('superadmin.reporting.receiveAll')); ?>" id="receive-all-form" style="display: contents;">
                         <?php echo csrf_field(); ?>
                         <input type="hidden" name="job" value="<?php echo e($letterKey ?? $job); ?>">
                         <button class="btn bulk-action-btn" type="submit" id="receive-all-btn" style="background-color:#092C4C;border-color:#092C4C;color:#fff; <?php echo e($allReceived ? 'display:none;' : ''); ?>">Receive All</button>
@@ -494,6 +515,22 @@
         </div>
     </div>
 
+    
+    <div class="modal fade" id="docsModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Uploaded Documents</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="docs-list" class="list-group">
+                        <div class="text-muted">Loading...</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 
@@ -759,17 +796,88 @@
         const lettersListEl = document.getElementById('letters-list');
         const lettersCountBadge = document.getElementById('letters-count-badge');
 
+        const viewDocsBtn = document.getElementById('view-docs-btn');
+        const docsModalEl = document.getElementById('docsModal');
+        const docsListEl = document.getElementById('docs-list');
+        const docsCountBadge = document.getElementById('docs-count-badge');
+
         const getListUrl = () => {
             const form = uploadForms.find(f => !!f.getAttribute('data-list-url'));
             return form ? (form.getAttribute('data-list-url') || '') : '';
         };
+
+        const getDeleteTpl = () => {
+            const form = uploadForms.find(f => !!f.getAttribute('data-delete-url-tpl'));
+            return form ? (form.getAttribute('data-delete-url-tpl') || '') : null;
+        };
+
+        const deleteFile = (filename) => {
+            const tpl = getDeleteTpl();
+            if (!tpl || !filename) return;
+            const url = tpl.replace('FILENAME_PLACEHOLDER', filename);
+            const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
+            
+            if (window.Swal) {
+                Swal.fire({
+                    title: 'Delete file?',
+                    text: "You won't be able to revert this!",
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#d33',
+                    cancelButtonColor: '#3085d6',
+                    confirmButtonText: 'Yes, delete it!'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        doDelete(url, csrf);
+                    }
+                });
+            } else {
+                if (confirm('Are you sure you want to delete this file?')) {
+                    doDelete(url, csrf);
+                }
+            }
+        };
+
+        const doDelete = (url, csrf) => {
+            LoadingOverlay.wrap(async () => {
+                const resp = await fetch(url, {
+                    method: 'DELETE',
+                    headers: { 
+                        'X-CSRF-TOKEN': csrf, 
+                        'Accept': 'application/json', 
+                        'X-Requested-With': 'XMLHttpRequest' 
+                    }
+                });
+                return await safeJson(resp);
+            }, 'Deleting file...').then(data => {
+                if (data && data.ok) {
+                    // refresh both lists
+                    loadLetters(false).catch(() => {});
+                    loadDocs(false).catch(() => {});
+                    if (window.Swal) Swal.fire({ icon: 'success', title: 'Deleted', text: 'File deleted.' });
+                } else {
+                    if (window.Swal) Swal.fire({ icon: 'error', title: 'Failed', text: (data?.message || 'Delete failed') });
+                }
+            }).catch(e => {
+                if (window.Swal) Swal.fire({ icon: 'error', title: 'Error', text: 'Delete failed.' });
+            });
+        };
+
         async function refreshLettersCount() {
             try {
                 const listUrl = getListUrl();
                 if (!listUrl) return;
                 const resp = await fetch(listUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
                 const data = await resp.json();
-                const cnt = (data && typeof data.count === 'number') ? data.count : (Array.isArray(data.letters) ? data.letters.length : 0);
+                // We must filter out doc/docx to show accurate count for 'letters/reports' only
+                let cnt = 0;
+                if (Array.isArray(data.letters)) {
+                    cnt = data.letters.filter(l => !(l.name || l.filename || '').match(/\.(doc|docx)$/i)).length;
+                } else if (data && typeof data.count === 'number') {
+                    // Fallback if 'letters' array is not present (though it usually is with the index endpoint)
+                    cnt = data.count; 
+                }
+
                 if (lettersCountBadge) {
                     if (cnt > 0) { lettersCountBadge.style.display = ''; lettersCountBadge.textContent = String(cnt); }
                     else { lettersCountBadge.style.display = 'none'; lettersCountBadge.textContent = '0'; }
@@ -791,7 +899,10 @@
                     showModal ? 'Loading letters...' : 'Refreshing letters...'
                 );
                 const data = await resp.json();
-                const letters = Array.isArray(data.letters) ? data.letters : [];
+                const allLetters = Array.isArray(data.letters) ? data.letters : [];
+                // Filter out doc/docx files from the "Letters/Report" view
+                const letters = allLetters.filter(l => !(l.name || l.filename || '').match(/\.(doc|docx)$/i));
+
                 if (lettersListEl) {
                     lettersListEl.innerHTML = '';
                     if (!letters.length) {
@@ -829,6 +940,20 @@
 
                             const right = document.createElement('span');
                             right.className = 'd-inline-flex align-items-center gap-2 ms-auto';
+
+                            // Delete button
+                            const delBtn = document.createElement('button');
+                            delBtn.className = 'btn btn-outline-danger btn-sm p-0 d-flex align-items-center justify-content-center border-0';
+                            delBtn.style.width = '24px';
+                            delBtn.style.height = '24px';
+                            delBtn.title = 'Delete';
+                            delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>';
+                            delBtn.onclick = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                deleteFile(l.filename || l.name); // Using stored filename
+                            };
+                            right.appendChild(delBtn);
 
                             if (isPdf) {
                                 const badge = document.createElement('span');
@@ -922,6 +1047,105 @@
                 refreshLettersCount();
             } catch (_) {}
         }
+
+        async function refreshDocsCount() {
+            try {
+                const listUrl = getListUrl();
+                if (!listUrl) return;
+                const resp = await fetch(listUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } });
+                const data = await resp.json();
+                const letters = data.letters || [];
+                const docCount = letters.filter(l => (l.name || l.filename || '').match(/\.(doc|docx)$/i)).length;
+                if (docsCountBadge) {
+                    if (docCount > 0) { docsCountBadge.style.display = ''; docsCountBadge.textContent = String(docCount); }
+                    else { docsCountBadge.style.display = 'none'; docsCountBadge.textContent = '0'; }
+                }
+                if (viewDocsBtn) viewDocsBtn.disabled = !docCount;
+            } catch (e) {}
+        }
+
+        async function loadDocs(showModal = true) {
+            try {
+                const listUrl = getListUrl();
+                if (!listUrl) return;
+                if (docsListEl) docsListEl.innerHTML = '<div class="text-muted">Loading...</div>';
+                const resp = await LoadingOverlay.wrap(
+                    () => fetch(listUrl, { headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' } }),
+                    showModal ? 'Loading documents...' : 'Refreshing documents...'
+                );
+                const data = await resp.json();
+                const letters = Array.isArray(data.letters) ? data.letters : [];
+                const docFiles = letters.filter(l => (l.name || l.filename || '').match(/\.(doc|docx)$/i));
+
+                if (docsListEl) {
+                    docsListEl.innerHTML = '';
+                    if (!docFiles.length) {
+                        docsListEl.innerHTML = '<div class="text-muted">No documents uploaded yet.</div>';
+                    } else {
+                        const frag = document.createDocumentFragment();
+                        docFiles.forEach(function(l) {
+                            const a = document.createElement('a');
+                            const url = l.download_url || l.encoded_url || l.url || l.path || '#';
+                            const name = (l.name || l.filename || 'Document');
+                            const dateStr = (l.uploaded_at || l.created_at || '');
+                            const uploader = l.uploader_name || l.uploaded_by || l.uploader || '';
+                            a.href = url;
+                            a.target = '_blank';
+                            a.rel = 'noopener';
+                            a.className = 'list-group-item list-group-item-action d-flex justify-content-between align-items-center';
+
+                            const left = document.createElement('span');
+                            left.className = 'me-2 text-truncate';
+                            left.style.maxWidth = '60%';
+                            left.textContent = name;
+
+                            const right = document.createElement('span');
+                            right.className = 'd-inline-flex align-items-center gap-2 ms-auto';
+
+                            // Delete button
+                            const delBtn = document.createElement('button');
+                            delBtn.className = 'btn btn-outline-danger btn-sm p-0 d-flex align-items-center justify-content-center border-0';
+                            delBtn.style.width = '24px';
+                            delBtn.style.height = '24px';
+                            delBtn.title = 'Delete';
+                            delBtn.innerHTML = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16"><path d="M5.5 5.5A.5.5 0 0 1 6 6v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm2.5 0a.5.5 0 0 1 .5.5v6a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5zm3 .5a.5.5 0 0 0-1 0v6a.5.5 0 0 0 1 0V6z"/><path fill-rule="evenodd" d="M14.5 3a1 1 0 0 1-1 1H13v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V4h-.5a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1H6a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1h3.5a1 1 0 0 1 1 1v1zM4.118 4 4 4.059V13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1V4.059L11.882 4H4.118zM2.5 3V2h11v1h-11z"/></svg>';
+                            delBtn.onclick = (e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                deleteFile(l.filename || l.name);
+                            };
+                            right.appendChild(delBtn);
+
+                            if (uploader) {
+                                const up = document.createElement('span');
+                                up.className = 'badge bg-info text-dark ms-1';
+                                up.title = 'Uploaded by';
+                                up.textContent = uploader;
+                                right.appendChild(up);
+                            }
+                            const dt = document.createElement('span');
+                            dt.className = 'small text-muted ms-2';
+                            dt.textContent = dateStr;
+                            right.appendChild(dt);
+
+                            a.appendChild(left);
+                            a.appendChild(right);
+                            frag.appendChild(a);
+                        });
+                        docsListEl.appendChild(frag);
+                    }
+                }
+                if (showModal) {
+                    try {
+                        if (window.bootstrap && window.bootstrap.Modal && docsModalEl) {
+                            new bootstrap.Modal(docsModalEl).show();
+                        }
+                    } catch (_) {}
+                }
+                refreshDocsCount();
+            } catch (_) {}
+        }
+        
         uploadForms.forEach((form) => {
             if (form.dataset.bound === '1') return;
             if (form.getAttribute('action') === '#') return;
@@ -945,6 +1169,8 @@
                         // Refresh list/count without forcing a modal open
                         loadLetters(false);
                         refreshLettersCount();
+                        loadDocs(false);
+                        refreshDocsCount();
                         try { form.reset(); } catch (_) {}
                     } else {
                         if (window.Swal) { Swal.fire({ icon: 'error', title: 'Failed', text: (data && data.message) || 'Upload failed.' }); }
@@ -958,8 +1184,13 @@
             viewLettersBtn.dataset.bound = '1';
             viewLettersBtn.addEventListener('click', function() { loadLetters(true); });
         }
+        if (viewDocsBtn && viewDocsBtn.dataset.bound !== '1') {
+            viewDocsBtn.dataset.bound = '1';
+            viewDocsBtn.addEventListener('click', function() { loadDocs(true); });
+        }
         // initial count
         refreshLettersCount();
+        refreshDocsCount();
 
         document.querySelectorAll('.receive-toggle-btn').forEach(function(btn) {
             if (btn.dataset.bound === '1') return; // avoid double-binding
@@ -1076,34 +1307,44 @@
             });
         });
 
-        // Save issue date ONLY when user hits Enter (no auto-save on date picker selection)
+        // Save issue date on Enter or Change (Picker only)
         document.querySelectorAll('.issue-date-input').forEach(function(input) {
             if (input.dataset.boundIssueEnter === '1') return;
             input.dataset.boundIssueEnter = '1';
 
-            input.addEventListener('keydown', function(ev) {
-                if (ev.key !== 'Enter') return;
-                ev.preventDefault();
+            let userIsTyping = false;
+            
+            // Reset typing flag on focus
+            input.addEventListener('focus', () => { userIsTyping = false; });
 
-                const val = (input.value || '').trim();
+            const saveDate = (val) => {
+                const cell = input.closest('.issue-date-cell');
+                const id = cell ? cell.getAttribute('data-id') : null;
+
                 if (!val) {
                     if (window.Swal) {
-                        Swal.fire({ icon: 'warning', title: 'Issue Date required', text: 'Please enter/select an issue date, then press Enter to save.' });
+                        Swal.fire({ icon: 'warning', title: 'Issue Date required', text: 'Please enter/select an issue date.' });
                     } else {
-                        alert('Please enter/select an issue date, then press Enter to save.');
+                        alert('Please enter/select an issue date.');
                     }
-                    input.focus();
                     return;
                 }
 
-                const cell = input.closest('.issue-date-cell');
-                const id = cell ? cell.getAttribute('data-id') : null;
-                if (!id) return;
-                const form = document.getElementById('receive-form-' + id);
-                if (!form) return;
-                const csrf = form.querySelector('input[name="_token"]') ? form.querySelector('input[name="_token"]').value : '';
+                let url = input.getAttribute('data-update-url');
+                let csrf = input.getAttribute('data-csrf');
 
-                LoadingOverlay.wrap(() => fetch(form.action, {
+                if (!url && id) {
+                     const form = document.getElementById('receive-form-' + id);
+                     if (form) {
+                        url = form.action;
+                        const csrfInput = form.querySelector('input[name="_token"]');
+                        if (csrfInput) csrf = csrfInput.value;
+                     }
+                }
+
+                if (!url) return;
+
+                LoadingOverlay.wrap(() => fetch(url, {
                     method: 'POST',
                     headers: {
                         'X-CSRF-TOKEN': csrf,
@@ -1141,10 +1382,33 @@
                         if (window.Swal) {
                             Swal.fire({ icon: 'success', title: 'Saved', text: 'Issue Date saved successfully.' });
                         }
+                        // Reset typing flag on success
+                        userIsTyping = false;
                         return;
                     }
                     window.location.reload();
                 }).catch(() => window.location.reload());
+            };
+
+            // 1. Handle Keydown
+            input.addEventListener('keydown', function(ev) {
+                if (ev.key === 'Enter') {
+                    ev.preventDefault();
+                    saveDate((input.value || '').trim());
+                } else if (['Tab', 'Escape', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(ev.key)) {
+                    // Navigation, not typing
+                } else {
+                    userIsTyping = true;
+                }
+            });
+
+            // 2. Handle Change (date picker selection)
+            // If user typed manually, do NOT save on blur/change (wait for Enter).
+            // If user selected via picker (no keys), DO save.
+            input.addEventListener('change', function(ev) {
+                if (!userIsTyping) {
+                    saveDate((input.value || '').trim());
+                }
             });
         });
 
@@ -1266,13 +1530,63 @@
         // Selection handlers: update Receive All button enabled state
         const selectAllCheckbox = document.getElementById('select-all-checkbox');
         const updateSelectionButtons = () => {
-            const anyChecked = !!document.querySelector('.row-select-checkbox:checked');
+             const anyChecked = !!document.querySelector('.row-select-checkbox:checked');
             if (receiveAllBtn) receiveAllBtn.disabled = !anyChecked;
             if (receiveAllBtn) {
                 if (anyChecked) receiveAllBtn.classList.remove('disabled');
                 else receiveAllBtn.classList.add('disabled');
             }
         };
+
+        const bulkIssueInput = document.getElementById('bulk-issue-input');
+        if (bulkIssueInput) {
+            const handleBulkUpdate = async () => {
+                 const dateVal = bulkIssueInput.value;
+                 if (!dateVal) return; // ignore empty
+
+                const selected = Array.from(document.querySelectorAll('.row-select-checkbox:checked'));
+                if (!selected.length) return;
+                
+                 // Do update without confirmation
+                 const doBulkUpdate = async () => {
+                    const csrf = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content');
+                     const promises = selected.map(cb => {
+                        const id = cb.value;
+                         const cell = document.querySelector(`.issue-date-cell[data-id="${id}"]`);
+                        const dateInput = cell ? cell.querySelector('input') : null;
+                         const url = dateInput ? dateInput.dataset.updateUrl : null;
+                        if (!url) return Promise.resolve(false);
+
+                         return fetch(url, {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/x-www-form-urlencoded',
+                                'X-CSRF-TOKEN': csrf,
+                                'Accept': 'application/json',
+                                'X-Requested-With': 'XMLHttpRequest'
+                             },
+                             body: new URLSearchParams({ issue_date: dateVal })
+                        }).then(r => r.ok).catch(() => false);
+                    });
+                    await Promise.all(promises);
+                     window.location.reload();
+                };
+
+                if (window.LoadingOverlay) {
+                    LoadingOverlay.wrap(doBulkUpdate, 'Updating issue dates...');
+                } else {
+                    doBulkUpdate();
+                 }
+            };
+            
+            // Trigger on Enter
+             bulkIssueInput.addEventListener('keydown', (ev) => {
+                 if (ev.key === 'Enter') {
+                     ev.preventDefault();
+                    handleBulkUpdate();
+                 }
+            });
+        }
         // bind change events for row checkboxes
         document.querySelectorAll('.row-select-checkbox').forEach(cb => {
             if (cb.dataset.bound === '1') return;

@@ -70,14 +70,17 @@ class ShowBookingController extends Controller
                 });
             });
 
+            // Determine which date column to use for filtering
+            $dateColumn = $request->boolean('use_created_at') ? 'created_at' : 'job_order_date';
+
             // Month filter
             if (!empty($month)) {
-                $query->whereMonth('job_order_date', $month);
+                $query->whereMonth($dateColumn, $month);
             }
 
             // Year filter
             if (!empty($year)) {
-                $query->whereYear('job_order_date', $year);
+                $query->whereYear($dateColumn, $year);
             }
 
             // Marketing person filter

@@ -25,6 +25,8 @@ class AppServiceProvider extends ServiceProvider
             $settings = \App\Models\SiteSetting::query()->first();
             $appSettings = [
                 'site_logo_url' => ($settings && $settings->site_logo) ? asset('storage/' . $settings->site_logo) : null,
+                'site_favicon_url' => ($settings && $settings->site_favicon) ? asset('storage/' . $settings->site_favicon) : null,
+                'project_title' => $settings->project_title ?? null,
                 'theme_color' => $settings->theme_color ?? '#4B9CFF',
                 'company_name' => $settings->company_name ?? null,
                 'company_address' => $settings->company_address ?? null,

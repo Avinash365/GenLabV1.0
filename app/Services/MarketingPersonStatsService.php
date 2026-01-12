@@ -211,6 +211,9 @@ class MarketingPersonStatsService
         /** -------------------------
          *  Final Stats Response
          * ------------------------ */
+        $taxInvoiceStats = $invoiceStats->get('tax_invoice');
+        $piInvoiceStats = $invoiceStats->get('proforma_invoice');
+
         return [
             // Bookings
             'totalBookings' => (int) ($bookingStats->totalBookings ?? 0),
@@ -222,28 +225,28 @@ class MarketingPersonStatsService
             'allClients' =>  (int) ($bookingStats->uniqueClientIds ?? 0),
 
             // Invoices
-            'GeneratedInvoices' => (int) ($invoiceStats['tax_invoice']->invoice_count ?? 0),
-            'GeneratedPIs' => (int) ($invoiceStats['proforma_invoice']->invoice_count ?? 0),
-            'totalInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_amount ?? 0),
-            'totalPIAmount' => (float) ($invoiceStats['proforma_invoice']->total_amount ?? 0),
+            'GeneratedInvoices' => (int) ($taxInvoiceStats?->invoice_count ?? 0),
+            'GeneratedPIs' => (int) ($piInvoiceStats?->invoice_count ?? 0),
+            'totalInvoiceAmount' => (float) ($taxInvoiceStats?->total_amount ?? 0),
+            'totalPIAmount' => (float) ($piInvoiceStats?->total_amount ?? 0),
 
-            'paidInvoices' => (int) ($invoiceStats['tax_invoice']->paid_invoice_count + $manualPaidCount ?? 0),
-            'totalPaidInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_paid_amount + $manualPaidAmount ?? 0),
+            'paidInvoices' => (int) (($taxInvoiceStats?->paid_invoice_count ?? 0) + ($manualPaidCount ?? 0)),
+            'totalPaidInvoiceAmount' => (float) (($taxInvoiceStats?->total_paid_amount ?? 0) + ($manualPaidAmount ?? 0)),
 
-            'partialTaxInvoices' => (int) ($invoiceStats['tax_invoice']->partial_invoice_count ?? 0), 
-            'totalPartialTaxInvoiceAmount' => (float) (($invoiceStats['tax_invoice']->partial_amount_after_tds ?? 0)-($invoiceStats['tax_invoice']->partial_received_amount ?? 0)), 
+            'partialTaxInvoices' => (int) ($taxInvoiceStats?->partial_invoice_count ?? 0), 
+            'totalPartialTaxInvoiceAmount' => (float) (($taxInvoiceStats?->partial_amount_after_tds ?? 0) - ($taxInvoiceStats?->partial_received_amount ?? 0)), 
 
-            'settledTaxInvoices' => (int) ($invoiceStats['tax_invoice']->settled_invoice_count ?? 0), 
-            'totalSettledTaxInvoicesAmount' => (float) (($invoiceStats['tax_invoice']->settled_amount_after_tds ?? 0)-($invoiceStats['tax_invoice']->settled_received_amount ?? 0)),
+            'settledTaxInvoices' => (int) ($taxInvoiceStats?->settled_invoice_count ?? 0), 
+            'totalSettledTaxInvoicesAmount' => (float) (($taxInvoiceStats?->settled_amount_after_tds ?? 0) - ($taxInvoiceStats?->settled_received_amount ?? 0)),
 
-            'paidPiInvoices' => (int) ($invoiceStats['proforma_invoice']->paid_invoice_count ?? 0),
-            'totalPaidPIAmount' => (float) ($invoiceStats['proforma_invoice']->total_paid_amount ?? 0),
+            'paidPiInvoices' => (int) ($piInvoiceStats?->paid_invoice_count ?? 0),
+            'totalPaidPIAmount' => (float) ($piInvoiceStats?->total_paid_amount ?? 0),
 
-            'unpaidInvoices' => (int) ($invoiceStats['tax_invoice']->unpaid_invoice_count + $manualUnpaidCount?? 0),
-            'totalUnpaidInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_unpaid_amount + $manualUnpaidAmount ?? 0),
+            'unpaidInvoices' => (int) (($taxInvoiceStats?->unpaid_invoice_count ?? 0) + ($manualUnpaidCount?? 0)),
+            'totalUnpaidInvoiceAmount' => (float) (($taxInvoiceStats?->total_unpaid_amount ?? 0) + ($manualUnpaidAmount ?? 0)),
 
-            'canceledGeneratedInvoices' => (int) ($invoiceStats['tax_invoice']->canceled_invoice_count ?? 0),
-            'totalcanceledGeneratedInvoicesAmount' => (float) ($invoiceStats['tax_invoice']->canceled_amount ?? 0), 
+            'canceledGeneratedInvoices' => (int) ($taxInvoiceStats?->canceled_invoice_count ?? 0),
+            'totalcanceledGeneratedInvoicesAmount' => (float) ($taxInvoiceStats?->canceled_amount ?? 0), 
 
             // Not generated invoices
             'notGeneratedInvoices' => (int) $notGeneratedInvoices,

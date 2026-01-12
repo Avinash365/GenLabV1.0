@@ -123,7 +123,7 @@
                 </thead>
                 <tbody>
                     <?php $__empty_1 = true; $__currentLoopData = $expenses; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $index => $expense): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
-                        <?php echo $__env->make('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'serial' => $expenses->firstItem() + $index], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+                        <?php echo $__env->make('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'showDescription' => true, 'serial' => $expenses->firstItem() + $index], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
                             <td colspan="8" class="text-center">No records found.</td>

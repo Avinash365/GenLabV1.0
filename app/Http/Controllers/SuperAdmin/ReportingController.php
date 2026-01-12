@@ -1124,6 +1124,7 @@ class ReportingController extends Controller
     $item->dispatched_by_name = $dispatcherName;
     foreach ($meta as $k => $v) { $item->{$k} = $v; }
         $item->save();
+        $item->refresh();
 
         if ($request->wantsJson()) {
             return response()->json([

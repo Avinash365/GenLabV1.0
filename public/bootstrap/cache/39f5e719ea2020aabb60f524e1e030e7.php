@@ -15,10 +15,10 @@
         content="inventory management, admin dashboard, bootstrap template, invoicing, estimates, business management, responsive admin, POS system">
     <meta name="author" content="Dreams Technologies">
     <meta name="robots" content="index, follow">
-    <title></title>
+    <title><?php echo e($appSettings['project_title'] ?? config('app.name', 'Dreams POS')); ?></title>
 
     <!-- Favicon -->
-    <link rel="shortcut icon" type="image/x-icon" href="<?php echo e(url('assets/img/favicon.png')); ?>">
+    <link rel="shortcut icon" type="image/x-icon" href="<?php echo e($appSettings['site_favicon_url'] ?? url('assets/img/favicon.png')); ?>">
 
     <!-- Apple Touch Icon -->
     <link rel="apple-touch-icon" sizes="180x180" href="<?php echo e(url('assets/img/apple-touch-icon.png')); ?>">

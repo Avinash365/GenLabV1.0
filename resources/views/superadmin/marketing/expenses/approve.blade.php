@@ -122,7 +122,7 @@
                 </thead>
                 <tbody>
                     @forelse($expenses as $index => $expense)
-                        @include('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'serial' => $expenses->firstItem() + $index])
+                        @include('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'showDescription' => true, 'serial' => $expenses->firstItem() + $index])
                     @empty
                         <tr>
                             <td colspan="8" class="text-center">No records found.</td>

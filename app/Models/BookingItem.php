@@ -28,7 +28,17 @@ class BookingItem extends Model
         'received_at',
         'issue_date',
         'job_order_date',
-        'status'
+        'status',
+        'account_received_at',
+        'account_received_by_id',
+        'account_received_by_name',
+        'dispatched_at',
+        'dispatched_by_id',
+        'dispatched_by_name',
+        'dispatch_by',
+        'dispatch_person_name',
+        'dispatch_assignment_no',
+        'dispatch_comment',
     ];
 
 
