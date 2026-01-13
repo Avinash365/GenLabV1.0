@@ -1339,7 +1339,8 @@ class MarketingPersonInfo extends Controller
             })
             ->firstOrFail();
 
-        return $pdfService->generateHtml2Pdf($invoice);
+        $filename = 'Invoice-' . $invoice->invoice_no . '.pdf';
+        return $pdfService->generateHtml2Pdf($invoice, 'superadmin.accounts.generateInvoice.bill_pdf-new', $filename);
     }
 
     /**
