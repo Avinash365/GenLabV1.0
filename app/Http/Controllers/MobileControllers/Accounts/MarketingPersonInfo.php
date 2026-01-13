@@ -1204,7 +1204,7 @@ class MarketingPersonInfo extends Controller
         // Payment status filter (0,1,2,3,4 mapping as used in UI)
         if ($request->filled('payment_status')) {
             $ps = $request->payment_status;
-            $query->where('payment_status', $ps);
+            $query->where('status', $ps);
         }
 
         // Search invoice_no or booking reference
