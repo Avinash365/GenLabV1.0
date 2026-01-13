@@ -1258,7 +1258,7 @@ class MarketingPersonInfo extends Controller
 
             return [
                 'id' => $inv->id,
-                'payment_status' => (int)$inv->status, 
+                'payment_status' => (string)$inv->status, 
                 'invoice_no' => $inv->invoice_no,
                 'reference_no' => $booking->reference_no ?? null,
                 'client_name' => $clientName,
