@@ -61,7 +61,7 @@
                   <th>#</th>
                   <th>Party Name</th>
                   <th>Cheque Date</th>
-                  <th class="text-end">Amount</th>
+                  <th class="text-end">Amount /-</th>
                   <th>Deposit Date</th>
                   <th>Deposit Person</th>
                   <th>Deposit Status</th>
@@ -76,7 +76,7 @@
                   <th>Date</th>
                   <th>Purpose</th>
                   <th>Handed Over To</th>
-                  <th class="text-end">Amount</th>
+                  <th class="text-end">Amount /-</th>
                   <th>Status</th>
                   <th class="text-end">Action</th>
                 </tr>
@@ -89,7 +89,7 @@
                     <td><?php echo e($cheques->firstItem() + $i); ?></td>
                     <td><?php echo e($chq->received_party_name ?? '-'); ?></td>
                     <td><?php echo e(optional($chq->received_cheque_date)->format('d M Y')); ?></td>
-                    <td class="text-end"><?php echo e(number_format($chq->received_amount ?? $chq->amount, 2)); ?></td>
+                      <td class="text-end"><?php echo e(number_format($chq->received_amount ?? $chq->amount, 2)); ?> /-</td>
                     <td><?php echo e(optional($chq->deposit_date)->format('d M Y') ?? 'N/A'); ?></td>
                     <td><?php echo e($chq->deposit_person ?? 'N/A'); ?></td>
                     <td>
@@ -115,7 +115,7 @@
                     <td><?php echo e(optional($chq->date)->format('d M Y')); ?></td>
                     <td><?php echo e($chq->purpose); ?></td>
                     <td><?php echo e($chq->handed_over_to); ?></td>
-                    <td class="text-end"><?php echo e(number_format($chq->amount, 2)); ?></td>
+                      <td class="text-end"><?php echo e(number_format($chq->amount, 2)); ?> /-</td>
                     <td><span class="badge bg-<?php echo e($chq->status==='issued' ? 'warning' : ($chq->status==='received' ? 'success' : 'secondary')); ?>"><?php echo e(ucfirst($chq->status)); ?></span></td>
                     <td class="text-end">
                       <div class="btn-group btn-group-sm" role="group" style="gap:5px;">

@@ -86,8 +86,7 @@
                         action="{{ route('superadmin.accountBookingsLetters.index') }}"
                         class="d-flex input-group gap-2">
                         
-                         <input type="hidden" name="per_page" id="per_page_hidden"
-                        value="{{ request('per_page', 25) }}">
+                         
                         {{-- Preserve department --}}
                         <input type="hidden" name="department_id" value="{{ request('department_id') }}">
 
@@ -879,7 +878,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-        <script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
 
     const mainForm = document.getElementById('invoiceFilterForm');

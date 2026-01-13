@@ -13,7 +13,7 @@
     <div class="card-header d-flex justify-content-between align-items-center">
         <h5 class="card-title">Generated Blank Invoice</h5>
         <!-- Search bar -->
-        <form method="GET" action="<?php echo e(route('superadmin.invoices.index')); ?>" class="d-flex" role="search">
+        <form method="GET" action="<?php echo e(route('superadmin.blank-invoices.index')); ?>" class="d-flex" role="search">
             <input class="form-control me-2" type="search" name="search" placeholder="Search Document..." value="<?php echo e(request('search')); ?>">
             <button class="btn btn-outline-primary" type="submit">Search</button>
         </form>
@@ -47,11 +47,11 @@
                            <td><?php echo e(optional($invoice->created_at)->format('d-m-y')); ?></td>
 <td class="d-flex">
     <!-- Edit Button as Icon -->
-    <!-- <a href="<?php echo e(route('superadmin.invoices.edit', $invoice->id)); ?>" 
+    <a href="<?php echo e(route('superadmin.blank-invoices.edit', $invoice->id)); ?>" 
        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
        title="Edit">
         <i data-feather="edit" class="feather-edit"></i>
-    </a> -->
+    </a>
 
     <!-- Delete Button as Icon -->
     <button type="button" 
