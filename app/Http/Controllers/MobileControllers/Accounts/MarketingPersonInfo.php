@@ -147,7 +147,6 @@ class MarketingPersonInfo extends Controller
                 }
             }
             $invoice->setAttribute('invoice_letter_url', $url);
-            $invoice->setAttribute('invoice_url', $url);
             return $invoice;
         });
 
@@ -1273,7 +1272,7 @@ class MarketingPersonInfo extends Controller
             4 => 'Settle'
         ];
 
-        $invoices->through(function($inv) use ($statusLabels){
+        $data = $invoices->through(function($inv) use ($statusLabels){
             $booking = $inv->relatedBooking;
             // `client_name` should reflect the booking's client_name text (assigned in booking)
             // while `assigned_client` is the linked Client model's name (if any).
@@ -1311,7 +1310,7 @@ class MarketingPersonInfo extends Controller
                     ];
                 })->values(),
                 'invoice_letter_url' => $invoiceUrl,
-                'invoice_url' => $invoiceUrl,
+                'invoice_pdf' => $invoiceUrl,
                 'can_generate' => empty($inv->invoice_letter_path) && !empty($inv->new_booking_id),
             ];
         });
@@ -1320,7 +1319,7 @@ class MarketingPersonInfo extends Controller
             'status' => true,
             'message' => 'Invoices fetched',
             'data' => [
-                'invoices' => $invoices,
+                'invoices' => $data,
                 'meta' => [
                     'total' => $invoices->total(),
                     'per_page' => $invoices->perPage(),
