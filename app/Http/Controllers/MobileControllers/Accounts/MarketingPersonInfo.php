@@ -1273,7 +1273,7 @@ class MarketingPersonInfo extends Controller
             4 => 'Settle'
         ];
 
-        $data = $invoices->getCollection()->map(function($inv) use ($statusLabels){
+        $invoices->through(function($inv) use ($statusLabels){
             $booking = $inv->relatedBooking;
             // `client_name` should reflect the booking's client_name text (assigned in booking)
             // while `assigned_client` is the linked Client model's name (if any).
@@ -1314,13 +1314,13 @@ class MarketingPersonInfo extends Controller
                 'invoice_url' => $invoiceUrl,
                 'can_generate' => empty($inv->invoice_letter_path) && !empty($inv->new_booking_id),
             ];
-        })->values();
+        });
 
         return response()->json([
             'status' => true,
             'message' => 'Invoices fetched',
             'data' => [
-                'invoices' => $data,
+                'invoices' => $invoices,
                 'meta' => [
                     'total' => $invoices->total(),
                     'per_page' => $invoices->perPage(),
