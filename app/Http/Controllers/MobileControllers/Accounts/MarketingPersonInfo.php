@@ -1202,8 +1202,9 @@ class MarketingPersonInfo extends Controller
         }
 
         // Payment status filter (0,1,2,3,4 mapping as used in UI)
-        if ($request->has('payment_status') && !is_null($request->payment_status) && $request->payment_status !== '') {
-            $query->where('status', $request->payment_status);
+        if ($request->filled('payment_status')) {
+            $ps = $request->payment_status;
+            $query->where('status', $ps);
         }
 
         // Search invoice_no or booking reference
@@ -1257,6 +1258,7 @@ class MarketingPersonInfo extends Controller
 
             return [
                 'id' => $inv->id,
+                'payment_status' => (int)$inv->status, 
                 'invoice_no' => $inv->invoice_no,
                 'reference_no' => $booking->reference_no ?? null,
                 'client_name' => $clientName,
@@ -1274,7 +1276,6 @@ class MarketingPersonInfo extends Controller
                         'amount' => isset($it->qty, $it->rate) ? ($it->qty * $it->rate) : ($it->amount ?? 0),
                     ];
                 })->values(),
-                'payment_status' => (int) $inv->status,
                 'invoice_letter_url' => $invoiceUrl,
                 'can_generate' => empty($inv->invoice_letter_path) && !empty($inv->new_booking_id),
             ];
