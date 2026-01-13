@@ -147,6 +147,7 @@ class MarketingPersonInfo extends Controller
                 }
             }
             $invoice->setAttribute('invoice_letter_url', $url);
+            $invoice->setAttribute('invoice_url', $url);
             return $invoice;
         });
 
@@ -1310,6 +1311,7 @@ class MarketingPersonInfo extends Controller
                     ];
                 })->values(),
                 'invoice_letter_url' => $invoiceUrl,
+                'invoice_url' => $invoiceUrl,
                 'can_generate' => empty($inv->invoice_letter_path) && !empty($inv->new_booking_id),
             ];
         });
