@@ -1340,7 +1340,13 @@ class MarketingPersonInfo extends Controller
             ->firstOrFail();
 
         $filename = 'Invoice-' . $invoice->invoice_no . '.pdf';
-        return $pdfService->generateHtml2Pdf($invoice, 'superadmin.accounts.generateInvoice.bill_pdf-new', $filename);
+        $response = $pdfService->generateHtml2Pdf($invoice, 'superadmin.accounts.generateInvoice.bill_pdf-new', $filename);
+
+        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
+        $response->headers->set('Pragma', 'no-cache');
+        $response->headers->set('Expires', '0');
+
+        return $response;
     }
 
     /**
