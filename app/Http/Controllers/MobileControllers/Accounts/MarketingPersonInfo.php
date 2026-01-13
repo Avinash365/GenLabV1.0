@@ -1141,7 +1141,7 @@ class MarketingPersonInfo extends Controller
                         $original = $meta[$base]['original'] ?? $base;
                         $letterFiles[$base] = [
                             'name' => $original,
-                            'url' => route('superadmin.reporting.letters.show', ['job' => $booking->reference_no, 'filename' => $base]),
+                            'url' => route('api.reporting.letters.show', ['job' => $booking->reference_no, 'filename' => $base]),
                         ];
                     }
                 }
@@ -1204,7 +1204,21 @@ class MarketingPersonInfo extends Controller
         // Payment status filter (0,1,2,3,4 mapping as used in UI)
         if ($request->filled('payment_status')) {
             $ps = $request->payment_status;
-            $query->where('payment_status', $ps);
+            
+            // Map common status labels to integers if string is provided
+            $map = [
+                'unpaid' => 0,
+                'paid' => 1,
+                'cancel' => 2, 'cancelled' => 2,
+                'partial' => 3, 'partially paid' => 3,
+                'settle' => 4, 'settled' => 4
+            ];
+
+            if (!is_numeric($ps) && is_string($ps) && isset($map[strtolower($ps)])) {
+                 $query->where('status', $map[strtolower($ps)]);
+            } else {
+                 $query->where('status', $ps);  
+            }
         }
 
         // Search invoice_no or booking reference
@@ -1236,7 +1250,15 @@ class MarketingPersonInfo extends Controller
         $perPage = (int) $request->get('perPage', 25);
         $invoices = $query->latest()->paginate($perPage);
 
-        $data = $invoices->through(function($inv){
+        $statusLabels = [
+            0 => 'Unpaid',
+            1 => 'Paid',
+            2 => 'Cancel',
+            3 => 'Partial',
+            4 => 'Settle'
+        ];
+
+        $data = $invoices->through(function($inv) use ($statusLabels){
             $booking = $inv->relatedBooking;
             // `client_name` should reflect the booking's client_name text (assigned in booking)
             // while `assigned_client` is the linked Client model's name (if any).
@@ -1258,6 +1280,8 @@ class MarketingPersonInfo extends Controller
 
             return [
                 'id' => $inv->id,
+                'payment_status' => $statusLabels[$inv->status] ?? 'Unpaid', 
+                'payment_status_id' => (string)$inv->status,
                 'invoice_no' => $inv->invoice_no,
                 'reference_no' => $booking->reference_no ?? null,
                 'client_name' => $clientName,

@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\MobileControllers\MeterReadingController;
+use App\Http\Controllers\SuperAdmin\ReportingLettersController;
 
 
 // Static test file endpoint for client testing
@@ -22,6 +23,11 @@ Route::get('static/test-file', function() {
     }
     return response()->file($path);
 });
+
+// Public Letter Download (No Auth)
+Route::get('marketing-person/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
+    ->where('filename', '.*')
+    ->name('api.reporting.letters.show');
 
 Route::post('attendance/essl/webhook', EsslWebhookController::class)->name('api.attendance.essl.webhook');
 
