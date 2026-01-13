@@ -136,6 +136,19 @@ class MarketingPersonInfo extends Controller
 
         $invoices = $query->latest()->paginate(10); 
 
+        $invoices->through(function ($invoice) {
+            $invoice->invoice_letter_url = null;
+            if (!empty($invoice->invoice_letter_path)) {
+                $path = $invoice->invoice_letter_path;
+                if (preg_match('#^https?://#i', $path)) {
+                    $invoice->invoice_letter_url = $path;
+                } else {
+                    $invoice->invoice_letter_url = url($path);
+                }
+            }
+            return $invoice;
+        });
+
         return response()->json([
             'status'   => true,
             'message'  => 'Invoices fetched successfully',
@@ -1270,11 +1283,7 @@ class MarketingPersonInfo extends Controller
                 if (preg_match('#^https?://#i', $path)) {
                     $invoiceUrl = $path;
                 } else {
-                    try {
-                        $invoiceUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : url($path);
-                    } catch (\Exception $_) {
-                        $invoiceUrl = url($path);
-                    }
+                    $invoiceUrl = url($path);
                 }
             }
 
