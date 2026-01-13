@@ -74,6 +74,11 @@ Route::middleware(['multi_jwt:api_admin'])->prefix('admin/expenses')->group(func
 });
 
 
+Route::prefix('marketing-person')->group(function () {
+    // Download Invoice API (Public/Stream for PDF viewers)
+    Route::get('{user_code}/invoices/{invoice_id}/download', [MarketingPersonInfo::class, 'downloadInvoiceApi'])->name('api.marketing.invoices.download');
+});
+
 Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function () {
 
     // Fetch Bookings

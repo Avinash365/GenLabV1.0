@@ -11,9 +11,10 @@ use App\Models\NewBooking;
 use App\Models\{Invoice,InvoiceTransaction,CashLetterPayment}; 
 use App\Services\GetUserActiveDepartment;  
 use App\Services\MarketingPersonStatsService;
+use App\Services\InvoicePdfService;
 
 
-class MarketingPersonInfo extends Controller 
+class MarketingPersonInfo extends Controller  
 { 
      public function fetchBookings(Request $request, $user_code)
     {
@@ -1258,7 +1259,7 @@ class MarketingPersonInfo extends Controller
             4 => 'Settle'
         ];
 
-        $data = $invoices->through(function($inv) use ($statusLabels){
+        $data = $invoices->through(function($inv) use ($statusLabels, $user_code){
             $booking = $inv->relatedBooking;
             // `client_name` should reflect the booking's client_name text (assigned in booking)
             // while `assigned_client` is the linked Client model's name (if any).
@@ -1272,6 +1273,12 @@ class MarketingPersonInfo extends Controller
                 } else {
                     $invoiceUrl = url($path);
                 }
+            } else {
+                // If invoice exists but no static file, use dynamic download route
+                $invoiceUrl = route('api.marketing.invoices.download', [
+                    'user_code' => $user_code, 
+                    'invoice_id' => $inv->id
+                ]);
             }
 
             return [
@@ -1313,6 +1320,24 @@ class MarketingPersonInfo extends Controller
                 ],
             ],
         ], 200);
+    }
+
+    /**
+     * API: Download Invoice PDF (stream)
+     * GET /api/marketing-person/{user_code}/invoices/{invoice_id}/download
+     */
+    public function downloadInvoiceApi(Request $request, $user_code, $invoice_id, InvoicePdfService $pdfService)
+    {
+        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+        
+        // Ensure the invoice belongs to a booking associated with this marketing person
+        $invoice = Invoice::where('id', $invoice_id)
+            ->whereHas('relatedBooking', function($q) use ($marketingPerson) {
+                $q->where('marketing_id', $marketingPerson->user_code);
+            })
+            ->firstOrFail();
+
+        return $pdfService->generateHtml2Pdf($invoice);
     }
 
     /**
