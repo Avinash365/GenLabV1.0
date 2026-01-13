@@ -137,15 +137,16 @@ class MarketingPersonInfo extends Controller
         $invoices = $query->latest()->paginate(10); 
 
         $invoices->through(function ($invoice) {
-            $invoice->invoice_letter_url = null;
+            $url = null;
             if (!empty($invoice->invoice_letter_path)) {
                 $path = $invoice->invoice_letter_path;
                 if (preg_match('#^https?://#i', $path)) {
-                    $invoice->invoice_letter_url = $path;
+                    $url = $path;
                 } else {
-                    $invoice->invoice_letter_url = url($path);
+                    $url = url($path);
                 }
             }
+            $invoice->setAttribute('invoice_letter_url', $url);
             return $invoice;
         });
 
