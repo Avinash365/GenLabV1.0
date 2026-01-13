@@ -1271,8 +1271,10 @@ class MarketingPersonInfo extends Controller
                 if (preg_match('#^https?://#i', $path)) {
                     $invoiceUrl = $path;
                 } else {
-                    $invoiceUrl = url($path);
+                    $invoiceUrl = asset($path);
                 }
+                // Ensure spaces are encoded for mobile compatibility
+                $invoiceUrl = str_replace(' ', '%20', $invoiceUrl);
             } else {
                 // If invoice exists but no static file, use dynamic download route
                 $invoiceUrl = route('api.marketing.invoices.download', [
