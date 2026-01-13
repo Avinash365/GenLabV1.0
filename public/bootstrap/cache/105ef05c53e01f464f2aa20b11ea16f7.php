@@ -52,6 +52,9 @@
                 class="d-flex align-items-center justify-content-between w-100 gap-3 flex-wrap">
                 <input type="hidden" name="type" value="<?php echo e(request('type', $type ?? '')); ?>">
                 <input type="hidden" name="department_id" value="<?php echo e(request('department_id', $department_id ?? '')); ?>">
+
+                 <input type="hidden" name="per_page" id="per_page_hidden"
+                        value="<?php echo e(request('per_page', 25)); ?>">
                 
                 <div class="d-flex align-items-center gap-2">
                     <input type="text" name="search" id="autoSearch" value="<?php echo e(request('search')); ?>" class="form-control"
@@ -350,10 +353,54 @@
             </div>
 
             <!-- Pagination -->
-            <div class="mt-3">
+            <!-- <div class="mt-3">
+                <select id="perPageSelect" class="form-control mb-2 me-2" style="width:120px">
+                                <?php $__currentLoopData = [2,10, 25, 50, 100, 500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($size); ?>"
+                                        <?php echo e(request('per_page', 25) == $size ? 'selected' : ''); ?>>
+                                        <?php echo e($size); ?> / page
+                                    </option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
                 <?php echo e($invoices->appends(request()->query())->links('pagination::bootstrap-5')); ?>
 
-            </div>
+            </div> -->
+            <div class="mt-3">
+    <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+
+        
+        <div class="d-flex align-items-center">
+            <label for="perPageSelect" class="me-2 fw-semibold text-muted">
+                Show
+            </label>
+
+            <select
+                id="perPageSelect"
+                class="form-select form-select-sm"
+                style="width: 120px"
+                onchange="changePerPage(this.value)"
+            >
+                <?php $__currentLoopData = [2, 10, 25, 50, 100, 500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($size); ?>"
+                        <?php echo e(request('per_page', 25) == $size ? 'selected' : ''); ?>>
+                        <?php echo e($size); ?>
+
+                    </option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+
+            <span class="ms-2 text-muted">entries</span>
+        </div>
+
+        
+        <div>
+            <?php echo e($invoices->appends(request()->query())->links('pagination::bootstrap-5')); ?>
+
+        </div>
+
+    </div>
+</div>
+
         </div>
     </div>
 
@@ -418,6 +465,25 @@
                     });
                 });
             }
+        </script>
+    <?php $__env->stopPush(); ?>
+
+    <?php $__env->startPush('scripts'); ?>
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+
+                const mainForm = document.getElementById('invoiceFilterForm');
+                const perPageSelect = document.getElementById('perPageSelect');
+                const hiddenPerPage = document.getElementById('per_page_hidden');
+
+                if (!mainForm || !perPageSelect || !hiddenPerPage) return;
+
+                perPageSelect.addEventListener('change', function () {
+                    hiddenPerPage.value = this.value;
+                    mainForm.submit();
+                });
+
+            });
         </script>
     <?php $__env->stopPush(); ?>
 

@@ -106,6 +106,7 @@ class InvoiceController extends Controller
 
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_no', 'like', "{$search}%")
+                    ->orWhere('total_amount', 'like', "{$search}%")
                     ->orWhereHas('relatedBooking', function ($subQ) use ($search) {
                         $subQ->where('client_name', 'like', "{$search}%");
                     });
@@ -127,15 +128,20 @@ class InvoiceController extends Controller
             $year = $request->year;
 
             $query->when($month, function ($q, $month) {
-                $q->whereMonth('created_at', $month);
+                $q->whereMonth('invoice_date', $month);
             })->when($year, function ($q, $year) {
-                $q->whereYear('created_at', $year);
+                $q->whereYear('invoice_date', $year);
             });
         }
 
         $query->orderBy('invoice_no', 'desc');
 
-        $invoices = $query->paginate(10)->withQueryString();
+
+
+        $perPage = (int) $request->get('per_page', 5); 
+        $perPage = in_array($perPage, [2,10, 25, 50, 100, 500]) ? $perPage : 25;    
+
+        $invoices = $query->paginate($perPage)->withQueryString();
         $departments = $this->departmentService->getDepartment();
 
         $type = $request->type;
