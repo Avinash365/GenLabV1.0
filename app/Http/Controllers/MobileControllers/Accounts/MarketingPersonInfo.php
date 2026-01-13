@@ -1339,14 +1339,10 @@ class MarketingPersonInfo extends Controller
             })
             ->firstOrFail();
 
-        $filename = 'Invoice-' . $invoice->invoice_no . '.pdf';
-        $response = $pdfService->generateHtml2Pdf($invoice, 'superadmin.accounts.generateInvoice.bill_pdf-new', $filename);
+        // Generate unique filename to prevent caching issues on mobile
+        $filename = 'Invoice-' . str_replace(['/', '\\'], '-', $invoice->invoice_no) . '.pdf';
 
-        $response->headers->set('Cache-Control', 'no-cache, no-store, must-revalidate');
-        $response->headers->set('Pragma', 'no-cache');
-        $response->headers->set('Expires', '0');
-
-        return $response;
+        return $pdfService->generateHtml2Pdf($invoice, 'superadmin.accounts.generateInvoice.bill_pdf-new', $filename);
     }
 
     /**
