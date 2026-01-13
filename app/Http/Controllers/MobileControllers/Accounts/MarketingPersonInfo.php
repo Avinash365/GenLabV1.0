@@ -136,20 +136,6 @@ class MarketingPersonInfo extends Controller
 
         $invoices = $query->latest()->paginate(10); 
 
-        $invoices->through(function ($invoice) {
-            $url = null;
-            if (!empty($invoice->invoice_letter_path)) {
-                $path = $invoice->invoice_letter_path;
-                if (preg_match('#^https?://#i', $path)) {
-                    $url = $path;
-                } else {
-                    $url = url($path);
-                }
-            }
-            $invoice->setAttribute('invoice_letter_url', $url);
-            return $invoice;
-        });
-
         return response()->json([
             'status'   => true,
             'message'  => 'Invoices fetched successfully',
@@ -1310,7 +1296,6 @@ class MarketingPersonInfo extends Controller
                     ];
                 })->values(),
                 'invoice_letter_url' => $invoiceUrl,
-                'invoice_pdf' => $invoiceUrl,
                 'can_generate' => empty($inv->invoice_letter_path) && !empty($inv->new_booking_id),
             ];
         });
