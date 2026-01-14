@@ -1203,7 +1203,7 @@ class MarketingPersonInfo extends Controller
                         $original = $meta[$base]['original'] ?? $base;
                         $letterFiles[$base] = [
                             'name' => $original,
-                            'url' => route('api.reporting.letters.show', ['job' => $booking->reference_no, 'filename' => $base]),
+                            'url' => route('api.reporting.letters.show', ['job' => $key, 'filename' => $base]),
                         ];
                     }
                 }
