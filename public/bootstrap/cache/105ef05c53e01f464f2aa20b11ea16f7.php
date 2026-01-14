@@ -98,7 +98,7 @@
                     </select>
 
                     
-                    <select name="client_id" class="form-select" style="width:180px">
+                    <!-- <select name="client_id" class="form-select" style="width:180px">
                         <option value="">Client</option>
                         <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                             <option value="<?php echo e($client->id); ?>" <?php echo e(request('client_id') == $client->id ? 'selected' : ''); ?>>
@@ -106,7 +106,31 @@
 
                             </option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                    </select>
+                    </select> -->
+
+                    <div class="position-relative" style="width:220px;">
+                            <input type="text"
+                                class="form-control client-search-input"
+                                placeholder="Search client..."
+                                autocomplete="off">
+
+                            <input type="hidden" name="client_id"
+                                class="client-id-hidden"
+                                value="">
+
+                            <div class="dropdown-menu w-100 client-dropdown"
+                                style="max-height:500px; overflow:auto;">
+                                <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <button type="button"
+                                        class="dropdown-item client-option"
+                                        data-id="<?php echo e($client->id); ?>"
+                                        data-name="<?php echo e(strtolower($client->name)); ?>">
+                                        <?php echo e($client->name); ?>
+
+                                    </button>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </div>
+                        </div>
 
                     
                     <select name="payment_status" class="form-select" style="width:140px">
@@ -170,7 +194,7 @@
                             <th>Marketing Person</th>
                             <th>GST Amount</th>
                             <th>Total Amount</th>
-                            <th>Letter Date</th>
+                            <th>Invoice Date</th>
                             <th>items </th>
                             <th>Status</th>
                             <th>Action</th>
@@ -195,7 +219,7 @@
 
                                 <td><?php echo e($invoice->gst_amount); ?></td>
                                 <td><?php echo e($invoice->total_amount); ?></td>
-                                <td><?php echo e(\Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y')); ?></td>
+                                <td><?php echo e(\Carbon\Carbon::parse($invoice->invoice_date)->format('d-m-Y')); ?></td>
 
                                 <td>
                                     <?php echo e($invoice->bookingItems->count()); ?>
@@ -421,28 +445,28 @@
                 });
 
                 /* -----------------------------
-                | AUTO SUBMIT ON SEARCH (DEBOUNCE)
+                | AUTO SUBMIT ON SEARCH (DEBOUNCE) 
                 ----------------------------- */
-                let typingTimer;
-                const delay = 400;      // ms
-                const minLength = 2;    // submit after 2 chars
+                // let typingTimer;
+                // const delay = 400;      // ms
+                // const minLength = 2;    // submit after 2 chars
 
-                const searchInput = document.getElementById('autoSearch');
+                // const searchInput = document.getElementById('autoSearch');
 
-                if (searchInput) {
-                    searchInput.addEventListener('keyup', function () {
-                        clearTimeout(typingTimer);
+                // if (searchInput) {
+                //     searchInput.addEventListener('keyup', function () {
+                //         clearTimeout(typingTimer);
 
-                        typingTimer = setTimeout(() => {
-                            const value = this.value.trim();
+                //         typingTimer = setTimeout(() => {
+                //             const value = this.value.trim();
 
-                            // submit if enough chars OR cleared
-                            if (value.length >= minLength || value.length === 0) {
-                                form.submit();
-                            }
-                        }, delay);
-                    });
-                }
+                //             // submit if enough chars OR cleared
+                //             if (value.length >= minLength || value.length === 0) {
+                //                 form.submit();
+                //             }
+                //         }, delay);
+                //     });
+                // }
             });
         </script>
 
@@ -486,6 +510,107 @@
             });
         </script>
     <?php $__env->stopPush(); ?>
+    <?php $__env->startPush('scripts'); ?>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+
+            document.querySelectorAll('.client-search-input').forEach(input => {
+
+                const wrapper   = input.closest('.position-relative');
+                const dropdown  = wrapper.querySelector('.client-dropdown');
+                const hidden    = wrapper.querySelector('.client-id-hidden');
+                const options   = dropdown.querySelectorAll('.client-option');
+
+                input.addEventListener('focus', () => {
+                    dropdown.classList.add('show');
+                });
+
+                input.addEventListener('input', function () {
+                    const query = this.value.toLowerCase();
+
+                    options.forEach(opt => {
+                        opt.style.display =
+                            opt.dataset.name.includes(query)
+                                ? 'block'
+                                : 'none';
+                    });
+                });
+
+                options.forEach(opt => {
+                    opt.addEventListener('click', () => {
+                        input.value = opt.innerText;
+                        hidden.value = opt.dataset.id;
+                        dropdown.classList.remove('show');
+                    });
+                });
+
+                document.addEventListener('click', e => {
+                    if (!wrapper.contains(e.target)) {
+                        dropdown.classList.remove('show');
+                    }
+                });
+            });
+
+        });
+    </script>
+    <?php $__env->stopPush(); ?>
+    <?php $__env->startPush('scripts'); ?>
+<script>
+document.addEventListener('DOMContentLoaded', function(){
+    // Single client list available to all client-search inputs
+    window.__clientList = <?php echo json_encode($clients->map(function($c){ return ['id' => $c->id, 'name' => $c->name]; }), 512) ?>;
+
+    function renderItems(list){
+        if(!list.length) return '<span class="dropdown-item disabled">No results</span>';
+        return list.map(function(c){
+            return `<button type="button" class="dropdown-item" data-id="${c.id}" data-name="${c.name}">${c.name}</button>`;
+        }).join('');
+    }
+
+    document.querySelectorAll('.client-search-input').forEach(function(input){
+        const container = input.closest('.position-relative');
+        const dropdown = container.querySelector('.client-dropdown');
+        const hidden = container.querySelector('.client-id-hidden');
+        let debounceTimer = null;
+
+        input.addEventListener('input', function(){
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(function(){
+                const q = input.value.trim().toLowerCase();
+                const results = q ? window.__clientList.filter(c => c.name.toLowerCase().includes(q)) : window.__clientList;
+                dropdown.innerHTML = renderItems(results);
+                dropdown.style.display = 'block';
+            }, 150);
+        });
+
+        // show all on focus
+        input.addEventListener('focus', function(){
+            if(!dropdown.innerHTML) dropdown.innerHTML = renderItems(window.__clientList);
+            dropdown.style.display = 'block';
+        });
+
+        // click selection
+        dropdown.addEventListener('click', function(e){
+            const btn = e.target.closest('button.dropdown-item');
+            if(!btn) return;
+            const id = btn.getAttribute('data-id');
+            const name = btn.getAttribute('data-name');
+            hidden.value = id;
+            input.value = name;
+            dropdown.style.display = 'none';
+            // submit parent form to assign
+            const form = input.closest('form');
+            if(form) form.submit();
+        });
+
+        // click outside to hide
+        document.addEventListener('click', function(e){
+            if(!container.contains(e.target)) dropdown.style.display = 'none';
+        });
+    });
+});
+</script>
+<?php $__env->stopPush(); ?>
 
 <?php $__env->stopSection(); ?>
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/superadmin/accounts/invoiceList/index.blade.php ENDPATH**/ ?>

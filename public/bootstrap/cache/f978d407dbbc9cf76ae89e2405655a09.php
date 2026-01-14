@@ -85,8 +85,7 @@
                         action="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
                         class="d-flex input-group gap-2">
                         
-                         <input type="hidden" name="per_page" id="per_page_hidden"
-                        value="<?php echo e(request('per_page', 25)); ?>">
+                         
                         
                         <input type="hidden" name="department_id" value="<?php echo e(request('department_id')); ?>">
 
@@ -883,7 +882,7 @@ document.addEventListener('DOMContentLoaded', function () {
 </script>
 
 
-        <script>
+<script>
 document.addEventListener('DOMContentLoaded', function () {
 
     const mainForm = document.getElementById('invoiceFilterForm');

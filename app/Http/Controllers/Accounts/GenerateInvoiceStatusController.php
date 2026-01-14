@@ -57,7 +57,7 @@ class GenerateInvoiceStatusController extends Controller
 
         if (($request->payment_option ?? 'bill') === 'without_bill') {
             $paymentStatus = 'pending';
-
+            
             $query->where(function ($q) use ($paymentStatus) {
                 $q->whereDoesntHave('cashLetterPayments') // No payment yet
                     ->orWhereHas('cashLetterPayments', function ($q2) use ($paymentStatus) {
@@ -65,7 +65,7 @@ class GenerateInvoiceStatusController extends Controller
                     });
             });
         }
-
+          
 
         // Department filter (from query param)
         if ($request->filled('department')) {
@@ -351,7 +351,7 @@ class GenerateInvoiceStatusController extends Controller
         }
 
         // Fetch bookings with items
-        $bookings = NewBooking::with(['items'])
+        $bookings = NewBooking::with(['items', 'client', 'generatedInvoice'])
             ->whereIn('id', $bookingIds)
             ->get();
 

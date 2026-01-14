@@ -346,7 +346,7 @@
 
                 <!-- Hidden inputs -->
                 <input type="hidden" name="invoice_data" id="invoice_data">
-                <input type="hidden" id="invoice_type" name="invoice_type" value="">
+                <input type="hidden" id="invoice_type" name="invoice_type" value="454">
 
                 <!-- Type Option -->
                 <div class="d-flex justify-content-end align-items-center gap-3 mb-3">
@@ -474,6 +474,7 @@
 
         let invoiceData = {
             booking_info: { 
+                invoice_type: document.getElementById('invoice_type').value,
                 booking_id: document.getElementById('td_booking_id').value, 
                 invoice_id: document.getElementById('td_invoice_id').value, 
                 client_name: document.getElementById('td_client_name').textContent,
