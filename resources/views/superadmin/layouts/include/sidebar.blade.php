@@ -162,6 +162,12 @@
                                 @endif
                             </li>
 
+                            <li>
+                                <a href="{{ route('superadmin.reporting.marketing.holdcancel.index') }}" class="{{ Request::routeIs('superadmin.reporting.marketing.holdcancel.index') ? 'active' : '' }}">
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Hold & Canceled</span>
+                                </a>
+                            </li>
+
                         </ul>
                     </li>
                 </ul>

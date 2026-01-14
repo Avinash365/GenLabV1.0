@@ -68,7 +68,7 @@ class HoldCancelController extends Controller
                     'ms' => $ms,
                 ];
 
-                $items = BookingItem::with(['booking', 'receivedBy', 'analyst'])
+                $items = BookingItem::with(['booking', 'receivedBy', 'analyst', 'latestMarketingEnquiry'])
                     ->where('new_booking_id', $first->new_booking_id)
                     ->orderByDesc('id')
                     ->paginate(20)

@@ -361,6 +361,11 @@ class ReportingController extends Controller
         if ($mode === 'reference') {
             // Aggregate by booking (reference_no) where at least one pending/overdue item
             $bookingQuery = \App\Models\NewBooking::query()->withCount(['items as pending_items_count' => function($q) use ($overdue, $cutoff, $month, $year, $labAnalyst) {
+                $q->where(function($sub) {
+                     $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                })->where(function($sub) {
+                     $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                });
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
@@ -386,6 +391,11 @@ class ReportingController extends Controller
                     $q->where('lab_analysis_code', $labAnalyst);
                 }
             }])->with(['items' => function($q) use ($overdue, $cutoff, $month, $year){
+                $q->where(function($sub) {
+                     $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                })->where(function($sub) {
+                     $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                });
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
@@ -424,7 +434,12 @@ class ReportingController extends Controller
             if ($month) {
                 if ($overdue) {
                     $bookingQuery->whereHas('items', function($qi) use ($month, $cutoff, $labAnalyst){
-                        $qi->whereNull('issue_date')
+                        $qi->where(function($sub) {
+                                $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                           })->where(function($sub) {
+                                $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                           })
+                           ->whereNull('issue_date')
                            ->where('lab_expected_date','!=','0000-00-00')
                            ->whereDate('lab_expected_date','<', $cutoff)
                            ->whereMonth('lab_expected_date', $month);
@@ -435,10 +450,15 @@ class ReportingController extends Controller
                     });
                 } else {
                     $bookingQuery->whereHas('items', function($qi) use ($month, $labAnalyst){
-                        $qi->where(function($qii) use ($month){
-                            $qii->whereMonth('received_at', $month)
-                                ->orWhereMonth('created_at', $month);
-                        });
+                        $qi->where(function($sub) {
+                                $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                           })->where(function($sub) {
+                                $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                           })
+                           ->where(function($qii) use ($month){
+                               $qii->whereMonth('received_at', $month)
+                                   ->orWhereMonth('created_at', $month);
+                           });
 
                         if (!empty($labAnalyst)) {
                             $qi->where('lab_analysis_code', $labAnalyst);
@@ -449,7 +469,12 @@ class ReportingController extends Controller
             if ($year) {
                 if ($overdue) {
                     $bookingQuery->whereHas('items', function($qi) use ($year, $cutoff, $labAnalyst){
-                        $qi->whereNull('issue_date')
+                        $qi->where(function($sub) {
+                                $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                           })->where(function($sub) {
+                                $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                           })
+                           ->whereNull('issue_date')
                            ->where('lab_expected_date','!=','0000-00-00')
                            ->whereDate('lab_expected_date','<', $cutoff)
                            ->whereYear('lab_expected_date', $year);
@@ -460,9 +485,14 @@ class ReportingController extends Controller
                     });
                 } else {
                     $bookingQuery->whereHas('items', function($qi) use ($year, $labAnalyst){
-                        $qi->where(function($qii) use ($year){
-                            $qii->whereYear('received_at', $year)
-                                ->orWhereYear('created_at', $year);
+                        $qi->where(function($sub) {
+                                $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                           })->where(function($sub) {
+                                $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                           })
+                           ->where(function($qii) use ($year){
+                               $qii->whereYear('received_at', $year)
+                                   ->orWhereYear('created_at', $year);
                         });
 
                         if (!empty($labAnalyst)) {
@@ -477,6 +507,11 @@ class ReportingController extends Controller
             return view('superadmin.reporting.pendings', compact('items','bookings','departments','departmentId','mode','marketingPersons','marketing','labAnalysts','labAnalyst'));
         } else {
             $q = BookingItem::query()->with(['booking']);
+            $q->where(function($sub) {
+                $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+            })->where(function($sub) {
+                $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+            });
             if ($overdue) {
                 $q->whereNull('issue_date')
                   ->where('lab_expected_date', '!=', '0000-00-00')
@@ -546,6 +581,11 @@ class ReportingController extends Controller
         $cutoff = now()->toDateString();
 
         $q = BookingItem::query()->with(['booking']);
+        $q->where(function($sub) {
+            $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+        })->where(function($sub) {
+            $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+        });
         if ($overdue) {
             $q->whereNull('issue_date')
               ->where('lab_expected_date', '!=', '0000-00-00')
@@ -691,6 +731,11 @@ class ReportingController extends Controller
         $bookingQuery = \App\Models\NewBooking::query()
             ->with(['marketingPerson', 'items'])
             ->withCount(['items as pending_items_count' => function ($q) use ($overdue, $cutoff, $month, $year, $labAnalyst) {
+                $q->where(function($sub) {
+                    $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                })->where(function($sub) {
+                    $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                });
                 if ($overdue) {
                     $q->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
@@ -737,7 +782,12 @@ class ReportingController extends Controller
         if ($month) {
             if ($overdue) {
                 $bookingQuery->whereHas('items', function ($qi) use ($month, $cutoff, $labAnalyst) {
-                    $qi->whereNull('issue_date')
+                    $qi->where(function($sub) {
+                            $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                       })->where(function($sub) {
+                            $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                       })
+                       ->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
                         ->whereDate('lab_expected_date', '<', $cutoff)
                         ->whereMonth('lab_expected_date', $month);
@@ -747,7 +797,12 @@ class ReportingController extends Controller
                 });
             } else {
                 $bookingQuery->whereHas('items', function ($qi) use ($month, $labAnalyst) {
-                    $qi->where(function ($qii) use ($month) {
+                    $qi->where(function($sub) {
+                            $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                       })->where(function($sub) {
+                            $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                       })
+                       ->where(function ($qii) use ($month) {
                         $qii->whereMonth('received_at', $month)->orWhereMonth('created_at', $month);
                     });
                     if (!empty($labAnalyst)) {
@@ -760,7 +815,12 @@ class ReportingController extends Controller
         if ($year) {
             if ($overdue) {
                 $bookingQuery->whereHas('items', function ($qi) use ($year, $cutoff, $labAnalyst) {
-                    $qi->whereNull('issue_date')
+                    $qi->where(function($sub) {
+                            $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                       })->where(function($sub) {
+                            $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                       })
+                       ->whereNull('issue_date')
                         ->where('lab_expected_date', '!=', '0000-00-00')
                         ->whereDate('lab_expected_date', '<', $cutoff)
                         ->whereYear('lab_expected_date', $year);
@@ -770,7 +830,12 @@ class ReportingController extends Controller
                 });
             } else {
                 $bookingQuery->whereHas('items', function ($qi) use ($year, $labAnalyst) {
-                    $qi->where(function ($qii) use ($year) {
+                    $qi->where(function($sub) {
+                            $sub->whereNull('cancel_reason')->orWhere('cancel_reason', '');
+                       })->where(function($sub) {
+                            $sub->whereNull('hold_reason')->orWhere('hold_reason', 'not like', 'CANCELED:%');
+                       })
+                       ->where(function ($qii) use ($year) {
                         $qii->whereYear('received_at', $year)->orWhereYear('created_at', $year);
                     });
                     if (!empty($labAnalyst)) {

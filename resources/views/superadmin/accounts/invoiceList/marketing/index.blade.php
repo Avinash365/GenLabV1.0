@@ -13,8 +13,9 @@
     .wrap-table tbody tr{ border-bottom:1px solid rgba(0,0,0,0.04); }
     /* Keep action icons compact and align them to the right */
     .wrap-table td.d-flex{ white-space: nowrap !important; }
-    .wrap-table td.action-cell{ text-align:right; display:flex; justify-content:flex-end; align-items:center; gap:.15rem; min-width:0; }
-    .wrap-table td.action-cell > *{ margin:0; }
+    .wrap-table td.action-cell{ text-align:right; vertical-align:middle; padding-right: 0.5rem; }
+    .wrap-table td.action-cell .action-content { display:flex; justify-content:flex-end; align-items:center; gap:.25rem; }
+    .wrap-table td.action-cell .action-content > *{ margin:0; }
     /* Reduce padding on small inline controls so they don't expand cells */
     .wrap-table td.action-cell a.border,
     .wrap-table td.action-cell button.border,
@@ -107,8 +108,10 @@
             $authUser = auth()->user();
             $marketingCode = $authUser->user_code ?? null;
         @endphp
-        <h5 class="card-title">Generated {{ $type ?? 'Invoices' }}</h5>
-        <a href="{{ route('superadmin.bookingInvoiceStatuses.index', array_filter(['context' => 'marketing', 'marketing_person' => $marketingCode], fn($v) => filled($v))) }}" class="btn btn-primary">Yet to be Generate</a>
+        <div class="d-flex align-items-center gap-2">
+            <h5 class="card-title mb-0">Generated {{ $type ?? 'Invoices' }}</h5>
+            <a href="{{ route('superadmin.bookingInvoiceStatuses.index', array_filter(['context' => 'marketing', 'marketing_person' => $marketingCode], fn($v) => filled($v))) }}" class="btn btn-primary">Yet to be Generate</a>
+        </div>
 
         <!-- Filters + Search bar -->
         <form method="GET" action="{{ route('superadmin.invoices.index') }}" class="d-flex gap-2" role="search">
@@ -182,14 +185,14 @@
                 <colgroup>
                     <col style="width:3%">   <!-- # -->
                     <col style="width:8%">   <!-- Invoice No -->
-                    <col style="width:20%">  <!-- Reference No -->
-                    <col style="width:25%">  <!-- Client Name (wider for descriptions) -->
+                    <col style="width:15%">  <!-- Reference No -->
+                    <col style="width:23%">  <!-- Client Name (wider for descriptions) -->
                     <col style="width:8%">  <!-- Assigned Client (reduced to remove gap) -->
                     <col style="width:6%">   <!-- GST Amount -->
                     <col style="width:8%">  <!-- Total Amount -->
-                    <col style="width:6%">   <!-- Letter Date -->
+                    <col style="width:10%">   <!-- Letter Date -->
                     <col style="width:4%">   <!-- items -->
-                    <col style="width:3%">   <!-- Action -->
+                    <col style="width:5%">   <!-- Action -->
                 </colgroup>
                 <thead class="table-light">
                     <tr>
@@ -270,30 +273,30 @@
                                 @endif
                             </td>
                             
-                            <td class="d-flex action-cell"> 
-                                @if(!empty($invoice->invoice_letter_path))
-                                    <a href="{{ url($invoice->invoice_letter_path) }}" 
-                                       class="border rounded d-flex align-items-center p-2 text-decoration-none" 
-                                       target="_blank" 
-                                       title="View Generated Invoice">
-                                        <i class="ti ti-file-invoice"></i>
-                                    </a>
-                                @elseif($invoice->relatedBooking)
-                                    <form action="{{ route('superadmin.bookingInvoiceStatuses.generateInvoice', $invoice->relatedBooking->id) }}" method="POST" target="_blank" class="m-0">
-                                        @csrf
-                                        <button type="submit" class="border rounded d-flex align-items-center p-2 bg-white" title="Generate & View Invoice">
+                            <td class="action-cell"> 
+                                <div class="action-content">
+                                    @if(!empty($invoice->invoice_letter_path))
+                                        <a href="{{ url($invoice->invoice_letter_path) }}" 
+                                        class="border rounded d-flex align-items-center p-2 text-decoration-none" 
+                                        target="_blank" 
+                                        title="View Generated Invoice">
                                             <i class="ti ti-file-invoice"></i>
-                                        </button>
-                                    </form>
-                                @else
-                                    <span class="border rounded d-flex align-items-center p-2 text-decoration-none" title="No linked booking">
-                                        <i class="ti ti-file-invoice"></i>
-                                    </span>
-                                @endif
-                            </td>
-                        </tr>
-                        
-                        <div class="modal fade" id="deleteModal{{ $invoice->id }}" tabindex="-1" aria-hidden="true">
+                                        </a>
+                                    @elseif($invoice->relatedBooking)
+                                        <a href="{{ route('invoices.download', $invoice->id) }}" 
+                                        class="border rounded d-flex align-items-center p-2 text-decoration-none" 
+                                        target="_blank" 
+                                        title="View Invoice">
+                                            <i class="ti ti-file-invoice"></i>
+                                        </a>
+                                    @else
+                                        <span class="border rounded d-flex align-items-center p-2 text-decoration-none" title="No linked booking">
+                                            <i class="ti ti-file-invoice"></i>
+                                        </span>
+                                    @endif
+                                </div>
+
+                                <div class="modal fade" id="deleteModal{{ $invoice->id }}" tabindex="-1" aria-hidden="true">
                                     <div class="modal-dialog modal-dialog-centered">
                                         <div class="modal-content">
                                             <div class="modal-body text-center p-4">
@@ -313,6 +316,8 @@
                                         </div>
                                     </div>
                                 </div>
+                            </td>
+                        </tr>
                     @empty
                         <tr>
                             <td colspan="10" class="text-center text-muted">No documents found.</td>

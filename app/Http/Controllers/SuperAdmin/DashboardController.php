@@ -117,26 +117,26 @@ class DashboardController extends Controller
 
         // Use created_at for grouping/filtering so the dashboard reflects when invoices
         // were generated/updated in the system.
-        $dateExpr = 'created_at';
+        $dateExpr = 'invoice_date';
 
         $groupExpr = match ($range) {
-            '1D' => 'DATE_FORMAT(created_at, "%Y-%m-%d %H")',
-            '1W', '1M' => 'DATE_FORMAT(created_at, "%Y-%m-%d")',
-            '3M' => 'DATE_FORMAT(created_at, "%x-W%v")',
-            '6M', '1Y' => 'DATE_FORMAT(created_at, "%Y-%m")',
-            default => 'DATE_FORMAT(created_at, "%Y-%m")',
+            '1D' => 'DATE_FORMAT(invoice_date, "%Y-%m-%d %H")',
+            '1W', '1M' => 'DATE_FORMAT(invoice_date, "%Y-%m-%d")',
+            '3M' => 'DATE_FORMAT(invoice_date, "%x-W%v")',
+            '6M', '1Y' => 'DATE_FORMAT(invoice_date, "%Y-%m")',
+            default => 'DATE_FORMAT(invoice_date, "%Y-%m")',
         };
 
         // Expected invoices: exclude cancelled (status=2)
         $invoiceRaw = Invoice::selectRaw($groupExpr . ' as k, COALESCE(SUM(CASE WHEN status != 2 THEN total_amount ELSE 0 END), 0) as amount')
-            ->whereBetween('created_at', [$start, $end])
+            ->whereBetween('invoice_date', [$start, $end])
             ->groupBy('k')
             ->orderBy('k')
             ->pluck('amount', 'k');
 
         // Payment done: treat Paid(1) and Settled(4) as fully done.
         $paymentRaw = Invoice::selectRaw($groupExpr . ' as k, COALESCE(SUM(CASE WHEN status IN (1, 4) THEN total_amount ELSE 0 END), 0) as amount')
-            ->whereBetween('created_at', [$start, $end])
+            ->whereBetween('invoice_date', [$start, $end])
             ->groupBy('k')
             ->orderBy('k')
             ->pluck('amount', 'k');
@@ -2283,5 +2283,32 @@ class DashboardController extends Controller
                 ],
             ],
         ];
+    }
+
+    public function accountsInvoicesChart()
+    {
+        $startOfMonth = Carbon::now()->startOfMonth();
+        $endOfMonth = Carbon::now()->endOfMonth();
+
+        // Paid: Status 1 (Paid) or 4 (Partial/Settled) created this month
+        $paid = Invoice::whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
+            ->whereIn('status', [1, 4])
+            ->count();
+
+        // Unpaid: Status 0 (Unpaid) created this month
+        $unpaid = Invoice::whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
+             ->where('status', 0)
+             ->count();
+
+        // Overdue: Status 0 (Unpaid) created before this month
+        $overdue = Invoice::where('invoice_date', '<', $startOfMonth)
+            ->where('status', 0)
+            ->count();
+
+        return response()->json([
+            'paid' => $paid,
+            'unpaid' => $unpaid,
+            'overdue' => $overdue
+        ]);
     }
 }

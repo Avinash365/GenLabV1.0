@@ -84,6 +84,13 @@ Route::middleware(['web', 'multi_auth:web,admin'])
 
 });
 
+// Marketing Reporting View (Read-only)
+Route::middleware(['web', 'multi_auth:web,admin'])
+    ->prefix('superadmin/reporting')->name('superadmin.reporting.marketing.')->group(function () {
+    Route::get('/marketing-hold-cancel', [App\Http\Controllers\SuperAdmin\MarketingHoldCancelController::class, 'index'])->name('holdcancel.index');
+    Route::post('/marketing-hold-cancel/enquiry', [App\Http\Controllers\SuperAdmin\MarketingHoldCancelController::class, 'storeEnquiry'])->name('enquiry.store');
+});
+
 
 // Lab Analysts (protected)
 Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->group(function(){
