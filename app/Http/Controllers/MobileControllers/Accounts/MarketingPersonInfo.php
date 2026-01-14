@@ -727,43 +727,47 @@ class MarketingPersonInfo extends Controller
             // upload letter url resolution
             $letterUrl = null;
             
-            // 1. Try to find recent uploads in public/letters/{SANITZED_REF}
-            // This fixes issues where reference_no has slashes or parens
+            // Try to find via sanitized directory (handles special chars in ref no) like ReportingController logic
             $ref = $booking->reference_no ?? '';
-            // Sanitize key (matches ReportingController logic)
-            $safeKey = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim((string)$ref));
+            // Sanitize: replace anything not alphanumeric/dash/underscore with dash
+            $sanitizedKey = preg_replace('/[^A-Za-z0-9_\-]/', '-', trim((string)$ref));
             
-            if ($safeKey && \Illuminate\Support\Facades\Storage::exists("public/letters/{$safeKey}")) {
-                $files = \Illuminate\Support\Facades\Storage::files("public/letters/{$safeKey}");
-                // Sort by last modified desc
-                usort($files, function ($a, $b) {
-                    return \Illuminate\Support\Facades\Storage::lastModified($b) <=> \Illuminate\Support\Facades\Storage::lastModified($a);
-                });
-                foreach ($files as $fpath) {
-                    $base = basename($fpath);
-                    if ($base === '_meta.json' || \Illuminate\Support\Str::startsWith($base, '_')) continue;
-                    $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
-                    if (in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'])) {
-                        $letterUrl = route('api.reporting.letters.show', [
-                            'job' => $safeKey, 
-                            'filename' => $base
-                        ]);
-                        break; 
+            // Only search if we have a key
+            if ($sanitizedKey !== '') {
+                $dir = "public/letters/{$sanitizedKey}";
+                if (\Illuminate\Support\Facades\Storage::exists($dir)) {
+                    $files = \Illuminate\Support\Facades\Storage::files($dir);
+                     // Sort by last modified desc so newest uploads appear first
+                    usort($files, function ($a, $b) {
+                        return \Illuminate\Support\Facades\Storage::lastModified($b) <=> \Illuminate\Support\Facades\Storage::lastModified($a);
+                    });
+                    
+                    foreach ($files as $fPath) {
+                        $base = basename($fPath);
+                        if ($base === '_meta.json' || \Illuminate\Support\Str::startsWith($base, '_')) continue;
+                        $ext = strtolower(pathinfo($base, PATHINFO_EXTENSION));
+                        if (in_array($ext, ['pdf','jpg','jpeg','png','doc','docx'], true)) {
+                            // Use the API route for public download
+                            $letterUrl = route('api.reporting.letters.show', ['job' => $sanitizedKey, 'filename' => $base]);
+                            break; 
+                        }
                     }
                 }
             }
 
-            // 2. Fallback to older upload_letter_path column if no new report found
-            if (!$letterUrl && $booking->upload_letter_path) {
-                $path = $booking->upload_letter_path;
-                try {
-                    if (\Illuminate\Support\Str::startsWith($path, ['http://','https://'])) {
-                        $letterUrl = $path;
-                    } else {
-                        $letterUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : asset($path);
+            // Fallback to legacy single path if nothing found in directory
+            if (!$letterUrl) {
+                $path = $booking->upload_letter_path ?? null;
+                if ($path) {
+                    try {
+                        if (\Illuminate\Support\Str::startsWith($path, ['http://','https://'])) {
+                            $letterUrl = $path;
+                        } else {
+                            $letterUrl = \Illuminate\Support\Facades\Storage::disk('public')->exists($path) ? \Illuminate\Support\Facades\Storage::url($path) : asset($path);
+                        }
+                    } catch (\Exception $e) {
+                        $letterUrl = asset($path);
                     }
-                } catch (\Exception $e) {
-                     $letterUrl = asset($path);
                 }
             }
 
