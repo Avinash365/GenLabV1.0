@@ -1,6 +1,6 @@
 @extends('superadmin.layouts.app')
 
-@section('title', 'Hold & Cancelled (Marketing)')
+@section('title', 'Hold and Cancelled (Marketing)')
 
 @section('content')
 <div class="content">

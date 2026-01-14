@@ -5,6 +5,7 @@ use App\Http\Controllers\MobileControllers\Auth\AdminAuthController;
  use App\Http\Controllers\Api\Attendance\EsslWebhookController;
  use App\Http\Controllers\MobileControllers\Accounts\MarketingPersonInfo; 
 use App\Http\Controllers\Api\ExpenseApiController;
+use App\Http\Controllers\MobileControllers\MarketingHoldCancelApiController;
 use App\Http\Controllers\Api\MarketingDashboardController;
 
 use Illuminate\Support\Facades\Route;
@@ -86,6 +87,10 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
     Route::get('{user_code}/bookings', 
         [MarketingPersonInfo::class, 'fetchBookings']
     );
+
+    // Marketing Hold & Cancel
+    Route::get('{user_code}/hold-cancelled', [MarketingHoldCancelApiController::class, 'index']);
+    Route::post('{user_code}/hold-cancelled/enquiry', [MarketingHoldCancelApiController::class, 'storeEnquiry']);
 
     // Consolidated profile overview used by mobile profile screen
     Route::get('{user_code}/profile', [MarketingPersonInfo::class, 'profileOverviewApi']);
