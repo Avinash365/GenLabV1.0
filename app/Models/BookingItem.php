@@ -97,4 +97,14 @@ class BookingItem extends Model
         )->withPivot('id','booking_id', 'pdf_path', 'generated_report_path', 'issue_to_date')->withTimestamps();
     } 
 
+    public function marketingEnquiries()
+    {
+        return $this->hasMany(MarketingEnquiry::class, 'booking_item_id');
+    }
+
+    public function latestMarketingEnquiry()
+    {
+        return $this->hasOne(MarketingEnquiry::class, 'booking_item_id')->latestOfMany();
+    }
+
 }

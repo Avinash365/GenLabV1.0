@@ -243,10 +243,39 @@
 
   // Accounts - Invoices Donut
   if(invoiceDonut){
-    const paid = rnd(50,70), unpaid = rnd(20,35), overdue = 100 - paid - unpaid;
-    new Chart(invoiceDonut, { type:'doughnut', data:{ labels:['Paid','Unpaid','Overdue'], datasets:[{ data:[paid,unpaid,overdue], backgroundColor:['#2bb673','#6c757d','#dc3545'], borderWidth:0, cutout:'70%' }] }, options:{ plugins:{ legend:{ display:false } }, maintainAspectRatio:false } });
-    const setTxt = (id,val)=>{ const el=document.getElementById(id); if(el) el.textContent = `${val}%`; };
-    setTxt('invPaid', paid); setTxt('invUnpaid', unpaid); setTxt('invOverdue', overdue);
+    const invChart = new Chart(invoiceDonut, { 
+      type:'doughnut', 
+      data:{ 
+        labels:['Paid','Unpaid','Overdue'], 
+        datasets:[{ 
+          data:[0,0,0], 
+          backgroundColor:['#2bb673','#6c757d','#dc3545'], 
+          borderWidth:0, 
+          cutout:'70%' 
+        }] 
+      }, 
+      options:{ 
+        plugins:{ legend:{ display:false } }, 
+        maintainAspectRatio:false 
+      } 
+    });
+
+    fetch('/superadmin/dashboard/accounts-invoices-chart')
+      .then(r => r.json())
+      .then(d => {
+         const paid = Number(d.paid||0);
+         const unpaid = Number(d.unpaid||0);
+         const overdue = Number(d.overdue||0);
+         
+         invChart.data.datasets[0].data = [paid, unpaid, overdue];
+         invChart.update();
+
+         const setVal = (id, v) => { const el=document.getElementById(id); if(el) el.textContent = v; };
+         setVal('invPaid', paid);
+         setVal('invUnpaid', unpaid);
+         setVal('invOverdue', overdue);
+      })
+      .catch(e => console.error('Accounts chart error:', e));
   }
 
   // Analysts Workload (horizontal bar)

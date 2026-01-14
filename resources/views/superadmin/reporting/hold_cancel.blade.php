@@ -93,7 +93,8 @@
                             <tr>
                                 <td>{{ $item->job_order_no }}</td>
                                 <td>{{ $item->sample_description }}</td>
-                                <td class="status-cell" data-id="{{ $item->id }}">
+                                <td>
+                                    <span class="status-cell" data-id="{{ $item->id }}">
                                     @if(!empty($item->cancel_reason))
                                         Canceled "{{ $item->cancel_reason }}"
                                     @elseif($isCancelMarker)
@@ -108,6 +109,21 @@
                                         @else
                                             In Lab / Analyst TBD
                                         @endif
+                                    @endif
+                                    </span>
+
+                                    @if($item->latestMarketingEnquiry)
+                                        <button type="button" class="btn btn-sm btn-success py-0 ms-2 lh-1 text-white enquiry-btn" 
+                                            data-id="{{ $item->id }}" 
+                                            data-note="{{ $item->latestMarketingEnquiry->note }}"
+                                            data-media="{{ json_encode($item->latestMarketingEnquiry->media_paths) }}"
+                                            data-created-at="{{ $item->latestMarketingEnquiry->created_at->format('d/m/Y h:i A') }}"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#enquiryViewModal"
+                                            title="View Enquiry"
+                                            style="font-size: 0.9rem; padding: 2px 6px;">
+                                            Inquiry
+                                        </button>
                                     @endif
                                 </td>
                                 <td>
@@ -142,10 +158,78 @@
 </div>
 @endsection
 
+<!-- Enquiry View Modal -->
+<div class="modal fade" id="enquiryViewModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Enquiry Details</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-success d-flex align-items-center mb-3" role="alert">
+                    <i class="ti ti-check-circle me-2 fs-4"></i>
+                    <div>Submitted on <span id="enquiryCreatedAt" class="fw-bold"></span></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-bold">Note:</label>
+                    <div class="p-2 border rounded bg-light" id="enquiryNote" style="white-space: pre-wrap;"></div>
+                </div>
+                <div class="mb-3 d-none" id="enquiryMediaContainer">
+                    <label class="form-label fw-bold">Attached Media:</label>
+                    <ul class="list-group" id="enquiryMediaList"></ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @push('scripts')
 <script>
 (function initHoldCancelPage(){
     const init = async function(){
+        // Hande Enquiry View Modal
+        const enquiryViewModal = document.getElementById('enquiryViewModal');
+        if (enquiryViewModal) {
+            enquiryViewModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const createdAt = button.getAttribute('data-created-at');
+                const note = button.getAttribute('data-note');
+                const mediaJson = button.getAttribute('data-media');
+                
+                document.getElementById('enquiryCreatedAt').textContent = createdAt;
+                document.getElementById('enquiryNote').textContent = note;
+
+                const mediaList = document.getElementById('enquiryMediaList');
+                const mediaContainer = document.getElementById('enquiryMediaContainer');
+                mediaList.innerHTML = '';
+                
+                try {
+                    const mediaPaths = JSON.parse(mediaJson || '[]');
+                    if (mediaPaths && mediaPaths.length > 0) {
+                        mediaContainer.classList.remove('d-none');
+                        mediaPaths.forEach(function(path) {
+                            const li = document.createElement('li');
+                            li.className = 'list-group-item';
+                            // Construct URL (assuming standar storage link)
+                            const url = "{{ asset('storage') }}/" + path;
+                            const fileName = path.split('/').pop();
+                            li.innerHTML = '<a href="' + url + '" target="_blank" class="d-flex align-items-center text-decoration-none"><i class="ti ti-file me-2"></i>' + fileName + '</a>';
+                            mediaList.appendChild(li);
+                        });
+                    } else {
+                        mediaContainer.classList.add('d-none');
+                    }
+                } catch (e) {
+                    console.error('Error parsing media JSON', e);
+                    mediaContainer.classList.add('d-none');
+                }
+            });
+        }
+
         // Ensure SweetAlert2 is available
         if (!window.Swal) {
             await new Promise(function(resolve){
