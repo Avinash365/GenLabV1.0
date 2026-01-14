@@ -105,7 +105,7 @@ class InvoiceController extends Controller
             $search = trim($request->search);
 
             $query->where(function ($q) use ($search) {
-                $q->where('invoice_no', 'like', "{$search}%")
+                $q->where('invoice_no', 'like', "%{$search}%")
                     ->orWhere('total_amount', 'like', "{$search}%")
                     ->orWhereHas('relatedBooking', function ($subQ) use ($search) {
                         $subQ->where('client_name', 'like', "{$search}%");

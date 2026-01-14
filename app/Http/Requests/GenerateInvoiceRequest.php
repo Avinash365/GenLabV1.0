@@ -49,7 +49,7 @@ class GenerateInvoiceRequest extends FormRequest
                 'booking_info.invoice_date'     => 'required|date',
                 'booking_info.letter_date'      => 'nullable|date',
                 'booking_info.name_of_work'     => 'nullable|string|max:1000',
-                'booking_info.bill_issue_to'    => 'nullable|string|max:100',
+                'booking_info.bill_issue_to'    => 'nullable|string|max:1000',
                 'booking_info.client_gstin'     => 'nullable|string|max:50',
                 'booking_info.address'          => 'nullable|string|max:500',
 

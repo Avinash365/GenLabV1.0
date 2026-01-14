@@ -260,11 +260,11 @@
 
                                 <td class="col-wide text-start text-uppercase" colspan="2" contenteditable="true"
                                     id="td_bill_block">
-
-                                    {{ $booking->name_of_work ?? '' }}<br><br>
+                                    {{ $bookings->first()->client->name ?? '' }}<br>
+                                    {{ $bookings->first()->client->address ?? '' }}<br>
 
                                     <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
-                                    {{ $bookings->first()->gstin ?? '' }}
+                                    {{ $bookings->first()->client->gstin ?? '' }}
                                 </td>
 
                                 <td class="text-centre">

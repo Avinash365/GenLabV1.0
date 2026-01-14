@@ -179,7 +179,7 @@ class BlankInvoiceController extends Controller
                     'igst_amount' => (float) ($data['totals']['igst_amount'] ?? 0),
                     'round_off' => (float) ($data['totals']['round_off'] ?? 0),
                     'payable_amount' => (float) ($data['totals']['payable_amount'] ?? 0),
-                    'invoice_type' => $data['invoice_type'] ?? 'tax_invoice',
+                    'invoice_type' => $data['booking_info']['invoice_type'] ?? 'tax_invoice',
                 ]);
 
                 // Remove old items

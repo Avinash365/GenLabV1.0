@@ -242,8 +242,8 @@
                                 <td class="col-wide text-start text-uppercase" colspan="2" contenteditable="true"
                                     id="td_bill_block">
 
-                                    {{ $booking->name_of_work ?? '' }}<br><br>
-
+                                    {{ $booking->client->name ?? '' }}<br>
+                                    {{ $booking->client->address ?? '' }}<br>
                                     <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
                                     {{ $booking->client->gstin ?? '' }}
                                 </td>

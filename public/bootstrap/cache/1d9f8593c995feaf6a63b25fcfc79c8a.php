@@ -243,8 +243,8 @@
                                 <td class="col-wide text-start text-uppercase" colspan="2" contenteditable="true"
                                     id="td_bill_block">
 
-                                    <?php echo e($booking->name_of_work ?? ''); ?><br><br>
-
+                                    <?php echo e($booking->client->name ?? ''); ?><br>
+                                    <?php echo e($booking->client->address ?? ''); ?><br>
                                     <span contenteditable="false" style="font-weight:bold;">GSTIN:</span>
                                     <?php echo e($booking->client->gstin ?? ''); ?>
 
