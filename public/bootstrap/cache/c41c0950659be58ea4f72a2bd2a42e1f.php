@@ -120,7 +120,7 @@
                                             data-bs-toggle="modal" 
                                             data-bs-target="#enquiryViewModal"
                                             title="View Enquiry"
-                                            style="font-size: 0.9rem; padding: 2px 6px;">
+                                            style="font-size: 0.75rem; padding: 2px 6px;">
                                             Inquiry
                                         </button>
                                     <?php endif; ?>
@@ -211,12 +211,21 @@
                     const mediaPaths = JSON.parse(mediaJson || '[]');
                     if (mediaPaths && mediaPaths.length > 0) {
                         mediaContainer.classList.remove('d-none');
-                        mediaPaths.forEach(function(path) {
+                        mediaPaths.forEach(function(item) {
                             const li = document.createElement('li');
                             li.className = 'list-group-item';
+                            
+                            var path, fileName;
+                            if (typeof item === 'object' && item !== null && item.path) {
+                                path = item.path;
+                                fileName = item.name || path.split('/').pop();
+                            } else {
+                                path = item;
+                                fileName = path.split('/').pop();
+                            }
+
                             // Construct URL (assuming standar storage link)
                             const url = "<?php echo e(asset('storage')); ?>/" + path;
-                            const fileName = path.split('/').pop();
                             li.innerHTML = '<a href="' + url + '" target="_blank" class="d-flex align-items-center text-decoration-none"><i class="ti ti-file me-2"></i>' + fileName + '</a>';
                             mediaList.appendChild(li);
                         });
