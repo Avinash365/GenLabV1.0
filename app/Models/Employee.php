@@ -91,7 +91,15 @@ class Employee extends Model
     {
         $details = $this->additional_details ?? [];
 
-        return array_values($details['other_documents'] ?? []);
+        $documents = array_values($details['other_documents'] ?? []);
+
+        return array_map(function ($document) {
+            if (isset($document['path'])) {
+                $document['url'] = asset('storage/' . $document['path']);
+            }
+
+            return $document;
+        }, $documents);
     }
 
     public function getOtherDocumentsCountAttribute(): int
