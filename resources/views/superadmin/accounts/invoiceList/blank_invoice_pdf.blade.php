@@ -54,6 +54,17 @@
 
         .colw { width: 30%; }
         .col4 { width: 52%; }
+        
+        .text-right {
+            text-align: right !important;
+        }
+        .text-left{
+            text-align: left !important;
+        }
+        .text-centre{
+            text-align: center !important;
+        }
+
     </style>
 </head>
 <body>
@@ -98,8 +109,8 @@
             <th style="width:20%;">Job Order No</th>
             <th style="width:10%;">SAC Code</th>
             <th style="width:10%;">Qty</th>
-            <th style="width:12%;">Rate</th>
-            <th style="width:13%;">Amount</th>
+            <th style="width:12%;" class="text-centre">Rate</th>
+            <th style="width:13%;" class="text-centre">Amount</th>
         </tr>
     </thead>
     <tbody>
@@ -109,49 +120,49 @@
             <td class="text-uppercase">{{ $item->job_order_no ?? '' }}</td>
             <td >{{ $SACCODE ?? '' }}</td>
             <td>{{ $item->qty ?? 0 }}</td>
-            <td>{{ number_format($item->rate ?? 0,2) }}</td>
-            <td>{{ number_format($item->amount ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($item->rate ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($item->amount ?? 0,2) }}</td>
         </tr>
         @endforeach
 
         <tr class="total-row">
             <td colspan="5" class="text-right">Total Amount</td>
-            <td>{{ number_format($invoice->total_amount ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($invoice->total_amount ?? 0,2) }}</td>
         </tr>
 
         @if(($invoice->discount_percent ?? 0) > 0)
         <tr class="total-row">
             <td colspan="5" class="text-right">Discount ({{ $invoice->discount_percent ?? 0 }}%)</td>
-            <td>{{ number_format(($invoice->total_amount ?? 0) - ($invoice->after_discount ?? 0), 2) }}</td>
+            <td class="text-right">{{ number_format(($invoice->total_amount ?? 0) - ($invoice->after_discount ?? 0), 2) }}</td>
         </tr>
         <tr class="total-row">
             <td colspan="5" class="text-right">After Discount</td>
-            <td>{{ number_format($invoice->after_discount ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($invoice->after_discount ?? 0,2) }}</td>
         </tr>
         @endif
 
         <tr class="total-row">
             <td colspan="5" class="text-right">CGST ({{ $invoice->cgst_percent ?? 0 }}%)</td>
-            <td>{{ number_format($invoice->cgst_amount ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($invoice->cgst_amount ?? 0,2) }}</td>
         </tr>
         <tr class="total-row">
             <td colspan="5" class="text-right">SGST ({{ $invoice->sgst_percent ?? 0 }}%)</td>
-            <td>{{ number_format($invoice->sgst_amount ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($invoice->sgst_amount ?? 0,2) }}</td>
         </tr>
         <tr class="total-row">
             <td colspan="5" class="text-right">IGST ({{ $invoice->igst_percent ?? 0 }}%)</td>
-            <td>{{ number_format($invoice->igst_amount ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($invoice->igst_amount ?? 0,2) }}</td>
         </tr>
         <tr class="total-row">
             <td colspan="5" class="text-right">Round Off</td>
-            <td>{{ number_format($invoice->round_off ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($invoice->round_off ?? 0,2) }}</td>
         </tr>
         <tr class="total-row">
             <td colspan="5" class="text-right">Payable Amount</td>
-            <td>{{ number_format($invoice->payable_amount ?? 0,2) }}</td>
+            <td class="text-right">{{ number_format($invoice->payable_amount ?? 0,2) }}</td>
         </tr>
         <tr>
-            <th colspan="6">Amount in Words: {{ $WordAmout ?? '' }}</th>
+            <th colspan="6" class="text-left">Amount in Words: {{ $WordAmout ?? '' }}</th>
         </tr>
     </tbody>
 </table>

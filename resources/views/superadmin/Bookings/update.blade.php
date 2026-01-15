@@ -269,7 +269,11 @@
                                                 <input type="date" name="booking_items[{{ $index }}][lab_expected_date]" class="form-control" 
                                                     value="{{ !empty($item['lab_expected_date']) ? \Carbon\Carbon::parse($item['lab_expected_date'])->format('Y-m-d') : '' }}" required>
                                             </div>
-                                        </div>
+                                             <div class="col-lg-4 col-sm-6 col-12">
+                                                <label class="form-label">Sample Details</label>
+                                                <input type="text" name="booking_items[{{ $index }}][sample_details]" class="form-control" value="{{ $item['sample_details'] ?? '' }}" required>
+                                            </div>
+                                    </div>
                                         <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="{{ $index == 0 ? 'display:none;' : '' }}">Remove</button>
                                     </div>
                                 @endforeach

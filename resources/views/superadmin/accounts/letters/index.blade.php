@@ -86,6 +86,8 @@
                         action="{{ route('superadmin.accountBookingsLetters.index') }}"
                         class="d-flex input-group gap-2">
                         
+                        <input type="hidden" name="per_page" id="per_page_hidden"
+                        value="{{ request('per_page', 25) }}">
                          
                         {{-- Preserve department --}}
                         <input type="hidden" name="department_id" value="{{ request('department_id') }}">
@@ -408,9 +410,12 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="p-3">
-                    {{ $bookings->appends(request()->query())->links('pagination::bootstrap-5') }}
-                </div>
+                            <div class="mt-3">
+        {{-- Pagination --}}
+        <div>
+            {{ $bookings->appends(request()->query())->links('pagination::bootstrap-5') }}
+        </div>
+    </div>
             </div>
             <div class="ms-2 d-flex justify-content-between">
                         
@@ -442,14 +447,29 @@
         Assign Selected
     </button>
 </form>
-                        <select id="perPageSelect" class="form-control mb-2 me-2" style="width:120px">
-                                @foreach([2,10, 25, 50, 100, 500] as $size)
-                                    <option value="{{ $size }}"
-                                        {{ request('per_page', 25) == $size ? 'selected' : '' }}>
-                                        {{ $size }} / page
-                                    </option>
-                                @endforeach
-                        </select>
+                         {{-- Per Page Dropdown --}}
+        <div class="d-flex align-items-center">
+            <label for="perPageSelect" class="me-2 fw-semibold text-muted">
+                Show
+            </label>
+
+            <select
+                id="perPageSelect"
+                class="form-select form-select-sm"
+                style="width: 120px"
+                onchange="changePerPage(this.value)"
+            >
+                @foreach([2, 10, 25, 50, 100, 500] as $size)
+                    <option value="{{ $size }}"
+                        {{ request('per_page', 25) == $size ? 'selected' : '' }}>
+                        {{ $size }}
+                    </option>
+                @endforeach
+            </select>
+
+            <span class="ms-2 text-muted">entries</span>
+        </div>
+
                 </div>
         </div>
     </div>

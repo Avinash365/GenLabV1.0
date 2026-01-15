@@ -162,6 +162,12 @@
                                 <?php endif; ?>
                             </li>
 
+                            <li>
+                                <a href="<?php echo e(route('superadmin.reporting.marketing.holdcancel.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.marketing.holdcancel.index') ? 'active' : ''); ?>">
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Hold & Canceled</span>
+                                </a>
+                            </li>
+
                         </ul>
                     </li>
                 </ul>

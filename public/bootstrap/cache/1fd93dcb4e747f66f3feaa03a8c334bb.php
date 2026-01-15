@@ -24,8 +24,19 @@
     </div>
 <?php endif; ?>
 
-
-
+<?php $__env->startPush('styles'); ?>
+<style>
+     .text-right {
+        text-align: right !important;
+    }
+    .text-left{
+        text-align: left !important;
+    }
+    .text-centre{
+        text-align: center !important;
+    }
+</style> 
+<?php $__env->stopPush(); ?>
 
 <div class="row g-4 p-4">
 
@@ -232,10 +243,10 @@
                         <tr>
                             <th>#</th>
                             <th>Sample Description</th>
-                            <th>Job Order No</th>
-                            <th>Qty</th>
-                            <th>Rate</th>
-                            <th>Amount</th>
+                            <th class="text-centre">Job Order No</th>
+                            <th class="text-centre">Qty</th>
+                            <th class="text-centre">Rate</th>
+                            <th class="text-centre">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -245,49 +256,49 @@
                                 <td contenteditable="true" class="editable"></td>
                                 <td contenteditable = "true" class ="editable"> </td>
                                 <!-- <td contenteditable="true" class="editable qty"></td> -->
-                                <td contenteditable="true" class="editable qty"></td>
-                                <td contenteditable="true" class="editable rate"></td>
-                                <td class="amount">0.00</td>
+                                <td contenteditable="true" class="editable qty text-centre"></td>
+                                <td contenteditable="true" class="editable rate text-right"></td>
+                                <td class="amount text-right">0.00</td>
                             </tr>
                         <?php endfor; ?>
                     </tbody>
                     <tfoot>
                         <tr>
                             <th colspan="5" class="text-end">Total</th>
-                            <th id="totalAmount">0.00</th>
+                            <th id="totalAmount" class="text-right">0.00</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">Discount %</th>
-                            <td contenteditable="true" class="editable" id="discountPercent"></td>
-                            <th id="discountAmount">0.00</th>
+                            <td contenteditable="true" class="editable text-right" id="discountPercent"></td>
+                            <th id="discountAmount" class="text-right">0.00</th>
                         </tr>
                         <tr>
                             <th colspan="5" class="text-end">After Discount Amount</th>
-                            <th id="afterDiscount">0.00</th>
+                            <th id="afterDiscount" class="text-right">0.00</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">CGST %</th>
-                            <td contenteditable="true" class="editable" id="cgstPercent">0</td>
-                            <th id="cgstAmount">0.00</th>
+                            <td contenteditable="true" class="editable text-right" id="cgstPercent" >0</td>
+                            <th id="cgstAmount" class="text-right">0.00</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">SGST %</th>
-                            <td contenteditable="true" class="editable" id="sgstPercent">0</td>
-                            <th id="sgstAmount">0.00</th>
+                            <td contenteditable="true" class="editable text-right" id="sgstPercent">0</td>
+                            <th id="sgstAmount" class="text-right">0.00</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">IGST %</th>
-                            <td contenteditable="true" class="editable" id="igstPercent">0</td>
-                            <th id="igstAmount">0.00</th>
+                            <td contenteditable="true" class="editable text-right" id="igstPercent">0</td>
+                            <th id="igstAmount" class="text-right">0.00</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">Round Off</th>
-                            <td><input type="checkbox" id="roundOffCheckbox"></td>
-                            <th id="roundOffAmount">0.00</th>
+                            <td class="text-right"><input type="checkbox" id="roundOffCheckbox"></td>
+                            <th id="roundOffAmount" class="text-right">0.00</th>
                         </tr>
                         <tr>
                             <th colspan="5" class="text-end">Payable Amount</th>
-                            <th id="payableAmount">0.00</th>
+                            <th id="payableAmount" class="text-right">0.00</th>
                         </tr>
                     </tfoot>
                 </table> 
@@ -575,9 +586,9 @@
         row.insertCell(0).textContent = rowCount;
         row.insertCell(1).contentEditable = "true"; row.cells[1].classList.add('editable');
         row.insertCell(2).contentEditable = "true"; row.cells[2].classList.add('editable');
-        row.insertCell(3).contentEditable = "true"; row.cells[3].classList.add('editable','qty');
-        row.insertCell(4).contentEditable = "true"; row.cells[4].classList.add('editable','rate');
-        row.insertCell(5).textContent = "0.00"; row.cells[5].classList.add('amount');
+        row.insertCell(3).contentEditable = "true"; row.cells[3].classList.add('editable','qty', 'text-centre');
+        row.insertCell(4).contentEditable = "true"; row.cells[4].classList.add('editable','rate', 'text-right');
+        row.insertCell(5).textContent = "0.00"; row.cells[5].classList.add('amount', 'text-right');
 
         row.querySelectorAll('.editable').forEach(function(cell){
             cell.addEventListener('input', function() {
