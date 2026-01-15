@@ -136,6 +136,11 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
         [MarketingPersonInfo::class, 'fetchCashTransaction']
     );
 
+    // Fetch Quotations
+    Route::get('{user_code}/quotations', 
+        [MarketingPersonInfo::class, 'quotationsListApi']
+    )->name('api.marketing.quotations.list');
+
     // Fetch Clients
     Route::get('{user_code}/clients',
         [MarketingPersonInfo::class, 'fetchClients']

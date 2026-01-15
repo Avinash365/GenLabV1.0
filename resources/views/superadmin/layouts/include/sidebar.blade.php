@@ -144,7 +144,7 @@
                             </li>
 
                             <li>
-                                <a href="{{ route('superadmin.quotations.index') }}" class="{{ Request::routeIs('superadmin.personal.expenses.*') ? 'active' : '' }}">
+                                <a href="{{ route('superadmin.marketing.quotations.index') }}" class="{{ Request::routeIs('superadmin.marketing.quotations.*') ? 'active' : '' }}">
                                     <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
                                 </a>
                             </li>

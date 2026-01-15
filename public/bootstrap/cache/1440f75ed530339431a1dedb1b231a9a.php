@@ -144,7 +144,7 @@
                             </li>
 
                             <li>
-                                <a href="<?php echo e(route('superadmin.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">
+                                <a href="<?php echo e(route('superadmin.marketing.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.quotations.*') ? 'active' : ''); ?>">
                                     <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
                                 </a>
                             </li>

@@ -48,6 +48,7 @@ use App\Http\Controllers\SuperAdmin\ReportingController;
 use App\Http\Controllers\Accounts\GenerateInvoiceStatusController;
 use App\Http\Controllers\Accounts\InvoiceController;
 use App\Http\Controllers\Accounts\QuotationController;
+use App\Http\Controllers\Accounts\MarketingQuotationController;
 use App\Http\Controllers\Accounts\BlankInvoiceController;
 use App\Http\Controllers\Accounts\PaymentSettingController;
 use App\Http\Controllers\Accounts\MarketingExpenseController;
@@ -107,6 +108,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/expenses/export/pdf', [MarketingExpenseController::class, 'exportPdf'])->name('expenses.export.pdf');
         Route::get('/expenses/in-account', [MarketingExpenseController::class, 'inAccount'])->name('expenses.in_account');
         Route::get('/expenses/export/excel', [MarketingExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
+
+        // Quotations
+        Route::get('/quotations', [MarketingQuotationController::class, 'index'])->name('quotations.index');
         Route::post('/expenses', [MarketingExpenseController::class, 'store'])->name('expenses.store');
         Route::get('/persons', [MarketingExpenseController::class, 'persons'])->name('persons');
         Route::patch('/expenses/{expense}/approve', [MarketingExpenseController::class, 'approve'])->name('expenses.approve');
