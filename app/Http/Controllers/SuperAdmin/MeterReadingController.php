@@ -8,10 +8,13 @@ use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Auth;
 use App\Models\MeterReading;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\MeterReadingsExport;
 
 class MeterReadingController extends Controller
 {
-    public function index(Request $request)
+    protected function buildQuery(Request $request)
     {
         $query = MeterReading::with('user');
 
@@ -57,7 +60,12 @@ class MeterReadingController extends Controller
                 $query->where('user_id', $user->id);
             }
         }
+        return $query;
+    }
 
+    public function index(Request $request)
+    {
+        $query = $this->buildQuery($request);
         $perPage = (int) $request->get('per_page', 25);
         $allowed = [25, 100, 250];
         if (!in_array($perPage, $allowed)) {
@@ -91,6 +99,7 @@ class MeterReadingController extends Controller
 
         // compute if the current user has an open starting reading (personal view)
         $hasOpenQuery = MeterReading::whereNotNull('starting_reading')->whereNull('ending_reading');
+        $user = Auth::user(); // Re-fetch user in local scope or pass it or trust Auth::user()
         if ($user) {
             $hasOpenQuery->where('user_id', $user->id);
         }
@@ -102,6 +111,26 @@ class MeterReadingController extends Controller
         })->orderBy('name')->get(['id','name','user_code']);
 
         return view('superadmin.meter_reading.index', ['readings' => $rows, 'hasOpen' => $hasOpen, 'marketingPersons' => $marketingPersons]);
+    }
+
+    public function exportPdf(Request $request)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+        $readings = $this->buildQuery($request)->orderBy('created_at', 'desc')->get();
+        
+        $pdf = Pdf::loadView('superadmin.meter_reading.pdf', compact('readings'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->stream('meter_readings.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+        $readings = $this->buildQuery($request)->orderBy('created_at', 'desc')->get();
+        return Excel::download(new MeterReadingsExport($readings), 'meter_readings.xlsx');
     }
 
     public function upload(Request $request)

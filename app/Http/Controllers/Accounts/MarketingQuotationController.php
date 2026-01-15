@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\Quotation;
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class MarketingQuotationController extends Controller
 {
@@ -14,7 +16,57 @@ class MarketingQuotationController extends Controller
      */
     public function index(Request $request)
     {
-        // Marketing persons dropdown
+        $marketingPersons = $this->getMarketingPersons();
+        $query = $this->buildQuery($request);
+        $quotations = $query->paginate(10)->withQueryString();
+
+        return view('superadmin.marketing.accounts.quotation.index', compact(
+            'quotations',
+            'marketingPersons'
+        ));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $query = $this->buildQuery($request);
+        $quotations = $query->get();
+
+        $pdf = Pdf::loadView('superadmin.marketing.accounts.quotation.pdf', compact('quotations'));
+        return $pdf->download('quotations.pdf');
+    }
+
+     public function exportExcel(Request $request)
+    {
+        $query = $this->buildQuery($request);
+        $quotations = $query->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="quotations.csv"',
+        ];
+
+        $callback = function () use ($quotations) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Quotation No', 'Client Name', 'Client GSTIN', 'Total Amount', 'Quotation Date', 'Bill Issue To']);
+
+            foreach ($quotations as $row) {
+                fputcsv($file, [
+                    $row->quotation_no,
+                    $row->client_name,
+                    $row->client_gstin,
+                    $row->payable_amount,
+                    $row->quotation_date,
+                    $row->bill_issue_to
+                ]);
+            }
+            fclose($file);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
+    }
+
+    private function getMarketingPersons()
+    {
         $marketingPersons = User::whereHas('role', function ($q) {
             $q->where('slug', 'marketing_person');
         })->get(['id', 'user_code', 'name']);
@@ -22,7 +74,11 @@ class MarketingQuotationController extends Controller
         foreach ($marketingPersons as $person) {
             $person->label = $person->user_code . ' - ' . $person->name;
         }
+        return $marketingPersons;
+    }
 
+    private function buildQuery(Request $request)
+    {
         $query = Quotation::with('generatedBy');
 
         /** ------------------------------
@@ -84,17 +140,8 @@ class MarketingQuotationController extends Controller
             });
         }
 
-        /** ------------------------------
-         * SORTING
-         * ------------------------------ */
         $query->orderBy('quotation_no', 'desc');
 
-        $quotations = $query->paginate(10)->withQueryString();
-
-        // Use the new mirrored blade
-        return view('superadmin.marketing.accounts.quotation.index', compact(
-            'quotations',
-            'marketingPersons'
-        ));
+        return $query;
     }
 }

@@ -22,6 +22,9 @@ use App\Http\Controllers\Transactions\CashPaymentController;
 
 
 use App\Models\User;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\InvoicesExport;
 
 
 class InvoiceController extends Controller
@@ -42,17 +45,9 @@ class InvoiceController extends Controller
     }
 
 
-    public function index(Request $request)
+    protected function buildQuery(Request $request)
     {
-        $marketingPersons = User::whereHas('role', function ($q) {
-            $q->where('slug', 'marketing_person');
-        })->get(['id', 'user_code', 'name']);
-
-        foreach ($marketingPersons as $person) {
-            $person->label = $person->user_code . ' - ' . $person->name;
-        }
-
-        $query = Invoice::with(['relatedBooking.marketingPerson', 'relatedBooking.department']);
+        $query = Invoice::with(['relatedBooking.marketingPerson', 'relatedBooking.department', 'relatedBooking.client']);
 
         $authUser = $request->user();
         $isMarketing = false;
@@ -67,16 +62,18 @@ class InvoiceController extends Controller
             ?? $request->user_code
             ?? ($isMarketing ? ($authUser->user_code ?? null) : null);
 
-        // Marketing context filter (sidebar param or inferred for marketing users)
+        // Marketing context filter
         if ($marketingCode) {
             $query->whereHas('relatedBooking.marketingPerson', function ($q) use ($marketingCode) {
                 $q->where('user_code', $marketingCode);
             });
         }
 
-        // Marketing person filter
+        // Marketing person filter (dropdown)
         if ($request->filled('marketing_person')) {
-            $this->filterByMarketingPerson($query, $request->marketing_person);
+             $query->whereHas('relatedBooking.marketingPerson', function ($q) use ($request) {
+                $q->where('id', (int)$request->marketing_person);
+            });
         }
 
         // User code filter
@@ -103,7 +100,6 @@ class InvoiceController extends Controller
         // Search filter
         if ($request->filled('search')) {
             $search = trim($request->search);
-
             $query->where(function ($q) use ($search) {
                 $q->where('invoice_no', 'like', "%{$search}%")
                     ->orWhere('total_amount', 'like', "{$search}%")
@@ -112,6 +108,7 @@ class InvoiceController extends Controller
                     });
             });
         }
+
         // Payment status filter
         if ($request->filled('payment_status')) {
             $query->where('status', $request->payment_status);
@@ -134,9 +131,21 @@ class InvoiceController extends Controller
             });
         }
 
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $marketingPersons = User::whereHas('role', function ($q) {
+            $q->where('slug', 'marketing_person');
+        })->get(['id', 'user_code', 'name']);
+
+        foreach ($marketingPersons as $person) {
+            $person->label = $person->user_code . ' - ' . $person->name;
+        }
+
+        $query = $this->buildQuery($request);
         $query->orderBy('invoice_no', 'desc');
-
-
 
         $perPage = (int) $request->get('per_page', 5); 
         $perPage = in_array($perPage, [2,10, 25, 50, 100, 500]) ? $perPage : 25;    
@@ -148,6 +157,16 @@ class InvoiceController extends Controller
         $type = ucfirst(str_replace('_', ' ', $type));
 
         $clients = Client::all(['id', 'name']);
+
+        // Determine which view to render based on user role or context
+        $authUser = $request->user();
+        $isMarketing = false;
+        if ($authUser && isset($authUser->role)) {
+            $roleName = is_object($authUser->role)
+                ? ($authUser->role->role_name ?? $authUser->role->name ?? null)
+                : $authUser->role;
+            $isMarketing = $roleName && stripos($roleName, 'market') !== false;
+        }
 
         $useMarketingView = $request->context === 'marketing' || $isMarketing;
         $view = $useMarketingView
@@ -161,6 +180,26 @@ class InvoiceController extends Controller
             'type',
             'clients'
         ));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+        $invoices = $this->buildQuery($request)->orderBy('invoice_no', 'desc')->get();
+
+        $pdf = Pdf::loadView('superadmin.accounts.invoiceList.marketing.pdf_export', compact('invoices'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->stream('invoices.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+        $invoices = $this->buildQuery($request)->orderBy('invoice_no', 'desc')->get();
+        return Excel::download(new InvoicesExport($invoices), 'invoices.xlsx');
     }
 
 

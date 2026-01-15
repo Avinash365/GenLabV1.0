@@ -179,7 +179,16 @@ class ShowBookingByLetterController extends Controller
 
     public function exportPdf(Request $request)
     {
-        $items = $this->buildQuery($request)->latest()->get();
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $query = $this->buildQuery($request)->latest();
+
+        if ($request->has(['page', 'perPage'])) {
+            $items = $query->forPage($request->input('page'), $request->input('perPage'))->get();
+        } else {
+            $items = $query->get();
+        }
 
         $pdf = Pdf::loadView('superadmin.showbooking.bookingByLetter_pdf', [
             'items' => $items,
@@ -193,7 +202,17 @@ class ShowBookingByLetterController extends Controller
 
     public function exportExcel(Request $request)
     {
-        $items = $this->buildQuery($request)->latest()->get();
+        set_time_limit(300);
+        ini_set('memory_limit', '512M');
+
+        $query = $this->buildQuery($request)->latest();
+
+        if ($request->has(['page', 'perPage'])) {
+            $items = $query->forPage($request->input('page'), $request->input('perPage'))->get();
+        } else {
+            $items = $query->get();
+        }
+
         return Excel::download(new BookingItemsExport($items), 'booking_items.xlsx');
     }
 }

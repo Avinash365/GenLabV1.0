@@ -96,22 +96,27 @@ class ShowBookingController extends Controller
         {
             $query = $this->buildQuery($request, $department);
 
-            // Safety: avoid building extremely large PDFs that exhaust PHP memory.
-            // Set max allowed rows via env `BOOKING_EXPORT_MAX_ROWS` (default 3000).
-            $maxRows = (int) config('app.booking_export_max_rows', env('BOOKING_EXPORT_MAX_ROWS', 3000));
-            $total = $query->count();
+            if ($request->has(['page', 'perPage'])) {
+                $bookings = $query->latest()->forPage($request->input('page'), $request->input('perPage'))->get();
+            } else {
+                // Safety: avoid building extremely large PDFs that exhaust PHP memory.
+                // Set max allowed rows via env `BOOKING_EXPORT_MAX_ROWS` (default 3000).
+                $maxRows = (int) config('app.booking_export_max_rows', env('BOOKING_EXPORT_MAX_ROWS', 3000));
+                $total = $query->count();
 
-            if ($total > $maxRows) {
-                return back()->with('error', "Too many records to export as PDF ({$total}). Please narrow the filters or set BOOKING_EXPORT_MAX_ROWS in your .env (current: {$maxRows}).");
+                if ($total > $maxRows) {
+                    return back()->with('error', "Too many records to export as PDF ({$total}). Please narrow the filters or set BOOKING_EXPORT_MAX_ROWS in your .env (current: {$maxRows}).");
+                }
+
+                // Optional: raise memory limit for export if configured via env BOOKING_EXPORT_MEMORY_LIMIT.
+                $mem = env('BOOKING_EXPORT_MEMORY_LIMIT');
+                if ($mem) {
+                    @ini_set('memory_limit', $mem);
+                }
+
+                $bookings = $query->latest()->get();
             }
 
-            // Optional: raise memory limit for export if configured via env BOOKING_EXPORT_MEMORY_LIMIT.
-            $mem = env('BOOKING_EXPORT_MEMORY_LIMIT');
-            if ($mem) {
-                @ini_set('memory_limit', $mem);
-            }
-
-            $bookings = $query->latest()->get();
             $pdf = Pdf::loadView('superadmin.showbooking.showbooking_pdf', [
                 'bookings' => $bookings,
                 'department' => $department,
@@ -127,6 +132,10 @@ class ShowBookingController extends Controller
         {
             // Use the query builder and a chunked export to avoid loading all rows into memory
             $query = $this->buildQuery($request, $department)->latest();
+
+            if ($request->has(['page', 'perPage'])) {
+                $query->forPage($request->input('page'), $request->input('perPage'));
+            }
 
             // Eager load relationships used in mapping to avoid N+1 while streaming
             $query = $query->with(['items', 'department', 'marketingPerson']);

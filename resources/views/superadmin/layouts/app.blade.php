@@ -161,7 +161,16 @@
         };
         const finishInitial = ()=> api.hide(true);
         if(document.readyState === 'loading'){ document.addEventListener('DOMContentLoaded', finishInitial, { once:true }); } else { finishInitial(); }
-        window.addEventListener('beforeunload', ()=> api.show('Loading next view…','Hang tight while we redirect.'));
+        window.addEventListener('beforeunload', (event) => {
+             if (document.activeElement && 
+               (document.activeElement.getAttribute('target') === '_blank' || 
+                document.activeElement.hasAttribute('download') || 
+                document.activeElement.classList.contains('no-loader') ||
+                document.activeElement.closest('.no-loader'))) {
+                return;
+            }
+            api.show('Loading next view…','Hang tight while we redirect.');
+        });
         window.LoadingOverlay = api;
     })();
     </script>
