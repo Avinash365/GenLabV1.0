@@ -79,12 +79,12 @@ class Employee extends Model
 
     public function getProfilePhotoUrlAttribute(): ?string
     {
-        return $this->profile_photo_path ? Storage::disk('public')->url($this->profile_photo_path) : null;
+        return $this->profile_photo_path ? asset('storage/' . $this->profile_photo_path) : null;
     }
 
     public function getResumeUrlAttribute(): ?string
     {
-        return $this->resume_path ? Storage::disk('public')->url($this->resume_path) : null;
+        return $this->resume_path ? asset('storage/' . $this->resume_path) : null;
     }
 
     public function getOtherDocumentsAttribute(): array

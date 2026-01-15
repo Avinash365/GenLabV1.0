@@ -120,7 +120,7 @@
                                             data-bs-toggle="modal" 
                                             data-bs-target="#enquiryViewModal"
                                             title="View Enquiry"
-                                            style="font-size: 0.75rem; padding: 2px 6px;">
+                                            style="font-size: 0.9rem; padding: 2px 6px;">
                                             Inquiry
                                         </button>
                                     <?php endif; ?>
