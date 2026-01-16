@@ -320,8 +320,8 @@
                                 <th style="width:27%;">Job Order No</th>
                                 <th style="width:11%;">SAC Code</th>
                                 <th style="width:9%;">Qty</th>
-                                <th style="width:14%;">Rate</th>
-                                <th style="width:20%;">Amount</th>
+                                <th style="width:14%;" class="text-centre">Rate</th>
+                                <th style="width:20%;" class="text-centre">Amount</th>
                             </tr>
                         </thead>
 
@@ -340,10 +340,10 @@
                                             <td contenteditable="true" class="editable qty ">
                                                 {{ $item->qty ?? 1 }}
                                             </td>
-                                            <td contenteditable="true" class="editable rate ">
+                                            <td contenteditable="true" class="editable rate text-right">
                                                 {{ number_format($item->amount, 2) }}
                                             </td>
-                                            <td class="amount">0.00</td>
+                                            <td class="amount text-right">0.00</td>
                                         </tr>
                                     @endforeach
                                 @endif
@@ -353,7 +353,7 @@
                             {{-- ===================== TOTALS ===================== --}}
                             <tr class="total-row">
                                 <td colspan="5" class="text-right">Total Amount</td>
-                                <td id="totalAmount">0.00</td>
+                                <td id="totalAmount" class="text-right">0.00</td>
                             </tr>
 
                             <tr class="total-row" id="discountRow">
@@ -361,12 +361,12 @@
                                     Discount (
                                     <span contenteditable="true" id="discountPercent" class="editable-percent">0</span> %)
                                 </td>
-                                <td id="discountAmount">0.00</td>
+                                <td id="discountAmount" class="text-right">0.00</td>
                             </tr>
 
                             <tr class="total-row" id="afterDiscountRow">
                                 <td colspan="5" class="text-right">After Discount</td>
-                                <td id="afterDiscount">0.00</td>
+                                <td id="afterDiscount" class="text-right">0.00</td>
                             </tr>
 
                             <tr class="total-row">
@@ -374,7 +374,7 @@
                                     CGST (
                                     <span contenteditable="true" id="cgstPercent" class="editable-percent">0</span> %)
                                 </td>
-                                <td id="cgstAmount">0.00</td>
+                                <td id="cgstAmount" class="text-right">0.00</td>
                             </tr>
 
                             <tr class="total-row">
@@ -382,7 +382,7 @@
                                     SGST (
                                     <span contenteditable="true" id="sgstPercent" class="editable-percent">0</span> %)
                                 </td>
-                                <td id="sgstAmount">0.00</td>
+                                <td id="sgstAmount" class="text-right">0.00</td>
                             </tr>
 
                             <tr class="total-row">
@@ -390,21 +390,21 @@
                                     IGST (
                                     <span contenteditable="true" id="igstPercent" class="editable-percent">0</span> %)
                                 </td>
-                                <td id="igstAmount">0.00</td>
+                                <td id="igstAmount" class="text-right">0.00</td>
                             </tr>
 
                             <tr class="total-row" id="roundOffRow">
                                 <td colspan="5" class="text-right">Round Off</td>
-                                <td id="roundOff">0.00</td>
+                                <td id="roundOff" class="text-right">0.00</td>
                             </tr>
 
                             <tr class="total-row">
                                 <td colspan="5" class="text-right">Payable Amount</td>
-                                <td id="payableAmount">0.00</td>
+                                <td id="payableAmount" class="text-right">0.00</td>
                             </tr>
 
                             <tr>
-                                <th colspan="6" id="amountInWords" class="text-centre">
+                                <th colspan="6" id="amountInWords" class="text-left">
                                     Amount in Words:
                                 </th>
                             </tr>

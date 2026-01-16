@@ -85,6 +85,8 @@
                         action="<?php echo e(route('superadmin.accountBookingsLetters.index')); ?>"
                         class="d-flex input-group gap-2">
                         
+                        <input type="hidden" name="per_page" id="per_page_hidden"
+                        value="<?php echo e(request('per_page', 25)); ?>">
                          
                         
                         <input type="hidden" name="department_id" value="<?php echo e(request('department_id')); ?>">
@@ -411,10 +413,13 @@
                         </tbody>
                     </table>
                 </div>
-                <div class="p-3">
-                    <?php echo e($bookings->appends(request()->query())->links('pagination::bootstrap-5')); ?>
+                            <div class="mt-3">
+        
+        <div>
+            <?php echo e($bookings->appends(request()->query())->links('pagination::bootstrap-5')); ?>
 
-                </div>
+        </div>
+    </div>
             </div>
             <div class="ms-2 d-flex justify-content-between">
                         
@@ -446,14 +451,30 @@
         Assign Selected
     </button>
 </form>
-                        <select id="perPageSelect" class="form-control mb-2 me-2" style="width:120px">
-                                <?php $__currentLoopData = [2,10, 25, 50, 100, 500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($size); ?>"
-                                        <?php echo e(request('per_page', 25) == $size ? 'selected' : ''); ?>>
-                                        <?php echo e($size); ?> / page
-                                    </option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                        </select>
+                         
+        <div class="d-flex align-items-center">
+            <label for="perPageSelect" class="me-2 fw-semibold text-muted">
+                Show
+            </label>
+
+            <select
+                id="perPageSelect"
+                class="form-select form-select-sm"
+                style="width: 120px"
+                onchange="changePerPage(this.value)"
+            >
+                <?php $__currentLoopData = [2, 10, 25, 50, 100, 500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($size); ?>"
+                        <?php echo e(request('per_page', 25) == $size ? 'selected' : ''); ?>>
+                        <?php echo e($size); ?>
+
+                    </option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+
+            <span class="ms-2 text-muted">entries</span>
+        </div>
+
                 </div>
         </div>
     </div>

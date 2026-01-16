@@ -39,6 +39,7 @@ class BookingItem extends Model
         'dispatch_person_name',
         'dispatch_assignment_no',
         'dispatch_comment',
+        'sample_details'
     ];
 
 

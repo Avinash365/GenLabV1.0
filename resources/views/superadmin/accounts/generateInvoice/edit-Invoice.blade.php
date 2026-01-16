@@ -166,6 +166,12 @@
             border-radius: 4px;
         }
 
+        .text-right {
+            text-align: right !important;
+        }
+        .text-left{
+            text-align: left !important;
+        }
 
         /* ================= PRINT ================= */
         @media print {
@@ -796,9 +802,9 @@
                     <td contenteditable="true" class="editable description"></td>
                     <td contenteditable="true">10101</td>
                     <td contenteditable="true"></td>
-                    <td contenteditable="true" class="editable qty">1</td>
-                    <td contenteditable="true" class="editable rate">0.00</td>
-                    <td class="amount">0.00</td>
+                    <td contenteditable="true" class="editable qty text-center">1</td>
+                    <td contenteditable="true" class="editable rate text-right">0.00</td>
+                    <td class="amount text-right">0.00</td>
                 `;
 
             return row;
@@ -942,9 +948,9 @@
                                                 class="editable description">
                                                 ${combinedText}
                                             </td>
-                                            <td contenteditable="true" class="editable qty ">${cells[3].innerText}</td>
-                                            <td contenteditable="true" class="editable rate ">${cells[4].innerText}</td>
-                                            <td contenteditable="true" class="amount">${cells[5].innerText}</td>
+                                            <td contenteditable="true" class="editable qty text-center">${cells[3].innerText}</td>
+                                            <td contenteditable="true" class="editable rate text-right">${cells[4].innerText}</td>
+                                            <td contenteditable="true" class="amount text-right">${cells[5].innerText}</td>
                                         `;
 
             recalculateAll();

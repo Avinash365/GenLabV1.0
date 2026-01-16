@@ -24,6 +24,20 @@
 @endif
 
 
+@push('styles')
+<style>
+     .text-right {
+        text-align: right !important;
+    }
+    .text-left{
+        text-align: left !important;
+    }
+    .text-centre{
+        text-align: center !important;
+    }
+</style> 
+@endpush
+
 
 
 <div class="row g-4 p-4">
@@ -234,10 +248,10 @@
                         <tr>
                             <th>#</th>
                             <th>Sample Description</th>
-                            <th>Job Order No</th>
-                            <th>Qty</th>
-                            <th>Rate</th>
-                            <th>Amount</th>
+                            <th class="text-centre">Job Order No</th>
+                            <th class="text-centre">Qty</th>
+                            <th class="text-centre">Rate</th>
+                            <th class="text-centre">Amount</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -247,9 +261,9 @@
             <td>{{ $index + 1 }}</td>
             <td contenteditable="true" class="editable">{{ $item->description }}</td>
             <td contenteditable="true" class="editable">{{ $item->job_order_no }}</td>
-            <td contenteditable="true" class="editable qty">{{ $item->qty }}</td>
-            <td contenteditable="true" class="editable rate">{{ $item->rate }}</td>
-            <td class="amount">{{ number_format($item->amount, 2) }}</td>
+            <td contenteditable="true" class="editable qty text-centre">{{ $item->qty }}</td>
+            <td contenteditable="true" class="editable rate text-right">{{ $item->rate }}</td>
+            <td class="amount text-right">{{ number_format($item->amount, 2) }}</td>
         </tr>
     @endforeach
 @endif
@@ -258,51 +272,51 @@
                     <tfoot>
                         <tr>
                             <th colspan="5" class="text-end">Total</th>
-                            <th id="totalAmount">{{ number_format($invoice->total_amount, 2) }}</th>
+                            <th id="totalAmount" class="text-right">{{ number_format($invoice->total_amount, 2) }}</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">Discount %</th>
-                            <td contenteditable="true" class="editable" id="discountPercent">
+                            <td contenteditable="true" class="editable text-right" id="discountPercent">
     {{ $invoice->discount_percent }}
 </td>
-                            <th id="discountAmount">{{ number_format($invoice->discount_amount ?? 0, 2) }}</th>
+                            <th id="discountAmount" class="text-right">{{ number_format($invoice->discount_amount ?? 0, 2) }}</th>
                         </tr>
                         <tr>
                             <th colspan="5" class="text-end">After Discount Amount</th>
-                            <th id="afterDiscount">{{ number_format($invoice->after_discount, 2) }}</th>
+                            <th id="afterDiscount" class="text-right">{{ number_format($invoice->after_discount, 2) }}</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">CGST %</th>
                             
-<td contenteditable="true" class="editable" id="cgstPercent">
+<td contenteditable="true" class="editable text-right" id="cgstPercent">
     {{ $invoice->cgst_percent }}
 </td>
-                           <th id="cgstAmount">{{ number_format($invoice->cgst_amount, 2) }}</th>
+                           <th id="cgstAmount" class="text-right">{{ number_format($invoice->cgst_amount, 2) }}</th>
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">SGST %</th>
-                            <td contenteditable="true" class="editable" id="sgstPercent">
+                            <td contenteditable="true" class="editable text-right" id="sgstPercent">
     {{ $invoice->sgst_percent }}
 </td>
-                            <th id="sgstAmount">{{ number_format($invoice->sgst_amount, 2) }}</th>
+                            <th id="sgstAmount" class="text-right">{{ number_format($invoice->sgst_amount, 2) }}</th>
 
                         </tr>
                         <tr>
                             <th colspan="4" class="text-end">IGST %</th>
-                           <td contenteditable="true" class="editable" id="igstPercent">
+                           <td contenteditable="true" class="editable text-right" id="igstPercent">
     {{ $invoice->igst_percent }}
 </td>
-                            <th id="igstAmount">{{ number_format($invoice->igst_amount, 2) }}</th>
+                            <th id="igstAmount" class="text-right">{{ number_format($invoice->igst_amount, 2) }}</th>
                         </tr>
                         <tr>
-                            <th colspan="4" class="text-end">Round Off</th>
-                            <td><input type="checkbox" id="roundOffCheckbox"></td>
-                            <th id="roundOffAmount">{{ number_format($invoice->round_off, 2) }}</th>
+                            <th colspan="4" class="text-right">Round Off</th>
+                            <td class="text-right"><input type="checkbox"  id="roundOffCheckbox"></td>
+                            <th id="roundOffAmount" class="text-right">{{ number_format($invoice->round_off, 2) }}</th>
                         </tr>
                         <tr>
                             <th colspan="5" class="text-end">Payable Amount</th>
                             
-<th id="payableAmount">{{ number_format($invoice->payable_amount, 2) }}</th>
+<th id="payableAmount" class="text-right">{{ number_format($invoice->payable_amount, 2) }}</th>
                         </tr>
                     </tfoot>
                 </table> 
@@ -595,9 +609,9 @@
         row.insertCell(0).textContent = rowCount;
         row.insertCell(1).contentEditable = "true"; row.cells[1].classList.add('editable');
         row.insertCell(2).contentEditable = "true"; row.cells[2].classList.add('editable');
-        row.insertCell(3).contentEditable = "true"; row.cells[3].classList.add('editable','qty');
-        row.insertCell(4).contentEditable = "true"; row.cells[4].classList.add('editable','rate');
-        row.insertCell(5).textContent = "0.00"; row.cells[5].classList.add('amount');
+        row.insertCell(3).contentEditable = "true"; row.cells[3].classList.add('editable','qty', 'text-centre');
+        row.insertCell(4).contentEditable = "true"; row.cells[4].classList.add('editable','rate','text-right');
+        row.insertCell(5).textContent = "0.00"; row.cells[5].classList.add('amount','text-right');
 
         row.querySelectorAll('.editable').forEach(function(cell){
             cell.addEventListener('input', function() {
