@@ -8,6 +8,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Database\QueryException;
 use App\Models\BankTransaction;
 use Illuminate\Support\Facades\DB;
+use Barryvdh\DomPDF\Facade\Pdf;
+use App\Exports\BankTransactionsExport;
 
 
 use App\Models\{Client, User, NewBooking, Invoice}; 
@@ -16,7 +18,7 @@ use App\Models\{Client, User, NewBooking, Invoice};
 
 class BankTransactionController extends Controller
 {
-    public function index(Request $request)
+    private function getFilteredTransactions(Request $request)
     {
         // Start query
         $query = BankTransaction::query();
@@ -63,6 +65,13 @@ class BankTransactionController extends Controller
             $query->whereDate('deleted_at', $request->deleted_date);
         }
 
+        return $query->orderBy('date', 'desc');
+    }
+
+    public function index(Request $request)
+    {
+        $query = $this->getFilteredTransactions($request);
+
         // Get marketing persons
         $marketingPersons = User::whereHas('role', function ($q) {
             $q->where('slug', 'marketing_person');
@@ -74,9 +83,23 @@ class BankTransactionController extends Controller
         $years = array_reverse($years); // optional: show latest year first
 
         // Get paginated results
-        $transactions = $query->orderBy('date', 'desc')->paginate(10)->withQueryString();
+        $transactions = $query->paginate(10)->withQueryString();
 
         return view('bankTransactions.upload', compact('transactions', 'years', 'marketingPersons'));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $transactions = $this->getFilteredTransactions($request)->get();
+        
+        $pdf = Pdf::loadView('bankTransactions.pdf', compact('transactions'));
+        return $pdf->download('bank-transactions.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $transactions = $this->getFilteredTransactions($request)->get();
+        return Excel::download(new BankTransactionsExport($transactions), 'bank-transactions.xlsx');
     }
 
 

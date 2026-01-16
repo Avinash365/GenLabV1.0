@@ -12,6 +12,8 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Models\{NewBooking, Department, Invoice, InvoiceBookingItem, PaymentSetting, SiteSetting, User, Client};
 use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\BookingsExport;
 use App\Services\{GetUserActiveDepartment, BillingService};
 use App\Services\{InvoicePdfService, NumberToWordsService};
 
@@ -686,5 +688,103 @@ class GenerateInvoiceStatusController extends Controller
     public function downloadInvoice(Invoice $invoice)
     {
         return $this->invoicePdfService->generateHtml2Pdf($invoice);
+    }
+
+    private function getFilteredQuery(Request $request) {
+        $query = NewBooking::with(['items', 'department', 'marketingPerson', 'client'])
+            ->where('payment_option', $request->payment_option ?? 'bill')
+            ->whereNotNull('client_id')
+            ->whereNotExists(function ($sub) {
+                $sub->select(\DB::raw(1))
+                    ->from('invoices')
+                    ->where(function ($q) {
+                        $q->whereColumn('invoices.new_booking_id', 'new_bookings.id')
+                            ->orWhereRaw("invoices.invoice_booking_ids IS NOT NULL AND FIND_IN_SET(new_bookings.id, invoices.invoice_booking_ids) > 0");
+                    });
+            });
+
+        if (($request->payment_option ?? 'bill') === 'without_bill') {
+            $paymentStatus = 'pending';
+            
+            $query->where(function ($q) use ($paymentStatus) {
+                $q->whereDoesntHave('cashLetterPayments') // No payment yet
+                    ->orWhereHas('cashLetterPayments', function ($q2) use ($paymentStatus) {
+                        $q2->where('payment_status', $paymentStatus);
+                    });
+            });
+        }
+
+        // Department filter (from query param)
+        if ($request->filled('department')) {
+            $query->where('department_id', $request->department);
+        }
+
+        // Search filter
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('id', 'like', "{$search}%")
+                    ->orWhere('reference_no', 'like', "{$search}%")
+                    ->orWhereHas('department', fn($deptQ) => $deptQ->where('name', 'like', "{$search}%"))
+                    ->orWhereHas('marketingPerson', fn($mpQ) => $mpQ->where('name', 'like', "{$search}%"))
+                    ->orWhereDate('job_order_date', $search)
+                    ->orWhereHas('items', fn($itemQ) => $itemQ->where('job_order_no', 'like', "{$search}%"));
+            });
+        }
+        
+        // Determine marketing context
+        $authUser = $request->user();
+        $roleName = null;
+        if ($authUser && isset($authUser->role)) {
+            $roleName = is_object($authUser->role)
+                ? ($authUser->role->role_name ?? $authUser->role->name ?? null)
+                : $authUser->role;
+        }
+        $isMarketing = $roleName && stripos($roleName, 'market') !== false;
+
+        // Lock marketing filter to logged-in marketing user by default
+        if ($isMarketing && !$request->filled('marketing_person')) {
+             $request->merge(['marketing_person' => $authUser->user_code ?? null]);
+        }
+
+        // Marketing person filter (by marketing_id / user_code stored on booking)
+        if ($request->filled('marketing_person')) {
+            $query->where('marketing_id', $request->marketing_person);
+        }
+
+        // Client filter (by client_id)
+        if ($request->filled('client_id')) {
+            $query->where('client_id', $request->client_id);
+        }
+
+        // Month filter
+        if ($request->filled('month')) {
+            $query->whereMonth('job_order_date', $request->month);
+        }
+
+        // Year filter
+        if ($request->filled('year')) {
+            $query->whereYear('job_order_date', $request->year);
+        }
+        
+        return $query;
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $query = $this->getFilteredQuery($request);
+        $bookings = $query->latest()->get();
+
+        $title = ($request->payment_option === 'without_bill') ? 'Cash Letter' : 'Booking List';
+
+        $pdf = Pdf::loadView('superadmin.accounts.generateInvoice.list_pdf', compact('bookings', 'title'));
+        return $pdf->download('invoices_list.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $query = $this->getFilteredQuery($request);
+        $bookings = $query->latest()->get();
+        return Excel::download(new BookingsExport($bookings), 'invoices_list.xlsx');
     }
 }

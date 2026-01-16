@@ -10,26 +10,24 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\DB;
 use App\Http\Requests\StorePaymentRequest;
 use Illuminate\Http\Request; 
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\TransactionsExport;
 
 class CashPaymentController extends Controller
 {
-    
-    public function index(Request $request)
+    private function getFilteredQuery(Request $request)
     {
         $query = InvoiceTransaction::with(['invoice', 'client', 'marketingPerson']);
-
-        // Get distinct years for filter dropdown
-        $years = InvoiceTransaction::selectRaw('YEAR(transaction_date) as year')
-                    ->distinct()
-                    ->orderBy('year', 'desc')
-                    ->pluck('year');
 
         // Search filter
         if ($request->filled('search')) {
             $search = $request->search;
-            $query->whereHas('invoice', fn($q) => $q->where('invoice_no', 'like', "%$search%"))
-                ->orWhereHas('client', fn($q) => $q->where('name', 'like', "%$search%"))
-                ->orWhereHas('marketingPerson', fn($q) => $q->where('name', 'like', "%$search%"));
+            $query->where(function($q) use ($search) {
+                $q->whereHas('invoice', fn($sub) => $sub->where('invoice_no', 'like', "%$search%"))
+                  ->orWhereHas('client', fn($sub) => $sub->where('name', 'like', "%$search%"))
+                  ->orWhereHas('marketingPerson', fn($sub) => $sub->where('name', 'like', "%$search%"));
+            });
         }
 
         // Client filter
@@ -52,6 +50,19 @@ class CashPaymentController extends Controller
             $query->whereYear('transaction_date', $request->year);
         }
 
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $query = $this->getFilteredQuery($request);
+
+        // Get distinct years for filter dropdown
+        $years = InvoiceTransaction::selectRaw('YEAR(transaction_date) as year')
+                    ->distinct()
+                    ->orderBy('year', 'desc')
+                    ->pluck('year');
+
         // Get transactions ordered by date
         $transactions = $query->orderBy('transaction_date', 'desc')->paginate(10);
 
@@ -62,6 +73,21 @@ class CashPaymentController extends Controller
                         })->get(['id', 'user_code', 'name']);
 
         return view('superadmin.accounts.transactions.index', compact('transactions', 'clients', 'marketingPersons', 'years'));
+    }
+
+    public function exportPdf(Request $request)
+    {
+        $query = $this->getFilteredQuery($request);
+        $transactions = $query->orderBy('transaction_date', 'desc')->get();
+        $pdf = Pdf::loadView('superadmin.accounts.transactions.pdf_export', compact('transactions'));
+        return $pdf->download('invoice_transactions.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $query = $this->getFilteredQuery($request);
+        $transactions = $query->orderBy('transaction_date', 'desc')->get();
+        return Excel::download(new TransactionsExport($transactions), 'invoice_transactions.xlsx');
     }
 
 

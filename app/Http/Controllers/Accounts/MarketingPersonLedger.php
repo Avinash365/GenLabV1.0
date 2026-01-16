@@ -124,17 +124,17 @@ class MarketingPersonLedger extends Controller
         ]; 
 
         $departments = $this->departmentService->getDepartment(); 
-        return view('superadmin.accounts.marketingPerson.index', compact(
-            'marketingPersons',
-            'ledgerData',
-            'search',
-            'totals',
-            'filterPerson',
-            'month',
-            'year', 
-            'departments'
-        ));
-    }  
+            return view('superadmin.accounts.marketingPerson.index', compact(
+                'marketingPersons',
+                'ledgerData',
+                'search',
+                'totals',
+                'filterPerson',
+                'month',
+                'year', 
+                'departments'
+            ));
+    }
 
     public function fetchBookings(Request $request, $user_code)
     {
