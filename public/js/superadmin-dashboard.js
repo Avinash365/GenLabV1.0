@@ -278,13 +278,44 @@
       .catch(e => console.error('Accounts chart error:', e));
   }
 
-  // Analysts Workload (horizontal bar)
+  // Analysts Workload (horizontal bar) with 30/90/all toggles
   if(analystWorkloadChart){
-    const names = ['A. Kumar','P. Singh','R. Shah','N. Yadav','S. Rao','V. Jain'];
-    new Chart(analystWorkloadChart, {
-      type: 'bar',
-      data: { labels: names, datasets: [{ label: 'Samples', data: names.map(()=> rnd(5,20)), backgroundColor: '#6f42c1' }] },
-      options: { indexAxis: 'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ color:'#f1f1f1' } }, y:{ grid:{ display:false } } } }
+    let analystChart = null;
+
+    function renderAnalystChart(dataset){
+      const data = Array.isArray(dataset) ? dataset : [];
+      const names = data.map(x => x.name);
+      const counts = data.map(x => x.count);
+
+      const cfg = {
+        type: 'bar',
+        data: { labels: names, datasets: [{ label: 'Samples', data: counts, backgroundColor: '#6f42c1' }] },
+        options: { indexAxis: 'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ color:'#f1f1f1' } }, y:{ grid:{ display:false } } } }
+      };
+
+      if(analystChart){
+        analystChart.data = cfg.data;
+        analystChart.options = cfg.options;
+        analystChart.update();
+      } else {
+        analystChart = new Chart(analystWorkloadChart, cfg);
+      }
+    }
+
+    // Choose default dataset: 30 days if available, else all
+    const defaultData = window.analystWorkload30 ?? window.analystWorkloadAll ?? [];
+    renderAnalystChart(defaultData);
+
+    // Attach toggle handlers for workload-specific buttons
+    document.querySelectorAll('.workload-range-toggle .btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.workload-range-toggle .btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const range = btn.getAttribute('data-range');
+        if(range === '30') renderAnalystChart(window.analystWorkload30 ?? []);
+        else if(range === '90') renderAnalystChart(window.analystWorkload90 ?? []);
+        else renderAnalystChart(window.analystWorkloadAll ?? []);
+      });
     });
   }
 })();

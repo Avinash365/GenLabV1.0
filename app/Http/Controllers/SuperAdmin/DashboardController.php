@@ -14,6 +14,7 @@ use App\Models\MarketingExpense;
 use App\Models\NewBooking;
 use App\Models\Leave;
 use App\Models\Product;
+use App\Models\ProductStockEntry;
 use App\Models\Client;
 use App\Models\InvoiceTds;
 use App\Models\CashLetterPayment;
@@ -44,9 +45,57 @@ class DashboardController extends Controller
     {
         $activeDepartments = $this->departmentService->getDepartment();
 
-        if (Auth::guard('admin')->check()) {
+        // Fetch Analyst Workload (Overall totals)
+        $analystWorkload = \App\Models\BookingItem::with('analyst')
+            ->select('lab_analysis_code', \DB::raw('count(*) as count'))
+            ->whereNotNull('lab_analysis_code')
+            ->groupBy('lab_analysis_code')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get()
+            ->map(function ($item) {
+                return [
+                    'name' => optional($item->analyst)->name ?? $item->lab_analysis_code,
+                    'count' => (int) $item->count,
+                ];
+            });
+
+        // Also provide last 30 days and last 90 days workloads for the widget toggles.
+        $now = Carbon::now();
+
+        $analystWorkload30 = \App\Models\BookingItem::with('analyst')
+            ->select('lab_analysis_code', \DB::raw('count(*) as count'))
+            ->whereNotNull('lab_analysis_code')
+            ->whereBetween('created_at', [$now->copy()->subDays(29)->startOfDay(), $now->endOfDay()])
+            ->groupBy('lab_analysis_code')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get()
+            ->map(fn($item) => ['name' => optional($item->analyst)->name ?? $item->lab_analysis_code, 'count' => (int) $item->count]);
+
+        $analystWorkload90 = \App\Models\BookingItem::with('analyst')
+            ->select('lab_analysis_code', \DB::raw('count(*) as count'))
+            ->whereNotNull('lab_analysis_code')
+            ->whereBetween('created_at', [$now->copy()->subDays(89)->startOfDay(), $now->endOfDay()])
+            ->groupBy('lab_analysis_code')
+            ->orderByDesc('count')
+            ->limit(10)
+            ->get()
+            ->map(fn($item) => ['name' => optional($item->analyst)->name ?? $item->lab_analysis_code, 'count' => (int) $item->count]);
+
+        // Fetch Low Stock Inventory (Items with Total Stock < 10)
+        $lowStockItems = \App\Models\ProductStockEntry::select('product_code', \DB::raw('SUM(quantity) as total_qty'))
+            ->groupBy('product_code')
+            ->having('total_qty', '<', 10)
+            ->with('product')
+            ->limit(5)
+            ->get();
+
+        if (\Auth::guard('admin')->check()) {
             return view('superadmin.dashboard', [
                 'departments' => $activeDepartments,
+                'analystWorkload' => $analystWorkload,
+                'lowStockItems'   => $lowStockItems,
             ]);
         }
 

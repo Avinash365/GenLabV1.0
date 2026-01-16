@@ -394,22 +394,66 @@
                                     <li>
                                         <a href="<?php echo e(route('superadmin.banks.create')); ?>" class="<?php echo e(Request::routeIs('superadmin.banks.*') || Request::routeIs('superadmin.cheque-templates.*') ? 'active' : ''); ?>">Cheque Template</a>
                                     </li>
-                                    <li><a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index')); ?>">Generate Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'tax_invoice', 'payment_status'=>'0'])); ?>">Tax Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0'])); ?>">PI Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.blank-invoices.index')); ?>">Blank Invoice</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.quotations.index')); ?>">Quotation</a></li>
                                     <li>
-                                        <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill'])); ?>">
+                                        <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.bookingInvoiceStatuses.index') && !request()->has('payment_option') ? 'active' : ''); ?>">
+                                            Generate Invoice
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'tax_invoice', 'payment_status'=>'0'])); ?>" class="<?php echo e(Request::routeIs('superadmin.invoices.index') && request('type') == 'tax_invoice' ? 'active' : ''); ?>">
+                                            Tax Invoice
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.invoices.index', ['type' => 'proforma_invoice', 'payment_status'=>'0'])); ?>" class="<?php echo e(Request::routeIs('superadmin.invoices.index') && request('type') == 'proforma_invoice' ? 'active' : ''); ?>">
+                                            PI Invoice
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.blank-invoices.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.blank-invoices.*') ? 'active' : ''); ?>">
+                                            Blank Invoice
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.quotations.*') ? 'active' : ''); ?>">
+                                            Quotation
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.index', ['payment_option' => 'without_bill'])); ?>" class="<?php echo e(Request::routeIs('superadmin.bookingInvoiceStatuses.index') && request('payment_option') == 'without_bill' ? 'active' : ''); ?>">
                                             Cash Letter
                                         </a>
                                     </li>     
-                                    <li><a href="<?php echo e(route('superadmin.cashLetterTransactions.index')); ?>">Paid Letters</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.cashPayments.index')); ?>">Invoice Transaction</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.client-ledger.index')); ?>">Client Ledger</a></li>
-                                    <li><a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>">Marketing Person Ledger</a></li>
-                                    <li><a href="<?php echo e(route('purchase.index')); ?>" >Purchase Bill</a></li> 
-                                    <li><a href="<?php echo e(route('superadmin.bank.upload')); ?>">Bank Transactions</a></li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.cashLetterTransactions.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.cashLetterTransactions.*') ? 'active' : ''); ?>">
+                                            Paid Letters
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.cashPayments.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.cashPayments.*') ? 'active' : ''); ?>">
+                                            Invoice Transaction
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.client-ledger.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.client-ledger.*') ? 'active' : ''); ?>">
+                                            Client Ledger
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.marketing-person-ledger.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing-person-ledger.*') ? 'active' : ''); ?>">
+                                            Marketing Person Ledger
+                                        </a>
+                                    </li>
+                                    <li>
+                                        <a href="<?php echo e(route('purchase.index')); ?>" class="<?php echo e(Request::routeIs('purchase.*') ? 'active' : ''); ?>">
+                                            Purchase Bill
+                                        </a>
+                                    </li> 
+                                    <li>
+                                        <a href="<?php echo e(route('superadmin.bank.upload')); ?>" class="<?php echo e(Request::routeIs('superadmin.bank.upload') ? 'active' : ''); ?>">
+                                            Bank Transactions
+                                        </a>
+                                    </li>
                                     <li>
                                         <a href="<?php echo e(route('superadmin.accounts.payroll.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.payroll.*') ? 'active' : ''); ?>">
                                             Employees Salary

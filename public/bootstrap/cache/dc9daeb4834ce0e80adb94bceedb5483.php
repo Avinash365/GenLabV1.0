@@ -206,12 +206,21 @@
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-flask"></i> Lab Analysts - Workload</h6>
-                        <a href="#" class="small text-decoration-underline">Today</a>
+                        <div class="workload-range-toggle btn-group" role="group" aria-label="Workload Range">
+                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="30">30D</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="90">90D</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="all">All</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="chart-container" style="height: 260px;">
                             <canvas id="analystWorkloadChart"></canvas>
                         </div>
+                        <script>
+                        window.analystWorkloadAll = <?php echo json_encode($analystWorkload ?? [], 15, 512) ?>;
+                        window.analystWorkload30 = <?php echo json_encode($analystWorkload30 ?? [], 15, 512) ?>;
+                        window.analystWorkload90 = <?php echo json_encode($analystWorkload90 ?? [], 15, 512) ?>;
+                        </script>
                     </div>
                 </div>
             </div>
@@ -223,18 +232,18 @@
                     </div>
                     <div class="card-body">
                         <ul class="list-unstyled low-stock-list mb-0">
-                            <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
-                                <div class="d-flex align-items-center gap-2"><span class="bullet bg-warning"></span> Reagent A</div>
-                                <span class="badge text-bg-warning">08</span>
-                            </li>
-                            <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
-                                <div class="d-flex align-items-center gap-2"><span class="bullet bg-warning"></span> Reagent B</div>
-                                <span class="badge text-bg-warning">05</span>
-                            </li>
-                            <li class="d-flex align-items-center justify-content-between py-2">
-                                <div class="d-flex align-items-center gap-2"><span class="bullet bg-warning"></span> Kit C</div>
-                                <span class="badge text-bg-warning">03</span>
-                            </li>
+                            <?php $__empty_1 = true; $__currentLoopData = ($lowStockItems ?? []); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+                                <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="bullet bg-warning"></span>
+                                        <?php echo e($item->product->product_name ?? $item->product_code); ?>
+
+                                    </div>
+                                    <span class="badge text-bg-warning"><?php echo e($item->total_qty); ?></span>
+                                </li>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+                                <li class="text-muted py-2">No low stock items</li>
+                            <?php endif; ?>
                         </ul>
                     </div>
                 </div>
