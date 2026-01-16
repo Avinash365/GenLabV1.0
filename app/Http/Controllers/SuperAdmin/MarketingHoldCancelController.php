@@ -19,12 +19,16 @@ class MarketingHoldCancelController extends Controller
             'media.*' => 'file|max:10240', // 10MB max per file
         ]);
 
-        $mediaPaths = [];
+        $mediaData = [];
         if ($request->hasFile('media')) {
             foreach ($request->file('media') as $file) {
                 // Store file publically
                 $path = $file->store('marketing_enquiries', 'public');
-                $mediaPaths[] = $path;
+                // Store path and original name
+                $mediaData[] = [
+                    'path' => $path,
+                    'name' => $file->getClientOriginalName()
+                ];
             }
         }
 
@@ -32,7 +36,7 @@ class MarketingHoldCancelController extends Controller
             'booking_item_id' => $request->booking_item_id,
             'user_id' => Auth::id(), // Works for both guards if Auth::user() is set, but better be safe
             'note' => $request->note,
-            'media_paths' => $mediaPaths,
+            'media_paths' => $mediaData,
         ]);
 
         return back()->with('status', 'Enquiry submitted successfully.');

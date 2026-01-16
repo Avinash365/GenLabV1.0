@@ -17,6 +17,8 @@ use App\Jobs\SendMarketingNotificationJob;
 
 use App\Models\SiteSetting;
 
+use Symfony\Component\HttpFoundation\StreamedResponse;
+
 class QuotationController extends Controller
 {
     /**
@@ -31,7 +33,7 @@ class QuotationController extends Controller
 
     }
 
-    public function index(Request $request)
+    private function getMarketingPersons()
     {
         // Marketing persons dropdown
         $marketingPersons = User::whereHas('role', function ($q) {
@@ -41,7 +43,11 @@ class QuotationController extends Controller
         foreach ($marketingPersons as $person) {
             $person->label = $person->user_code . ' - ' . $person->name;
         }
+        return $marketingPersons;
+    }
 
+    private function buildQuery(Request $request)
+    {
         $query = Quotation::with('generatedBy');
 
         /** ------------------------------
@@ -115,6 +121,29 @@ class QuotationController extends Controller
          * SORTING
          * ------------------------------ */
         $query->orderBy('quotation_no', 'desc');
+        
+        return $query;
+    }
+
+    public function index(Request $request)
+    {
+        $marketingPersons = $this->getMarketingPersons();
+
+        $query = $this->buildQuery($request);
+        
+         /** ------------------------------
+         * AUTH & MARKETING CONTEXT
+         * ------------------------------ */
+        $authUser = $request->user();
+        $isMarketing = false;
+
+        if ($authUser && isset($authUser->role)) {
+            $roleName = is_object($authUser->role)
+                ? ($authUser->role->role_name ?? $authUser->role->name ?? null)
+                : $authUser->role;
+
+            $isMarketing = $roleName && stripos($roleName, 'market') !== false;
+        }
 
         $quotations = $query->paginate(10)->withQueryString();
 
@@ -131,6 +160,46 @@ class QuotationController extends Controller
             'quotations',
             'marketingPersons'
         ));
+    }
+    
+    public function exportPdf(Request $request)
+    {
+        $query = $this->buildQuery($request);
+        $quotations = $query->get();
+
+        $pdf = Pdf::loadView('superadmin.accounts.quotation.list_pdf', compact('quotations'));
+        return $pdf->download('quotations-list.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $query = $this->buildQuery($request);
+        $quotations = $query->get();
+
+        $headers = [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="quotations.csv"',
+        ];
+
+        $callback = function () use ($quotations) {
+            $file = fopen('php://output', 'w');
+            fputcsv($file, ['Quotation No', 'Client Name', 'Marketing Person', 'Client GSTIN', 'Total Amount', 'Quotation Date', 'Bill Issue To']);
+
+            foreach ($quotations as $row) {
+                fputcsv($file, [
+                    $row->quotation_no,
+                    $row->client_name,
+                    $row->marketingPerson->name ?? 'N/A',
+                    $row->client_gstin,
+                    $row->payable_amount,
+                    $row->quotation_date,
+                    $row->bill_issue_to
+                ]);
+            }
+            fclose($file);
+        };
+
+        return new StreamedResponse($callback, 200, $headers);
     }
 
 

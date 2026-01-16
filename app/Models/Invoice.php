@@ -11,6 +11,11 @@ class Invoice extends Model
 {
     use HasFactory;
 
+    protected $casts = [
+        'invoice_date' => 'date',
+        'letter_date' => 'date',
+    ];
+
     protected $fillable = [
         'client_id', 
         'marketing_user_code', 

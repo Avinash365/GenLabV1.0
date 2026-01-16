@@ -66,6 +66,9 @@
                             <dt class="col-5 text-muted">Status</dt>
                             <dd class="col-7 text-capitalize">{{ $employee->employment_status }}</dd>
 
+                            <dt class="col-5 text-muted">Date of Birth</dt>
+                            <dd class="col-7">{{ $employee->dob?->format('d M Y') ?? '—' }}</dd>
+
                             <dt class="col-5 text-muted">Date of Joining</dt>
                             <dd class="col-7">{{ $employee->date_of_joining?->format('d M Y') ?? '—' }}</dd>
 
@@ -102,10 +105,32 @@
                                     <a href="{{ $employee->resume_url }}" target="_blank" class="ms-auto btn btn-sm btn-outline-primary">View</a>
                                 @endif
                             </li>
-                            <li class="d-flex align-items-center">
-                                <i class="ti ti-folders me-2"></i>
-                                Other documents
-                                <span class="ms-auto text-muted">{{ $employee->other_documents_count }} {{ $employee->other_documents_count === 1 ? 'file' : 'files' }}</span>
+                            <li class="d-flex flex-column">
+                                <div class="d-flex align-items-center">
+                                    <i class="ti ti-folders me-2"></i>
+                                    Other documents
+                                    @if($employee->other_documents_count > 0)
+                                        <button class="ms-auto btn btn-sm btn-outline-primary py-0 px-2" type="button" data-bs-toggle="collapse" data-bs-target="#otherDocumentsCollapse" aria-expanded="false" aria-controls="otherDocumentsCollapse" style="font-size: 12px; line-height: 2;">
+                                            {{ $employee->other_documents_count }} {{ $employee->other_documents_count === 1 ? 'file' : 'files' }} <i class="ti ti-chevron-down ms-1"></i>
+                                        </button>
+                                    @else
+                                        <span class="ms-auto text-muted">{{ $employee->other_documents_count }} files</span>
+                                    @endif
+                                </div>
+                                @if($employee->other_documents_count > 0)
+                                    <div class="collapse mt-2" id="otherDocumentsCollapse">
+                                        <ul class="list-unstyled ps-4 mb-0 small">
+                                            @foreach($employee->other_documents as $index => $document)
+                                                <li class="mb-2 d-flex align-items-center justify-content-between">
+                                                    <span class="text-truncate me-2 text-muted">{{ $document['name'] ?? 'Document '.($index + 1) }}</span>
+                                                    @if(isset($document['url']))
+                                                        <a href="{{ $document['url'] }}" target="_blank" class="btn btn-sm btn-light py-0 px-2" style="font-size: 11px;">View</a>
+                                                    @endif
+                                                </li>
+                                            @endforeach
+                                        </ul>
+                                    </div>
+                                @endif
                             </li>
                         </ul>
                     </div>
@@ -445,7 +470,7 @@
                                         @foreach($otherDocuments as $index => $document)
                                             @php
                                                 $documentName = $document['name'] ?? ('Document '.($index + 1));
-                                                $documentUrl = isset($document['path']) ? \Illuminate\Support\Facades\Storage::disk('public')->url($document['path']) : null;
+                                                $documentUrl = $document['url'] ?? (isset($document['path']) ? asset('storage/' . $document['path']) : null);
                                             @endphp
                                             <li class="d-flex align-items-center mb-1">
                                                 <i class="ti ti-paperclip me-2"></i>

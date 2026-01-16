@@ -7,6 +7,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 
 use App\Models\User;
+use App\Models\Quotation; // Added Quotation model
 use App\Models\NewBooking; 
 use App\Models\{Invoice,InvoiceTransaction,CashLetterPayment}; 
 use App\Services\GetUserActiveDepartment;  
@@ -1141,7 +1142,7 @@ class MarketingPersonInfo extends Controller
                         $original = $meta[$base]['original'] ?? $base;
                         $letterFiles[$base] = [
                             'name' => $original,
-                            'url' => route('api.reporting.letters.show', ['job' => $booking->reference_no, 'filename' => $base]),
+                            'url' => route('api.reporting.letters.show', ['job' => $key, 'filename' => $base]),
                         ];
                     }
                 }
@@ -1486,6 +1487,58 @@ class MarketingPersonInfo extends Controller
         ], 200);
     }
 
+    /**
+     * Fetch Quotations list for Marketing Dashboard (Mobile API)
+     * Mirrors superadmin.marketing.quotations.index
+     */
+    public function quotationsListApi(Request $request, $user_code)
+    {
+        // 1. Validate user existence (optional but good practice)
+        // Note: middleware already handles basic auth, but we need to ensure this user_code exists
+        // and preferably matches the auth user (though typically admins might view others).
+        // For simplicity, we just filter by this code.
+        
+        $query = Quotation::query();
 
+        // 2. Personalize: Filter by marketing_person_code
+        // In the web controller, we used $request->user()->user_code if role is marketing.
+        // Here, the route provides {user_code}, so we use that.
+        $query->where('marketing_person_code', $user_code);
+
+        // 3. Search (Quotation No or Client Name)
+        if ($request->filled('search')) {
+            $search = trim($request->search);
+            $query->where(function ($q) use ($search) {
+                $q->where('quotation_no', 'like', "{$search}%")
+                  ->orWhere('client_name', 'like', "{$search}%")
+                  ->orWhere('client_gstin', 'like', "{$search}%");
+            });
+        }
+
+        // 4. Client Name Filter (Specific)
+        if ($request->filled('client_name')) {
+            $query->where('client_name', 'like', "%{$request->client_name}%");
+        }
+
+        // 5. Month & Year Filter
+        if ($request->filled('month')) {
+            $query->whereMonth('quotation_date', $request->month);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('quotation_date', $request->year);
+        }
+
+        // 6. Sort
+        $query->orderBy('quotation_date', 'desc')->orderBy('id', 'desc');
+
+        // 7. Paginate
+        $quotations = $query->paginate(10);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Quotations fetched successfully',
+            'data' => $quotations
+        ], 200);
+    }
 
 }

@@ -295,7 +295,7 @@ class ReportingController extends Controller
             }
             $original = $meta[$base]['original'] ?? $base;
             $links[] = [
-                'url' => route('superadmin.reporting.letters.show', ['job' => $reference, 'filename' => $base]),
+                'url' => route('superadmin.reporting.letters.show', ['job' => $key, 'filename' => $base]),
                 'name' => $original,
                 'stored' => $base,
             ];

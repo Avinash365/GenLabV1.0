@@ -48,6 +48,7 @@ use App\Http\Controllers\SuperAdmin\ReportingController;
 use App\Http\Controllers\Accounts\GenerateInvoiceStatusController;
 use App\Http\Controllers\Accounts\InvoiceController;
 use App\Http\Controllers\Accounts\QuotationController;
+use App\Http\Controllers\Accounts\MarketingQuotationController;
 use App\Http\Controllers\Accounts\BlankInvoiceController;
 use App\Http\Controllers\Accounts\PaymentSettingController;
 use App\Http\Controllers\Accounts\MarketingExpenseController;
@@ -107,6 +108,11 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/expenses/export/pdf', [MarketingExpenseController::class, 'exportPdf'])->name('expenses.export.pdf');
         Route::get('/expenses/in-account', [MarketingExpenseController::class, 'inAccount'])->name('expenses.in_account');
         Route::get('/expenses/export/excel', [MarketingExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
+
+        // Quotations
+        Route::get('/quotations', [MarketingQuotationController::class, 'index'])->name('quotations.index');
+        Route::get('/quotations/export/pdf', [MarketingQuotationController::class, 'exportPdf'])->name('quotations.export.pdf');
+        Route::get('/quotations/export/csv', [MarketingQuotationController::class, 'exportExcel'])->name('quotations.export.excel');
         Route::post('/expenses', [MarketingExpenseController::class, 'store'])->name('expenses.store');
         Route::get('/persons', [MarketingExpenseController::class, 'persons'])->name('persons');
         Route::patch('/expenses/{expense}/approve', [MarketingExpenseController::class, 'approve'])->name('expenses.approve');
@@ -260,6 +266,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // ===================== EDIT GENERATE INVOICE =====================
         // Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
 
+        Route::get('invoices/export/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.export.pdf');
+        Route::get('invoices/export/excel', [InvoiceController::class, 'exportExcel'])->name('invoices.export.excel');
         Route::resource('invoices', InvoiceController::class);
 
 
@@ -275,11 +283,15 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::prefix('meter-reading')->name('meter-reading.')->group(function () {
             Route::get('/', [MeterReadingController::class, 'index'])->name('index');
             Route::post('/upload', [MeterReadingController::class, 'upload'])->name('upload');
+            Route::get('/export/pdf', [MeterReadingController::class, 'exportPdf'])->name('export.pdf');
+            Route::get('/export/excel', [MeterReadingController::class, 'exportExcel'])->name('export.excel');
         });
 
 
 
         Route::resource('quotations', QuotationController::class);
+        Route::get('quotations-export/pdf', [QuotationController::class, 'exportPdf'])->name('quotations.export.pdf');
+        Route::get('quotations-export/csv', [QuotationController::class, 'exportExcel'])->name('quotations.export.excel');
         Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])
             ->name('quotations.generateQuotations');
 

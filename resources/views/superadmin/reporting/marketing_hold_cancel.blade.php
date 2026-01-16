@@ -1,6 +1,6 @@
 @extends('superadmin.layouts.app')
 
-@section('title', 'Hold & Cancelled (Marketing)')
+@section('title', 'Hold and Cancelled (Marketing)')
 
 @section('content')
 <div class="content">
@@ -167,7 +167,7 @@
                         <div class="form-text">You can select multiple files.</div>
                     </div>
                 </div>
-                <div class="modal-footer">
+                <div class="modal-footer gap-2">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
                     <button type="submit" class="btn btn-primary">Submit Enquiry</button>
                 </div>
@@ -232,14 +232,20 @@
                     
                     if (mediaPaths && mediaPaths.length > 0) {
                         mediaContainer.classList.remove('d-none');
-                        mediaPaths.forEach(function(path) {
+                        mediaPaths.forEach(function(item) {
                             var li = document.createElement('li');
                             li.className = 'list-group-item';
-                            // Assuming storage/public symlink structure, adjust prefix if needed.
-                            // Typically: asset('storage/' + path)
-                            // We can construct a simple link.
+                            
+                            var path, fileName;
+                            if (typeof item === 'object' && item !== null && item.path) {
+                                path = item.path;
+                                fileName = item.name || path.split('/').pop();
+                            } else {
+                                path = item;
+                                fileName = path.split('/').pop();
+                            }
+
                             var url = "{{ asset('storage') }}/" + path;
-                            var fileName = path.split('/').pop();
                             
                             li.innerHTML = '<a href="' + url + '" target="_blank" class="d-flex align-items-center"><i class="ti ti-file me-2"></i>' + fileName + '</a>';
                             mediaList.appendChild(li);
