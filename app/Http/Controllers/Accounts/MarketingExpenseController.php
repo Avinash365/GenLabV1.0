@@ -502,7 +502,23 @@ class MarketingExpenseController extends Controller
         $section = $request->input('section', 'marketing');
         if(!in_array($section, ['marketing','office','personal'])){ $section = 'marketing'; }
 
-        $expenses = $this->buildExportQuery($request, $section)->get();
+        if ($request->input('context') === 'approval_list' && $section === 'marketing') {
+            $status = $request->input('status', 'pending');
+            $marketingExpenses = $this->buildExportQuery($request, 'marketing', $status)->get();
+            $personalExpenses = $this->buildExportQuery($request, 'personal', $status)->get();
+
+            $expenses = $marketingExpenses->concat($personalExpenses)
+                ->sortByDesc(function($expense){
+                    $created = $expense->created_at ?? null;
+                    if($created instanceof Carbon){ return $created->timestamp; }
+                    if($created){
+                        try { return Carbon::parse($created)->timestamp; } catch (\Throwable $e) { return 0; }
+                    }
+                    return 0;
+                })->values();
+        } else {
+            $expenses = $this->buildExportQuery($request, $section)->get();
+        }
 
         $pdf = Pdf::loadView('superadmin.marketing.expenses.export_pdf', [
             'expenses' => $expenses,
@@ -512,7 +528,7 @@ class MarketingExpenseController extends Controller
                 'personal' => 'Personal Expenses',
                 default    => 'Marketing Expenses',
             },
-        ])->setPaper('a4', 'portrait');
+        ])->setPaper('a4', 'landscape');
 
         $filename = sprintf('%s-expenses-%s.pdf', $section, now()->format('Ymd_His'));
         return $pdf->download($filename);
@@ -1115,10 +1131,28 @@ class MarketingExpenseController extends Controller
         $section = $request->input('section', 'marketing');
         if(!in_array($section, ['marketing','office','personal'])){ $section = 'marketing'; }
 
-        $query = $this->buildExportQuery($request, $section);
+        if ($request->input('context') === 'approval_list' && $section === 'marketing') {
+            $status = $request->input('status', 'pending');
+            $marketingExpenses = $this->buildExportQuery($request, 'marketing', $status)->get();
+            $personalExpenses = $this->buildExportQuery($request, 'personal', $status)->get();
+
+            $collection = $marketingExpenses->concat($personalExpenses)
+                ->sortByDesc(function($expense){
+                    $created = $expense->created_at ?? null;
+                    if($created instanceof Carbon){ return $created->timestamp; }
+                    if($created){
+                        try { return Carbon::parse($created)->timestamp; } catch (\Throwable $e) { return 0; }
+                    }
+                    return 0;
+                })->values();
+        } else {
+            $query = $this->buildExportQuery($request, $section);
+            $collection = $query->get();
+        }
+
         $filename = sprintf('%s-expenses-%s.xlsx', $section, now()->format('Ymd_His'));
 
-        return Excel::download(new MarketingExpensesExport($query->get()), $filename);
+        return Excel::download(new MarketingExpensesExport($collection), $filename);
     }
 
     public function store(Request $request)

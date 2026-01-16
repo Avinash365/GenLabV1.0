@@ -7,6 +7,9 @@ use Illuminate\Http\Request;
 use App\Models\Vehicle;
 use App\Models\VehicleService;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\VehiclesExport;
 
 class VehicleController extends Controller
 {
@@ -40,6 +43,63 @@ class VehicleController extends Controller
         $marketingPersons = [];
 
         return view('superadmin.vehicles.index', compact('vehicles', 'isAdmin', 'marketingPersons'));
+    }
+
+    public function exportPdf()
+    {
+        $request = request();
+        $query = Vehicle::query();
+
+        if ($request->filled('search')) {
+            $q = $request->get('search');
+            $query->where(function ($qb) use ($q) {
+                $qb->where('name', 'like', "%{$q}%")
+                   ->orWhere('engine_number', 'like', "%{$q}%")
+                   ->orWhere('handed_over_person', 'like', "%{$q}%");
+            });
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('rc_expiry_date', $request->get('month'));
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('rc_expiry_date', $request->get('year'));
+        }
+
+        $vehicles = $query->orderByDesc('created_at')->get();
+
+        $pdf = Pdf::loadView('superadmin.vehicles.export_pdf', compact('vehicles'))
+            ->setPaper('a4', 'landscape');
+
+        return $pdf->download('vehicles-export-' . now()->format('Ymd_His') . '.pdf');
+    }
+
+    public function exportExcel()
+    {
+        $request = request();
+        $query = Vehicle::query();
+
+        if ($request->filled('search')) {
+            $q = $request->get('search');
+            $query->where(function ($qb) use ($q) {
+                $qb->where('name', 'like', "%{$q}%")
+                   ->orWhere('engine_number', 'like', "%{$q}%")
+                   ->orWhere('handed_over_person', 'like', "%{$q}%");
+            });
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('rc_expiry_date', $request->get('month'));
+        }
+
+        if ($request->filled('year')) {
+            $query->whereYear('rc_expiry_date', $request->get('year'));
+        }
+
+        $vehicles = $query->orderByDesc('created_at')->get();
+
+        return Excel::download(new VehiclesExport($vehicles), 'vehicles-export-' . now()->format('Ymd_His') . '.xlsx');
     }
 
     public function create()
