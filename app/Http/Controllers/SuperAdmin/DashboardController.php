@@ -45,43 +45,11 @@ class DashboardController extends Controller
     {
         $activeDepartments = $this->departmentService->getDepartment();
 
-        // Fetch Analyst Workload (Overall totals)
-        $analystWorkload = \App\Models\BookingItem::with('analyst')
-            ->select('lab_analysis_code', \DB::raw('count(*) as count'))
-            ->whereNotNull('lab_analysis_code')
-            ->groupBy('lab_analysis_code')
-            ->orderByDesc('count')
-            ->limit(10)
-            ->get()
-            ->map(function ($item) {
-                return [
-                    'name' => optional($item->analyst)->name ?? $item->lab_analysis_code,
-                    'count' => (int) $item->count,
-                ];
-            });
-
-        // Also provide last 30 days and last 90 days workloads for the widget toggles.
-        $now = Carbon::now();
-
-        $analystWorkload30 = \App\Models\BookingItem::with('analyst')
-            ->select('lab_analysis_code', \DB::raw('count(*) as count'))
-            ->whereNotNull('lab_analysis_code')
-            ->whereBetween('created_at', [$now->copy()->subDays(29)->startOfDay(), $now->endOfDay()])
-            ->groupBy('lab_analysis_code')
-            ->orderByDesc('count')
-            ->limit(10)
-            ->get()
-            ->map(fn($item) => ['name' => optional($item->analyst)->name ?? $item->lab_analysis_code, 'count' => (int) $item->count]);
-
-        $analystWorkload90 = \App\Models\BookingItem::with('analyst')
-            ->select('lab_analysis_code', \DB::raw('count(*) as count'))
-            ->whereNotNull('lab_analysis_code')
-            ->whereBetween('created_at', [$now->copy()->subDays(89)->startOfDay(), $now->endOfDay()])
-            ->groupBy('lab_analysis_code')
-            ->orderByDesc('count')
-            ->limit(10)
-            ->get()
-            ->map(fn($item) => ['name' => optional($item->analyst)->name ?? $item->lab_analysis_code, 'count' => (int) $item->count]);
+        // Fetch Analyst Workload using case-insensitive join to users.user_code so
+        // `lab_analysis_code` like "LAb032" maps to the correct user name where present.
+        $analystWorkload = $this->getAnalystWorkload(null, 10);
+        $analystWorkload30 = $this->getAnalystWorkload(30, 10);
+        $analystWorkload90 = $this->getAnalystWorkload(90, 10);
 
         // Fetch Low Stock Inventory (Items with Total Stock < 10)
         $lowStockItems = \App\Models\ProductStockEntry::select('product_code', \DB::raw('SUM(quantity) as total_qty'))
@@ -91,11 +59,24 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
+        // Bookings by Department (label => count) - used on superadmin dashboard
+        $bookingsByDepartment = \App\Models\NewBooking::whereNotNull('department_id')
+            ->whereNull('new_bookings.deleted_at')
+            ->join('departments', 'new_bookings.department_id', '=', 'departments.id')
+            ->where('departments.is_active', 1)
+            ->selectRaw('departments.name as department, COUNT(*) as total')
+            ->groupBy('departments.name')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->pluck('total', 'department')
+            ->toArray();
+
         if (\Auth::guard('admin')->check()) {
             return view('superadmin.dashboard', [
                 'departments' => $activeDepartments,
                 'analystWorkload' => $analystWorkload,
                 'lowStockItems'   => $lowStockItems,
+                'bookingsByDepartment' => $bookingsByDepartment,
             ]);
         }
 
@@ -261,6 +242,49 @@ class DashboardController extends Controller
                 'outstanding' => $outstandingTotal,
             ],
         ]);
+    }
+
+    /**
+     * Helper: get analyst workload grouped by analyst name (case-insensitive user_code match)
+     * @param int|null $days  Number of days (null => all time)
+     * @param int $limit
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getAnalystWorkload(?int $days = null, int $limit = 10)
+    {
+        $now = Carbon::now();
+
+        $query = DB::table('booking_items')
+            ->leftJoin('users', function ($join) {
+                // case-insensitive join: lower(users.user_code) = lower(booking_items.lab_analysis_code)
+                $join->on(DB::raw('LOWER(users.user_code)'), '=', DB::raw('LOWER(booking_items.lab_analysis_code)'));
+            })
+            ->select(DB::raw('COALESCE(users.name, booking_items.lab_analysis_code) as name'), DB::raw('COUNT(*) as count'))
+            ->whereNotNull('booking_items.lab_analysis_code');
+
+        if ($days && $days > 0) {
+            $start = $now->copy()->subDays($days - 1)->startOfDay();
+            $end = $now->endOfDay();
+            $query->whereBetween('booking_items.created_at', [$start, $end]);
+        }
+
+        // Select both the raw lab_analysis_code and the joined user name explicitly
+        $rows = $query->select(DB::raw('booking_items.lab_analysis_code as code'), DB::raw('users.name as name'), DB::raw('COUNT(*) as count'))
+            ->groupBy('booking_items.lab_analysis_code', 'users.name')
+            ->orderByDesc('count')
+            ->limit($limit)
+            ->get();
+
+        // Map: prefer user name when present, otherwise show the raw code (trimmed)
+        return $rows->map(function ($r) {
+            $code = is_string($r->code) ? trim($r->code) : null;
+            $display = $r->name ? $r->name : ($code ?: 'Unknown');
+            return [
+                'name' => $display,
+                'code' => $code,
+                'count' => (int) $r->count,
+            ];
+        });
     }
 
     protected function normalizeDepartmentSlug(?string $departmentName): ?string

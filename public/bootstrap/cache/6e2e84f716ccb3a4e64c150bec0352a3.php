@@ -28,7 +28,7 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.showbooking.exportPdf', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v)))); ?>" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+                <a href="<?php echo e(route('superadmin.showbooking.exportPdf', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v)))); ?>" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
                 <a href="<?php echo e(route('superadmin.showbooking.exportExcel', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v)))); ?>" class="no-loader" data-bs-toggle="tooltip" title="Excel">

@@ -229,23 +229,73 @@
             <div class="col-xl-4">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-packages"></i> Inventory - Low Stock</h6>
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-chart-bar"></i> Bookings by Department</h6>
                         <a href="#" class="small text-decoration-underline">View All</a>
                     </div>
                     <div class="card-body">
-                        <ul class="list-unstyled low-stock-list mb-0">
-                            @forelse(($lowStockItems ?? []) as $item)
-                                <li class="d-flex align-items-center justify-content-between py-2 border-bottom">
-                                    <div class="d-flex align-items-center gap-2">
-                                        <span class="bullet bg-warning"></span>
-                                        {{ $item->product->product_name ?? $item->product_code }}
-                                    </div>
-                                    <span class="badge text-bg-warning">{{ $item->total_qty }}</span>
-                                </li>
-                            @empty
-                                <li class="text-muted py-2">No low stock items</li>
-                            @endforelse
-                        </ul>
+                        <div class="chart-container" style="height:240px;">
+                            <canvas id="bookingsDeptBar"></canvas>
+                        </div>
+
+                        <script>
+                        @php $__bookingsByDeptFallback = ['GENERAL' => 10000, 'UTTRAKHAND' => 8000, 'NBCC' => 2000, 'BIS' => 2500]; @endphp
+                        window.bookingsByDepartment = {!! json_encode($bookingsByDepartment ?? $__bookingsByDeptFallback) !!};
+
+                        (function renderBookingsDeptChart(){
+                            function draw(){
+                                if(typeof Chart === 'undefined'){
+                                    return setTimeout(draw, 50);
+                                }
+
+                                const raw = window.bookingsByDepartment || {};
+                                let labels = [], values = [];
+
+                                if(Array.isArray(raw)){
+                                    raw.forEach(item => {
+                                        if(item && typeof item === 'object'){
+                                            labels.push(item.label ?? Object.keys(item)[0]);
+                                            values.push(item.value ?? Object.values(item)[0]);
+                                        }
+                                    });
+                                } else if(raw && typeof raw === 'object'){
+                                    for(const k in raw){
+                                        if(Object.prototype.hasOwnProperty.call(raw, k)){
+                                            labels.push(k);
+                                            values.push(Number(raw[k]) || 0);
+                                        }
+                                    }
+                                }
+
+                                const ctx = document.getElementById('bookingsDeptBar').getContext('2d');
+                                new Chart(ctx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: labels,
+                                        datasets: [{
+                                            label: 'Bookings',
+                                            data: values,
+                                            backgroundColor: ['#1f77b4', '#ff7f0e', '#d62728', '#2ca02c'],
+                                            borderRadius: 4,
+                                            barThickness: 28
+                                        }]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            x: { grid: { display: false } },
+                                            y: { beginAtZero: true, ticks: { stepSize: Math.ceil(Math.max(...values)/5) || undefined } }
+                                        },
+                                        plugins: {
+                                            legend: { display: false }
+                                        }
+                                    }
+                                });
+                            }
+                            draw();
+                        })();
+                        </script>
+
                     </div>
                 </div>
             </div>
