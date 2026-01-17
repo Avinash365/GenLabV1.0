@@ -219,7 +219,7 @@
                             <canvas id="analystWorkloadChart"></canvas>
                         </div>
                         <script>
-                        window.analystWorkloadAll = @json($analystWorkload ?? []);
+                        window.analystWorkloadAll = @json($analystWorkloadAll ?? []);
                         window.analystWorkload30 = @json($analystWorkload30 ?? []);
                         window.analystWorkload90 = @json($analystWorkload90 ?? []);
                         </script>

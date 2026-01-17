@@ -217,7 +217,7 @@
                             <canvas id="analystWorkloadChart"></canvas>
                         </div>
                         <script>
-                        window.analystWorkloadAll = <?php echo json_encode($analystWorkload ?? [], 15, 512) ?>;
+                        window.analystWorkloadAll = <?php echo json_encode($analystWorkloadAll ?? [], 15, 512) ?>;
                         window.analystWorkload30 = <?php echo json_encode($analystWorkload30 ?? [], 15, 512) ?>;
                         window.analystWorkload90 = <?php echo json_encode($analystWorkload90 ?? [], 15, 512) ?>;
                         </script>

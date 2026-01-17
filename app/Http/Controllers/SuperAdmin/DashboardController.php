@@ -47,9 +47,11 @@ class DashboardController extends Controller
 
         // Fetch Analyst Workload using case-insensitive join to users.user_code so
         // `lab_analysis_code` like "LAb032" maps to the correct user name where present.
-        $analystWorkload = $this->getAnalystWorkload(null, 10);
-        $analystWorkload30 = $this->getAnalystWorkload(30, 10);
-        $analystWorkload90 = $this->getAnalystWorkload(90, 10);
+        // Provide full lists (all lab analysts) for the widget. The chart can handle many items,
+        // but we still provide 30/90 filters as well.
+        $analystWorkloadAll = $this->getAllAnalystWorkload(null);
+        $analystWorkload30 = $this->getAllAnalystWorkload(30);
+        $analystWorkload90 = $this->getAllAnalystWorkload(90);
 
         // Fetch Low Stock Inventory (Items with Total Stock < 10)
         $lowStockItems = \App\Models\ProductStockEntry::select('product_code', \DB::raw('SUM(quantity) as total_qty'))
@@ -74,7 +76,9 @@ class DashboardController extends Controller
         if (\Auth::guard('admin')->check()) {
             return view('superadmin.dashboard', [
                 'departments' => $activeDepartments,
-                'analystWorkload' => $analystWorkload,
+                'analystWorkloadAll' => $analystWorkloadAll,
+                'analystWorkload30' => $analystWorkload30,
+                'analystWorkload90' => $analystWorkload90,
                 'lowStockItems'   => $lowStockItems,
                 'bookingsByDepartment' => $bookingsByDepartment,
             ]);
@@ -282,6 +286,51 @@ class DashboardController extends Controller
             return [
                 'name' => $display,
                 'code' => $code,
+                'count' => (int) $r->count,
+            ];
+        });
+    }
+
+    /**
+     * Return counts for every user that has the Lab Analyst role.
+     * Includes users with zero bookings.
+     * @param int|null $days
+     * @return \Illuminate\Support\Collection
+     */
+    protected function getAllAnalystWorkload(?int $days = null)
+    {
+        // Find lab analyst role id (fallback to 1)
+        $labRoleId = DB::table('roles')->where('slug', 'lab_analyst')->value('id') ?? 1;
+
+        $now = Carbon::now();
+
+        // Aggregate booking items by normalized code
+        $sub = DB::table('booking_items')
+            ->select(DB::raw('LOWER(TRIM(lab_analysis_code)) as code'), DB::raw('COUNT(*) as cnt'))
+            ->whereNotNull('lab_analysis_code');
+
+        if ($days && $days > 0) {
+            $start = $now->copy()->subDays($days - 1)->startOfDay();
+            $end = $now->endOfDay();
+            $sub->whereBetween('created_at', [$start, $end]);
+        }
+
+        $sub->groupBy(DB::raw('LOWER(TRIM(lab_analysis_code))'));
+
+        // Left join lab analysts with their counts (0 if none)
+        $rows = DB::table('users')
+            ->leftJoinSub($sub, 'bi', function ($join) {
+                $join->on(DB::raw('LOWER(TRIM(users.user_code))'), '=', DB::raw('bi.code'));
+            })
+            ->where('users.role_id', $labRoleId)
+            ->select('users.name', 'users.user_code', DB::raw('COALESCE(bi.cnt, 0) as count'))
+            ->orderByDesc('count')
+            ->get();
+
+        return $rows->map(function ($r) {
+            return [
+                'name' => $r->name ?: trim($r->user_code) ?: 'Unknown',
+                'code' => trim($r->user_code ?? ''),
                 'count' => (int) $r->count,
             ];
         });
