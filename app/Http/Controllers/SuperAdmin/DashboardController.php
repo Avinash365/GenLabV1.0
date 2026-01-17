@@ -79,6 +79,9 @@ class DashboardController extends Controller
                 'analystWorkloadAll' => $analystWorkloadAll,
                 'analystWorkload30' => $analystWorkload30,
                 'analystWorkload90' => $analystWorkload90,
+                'overdueAll' => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->count(),
+                'overdue30' => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()->endOfDay()])->count(),
+                'overdue90' => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(89)->startOfDay(), Carbon::now()->endOfDay()])->count(),
                 'lowStockItems'   => $lowStockItems,
                 'bookingsByDepartment' => $bookingsByDepartment,
             ]);
@@ -304,34 +307,60 @@ class DashboardController extends Controller
 
         $now = Carbon::now();
 
-        // Aggregate booking items by normalized code
-        $sub = DB::table('booking_items')
-            ->select(DB::raw('LOWER(TRIM(lab_analysis_code)) as code'), DB::raw('COUNT(*) as cnt'))
-            ->whereNotNull('lab_analysis_code');
-
+        $start = null;
+        $end = null;
         if ($days && $days > 0) {
             $start = $now->copy()->subDays($days - 1)->startOfDay();
             $end = $now->endOfDay();
-            $sub->whereBetween('created_at', [$start, $end]);
         }
 
-        $sub->groupBy(DB::raw('LOWER(TRIM(lab_analysis_code))'));
+        // Use subqueries per-user to avoid accidental duplication from joins.
+        // This counts booking_items where the analyst is referenced either by user_code
+        // or by the analyst's name stored in the `status` column. It also computes
+        // overdue items where lab_expected_date is before today.
 
-        // Left join lab analysts with their counts (0 if none)
+        $dateFilter = '';
+        if ($start && $end) {
+            $s = $start->format('Y-m-d H:i:s');
+            $e = $end->format('Y-m-d H:i:s');
+            $dateFilter = "AND booking_items.created_at BETWEEN '{$s}' AND '{$e}'";
+        }
+
         $rows = DB::table('users')
-            ->leftJoinSub($sub, 'bi', function ($join) {
-                $join->on(DB::raw('LOWER(TRIM(users.user_code))'), '=', DB::raw('bi.code'));
-            })
             ->where('users.role_id', $labRoleId)
-            ->select('users.name', 'users.user_code', DB::raw('COALESCE(bi.cnt, 0) as count'))
-            ->orderByDesc('count')
+            ->select(
+                'users.id',
+                'users.name',
+                'users.user_code',
+                DB::raw("(
+                    SELECT COUNT(*) FROM booking_items
+                    WHERE booking_items.deleted_at IS NULL
+                      AND (
+                            LOWER(TRIM(booking_items.lab_analysis_code)) = LOWER(TRIM(users.user_code))
+                         OR LOWER(TRIM(booking_items.status)) = LOWER(TRIM(users.name))
+                      )
+                      {$dateFilter}
+                ) as total_count"),
+                DB::raw("(
+                    SELECT COUNT(*) FROM booking_items
+                    WHERE booking_items.deleted_at IS NULL
+                      AND (
+                            LOWER(TRIM(booking_items.lab_analysis_code)) = LOWER(TRIM(users.user_code))
+                         OR LOWER(TRIM(booking_items.status)) = LOWER(TRIM(users.name))
+                      )
+                      AND booking_items.lab_expected_date < CURDATE()
+                      {$dateFilter}
+                ) as overdue_count")
+            )
+            ->orderByDesc('total_count')
             ->get();
 
         return $rows->map(function ($r) {
             return [
                 'name' => $r->name ?: trim($r->user_code) ?: 'Unknown',
                 'code' => trim($r->user_code ?? ''),
-                'count' => (int) $r->count,
+                'count' => (int) ($r->total_count ?? 0),
+                'overdue' => (int) ($r->overdue_count ?? 0),
             ];
         });
     }
@@ -2411,18 +2440,13 @@ class DashboardController extends Controller
     {
         $startOfMonth = Carbon::now()->startOfMonth();
         $endOfMonth = Carbon::now()->endOfMonth();
+        // Use the `status` column to compute current totals across the invoices table.
+        // This ensures the dashboard reflects the current status values in the DB.
+        $paid = Invoice::whereIn('status', [1, 4])->count();
+        $unpaid = Invoice::where('status', 0)->count();
+        $cancel = Invoice::where('status', 2)->count();
 
-        // Paid: Status 1 (Paid) or 4 (Partial/Settled) created this month
-        $paid = Invoice::whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
-            ->whereIn('status', [1, 4])
-            ->count();
-
-        // Unpaid: Status 0 (Unpaid) created this month
-        $unpaid = Invoice::whereBetween('invoice_date', [$startOfMonth, $endOfMonth])
-             ->where('status', 0)
-             ->count();
-
-        // Overdue: Status 0 (Unpaid) created before this month
+        // Overdue: unpaid invoices with invoice_date before start of this month
         $overdue = Invoice::where('invoice_date', '<', $startOfMonth)
             ->where('status', 0)
             ->count();
@@ -2430,7 +2454,8 @@ class DashboardController extends Controller
         return response()->json([
             'paid' => $paid,
             'unpaid' => $unpaid,
-            'overdue' => $overdue
+            'cancel' => $cancel,
+            'overdue' => $overdue,
         ]);
     }
 }

@@ -117,7 +117,7 @@
         </div>
         <!-- /Invoice and Payment + Overall Info -->
 
-        <!-- Booking Trend & Status -->
+        <!-- Booking Trend & Department -->
         <div class="row g-3 mb-4">
             <div class="col-xl-8">
                 <div class="card h-100">
@@ -129,100 +129,6 @@
                         <div class="chart-container" style="height: 280px;">
                             <canvas id="bookingTrend"></canvas>
                         </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-chart-donut-2"></i> Booking Status</h6>
-                        <a href="#" class="small text-decoration-underline">View All</a>
-                    </div>
-                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
-                        <div style="width: 140px; height: 140px;">
-                            <canvas id="bookingStatusDonut" width="140" height="140"></canvas>
-                        </div>
-                        <div class="small">
-                            <div class="d-flex align-items-center gap-2 mb-2"><span class="legend-dot" style="background:#ff8a26"></span> Pending</div>
-                            <div class="d-flex align-items-center gap-2 mb-2"><span class="legend-dot" style="background:#2bb673"></span> Completed</div>
-                            <div class="d-flex align-items-center gap-2"><span class="legend-dot" style="background:#ffc107"></span> Processing</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /Booking Trend & Status -->
-
-        <!-- Dispatch, Attendance & Accounts -->
-        <div class="row g-3 mb-4">
-            <div class="col-xl-8">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-truck-delivery"></i> Report Dispatch</h6>
-                        <div class="small text-muted">This week</div>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 260px;">
-                            <canvas id="dispatchBar"></canvas>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-4 d-flex flex-column gap-3">
-                <div class="card">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0"><i class="ti ti-id-badge"></i> Attendance</h6>
-                        <a href="#" class="small text-decoration-underline">Today</a>
-                    </div>
-                    <div class="card-body d-flex align-items-center gap-3">
-                        <div style="width:110px;height:110px"><canvas id="attendanceDonut" width="110" height="110"></canvas></div>
-                        <div class="small">
-                            <div class="mb-1">Present: <span id="attPresent" class="fw-semibold">0</span></div>
-                            <div class="mb-1">Absent: <span id="attAbsent" class="fw-semibold">0</span></div>
-                            <div>Late: <span id="attLate" class="fw-semibold">0</span></div>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="card">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0"><i class="ti ti-report-money"></i> Accounts - Invoices</h6>
-                        <a href="#" class="small text-decoration-underline">This month</a>
-                    </div>
-                    <div class="card-body d-flex align-items-center gap-3">
-                        <div style="width:110px;height:110px"><canvas id="invoiceDonut" width="110" height="110"></canvas></div>
-                        <div class="small">
-                            <div class="mb-1">Paid: <span id="invPaid" class="fw-semibold">0</span></div>
-                            <div class="mb-1">Unpaid: <span id="invUnpaid" class="fw-semibold">0</span></div>
-                            <div>Overdue: <span id="invOverdue" class="fw-semibold">0</span></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <!-- /Dispatch, Attendance & Accounts -->
-
-        <!-- Analyst Workload & Inventory -->
-        <div class="row g-3 mb-4">
-            <div class="col-xl-8">
-                <div class="card h-100">
-                    <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-flask"></i> Lab Analysts - Workload</h6>
-                        <div class="workload-range-toggle btn-group" role="group" aria-label="Workload Range">
-                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="30">30D</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="90">90D</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="all">All</button>
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="chart-container" style="height: 260px;">
-                            <canvas id="analystWorkloadChart"></canvas>
-                        </div>
-                        <script>
-                        window.analystWorkloadAll = @json($analystWorkloadAll ?? []);
-                        window.analystWorkload30 = @json($analystWorkload30 ?? []);
-                        window.analystWorkload90 = @json($analystWorkload90 ?? []);
-                        </script>
                     </div>
                 </div>
             </div>
@@ -300,15 +206,221 @@
                 </div>
             </div>
         </div>
-        <!-- /Analyst Workload & Inventory -->
+        <!-- /Booking Trend & Department -->
+
+        <!-- Dispatch, Attendance & Accounts -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-8">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-truck-delivery"></i> Report Dispatch</h6>
+                        <div class="small text-muted">This week</div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container" style="height: 260px;">
+                            <canvas id="dispatchBar"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4 d-flex flex-column gap-3">
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0"><i class="ti ti-id-badge"></i> Attendance</h6>
+                        <a href="#" class="small text-decoration-underline">Today</a>
+                    </div>
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div style="width:110px;height:110px"><canvas id="attendanceDonut" width="110" height="110"></canvas></div>
+                        <div class="small">
+                            <div class="mb-1">Present: <span id="attPresent" class="fw-semibold">0</span></div>
+                            <div class="mb-1">Absent: <span id="attAbsent" class="fw-semibold">0</span></div>
+                            <div>Late: <span id="attLate" class="fw-semibold">0</span></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0"><i class="ti ti-report-money"></i> Accounts - Invoices</h6>
+                        <a href="#" class="small text-decoration-underline">All</a>
+                    </div>
+                    <div class="card-body d-flex align-items-center gap-3">
+                        <div style="width:110px;height:110px"><canvas id="invoiceDonut" width="110" height="110"></canvas></div>
+                        <div class="small">
+                            <div class="mb-1">Paid: <span id="invPaid" class="fw-semibold">0</span></div>
+                            <div class="mb-1">Unpaid: <span id="invUnpaid" class="fw-semibold">0</span></div>
+                            <div>Cancel: <span id="invCancel" class="fw-semibold">0</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Dispatch, Attendance & Accounts -->
+
+        <!-- Analyst Workload & Status -->
+        <div class="row g-3 mb-4">
+            <div class="col-xl-8">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-flask"></i> Lab Analysts - Workload</h6>
+                        <div class="workload-range-toggle btn-group" role="group" aria-label="Workload Range">
+                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="30">30D</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="90">90D</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="all">All</button>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="d-flex align-items-center justify-content-between mb-2">
+                            <div class=""></div>
+                            <div class="small text-danger">Overdue: <span id="analystOverdueCount">0</span></div>
+                        </div>
+                        <div class="chart-container" style="height: 260px;">
+                            <canvas id="analystWorkloadChart"></canvas>
+                        </div>
+                        <script>
+                        window.analystWorkloadAll = @json($analystWorkloadAll ?? []);
+                        window.analystWorkload30 = @json($analystWorkload30 ?? []);
+                        window.analystWorkload90 = @json($analystWorkload90 ?? []);
+                        window.overdueAll = @json($overdueAll ?? 0);
+                        window.overdue30 = @json($overdue30 ?? 0);
+                        window.overdue90 = @json($overdue90 ?? 0);
+                        (function renderAnalystWorkload(){
+                            function normalize(raw){
+                                if(!Array.isArray(raw)) return [];
+                                return raw.map(r => ({ name: r.name ?? (r.code||'Unknown'), total: Number(r.count||0), overdue: Number(r.overdue||0) }));
+                            }
+
+                            function buildChartData(list){
+                                // sort by total desc
+                                list = list.slice().sort((a,b)=>b.total - a.total).slice(0, 12);
+                                return {
+                                    labels: list.map(i=>i.name),
+                                    totals: list.map(i=>i.total),
+                                    overdue: list.map(i=>i.overdue)
+                                };
+                            }
+
+                            function draw(rangeKey){
+                                const raw = {
+                                    '30': window.analystWorkload30 || [],
+                                    '90': window.analystWorkload90 || [],
+                                    'all': window.analystWorkloadAll || []
+                                }[String(rangeKey)];
+
+                                const normalized = normalize(raw);
+                                const data = buildChartData(normalized);
+
+                                const ctx = document.getElementById('analystWorkloadChart').getContext('2d');
+
+                                if(window.__analystWorkloadChart){ window.__analystWorkloadChart.destroy(); }
+
+                                // prepare stacked data: overdue + remaining (so they appear in same bar)
+                                const overdueArr = data.overdue.map(v => Number(v || 0));
+                                const totalArr = data.totals.map(v => Number(v || 0));
+                                const remainingArr = totalArr.map((t, i) => Math.max(0, t - (overdueArr[i] || 0)));
+
+                                window.__analystWorkloadChart = new Chart(ctx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: data.labels,
+                                        datasets: [
+                                            {
+                                                label: ' ',
+                                                data: overdueArr,
+                                                backgroundColor: '#e15759'
+                                            },
+                                            {
+                                                label: 'Remaining',
+                                                data: remainingArr,
+                                                backgroundColor: '#4e79a7'
+                                            }
+                                        ]
+                                    },
+                                    options: {
+                                        indexAxis: 'y',
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            x: { stacked: true, grid: { display: false }, beginAtZero: true },
+                                            y: { stacked: true }
+                                        },
+                                        plugins: {
+                                            legend: { position: 'top' },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(context){
+                                                        const v = context.raw ?? 0;
+                                                        return context.dataset.label + ': ' + Number(v).toLocaleString();
+                                                    },
+                                                    footer: function(items){
+                                                        if(!items || !items.length) return '';
+                                                        const total = items.reduce((s,it)=> s + (Number(it.raw) || 0), 0);
+                                                        return 'Total: ' + Number(total).toLocaleString();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                                // initial draw (30D active by default)
+                            function updateOverdueDisplay(rangeKey){
+                                const val = {
+                                    '30': window.overdue30 || 0,
+                                    '90': window.overdue90 || 0,
+                                    'all': window.overdueAll || 0,
+                                }[String(rangeKey)];
+                                const el = document.getElementById('analystOverdueCount');
+                                if(el) el.textContent = Number(val).toLocaleString();
+                            }
+
+                            draw('30');
+                            updateOverdueDisplay('30');
+
+                            // wire up toggle buttons
+                            document.querySelectorAll('.workload-range-toggle [data-range]').forEach(btn=>{
+                                btn.addEventListener('click', function(e){
+                                    document.querySelectorAll('.workload-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+                                    this.classList.add('active');
+                                    const r = this.getAttribute('data-range') || '30';
+                                    draw(r === 'all' ? 'all' : String(r));
+                                    updateOverdueDisplay(r === 'all' ? 'all' : String(r));
+                                });
+                            });
+                        })();
+                        </script>
+                    </div>
+                </div>
+            </div>
+            <div class="col-xl-4">
+                <div class="card h-100">
+                    <div class="card-header d-flex align-items-center justify-content-between">
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-chart-donut-2"></i> Booking Status</h6>
+                        <a href="#" class="small text-decoration-underline">View All</a>
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-between gap-3">
+                        <div style="width: 140px; height: 140px;">
+                            <canvas id="bookingStatusDonut" width="140" height="140"></canvas>
+                        </div>
+                        <div class="small">
+                            <div class="d-flex align-items-center gap-2 mb-2"><span class="legend-dot" style="background:#ff8a26"></span> Pending</div>
+                            <div class="d-flex align-items-center gap-2 mb-2"><span class="legend-dot" style="background:#2bb673"></span> Completed</div>
+                            <div class="d-flex align-items-center gap-2"><span class="legend-dot" style="background:#ffc107"></span> Processing</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- /Analyst Workload & Status -->
 
         <div class="row">
             <div class="col-xl-3 col-sm-6 col-12 d-flex">
                 <div class="card bg-primary sale-widget flex-fill">
                     <div class="card-body d-flex align-items-center">
                         <span class="employee-icon bg-white text-primary p-2 rounded-circle d-inline-flex align-items-center justify-content-center">
-  <i class="fas fa-users fs-24"></i>
-</span>
+                            <i class="fas fa-users fs-24"></i>
+                        </span>
                         <div class="ms-2">
                             <p class="text-white mb-1">Total Users</p>
                             <div class="d-inline-flex align-items-center flex-wrap gap-2">
