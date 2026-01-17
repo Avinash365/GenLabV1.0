@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Log;
 use App\Services\FileUploadService;
+use App\Models\User;
 
 class ImportantLetterController extends Controller
 {
@@ -59,11 +60,17 @@ class ImportantLetterController extends Controller
                 );
             }
 
-            $validated['uploaded_by'] = Auth::id();
+            $authId = Auth::id();
+            Log::info('ImportantLetter store called by auth id: ' . ($authId ?? 'null'));
+            $uploadedBy = null;
+            if ($authId && User::where('id', $authId)->exists()) {
+                $uploadedBy = $authId;
+            }
 
-            ImportantLetter::create($validated);
+            $letter = ImportantLetter::create(array_merge($validated, ['uploaded_by' => $uploadedBy]));
+            Log::info('ImportantLetter created id: ' . ($letter->id ?? 'null'));
 
-            return redirect()->back()
+            return redirect()->route('superadmin.importantLetter.index')
                              ->with('success', 'Letter saved successfully.');
         } catch (\Exception $e) {
             Log::error("Error saving letter: " . $e->getMessage());

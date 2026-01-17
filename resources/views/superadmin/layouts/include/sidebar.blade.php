@@ -484,31 +484,50 @@
                                 <ul style="{{ $attachmentsActive ? 'display: block;' : 'display: none;' }}"> 
                                     @if($user instanceof \App\Models\Admin || $user->hasPermission('iscode.view'))
                                         <li>
-                                            <a href="{{ route('superadmin.iscodes.index') }}"
-                                            class="{{ Request::routeIs('superadmin.settingsection.Iscode') ? 'active' : '' }}">
-                                            Is Code
+                                            <a href="{{ route('superadmin.iscodes.index') }}" class="{{ Request::routeIs('superadmin.iscodes.*') ? 'active' : '' }}">
+                                                Is Code
                                             </a>
                                         </li>
                                     @endif  
 
                                     @if($user instanceof \App\Models\Admin || $user->hasPermission('calibration.view'))
-                                        <li><a href="{{ route('superadmin.calibrations.index') }}">Calibration</a></li>
+                                        <li>
+                                            <a href="{{ route('superadmin.calibrations.index') }}" class="{{ Request::routeIs('superadmin.calibrations.*') ? 'active' : '' }}">
+                                                Calibration
+                                            </a>
+                                        </li>
                                     @endif  
 
                                     @if($user instanceof \App\Models\Admin || $user->hasPermission('profile.view'))
-                                        <li><a href="{{ route('superadmin.profiles.index') }}">Profile</a></li>
+                                        <li>
+                                            <a href="{{ route('superadmin.profiles.index') }}" class="{{ Request::routeIs('superadmin.profiles.*') ? 'active' : '' }}">
+                                                Profile
+                                            </a>
+                                        </li>
                                     @endif  
 
                                     @if($user instanceof \App\Models\Admin || $user->hasPermission('approval.view'))
-                                        <li><a href="{{ route('superadmin.approvals.index') }}">Approval</a></li>
+                                        <li>
+                                            <a href="{{ route('superadmin.approvals.index') }}" class="{{ Request::routeIs('superadmin.approvals.*') ? 'active' : '' }}">
+                                                Approval
+                                            </a>
+                                        </li>
                                     @endif  
 
                                     @if($user instanceof \App\Models\Admin || $user->hasPermission('letter.view'))
-                                        <li><a href="{{ route('superadmin.importantLetter.index') }}">Letters</a></li>
+                                        <li>
+                                            <a href="{{ route('superadmin.importantLetter.index') }}" class="{{ Request::routeIs('superadmin.importantLetter.*') ? 'active' : '' }}">
+                                                Letters
+                                            </a>
+                                        </li>
                                     @endif  
 
                                     @if($user instanceof \App\Models\Admin || $user->hasPermission('document.view'))
-                                        <li><a href="{{ route('superadmin.documents.index') }}">Documents</a></li>
+                                        <li>
+                                            <a href="{{ route('superadmin.documents.index') }}" class="{{ Request::routeIs('superadmin.documents.*') ? 'active' : '' }}">
+                                                Documents
+                                            </a>
+                                        </li>
                                     @endif  
                                 </ul>
                             </li>

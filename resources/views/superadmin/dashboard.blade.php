@@ -229,7 +229,7 @@
             <div class="col-xl-4">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-chart-bar"></i> Bookings by Department</h6>
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-chart-bar"></i>Letters by Department</h6>
                         <a href="#" class="small text-decoration-underline">View All</a>
                     </div>
                     <div class="card-body">

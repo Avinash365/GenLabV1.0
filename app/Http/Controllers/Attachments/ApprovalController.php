@@ -8,6 +8,8 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use App\Services\FileUploadService;
+use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 use App\Models\Approval;
 
@@ -57,7 +59,13 @@ class ApprovalController extends Controller
                     'approvals'
                 );
             }
-            $validated['uploaded_by']=Auth::id(); 
+            // Only set uploaded_by when a matching record exists in `users` (the FK target)
+            $authId = Auth::id();
+            if ($authId && User::where('id', $authId)->exists()) {
+                $validated['uploaded_by'] = $authId;
+            } else {
+                $validated['uploaded_by'] = null;
+            }
              
 
             Approval::create($validated);

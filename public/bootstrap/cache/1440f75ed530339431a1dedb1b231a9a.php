@@ -485,31 +485,50 @@
                                 <ul style="<?php echo e($attachmentsActive ? 'display: block;' : 'display: none;'); ?>"> 
                                     <?php if($user instanceof \App\Models\Admin || $user->hasPermission('iscode.view')): ?>
                                         <li>
-                                            <a href="<?php echo e(route('superadmin.iscodes.index')); ?>"
-                                            class="<?php echo e(Request::routeIs('superadmin.settingsection.Iscode') ? 'active' : ''); ?>">
-                                            Is Code
+                                            <a href="<?php echo e(route('superadmin.iscodes.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.iscodes.*') ? 'active' : ''); ?>">
+                                                Is Code
                                             </a>
                                         </li>
                                     <?php endif; ?>  
 
                                     <?php if($user instanceof \App\Models\Admin || $user->hasPermission('calibration.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.calibrations.index')); ?>">Calibration</a></li>
+                                        <li>
+                                            <a href="<?php echo e(route('superadmin.calibrations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.calibrations.*') ? 'active' : ''); ?>">
+                                                Calibration
+                                            </a>
+                                        </li>
                                     <?php endif; ?>  
 
                                     <?php if($user instanceof \App\Models\Admin || $user->hasPermission('profile.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.profiles.index')); ?>">Profile</a></li>
+                                        <li>
+                                            <a href="<?php echo e(route('superadmin.profiles.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.profiles.*') ? 'active' : ''); ?>">
+                                                Profile
+                                            </a>
+                                        </li>
                                     <?php endif; ?>  
 
                                     <?php if($user instanceof \App\Models\Admin || $user->hasPermission('approval.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.approvals.index')); ?>">Approval</a></li>
+                                        <li>
+                                            <a href="<?php echo e(route('superadmin.approvals.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.approvals.*') ? 'active' : ''); ?>">
+                                                Approval
+                                            </a>
+                                        </li>
                                     <?php endif; ?>  
 
                                     <?php if($user instanceof \App\Models\Admin || $user->hasPermission('letter.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.importantLetter.index')); ?>">Letters</a></li>
+                                        <li>
+                                            <a href="<?php echo e(route('superadmin.importantLetter.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.importantLetter.*') ? 'active' : ''); ?>">
+                                                Letters
+                                            </a>
+                                        </li>
                                     <?php endif; ?>  
 
                                     <?php if($user instanceof \App\Models\Admin || $user->hasPermission('document.view')): ?>
-                                        <li><a href="<?php echo e(route('superadmin.documents.index')); ?>">Documents</a></li>
+                                        <li>
+                                            <a href="<?php echo e(route('superadmin.documents.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.documents.*') ? 'active' : ''); ?>">
+                                                Documents
+                                            </a>
+                                        </li>
                                     <?php endif; ?>  
                                 </ul>
                             </li>

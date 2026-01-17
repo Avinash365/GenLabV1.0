@@ -52,7 +52,7 @@
                         </td>
                         <td>
                             <span class="badge 
-                                {{ $letter->status == 'draft' ? 'bg-warning text-dark' : ($letter->status == 'sent' ? 'bg-success' : 'bg-danger') }}">
+                                {{ $letter->status == 'draft' ? 'bg-warning text-dark' : ($letter->status == 'send' ? 'bg-success' : 'bg-danger') }}">
                                 {{ ucfirst($letter->status) }}
                             </span>
                         </td>
