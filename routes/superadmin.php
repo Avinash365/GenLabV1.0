@@ -252,6 +252,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::get('/blank-invoice/get-clients', [BlankInvoiceController::class, 'getClients'])->name('get.clients');
 
+        Route::get('bookingInvoiceStatuses/export/pdf', [GenerateInvoiceStatusController::class, 'exportPdf'])->name('bookingInvoiceStatuses.exportPdf');
+        Route::get('bookingInvoiceStatuses/export/excel', [GenerateInvoiceStatusController::class, 'exportExcel'])->name('bookingInvoiceStatuses.exportExcel');
         Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
 
         Route::post('bookingInvoiceStatuses/generate-invoice/{booking}', [GenerateInvoiceStatusController::class, 'generateInvoice'])
@@ -343,7 +345,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::get('cash-payments/create/{id}', [CashPaymentController::class, 'create'])->name('cashPayments.create');
         Route::post('cash-payments/store', [CashPaymentController::class, 'store'])->name('cashPayments.store');
-        Route::get('cash-payments/repay/{id}', [CashPaymentController::class, 'repay'])->name('cashPayments.repay');
+        Route::get('cash-payments/repay/{id}', [CashPaymentController::class, 'repay'])->name('cashPayments.repay'); 
+        Route::get('cash-payments/export/pdf', [CashPaymentController::class, 'exportPdf'])->name('cashPayments.exportPdf');
+        Route::get('cash-payments/export/excel', [CashPaymentController::class, 'exportExcel'])->name('cashPayments.exportExcel');
         Route::get('cash-payments/', [CashPaymentController::class, 'index'])->name('cashPayments.index');
 
         Route::post('superadmin/cash-repay-payment/{invoice}', [CashPaymentController::class, 'storeRepay'])->name('cashPayments.storeRepay');
@@ -734,6 +738,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::get('/bank/upload', [BankTransactionController::class, 'index'])->name('bank.upload');
         Route::post('/bank/upload', [BankTransactionController::class, 'upload'])->name('bank.upload.post');
+        Route::get('/bank/export/pdf', [BankTransactionController::class, 'exportPdf'])->name('bank.export.pdf');
+        Route::get('/bank/export/excel', [BankTransactionController::class, 'exportExcel'])->name('bank.export.excel');
 
         Route::post('/bank/note/{id}', [BankTransactionController::class, 'addNote'])->name('bank.addNote');
         Route::patch('/bank/soft-delete/{id}', [BankTransactionController::class, 'softDeleteOrUndo'])->name('bank.softDeleteOrUndo');

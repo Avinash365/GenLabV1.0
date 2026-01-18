@@ -31,8 +31,7 @@
                         <th>#</th>
                         <th>Name</th>
                         <th>Type</th>
-                        <th>Description</th>       
-                        <th>Uploaded By</th>
+                        <th>Description</th>      
                         <th>File</th>
                          <th>Status</th>
                         <th>Actions</th>
@@ -45,8 +44,7 @@
                             <td>{{ $doc->name }}</td>
                             <td>{{ ucfirst($doc->type) }}</td>
                             <td>{{ $doc->description }}</td>
-                             <td>{{ $doc->user->name ?? 'N/A' }}</td>
-                            <td>
+                             <td>
                                 @if($doc->file_path)
                                     <a href="{{ url($doc->file_path) }}" class="btn btn-sm btn-outline-primary" target="_blank">View
                                 @else

@@ -9,6 +9,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use App\Services\FileUploadService;
+use App\Models\User;
 
 class DocumentController extends Controller
 {
@@ -75,13 +76,19 @@ class DocumentController extends Controller
                 );
             }
 
-            $validated['uploaded_by'] = Auth::id();
+            $authId = Auth::id();
+            Log::info('Document store called by auth id: ' . ($authId ?? 'null'));
+            $uploadedBy = null;
+            if ($authId && User::where('id', $authId)->exists()) {
+                $uploadedBy = $authId;
+            }
 
             unset($validated['file']);
 
-            Document::create($validated);
+            $doc = Document::create(array_merge($validated, ['uploaded_by' => $uploadedBy]));
+            Log::info('Document created id: ' . ($doc->id ?? 'null'));
 
-            return redirect()->back()->with('success', 'Document uploaded successfully.');
+            return redirect()->route('superadmin.documents.index')->with('success', 'Document uploaded successfully.');
         } catch (\Exception $e) {
             Log::error('Document store error: ' . $e->getMessage(), [
                 'trace' => $e->getTraceAsString()

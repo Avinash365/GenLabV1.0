@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 
 use App\Models\Profile;
+use App\Models\User;
 
 use App\Http\Controllers\Controller;
 
@@ -72,14 +73,22 @@ class ProfileController extends Controller
                 $filePath = $this->fileUploadService->upload($request->file('file'), 'profiles');
             }
 
-            Profile::create([
+            $authId = Auth::id();
+            Log::info('Profile store called by auth id: ' . ($authId ?? 'null'));
+            $uploadedBy = null;
+            if ($authId && User::where('id', $authId)->exists()) {
+                $uploadedBy = $authId;
+            }
+
+            $profile = Profile::create([
                 'name'        => $validated['name'],
                 'description' => $validated['description'] ?? null,
                 'file_path'   => $filePath,
-                'uploaded_by' => Auth::id(), 
+                'uploaded_by' => $uploadedBy,
             ]);
+            Log::info('Profile created id: ' . ($profile->id ?? 'null'));
 
-            return redirect()->back()->with('success', 'Profile created successfully!');
+            return redirect()->route('superadmin.profiles.index')->with('success', 'Profile created successfully!');
         } catch (\Exception $e) {
             Log::error('Profile Store Error: '.$e->getMessage());
             return back()->with('error', 'Something went wrong while saving profile. Please try again.');

@@ -6,6 +6,7 @@ use App\Models\Calibration;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
+use App\Models\User;
 
 class CalibrationController extends Controller
 {
@@ -56,11 +57,19 @@ class CalibrationController extends Controller
 
         try {
 
-            $validated['created_by'] = Auth::id();
+            // Only set created_by when a corresponding user exists in `users`
+            $authId = Auth::id();
+            Log::info('Calibration store called by auth id: ' . ($authId ?? 'null'));
+            if ($authId && User::where('id', $authId)->exists()) {
+                $validated['created_by'] = $authId;
+            } else {
+                $validated['created_by'] = null;
+            }
 
-            Calibration::create($validated);
+            $cal = Calibration::create($validated);
+            Log::info('Calibration created id: ' . ($cal->id ?? 'null'));
 
-            return redirect()->back()->with('success', 'Calibration created successfully.');
+            return redirect()->route('superadmin.calibrations.index')->with('success', 'Calibration created successfully.');
         } catch (\Exception $e) {
             Log::error('Calibration Store Error: '.$e->getMessage());
             return redirect()->back()->withInput()->with('error', 'Unable to create calibration.');

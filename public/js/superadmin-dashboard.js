@@ -243,48 +243,105 @@
 
   // Accounts - Invoices Donut
   if(invoiceDonut){
-    const invChart = new Chart(invoiceDonut, { 
-      type:'doughnut', 
-      data:{ 
-        labels:['Paid','Unpaid','Overdue'], 
-        datasets:[{ 
-          data:[0,0,0], 
-          backgroundColor:['#2bb673','#6c757d','#dc3545'], 
-          borderWidth:0, 
-          cutout:'70%' 
-        }] 
-      }, 
-      options:{ 
-        plugins:{ legend:{ display:false } }, 
-        maintainAspectRatio:false 
-      } 
+    const invChart = new Chart(invoiceDonut, {
+      type: 'doughnut',
+      data: {
+        labels: ['Paid', 'Unpaid', 'Cancel'],
+        datasets: [{
+          data: [0, 0, 0],
+          backgroundColor: ['#2bb673', '#6c757d', '#dc3545'],
+          borderWidth: 0,
+          cutout: '70%'
+        }]
+      },
+      options: {
+        plugins: { legend: { display: false } },
+        maintainAspectRatio: false
+      }
     });
 
     fetch('/superadmin/dashboard/accounts-invoices-chart')
       .then(r => r.json())
       .then(d => {
-         const paid = Number(d.paid||0);
-         const unpaid = Number(d.unpaid||0);
-         const overdue = Number(d.overdue||0);
-         
-         invChart.data.datasets[0].data = [paid, unpaid, overdue];
+         const paid = Number(d.paid || 0);
+         const unpaid = Number(d.unpaid || 0);
+         // Prefer explicit 'cancel' field; fall back to common variants or 'overdue'
+         const cancel = Number(d.cancel ?? d.canceled ?? d.cancelled ?? d.overdue ?? 0);
+
+         invChart.data.datasets[0].data = [paid, unpaid, cancel];
          invChart.update();
 
-         const setVal = (id, v) => { const el=document.getElementById(id); if(el) el.textContent = v; };
+         const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
          setVal('invPaid', paid);
          setVal('invUnpaid', unpaid);
-         setVal('invOverdue', overdue);
+         setVal('invCancel', cancel);
       })
       .catch(e => console.error('Accounts chart error:', e));
   }
 
-  // Analysts Workload (horizontal bar)
+  // Analysts Workload (horizontal bar) with 30/90/all toggles
   if(analystWorkloadChart){
-    const names = ['A. Kumar','P. Singh','R. Shah','N. Yadav','S. Rao','V. Jain'];
-    new Chart(analystWorkloadChart, {
-      type: 'bar',
-      data: { labels: names, datasets: [{ label: 'Samples', data: names.map(()=> rnd(5,20)), backgroundColor: '#6f42c1' }] },
-      options: { indexAxis: 'y', responsive:true, maintainAspectRatio:false, plugins:{ legend:{ display:false } }, scales:{ x:{ grid:{ color:'#f1f1f1' } }, y:{ grid:{ display:false } } } }
+    let analystChart = null;
+
+    function renderAnalystChart(dataset){
+      const data = Array.isArray(dataset) ? dataset : [];
+      const names = data.map(x => x.name);
+      const totals = data.map(x => Number(x.count || 0));
+      const overdue = data.map(x => Number(x.overdue || 0));
+      const remaining = totals.map((t,i) => Math.max(0, t - (overdue[i] || 0)));
+
+      // update global overdue display (sum of overdue in current dataset) if element exists
+      const overdueTotal = overdue.reduce((s,v)=> s + (Number(v)||0), 0);
+      const overdueEl = document.getElementById('analystOverdueCount');
+      if(overdueEl) overdueEl.textContent = Number(overdueTotal).toLocaleString();
+
+      // if any overdue values present, render stacked overdue+remaining, otherwise render single series
+      const hasOverdue = overdue.some(v=> v > 0);
+
+      const cfg = {
+        type: 'bar',
+        data: {
+          labels: names,
+          datasets: hasOverdue ? [
+            { label: 'Overdue', data: overdue, backgroundColor: '#e15759' },
+            { label: 'Remaining', data: remaining, backgroundColor: '#6f42c1' }
+          ] : [ { label: 'Samples', data: totals, backgroundColor: '#6f42c1' } ]
+        },
+        options: {
+          indexAxis: 'y',
+          responsive:true,
+          maintainAspectRatio:false,
+          plugins:{ legend:{ position: 'top' } },
+          scales: {
+            x: { stacked: hasOverdue, grid:{ color:'#f1f1f1' }, beginAtZero: true },
+            y: { stacked: hasOverdue, grid:{ display:false } }
+          }
+        }
+      };
+
+      if(analystChart){
+        analystChart.data = cfg.data;
+        analystChart.options = cfg.options;
+        analystChart.update();
+      } else {
+        analystChart = new Chart(analystWorkloadChart, cfg);
+      }
+    }
+
+    // Choose default dataset: 30 days if available, else all
+    const defaultData = window.analystWorkload30 ?? window.analystWorkloadAll ?? [];
+    renderAnalystChart(defaultData);
+
+    // Attach toggle handlers for workload-specific buttons
+    document.querySelectorAll('.workload-range-toggle .btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.workload-range-toggle .btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        const range = btn.getAttribute('data-range');
+        if(range === '30') renderAnalystChart(window.analystWorkload30 ?? []);
+        else if(range === '90') renderAnalystChart(window.analystWorkload90 ?? []);
+        else renderAnalystChart(window.analystWorkloadAll ?? []);
+      });
     });
   }
 })();
