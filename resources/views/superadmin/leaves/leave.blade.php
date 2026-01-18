@@ -80,6 +80,7 @@
 												</label>
 											</th>
 											<th>Type</th>
+											<th>Employee</th>
 											<th>From Date</th>
 											<th>To Date</th>
 											<th>Days/Hours</th>
@@ -98,6 +99,7 @@
 												</label>
 											</td>
 											<td>{{ $leave->leave_type ?? 'N/A' }}</td>
+											<td>{{ $leave->employee_name ?? ($leave->user->name ?? 'N/A') }}</td>
 											<td>{{ $leave->from_date ? \Carbon\Carbon::parse($leave->from_date)->format('d M Y') : 'N/A' }}</td>
 											<td>{{ $leave->to_date ? \Carbon\Carbon::parse($leave->to_date)->format('d M Y') : 'N/A' }}</td>
 											<td>{{ $leave->days_hours_formatted ?? ($leave->days_hours . ' Days') }}</td>
@@ -128,7 +130,7 @@
 										</tr>
 										@empty
 										<tr>
-											<td colspan="8" class="text-center py-4">
+											<td colspan="9" class="text-center py-4">
 												<div class="text-muted">
 													<i class="ti ti-inbox fs-48"></i>
 													<h5 class="mt-2">No leave applications found</h5>
@@ -159,7 +161,7 @@
 							<span aria-hidden="true">&times;</span>
 						</button>
 					</div>
-					<form action="{{ route('superadmin.leave.store') }}" method="POST">
+					<form id="add-leave-form" action="{{ route('superadmin.leave.store') }}" method="POST">
 						@csrf
 						<div class="modal-body">
 							<div class="row">
@@ -545,6 +547,34 @@ document.addEventListener('DOMContentLoaded', function() {
 	const deleteTemplate = @json(route('superadmin.leave.destroy', ['leave' => '__leave__']));
 	const approveForm = document.getElementById('approve-form');
 	const deleteForm = document.getElementById('delete-form');
+
+	// Validate reason word count (minimum 5 words) on Add Leave form submit
+	const addLeaveForm = document.getElementById('add-leave-form');
+	if (addLeaveForm) {
+		addLeaveForm.addEventListener('submit', function(e) {
+			const reasonEl = addLeaveForm.querySelector('textarea[name="reason"]');
+			if (reasonEl) {
+				const words = reasonEl.value.trim().split(/\s+/).filter(Boolean);
+				if (words.length < 5) {
+					e.preventDefault();
+					if (window.Swal && typeof Swal.fire === 'function') {
+						Swal.fire({
+							icon: 'error',
+							title: 'Reason too short',
+							text: 'Please enter at least 5 words for the reason.',
+							toast: true,
+							position: 'top-end',
+							showConfirmButton: false,
+							timer: 4000
+						});
+					} else {
+						alert('Please enter at least 5 words for the reason.');
+					}
+					reasonEl.focus();
+				}
+			}
+		});
+	}
 
     function calculateDays() {
         if (fromDate.value && toDate.value) {

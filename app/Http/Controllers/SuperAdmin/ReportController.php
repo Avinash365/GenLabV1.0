@@ -20,44 +20,48 @@ class ReportController extends Controller
         $this->departmentService = $departmentService;
     }
 
+    /**
+     * Gather booking ids that have reports either via DB pivot or via storage folders
+     */
+    private function gatherReportBookingIds(): array
+    {
+        $pivotIds = DB::table('booking_item_report')->distinct()->pluck('booking_id')->toArray();
+
+        $storageIds = [];
+        $allowed = ['pdf','jpg','jpeg','png','doc','docx'];
+        NewBooking::whereNotNull('reference_no')->select('id','reference_no')->chunk(200, function($rows) use (&$storageIds, $allowed) {
+            foreach ($rows as $r) {
+                try {
+                    $ref = trim((string) ($r->reference_no ?? ''));
+                    if ($ref === '') continue;
+                    $safe = preg_replace('/[^A-Za-z0-9_\-]/', '-', $ref) ?: 'unknown';
+                    $dir = "public/letters/{$safe}";
+                    if (!\Illuminate\Support\Facades\Storage::exists($dir)) continue;
+                    $files = \Illuminate\Support\Facades\Storage::files($dir);
+                    $files = array_filter($files, function($p) use ($allowed) {
+                        $bname = basename($p);
+                        if ($bname === '_meta.json' || str_starts_with($bname, '_')) return false;
+                        $ext = strtolower(pathinfo($bname, PATHINFO_EXTENSION));
+                        return $ext && in_array($ext, $allowed, true);
+                    });
+                    if (count($files) > 0) $storageIds[] = $r->id;
+                } catch (\Throwable $e) {
+                    // ignore and continue
+                }
+            }
+        });
+
+        return array_unique(array_merge($pivotIds, $storageIds));
+    }
+
     public function index(Request $request, $departmentId = null)
     {
         $departments = $this->departmentService->getDepartment();
         $deptParam = $request->query('department', $departmentId);
         $department = $deptParam ? Department::find($deptParam) : null;
 
-                // Determine bookings that have reports either via DB pivot or via storage/letters folder
-                $pivotIds = DB::table('booking_item_report')->distinct()->pluck('booking_id')->toArray();
-
-                $storageIds = [];
-                $allowed = ['pdf','jpg','jpeg','png','doc','docx'];
-                NewBooking::whereNotNull('reference_no')->select('id','reference_no')->chunk(200, function($rows) use (&$storageIds, $allowed) {
-                    foreach ($rows as $r) {
-                        try {
-                            $ref = trim((string) ($r->reference_no ?? ''));
-                            if ($ref === '') continue;
-                            $safe = preg_replace('/[^A-Za-z0-9_\-]/', '-', $ref) ?: 'unknown';
-                            $dir = "public/letters/{$safe}";
-                            if (!\Illuminate\Support\Facades\Storage::exists($dir)) continue;
-                            $files = \Illuminate\Support\Facades\Storage::files($dir);
-                            $files = array_filter($files, function($p) use ($allowed) {
-                                $bname = basename($p);
-                                if ($bname === '_meta.json' || str_starts_with($bname, '_')) return false;
-                                $ext = strtolower(pathinfo($bname, PATHINFO_EXTENSION));
-                                return $ext && in_array($ext, $allowed, true);
-                            });
-                            if (count($files) > 0) $storageIds[] = $r->id;
-                        } catch (\Throwable $e) {
-                            // ignore and continue
-                        }
-                    }
-                });
-
-                $ids = array_unique(array_merge($pivotIds, $storageIds));
-                if (empty($ids)) {
-                    // no bookings with reports, force empty result
-                    $ids = [0];
-                }
+                $ids = $this->gatherReportBookingIds();
+                if (empty($ids)) { $ids = [0]; }
 
                 $query = NewBooking::with(['items', 'marketingPerson', 'generatedInvoice'])
                     ->whereIn('new_bookings.id', $ids);
@@ -201,12 +205,140 @@ class ReportController extends Controller
 
     public function exportPdf(Request $request)
     {
-        return redirect()->route('superadmin.report.index')->with('success', 'PDF export not implemented yet.');
+        $ids = $this->gatherReportBookingIds();
+        if (empty($ids)) { return redirect()->route('superadmin.report.index')->with('success', 'No reports to export.'); }
+
+        $query = NewBooking::with(['marketingPerson'])->whereIn('new_bookings.id', $ids);
+
+        // apply same filters as index
+        if ($request->filled('department')) $query->where('department_id', $request->department);
+        if ($request->filled('search')) $query->where(function($q) use ($request){ $q->where('client_name','like','%'.$request->search.'%')->orWhere('reference_no','like','%'.$request->search.'%'); });
+        if ($request->filled('marketing')) $query->where('marketing_id', $request->marketing);
+        if ($request->filled('month')) $query->whereMonth('job_order_date', $request->month);
+        if ($request->filled('year')) $query->whereYear('job_order_date', $request->year);
+        if ($request->filled('bill')) {
+            if ($request->bill === 'generated') $query->whereHas('generatedInvoice');
+            if ($request->bill === 'not_generated') $query->whereDoesntHave('generatedInvoice');
+        }
+        if ($request->filled('dispatch')) {
+            if ($request->dispatch === 'dispatched') $query->whereHas('items', fn($q)=> $q->whereNotNull('dispatched_at'));
+            if ($request->dispatch === 'not_dispatched') $query->whereHas('items', fn($q)=> $q->whereNull('dispatched_at'));
+        }
+
+        $bookings = $query->orderBy('client_name')->get();
+
+        // compute reports_count and last upload time for header info
+        $bookings->transform(function($b){
+            $lettersCount = 0; $last = null;
+            $ref = trim((string) ($b->reference_no ?? ''));
+            if ($ref !== '') {
+                $safe = preg_replace('/[^A-Za-z0-9_\\-]/', '-', $ref) ?: 'unknown';
+                $dir = "public/letters/{$safe}";
+                if (Storage::exists($dir)) {
+                    $files = Storage::files($dir);
+                    $files = array_filter($files, function($p){ $bname = basename($p); if ($bname === '_meta.json' || str_starts_with($bname,'_')) return false; return true; });
+                    $lettersCount = count($files);
+                    $metaPath = $dir.'/_meta.json';
+                    $meta = [];
+                    if (Storage::exists($metaPath)) { $raw = Storage::get($metaPath); $parsed = @json_decode($raw, true); if (is_array($parsed)) $meta = $parsed; }
+                    foreach ($files as $p) {
+                        $bname = basename($p);
+                        $uploaded = $meta[$bname]['uploaded_at'] ?? null;
+                        if (!$uploaded) { $ts = Storage::lastModified($p); $uploaded = $ts ? date('Y-m-d H:i:s', $ts) : null; }
+                        if ($uploaded && (!$last || strtotime($uploaded) > strtotime($last))) $last = $uploaded;
+                    }
+                }
+            }
+            $b->reports_count = $lettersCount;
+            $b->last_report_at = $last;
+            return $b;
+        });
+
+        $filters = $request->only(['department','search','month','year','marketing','bill','dispatch']);
+
+        $view = view('superadmin.report.export_pdf', compact('bookings','filters'))->render();
+
+        if (class_exists(\Barryvdh\DomPDF\Facade\Pdf::class) || class_exists('PDF')) {
+            try {
+                $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('superadmin.report.export_pdf', compact('bookings','filters'));
+                return $pdf->download('reports.pdf');
+            } catch (\Throwable $e) {
+                // fallback to HTML download
+            }
+        }
+
+        return response($view, 200, [
+            'Content-Type' => 'text/html',
+            'Content-Disposition' => 'attachment; filename="reports.html"'
+        ]);
     }
 
     public function exportExcel(Request $request)
     {
-        return redirect()->route('superadmin.report.index')->with('success', 'Excel export not implemented yet.');
+        $ids = $this->gatherReportBookingIds();
+        if (empty($ids)) { return redirect()->route('superadmin.report.index')->with('success', 'No reports to export.'); }
+
+        $query = NewBooking::with(['marketingPerson'])->whereIn('new_bookings.id', $ids);
+        if ($request->filled('department')) $query->where('department_id', $request->department);
+        if ($request->filled('search')) $query->where(function($q) use ($request){ $q->where('client_name','like','%'.$request->search.'%')->orWhere('reference_no','like','%'.$request->search.'%'); });
+        if ($request->filled('marketing')) $query->where('marketing_id', $request->marketing);
+        if ($request->filled('month')) $query->whereMonth('job_order_date', $request->month);
+        if ($request->filled('year')) $query->whereYear('job_order_date', $request->year);
+        if ($request->filled('bill')) {
+            if ($request->bill === 'generated') $query->whereHas('generatedInvoice');
+            if ($request->bill === 'not_generated') $query->whereDoesntHave('generatedInvoice');
+        }
+        if ($request->filled('dispatch')) {
+            if ($request->dispatch === 'dispatched') $query->whereHas('items', fn($q)=> $q->whereNotNull('dispatched_at'));
+            if ($request->dispatch === 'not_dispatched') $query->whereHas('items', fn($q)=> $q->whereNull('dispatched_at'));
+        }
+
+        $bookings = $query->orderBy('client_name')->get();
+
+        // CSV generation with filters in header
+        $filters = $request->only(['department','search','month','year','marketing','bill','dispatch']);
+
+        $filename = 'reports.csv';
+        $callback = function() use ($bookings, $filters) {
+            $out = fopen('php://output', 'w');
+            // print filters
+            foreach ($filters as $k => $v) {
+                if ($v === null || $v === '') continue;
+                fputcsv($out, [ucfirst($k), $v]);
+            }
+            fputcsv($out, []);
+            // header
+            fputcsv($out, ['Client Name','Reference No','Marketing Person','Reports Count','Last Report']);
+            foreach ($bookings as $b) {
+                $reportsCount = 0; $last = '';
+                $ref = trim((string) ($b->reference_no ?? ''));
+                if ($ref !== '') {
+                    $safe = preg_replace('/[^A-Za-z0-9_\\-]/', '-', $ref) ?: 'unknown';
+                    $dir = "public/letters/{$safe}";
+                    if (Storage::exists($dir)) {
+                        $files = Storage::files($dir);
+                        $files = array_filter($files, function($p){ $bname = basename($p); if ($bname === '_meta.json' || str_starts_with($bname,'_')) return false; return true; });
+                        $reportsCount = count($files);
+                        $metaPath = $dir.'/_meta.json';
+                        $meta = [];
+                        if (Storage::exists($metaPath)) { $raw = Storage::get($metaPath); $parsed = @json_decode($raw, true); if (is_array($parsed)) $meta = $parsed; }
+                        foreach ($files as $p) {
+                            $bname = basename($p);
+                            $uploaded = $meta[$bname]['uploaded_at'] ?? null;
+                            if (!$uploaded) { $ts = Storage::lastModified($p); $uploaded = $ts ? date('Y-m-d H:i:s', $ts) : null; }
+                            if ($uploaded && (!$last || strtotime($uploaded) > strtotime($last))) $last = $uploaded;
+                        }
+                    }
+                }
+                fputcsv($out, [$b->client_name, $b->reference_no, optional($b->marketingPerson)->name, $reportsCount, $last]);
+            }
+            fclose($out);
+        };
+
+        return response()->stream($callback, 200, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Content-Disposition' => 'attachment; filename="'.$filename.'"',
+        ]);
     }
 
     public function reports(Request $request, $bookingId)
