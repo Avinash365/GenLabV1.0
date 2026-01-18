@@ -326,7 +326,11 @@
 
 
                         <!-- Single links -->
-                        <li><a href="#"><i class="ti ti-file-text fs-16 me-2"></i><span>Report</span></a></li>
+                        <li>
+                            <a href="{{ route('superadmin.report.index') }}" class="{{ Request::routeIs('superadmin.report.index') ? 'active' : '' }}">
+                                <i class="ti ti-file-text fs-16 me-2"></i><span>Report</span>
+                            </a>
+                        </li>
                         
 
                         @if($user && ($user instanceof Admin || $user->hasPermission('lab-analysts.view')))

@@ -175,6 +175,15 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
 });
 
 
+// Simple Report routes (reads)
+Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/report', [\App\Http\Controllers\Superadmin\ReportController::class, 'index'])->name('report.index');
+    Route::get('/report/exportPdf', [\App\Http\Controllers\Superadmin\ReportController::class, 'exportPdf'])->name('report.exportPdf');
+    Route::get('/report/exportExcel', [\App\Http\Controllers\Superadmin\ReportController::class, 'exportExcel'])->name('report.exportExcel');
+    Route::get('/report/{booking}/reports', [\App\Http\Controllers\Superadmin\ReportController::class, 'reports'])->name('report.reports');
+});
+
+
 
 
 
