@@ -25,6 +25,8 @@
     );
 ?>
 
+
+
     <div class="content">
         <div class="page-header">
             <div class="add-item d-flex justify-content-between w-100">
@@ -265,7 +267,7 @@
                                             method="POST" class="d-flex client-assign-form">
                                             <?php echo csrf_field(); ?>
                                             <div class="position-relative" style="min-width:180px;">
-                                                <input type="text" name="client_name_display" class="form-control client-search-input" autocomplete="off" placeholder="Search client" value="">
+                                                <input type="text" name="client_name_display" class="form-control client-search-input" autocomplete="off" placeholder="Search client" value="<?php echo e(optional($booking->client)->name); ?>">
                                                 <input type="hidden" name="client_id" class="client-id-hidden" value="<?php echo e($booking->client_id ?? ''); ?>">
                                                 <div class="dropdown-menu client-dropdown w-100" style="display:none; max-height:200px; overflow:auto;"></div>
                                             </div>
@@ -371,6 +373,22 @@
                                                 <i data-feather="file-text"></i>
                                             </span>
                                         <?php endif; ?>
+                                        <?php if($booking->client_id): ?>
+                                            <form method="POST"
+                                                action="<?php echo e(route('superadmin.bookings.unassignClient', $booking->id)); ?>"
+                                                
+                                                class="me-2">
+                                                <?php echo csrf_field(); ?>
+                                                <?php echo method_field('PATCH'); ?>
+
+                                                <button type="submit"
+                                                        class="p-2 border rounded btn btn-link text-danger"
+                                                        title="Unassign Client">
+                                                    <i data-feather="user-x"></i>
+                                                </button>
+                                            </form>
+                        
+                                        <?php endif; ?>
                                         <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>"
                                             class="me-2 p-2 border rounded">
                                             <i data-feather="edit"></i>
@@ -433,7 +451,7 @@
     <!-- Selected IDs will auto-submit via checkboxes -->
     
     <!-- Client search -->
-    <div class="position-relative" style="min-width:250px;">
+    <div class="position-relative client-search-float"  style="min-width:250px;">
         <input type="text"
                class="form-control bulk-client-input"
                placeholder="Search client..."

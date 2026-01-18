@@ -36,6 +36,7 @@
         .text-start{text-align: left; text-transform: uppercase;}
         .text-uppercase{text-transform: uppercase;}
         .text-right { text-align: right; }
+        .text-left { text-align: left; }
         .text-centre { text-align: center; font-weight: bold; }
         .text-bottom {text-align: center; font-weight: bold; vertical-align: bottom;}
         .total-row { font-weight: bold; background: #f9f9f9; }
@@ -171,7 +172,7 @@
             <td>{{ number_format($invoice->total_amount ?? 0,2) }}</td>
         </tr>
         <tr>
-            <th colspan="6">Amount in Words: {{ $WordAmout ?? '' }}</th>
+            <th colspan="6" class="text-left">Amount in Words: {{ $WordAmout ?? '' }}</th>
         </tr>
     </tbody> 
 </table>

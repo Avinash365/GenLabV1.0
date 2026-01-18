@@ -156,7 +156,15 @@
             font-weight: bold;
         }
 
-
+        .text-right {
+            text-align: right !important;
+        }
+        .text-left{
+            text-align: left !important;
+        }
+        .text-centre{
+            text-align: center !important;
+        }
     </style>
 </head>
 <body>

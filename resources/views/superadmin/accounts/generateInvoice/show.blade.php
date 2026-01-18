@@ -452,7 +452,7 @@
                     ⚙️ Invoice Settings
                 </div>
                 <div class="mb-3 p-3">
-                <label class="fw-semibold mb-2 d-block">
+                <label style="max-height: 200px; overflow-y: auto;" class="fw-semibold mb-2 d-block">
                     📄 Booking Letters
                 </label>
                     @if(!empty($booking->upload_letter_path))

@@ -173,6 +173,16 @@
             border-radius: 4px;
         }
 
+        .text-right {
+            text-align: right !important;
+        }
+        .text-left{
+            text-align: left !important;
+        }
+        .text-centre{
+            text-align: center !important;
+        }
+ 
         /* ================= PRINT ================= */
         @media print {
             body * {
@@ -459,8 +469,8 @@
                 <div class="card-header fw-semibold d-flex align-items-center gap-2">
                     ⚙️ Invoice Settings
                 </div>
-                <div class="mb-3 p-3">
-                <label class="fw-semibold mb-2 d-block">
+                <div  style="max-height: 200px; overflow-y: auto;" class="mb-3 p-3">
+                <label  class="fw-semibold mb-2 d-block">
                     📄 Booking Letters
                 </label>
 
