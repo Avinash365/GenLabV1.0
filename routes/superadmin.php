@@ -314,8 +314,11 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/{user_code}/all-clients', [MarketingPersonLedger::class, 'fetchGroupedBookings'])->name('marketing.allClients');
 
         Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
+        Route::put('clients/{client}', [ClientController::class, 'update'])->name('clients.update');
+        
         Route::post('clients/{client}/assign-booking', [ClientController::class, 'assignBooking'])->name('clients.assignBooking');
         Route::post('/clients/assign-bulk-bookings', [ClientController::class, 'assignBulkBookings'])->name('clients.assignBulkBookings');
+        Route::patch('/bookings/{booking}/unassign-client',[ClientController::class, 'unassignBooking'])->name('bookings.unassignClient');
 
         Route::get('client-ledger', [ClientLedgerController::class, 'index'])->name('client-ledger.index');
         Route::get('client-ledger/{id}', [ClientLedgerController::class, 'show'])->name('client-ledger.show');

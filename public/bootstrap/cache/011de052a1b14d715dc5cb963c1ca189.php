@@ -144,7 +144,7 @@
                             </li>
 
                             <li>
-                                <a href="<?php echo e(route('superadmin.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">
+                                <a href="<?php echo e(route('superadmin.marketing.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.quotations.*') ? 'active' : ''); ?>">
                                     <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
                                 </a>
                             </li>
@@ -520,6 +520,7 @@
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
+                        <li><a href="<?php echo e(route('superadmin.clients.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Client</span></a></li>
 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('report-format.create'))): ?>
                             <li>

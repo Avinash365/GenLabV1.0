@@ -9,25 +9,40 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
         try {
-           
-            $clients = Client::withCount('bookings')->latest()->paginate(10);
-            return view('superadmin.clients.index', compact('clients'));
+            $search = $request->input('search');
+            $perPage = $request->input('per_page', 10); // default 10
+
+            $clients = Client::withCount('bookings')
+                ->when($search, function ($query) use ($search) {
+                    $query->where(function ($q) use ($search) {
+                        $q->where('name', 'like', "%{$search}%")
+                            ->orWhere('email', 'like', "%{$search}%")
+                            ->orWhere('phone', 'like', "%{$search}%")
+                            ->orWhere('gstin', 'like', "%{$search}%");
+                    });
+                })
+                ->latest()
+                ->paginate($perPage)
+                ->appends($request->query()); // keep filters on pagination
+
+            return view('superadmin.accounts.client.index', compact('clients'));
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
 
+
     public function store(Request $request)
     {
         $request->validate([
-            'name'   => 'required|string|max:255',
-            'email'  => 'nullable|email|unique:clients',
-            'phone'  => 'nullable|string|max:20',
-            'gstin'  => 'nullable|string|max:30',
-            'address'=> 'nullable|string',
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|unique:clients',
+            'phone' => 'nullable|string|max:20',
+            'gstin' => 'nullable|string|max:30',
+            'address' => 'nullable|string',
         ]);
 
         try {
@@ -37,6 +52,35 @@ class ClientController extends Controller
             return back()->withErrors(['error' => $e->getMessage()]);
         }
     }
+
+
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'nullable|email|unique:clients,email,' . $id,
+            'phone' => 'nullable|string|max:20',
+            'gstin' => 'nullable|string|max:30',
+            'address' => 'nullable|string',
+        ]);
+
+        try {
+            $client = Client::findOrFail($id);
+
+            $client->update([
+                'name' => $request->name,
+                'email' => $request->email,
+                'phone' => $request->phone,
+                'gstin' => $request->gstin,
+                'address' => $request->address,
+            ]);
+
+            return back()->with('success', 'Client updated successfully!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
 
     public function destroy($id)
     {
@@ -70,7 +114,7 @@ class ClientController extends Controller
 
     // public function assignBulkBookings(Request $request)
     // {
-        
+
     //     dd($request->all()); 
     //     exit; 
     //     $request->validate([
@@ -90,9 +134,9 @@ class ClientController extends Controller
     public function assignBulkBookings(Request $request)
     {
         $request->validate([
-            'booking_ids'   => 'required|array',
+            'booking_ids' => 'required|array',
             'booking_ids.*' => 'exists:new_bookings,id',
-            'client_id'     => 'required|exists:clients,id',
+            'client_id' => 'required|exists:clients,id',
         ]);
 
         NewBooking::whereIn('id', $request->booking_ids)
@@ -102,4 +146,21 @@ class ClientController extends Controller
 
         return back()->with('success', 'Client assigned successfully!');
     }
+
+
+
+    public function unassignBooking($bookingId)
+    {
+        try {
+            $booking = NewBooking::findOrFail($bookingId);
+
+            $booking->client_id = null;
+            $booking->save();
+
+            return back()->with('success', 'Client unassigned successfully!');
+        } catch (\Exception $e) {
+            return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
 }

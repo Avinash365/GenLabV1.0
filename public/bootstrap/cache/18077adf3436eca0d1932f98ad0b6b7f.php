@@ -10,13 +10,17 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="PDF"><i class="ti ti-file-type-pdf"></i></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page']))); ?>" class="download-link" data-type="pdf" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="Excel"><i class="ti ti-file-spreadsheet"></i></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page']))); ?>" class="download-link" data-type="excel" data-bs-toggle="tooltip" title="Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
+                        <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
+                    </svg>
+                </a>
             </li>
-            <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings', request()->only(['search','month','year','department','overdue','marketing']))); ?>" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
+            <li style="margin-right:22px;">
+                <a href="<?php echo e(route('superadmin.reporting.pendings', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage']))); ?>" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a>
             </li>
         </ul>
     </div>
@@ -37,6 +41,7 @@
                     <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
                     
                     <?php if(request('marketing')): ?><input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>"><?php endif; ?>
+                    <?php if(request('lab_analyst')): ?><input type="hidden" name="lab_analyst" value="<?php echo e(request('lab_analyst')); ?>"><?php endif; ?>
                     <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search job/order/sample...">
                     <button class="btn btn-outline-secondary" type="submit">🔍</button>
                 </form>
@@ -51,6 +56,7 @@
                             'month' => request('month'),
                             'year' => request('year'),
                             'marketing' => request('marketing'),
+                            'lab_analyst' => request('lab_analyst'),
                         ];
                         // Always set overdue=1 for Out of Expected Date, remove for others
                         $onParams = array_filter($base + ['overdue' => 1], function($v){ return !is_null($v) && $v !== ''; });
@@ -67,6 +73,9 @@
                     <?php endif; ?>
                     <?php if(request('marketing')): ?>
                         <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
+                    <?php endif; ?>
+                    <?php if(request('lab_analyst')): ?>
+                        <input type="hidden" name="lab_analyst" value="<?php echo e(request('lab_analyst')); ?>">
                     <?php endif; ?>
                     <input type="hidden" name="overdue" id="overdueInput" value="<?php echo e(request('overdue') ? 1 : ''); ?>">
                     <select name="month" class="form-control">
@@ -89,9 +98,9 @@
         <div class="px-3 pb-3">
             <div class="d-flex flex-wrap gap-2 align-items-center">
                 <?php $currentDept = request('department'); ?>
-                <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e(!$currentDept ? 'btn-warning text-white' : 'btn-outline-warning'); ?>">All</a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'lab_analyst'=>request('lab_analyst'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e(!$currentDept ? 'btn-warning text-white' : 'btn-outline-warning'); ?>">All</a>
                 <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e((int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning'); ?>"><?php echo e($dept->name); ?></a>
+                    <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['department'=>$dept->id,'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'marketing'=>request('marketing'),'lab_analyst'=>request('lab_analyst'),'mode'=>request('mode'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm <?php echo e((int)$currentDept === $dept->id ? 'btn-warning text-white' : 'btn-outline-warning'); ?>"><?php echo e($dept->name); ?></a>
                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 <?php if(isset($marketingPersons) && $marketingPersons->count()): ?>
                     <?php
@@ -111,6 +120,9 @@
                         <?php if($lockedMarketingCode): ?>
                             <input type="hidden" name="marketing" value="<?php echo e($lockedMarketingCode); ?>">
                         <?php endif; ?>
+                        <?php if(request('lab_analyst')): ?>
+                            <input type="hidden" name="lab_analyst" value="<?php echo e(request('lab_analyst')); ?>">
+                        <?php endif; ?>
                         <div class="input-group input-group-sm me-2" style="min-width:220px;">
                             <button type="button" id="localSearchBtn" class="input-group-text bg-white border-end-0" style="cursor:pointer;" aria-label="Focus search">
                                 <i class="ti ti-search"></i>
@@ -125,8 +137,19 @@
                                 <option value="<?php echo e($mp->user_code); ?>" <?php echo e(request('marketing') == $mp->user_code ? 'selected' : ''); ?>><?php echo e($mp->user_code); ?> - <?php echo e($mp->name); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
+                        <?php if(isset($labAnalysts) && $labAnalysts->count()): ?>
+                            <select name="lab_analyst" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
+                                <option value="">Select Lab Analyst</option>
+                                <?php $__currentLoopData = $labAnalysts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $la): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($la->user_code); ?>" <?php echo e(request('lab_analyst') == $la->user_code ? 'selected' : ''); ?>><?php echo e($la->user_code); ?> - <?php echo e($la->name); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        <?php endif; ?>
                         <?php if(request('marketing') && !$lockedMarketingCode): ?>
-                            <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue')]))); ?>" class="btn btn-sm btn-outline-secondary">Clear</a>
+                            <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue'),'lab_analyst'=>request('lab_analyst')]))); ?>" class="btn btn-sm btn-outline-secondary">Clear</a>
+                        <?php endif; ?>
+                        <?php if(request('lab_analyst')): ?>
+                            <a href="<?php echo e(route('superadmin.reporting.pendings', array_filter(['mode'=>request('mode'),'department'=>request('department'),'search'=>request('search'),'month'=>request('month'),'year'=>request('year'),'overdue'=>request('overdue'),'marketing'=>request('marketing')]))); ?>" class="btn btn-sm btn-outline-secondary">Clear</a>
                         <?php endif; ?>
                     </form>
                 <?php endif; ?>
@@ -134,14 +157,22 @@
         </div>
         <?php endif; ?>
         <div class="card-body p-0">
+            <?php
+                $authUser = auth('admin')->user() ?: auth()->user();
+                $roleName = $authUser->role->role_name ?? $authUser->role ?? null;
+                $isMarketingUser = $roleName && stripos($roleName, 'market') !== false;
+            ?>
             <div class="table-responsive">
                 <?php if(($mode ?? 'job') === 'reference'): ?>
-                    <table class="table table-striped">
+                    <table class="table table-striped auto-layout">
                         <thead class="table-light">
                             <tr>
                                 <th style="width:30px;"><label class="checkboxs"><input type="checkbox" id="select-all-ref"><span class="checkmarks"></span></label></th>
-                                <th style="width:220px;">Client Name</th>
+                                <th style="width:350px;">Client Name</th>
                                 <th>Reference No</th>
+                                <?php if (! ($isMarketingUser)): ?>
+                                    <th>Marketing Person</th>
+                                <?php endif; ?>
                                 <th class="text-center">Pending Items</th>
                                 <th class="text-center" style="width:60px;">View</th>
                                 <th style="width:90px;">Action</th>
@@ -157,10 +188,35 @@
                                 <td class="truncate-cell">
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($b->client_name); ?>"><?php echo e($b->client_name); ?></div>
                                 </td>
-                                <td><?php echo e($b->reference_no); ?></td>
+                                <td class="truncate-cell"><div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($b->reference_no); ?>"><?php echo e($b->reference_no); ?></div></td>
+                                <?php if (! ($isMarketingUser)): ?>
+                                    <?php
+                                        $marketingName = null;
+                                        try{
+                                            if(isset($marketingPersons) && $marketingPersons instanceof \Illuminate\Support\Collection){
+                                                $mp = $marketingPersons->firstWhere('user_code', $b->marketing_id ?? '');
+                                                $marketingName = $mp->name ?? null;
+                                            }
+                                        }catch(\Exception $e){
+                                            $marketingName = null;
+                                        }
+                                    ?>
+                                    <td class="truncate-cell"><div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($marketingName ?? ($b->marketing_name ?? $b->marketing_id ?? '-')); ?>"><?php echo e($marketingName ?? ($b->marketing_name ?? $b->marketing_id ?? '-')); ?></div></td>
+                                <?php endif; ?>
                                 <td class="text-center"><?php echo e($b->pending_items_count); ?></td>
+                                <?php
+                                    $pendingPayload = $items->where('new_booking_id', $b->id)->map(function($it){
+                                        return [
+                                            'job_order_no' => $it->job_order_no,
+                                            'sample_description' => $it->sample_description,
+                                            'sample_quality' => $it->sample_quality,
+                                            'particulars' => $it->particulars,
+                                            'receiver' => $it->receiver,
+                                        ];
+                                    })->values();
+                                ?>
                                 <td class="text-center">
-                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='<?php echo json_encode($pendingItemsPayload, 15, 512) ?>' data-ref="<?php echo e($b->reference_no); ?>" data-client="<?php echo e($b->client_name); ?>" title="Show Pending Items"><i class="ti ti-eye"></i></button>
+                                    <button type="button" class="btn btn-sm btn-outline-secondary show-pending-modal" data-items='<?php echo json_encode($pendingPayload, 15, 512) ?>' data-ref="<?php echo e($b->reference_no); ?>" data-client="<?php echo e($b->client_name); ?>" title="Show Pending Items"><i class="ti ti-eye"></i></button>
                                 </td>
                                 <td class="action-cell">
                                     <?php
@@ -193,7 +249,7 @@
                                 </td>
                             </tr>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
-                            <tr><td colspan="6" class="text-center">No pending bookings found.</td></tr>
+                            <tr><td colspan="<?php echo e($isMarketingUser ? 6 : 7); ?>" class="text-center">No pending bookings found.</td></tr>
                         <?php endif; ?>
                         </tbody>
                     </table>
@@ -251,14 +307,9 @@
                                     <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->particulars); ?>"><?php echo e($item->particulars); ?></div>
                                 </td>
                                 <td>
-                                    <?php
-                                        $receiver = $item->received_by_name ?? optional($item->receivedBy)->name;
-                                    ?>
-                                    <?php if($receiver): ?>
-                                        <span class="status-dot received" data-bs-toggle="tooltip" title="Received by <?php echo e($receiver); ?>" aria-label="Received"></span>
-                                    <?php else: ?>
-                                        <span class="status-dot pending" data-bs-toggle="tooltip" title="Pending" aria-label="Pending"></span>
-                                    <?php endif; ?>
+                                 
+                                    <div class="cell-inner"><?php echo e($item->status); ?></div>
+  
                                 </td>
                                 <td class="action-cell">
                                     <?php
@@ -353,6 +404,66 @@ document.addEventListener('DOMContentLoaded', function(){
 </script>
 
 <script>
+document.addEventListener('DOMContentLoaded', function() {
+    const downloadLinks = document.querySelectorAll('.download-link');
+    downloadLinks.forEach(link => {
+        link.addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            // Show overlay
+            if(window.LoadingOverlay) {
+                window.LoadingOverlay.show('Generating Report', 'Please wait while we prepare your download...');
+            }
+
+            try {
+                const response = await fetch(link.href);
+                if(!response.ok) throw new Error('Download failed: ' + response.statusText);
+                
+                const blob = await response.blob();
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                
+                // Try to extract filename from Content-Disposition header
+                let fileName = 'report';
+                const contentDisposition = response.headers.get('Content-Disposition');
+                if (contentDisposition) {
+                    const idx = contentDisposition.indexOf('filename=');
+                    if (idx !== -1) {
+                        let f = contentDisposition.substring(idx + 9);
+                        if (f.startsWith('"') && f.endsWith('"')) {
+                            f = f.substring(1, f.length - 1);
+                        }
+                        fileName = f;
+                    }
+                }
+                
+                // Fallback filename if extraction failed
+                if (fileName === 'report') {
+                     const isPdf = link.getAttribute('data-type') === 'pdf';
+                     fileName = isPdf ? 'pending_reports.pdf' : 'pending_reports.xlsx';
+                }
+
+                a.download = fileName;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                window.URL.revokeObjectURL(downloadUrl);
+            } catch (error) {
+                console.error('Download error:', error);
+                // Optionally show an error toast here
+            } finally {
+                // Always hide overlay
+                if(window.LoadingOverlay) {
+                    window.LoadingOverlay.hide();
+                }
+            }
+        });
+    });
+});
+</script>
+
+<script>
     const localSearchInput = document.getElementById('localSearch');
 
     if (localSearchInput) {
@@ -422,12 +533,13 @@ document.addEventListener('DOMContentLoaded', function(){
     .marketing-filter-form .input-group .input-group-text { border-right: 0; }
     .marketing-filter-form .input-group .form-control { border-left: 0; }
 
-    /* Force fixed table layout so columns don't shift when long content wraps */
+    /* Keep a predictable column layout but allow rows to grow to fit content */
     table.table { table-layout: fixed; }
-    table.table th, table.table td { vertical-align: middle; }
+    table.table th, table.table td { vertical-align: middle; overflow: visible; }
 
     /* In the pending-items modal, allow auto layout and wrapping so full content shows */
     #pendingItemsModal table.table { table-layout: auto; }
+    .table.auto-layout { table-layout: auto; }
     #pendingItemsModal table.table th,
     #pendingItemsModal table.table td { white-space: normal; overflow: visible; }
 
@@ -439,25 +551,13 @@ document.addEventListener('DOMContentLoaded', function(){
     .table-responsive::-webkit-scrollbar { display: none; } /* Chrome, Safari, Opera */
     .table-responsive .table { margin-bottom: 0; }
 
-    /* Ensure cells respect overflow rules so content cannot push adjacent columns */
-    table.table td, table.table th { overflow: hidden; }
+     /* Allow table cells to expand vertically and wrap content. Use an inner wrapper
+         so long text will wrap within the column width and increase row height. */
+     .cell-inner { display:block; width:100%; overflow: visible; white-space: normal; word-break: break-word; }
 
-    /* Wrapper inside table cells to isolate overflow and allow clamping */
-    .cell-inner { display:block; width:100%; overflow:hidden; }
-
-    /* Truncate long text in specific cells to keep columns narrow
-       Show up to two lines and then ellipsis (multi-line clamp).
-       Applied to the inner wrapper for more reliable layout handling. */
-    .truncate-cell { max-width: 220px; }
-    .truncate-cell .cell-inner {
-        display: -webkit-box; /* required for webkit line-clamp */
-        -webkit-box-orient: vertical;
-        -webkit-line-clamp: 2; /* show up to two lines */
-        overflow: hidden;
-        text-overflow: ellipsis;
-        word-break: break-word;
-        white-space: normal; /* allow wrapping */
-    }
+     /* Limit width so columns remain reasonable while letting content wrap to multiple lines */
+     .truncate-cell { max-width: 220px; }
+     .truncate-cell .cell-inner { -webkit-box-orient: initial; -webkit-line-clamp: initial; }
     @media (max-width: 768px) {
         .truncate-cell { max-width: 140px; }
     }

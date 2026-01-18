@@ -210,6 +210,34 @@ class ClientStatsService
         /** -------------------------
          *  Final Stats Response
          * ------------------------ */
+
+        $invoiceStats = collect([
+            'tax_invoice' => (object) [
+                'invoice_count' => 0,
+                'total_amount' => 0,
+                'total_paid_amount' => 0,
+                'paid_invoice_count' => 0,
+                'partial_invoice_count' => 0,
+                'partial_amount_after_tds' => 0,
+                'partial_received_amount' => 0,
+                'settled_invoice_count' => 0,
+                'settled_amount_after_tds' => 0,
+                'settled_received_amount' => 0,
+                'unpaid_invoice_count' => 0,
+                'total_unpaid_amount' => 0,
+                'canceled_invoice_count' => 0,
+                'canceled_amount' => 0,
+            ],
+            'proforma_invoice' => (object) [
+                'invoice_count' => 0,
+                'total_amount' => 0,
+                'total_paid_amount' => 0,
+                'paid_invoice_count' => 0,
+            ],
+        ])->merge($invoiceStats);
+
+
+
         return [
             // Bookings
             'totalBookings' => (int) ($bookingStats->totalBookings ?? 0),
@@ -237,7 +265,7 @@ class ClientStatsService
             'paidPiInvoices' => (int) ($invoiceStats['proforma_invoice']->paid_invoice_count ?? 0),
             'totalPaidPIAmount' => (float) ($invoiceStats['proforma_invoice']->total_paid_amount ?? 0),
 
-            'unpaidInvoices' => (int) ($invoiceStats['tax_invoice']->unpaid_invoice_count + $manualUnpaidCount?? 0),
+            'unpaidInvoices' => (int) ($invoiceStats['tax_invoice']->unpaid_invoice_count + $manualUnpaidCount ?? 0),
             'totalUnpaidInvoiceAmount' => (float) ($invoiceStats['tax_invoice']->total_unpaid_amount + $manualUnpaidAmount ?? 0),
 
             'canceledGeneratedInvoices' => (int) ($invoiceStats['tax_invoice']->canceled_invoice_count ?? 0),
