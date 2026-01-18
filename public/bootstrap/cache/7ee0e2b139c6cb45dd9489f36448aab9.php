@@ -192,7 +192,7 @@
                                     <th style="width:40px; text-align:center;"><input type="checkbox" id="select-all-checkbox" title="Select all"></th>
                                     <th>Job No.</th>
                                     <!-- <th>Client Name</th> -->
-                                    <th>Description</th>
+                                    <th>Sample Details</th>
                                     <th>Status</th>
                                     <th id="column-header">Select Report</th>
                                     <th> view </th>

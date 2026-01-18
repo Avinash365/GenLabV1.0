@@ -267,7 +267,7 @@
                           <label class="form-label mb-1">Approving Amount</label>
                           <small class="text-muted">Max: ${numberFormat(maxApprovable)}</small>
                         </div>
-                        <input id="apprAmount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00">
+                        <input id="apprAmount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00" value="${maxApprovable.toFixed(2)}">
                         <div class="mt-2 small">Due after approval: <strong id=\"apprDue\" class=\"text-danger\">${numberFormat(maxApprovable)}</strong></div>
                         <label class="form-label mt-3">Description</label>
                         <textarea id="apprNote" rows="2" class="form-control" placeholder="Optional"></textarea>
