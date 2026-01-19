@@ -44,18 +44,19 @@
                     <label class="form-label fw-bold">Invoice Date</label>
                     <input type="date" class="form-control fw-bold" value="{{ $invoice->created_at ? $invoice->created_at->format('Y-m-d') : '' }}" readonly>
                 </div>
-                <div class="col-md-4 mb-3">
-                    <label class="form-label fw-bold">Payable Amount</label>
-                    <input type="number" id="total_amount" class="form-control fw-bold" value="{{ $invoice->total_amount }}" readonly>
+                 <div class="col-md-4">
+                    <label class="form-label fw-bold">Total Amount</label> 
+                    <input type="number" id="tax_amount" name="subtotal_amount" class="form-control fw-bold" value="{{ $totalAmount }}" readonly>
                 </div>
             </div>
 
             {{-- Row 3 --}}
             <div class="row"> 
-                <div class="col-md-4">
-                    <label class="form-label fw-bold">Total Amount</label> 
-                    <input type="number" id="tax_amount" name="subtotal_amount" class="form-control fw-bold" value="{{ $totalAmount }}" readonly>
+                <div class="col-md-4 mb-3">
+                    <label class="form-label fw-bold">Payable Amount</label>
+                    <input type="number" id="total_amount" class="form-control fw-bold" value="{{ $invoice->total_amount }}" readonly>
                 </div>
+
                 <div class="col-md-2 mb-3">
                     <label class="form-label fw-bold">TDS (%)</label>
                     <input type="number" id="tds_percentage" name="tds_percentage" class="form-control" value="0" step="0.01">
