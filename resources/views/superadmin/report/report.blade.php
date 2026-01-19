@@ -1,5 +1,7 @@
 @extends('superadmin.layouts.app')
+
 @section('title', 'Booking By Letter')
+
 @section('content')
 
 @if ($errors->any())
@@ -22,16 +24,16 @@
     <div class="page-header">
         <div class="add-item d-flex">
             <div class="page-title">
-                <h4>Booking</h4>
-                <h6>Booking By Letter</h6>
+                <h4>Reports</h4>
+                <h6>Showing all the itmes that have reports</h6>
             </div>                            
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.showbooking.exportPdf', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v))) }}" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+                <a href="{{ route('superadmin.report.exportPdf', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v))) }}" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.showbooking.exportExcel', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v))) }}" class="no-loader" data-bs-toggle="tooltip" title="Excel">
+                <a href="{{ route('superadmin.report.exportExcel', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v))) }}" class="no-loader" data-bs-toggle="tooltip" title="Excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
                         <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
                     </svg>
@@ -49,7 +51,7 @@
 
     <!-- Search Form -->
     <div class="search-set">
-        <form method="GET" action="{{ route('superadmin.showbooking.showBooking', $department?->id) }}" class="d-flex input-group">
+        <form method="GET" action="{{ route('superadmin.report.index', array_filter(['department' => $department?->id], fn($v) => filled($v))) }}" class="d-flex input-group">
             <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
             <button class="btn btn-outline-secondary" type="submit">🔍</button>
         </form>
@@ -57,7 +59,7 @@
 
     <!-- Month & Year Filter Form -->
     <div class="search-set">
-        <form method="GET" action="{{ route('superadmin.showbooking.showBooking', $department?->id) }}" class="d-flex align-items-center gap-2">
+        <form method="GET" action="{{ route('superadmin.report.index', array_filter(['department' => $department?->id], fn($v) => filled($v))) }}" class="d-flex align-items-center gap-2">
             
             <!-- Month Filter -->
             <select name="month" class="form-control" style="width:auto">
@@ -95,27 +97,29 @@
     </div>
  
 
-</div>
-
-       
+ </div>
+ 
+        
     
         <!--  Department filter buttons -->
         <div class="mb-4 mt-4 ms-3">
             <div class="d-flex flex-wrap gap-2 align-items-center">
-                <a href="{{ route('superadmin.showbooking.showBooking', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
+                <a href="{{ route('superadmin.report.index', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
                    class="btn btn-sm {{ !$department ? 'btn-primary' : 'btn-outline-primary' }}">
                     All
                 </a>
 
                 @foreach($departments as $dept)
-                    <a href="{{ route('superadmin.showbooking.showBooking', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
+                    <a href="{{ route('superadmin.report.index', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
                        class="btn btn-sm {{ $department && $department->id == $dept->id ? 'btn-primary' : 'btn-outline-primary' }}">
                         {{ $dept->name }}
                     </a>
                 @endforeach
 
+                
+
                 @if(isset($marketingPersons) && $marketingPersons->count())
-                    <form method="GET" action="{{ route('superadmin.showbooking.showBooking', $department?->id) }}" class="ms-auto me-3 d-flex align-items-center">
+                    <form method="GET" action="{{ route('superadmin.report.index', array_filter(['department' => $department?->id], fn($v) => filled($v))) }}" class="ms-auto me-3 d-flex align-items-center">
                         @if(request('search'))<input type="hidden" name="search" value="{{ request('search') }}">@endif
                         @if(request('month'))<input type="hidden" name="month" value="{{ request('month') }}">@endif
                         @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
@@ -126,7 +130,48 @@
                                 <option value="{{ $mp->user_code }}" {{ request('marketing') == $mp->user_code ? 'selected' : '' }}>{{ $mp->user_code }} - {{ $mp->name }}</option>
                             @endforeach
                         </select>
+
+                        <div class="ms-2">
+                        <div class="btn-group gap-2">
+                            @php
+                                // Determine which filter is active
+                                $bill = request('bill');
+                                $dispatch = request('dispatch');
+                                $selectedFilter = 'Select Filter';
+                                if ($bill === 'generated') {
+                                    $selectedFilter = 'Generated Bill';
+                                } elseif ($bill === 'not_generated') {
+                                    $selectedFilter = 'Not Bill Generated';
+                                } elseif ($dispatch === 'dispatched') {
+                                    $selectedFilter = 'Dispatched';
+                                } elseif ($dispatch === 'not_dispatched') {
+                                    $selectedFilter = 'Not Dispatched';
+                                }
+                            @endphp
+                            <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                {{ $selectedFilter }}
+                            </button>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superadmin.report.index', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'bill' => 'generated'], fn($v) => filled($v))) }}">Generated Bill</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superadmin.report.index', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'bill' => 'not_generated'], fn($v) => filled($v))) }}">Not Bill Generated</a>
+                                </li>
+                                <li><hr class="dropdown-divider"></li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superadmin.report.index', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'dispatch' => 'dispatched'], fn($v) => filled($v))) }}">Dispatched</a>
+                                </li>
+                                <li>
+                                    <a class="dropdown-item" href="{{ route('superadmin.report.index', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'dispatch' => 'not_dispatched'], fn($v) => filled($v))) }}">Not Dispatched</a>
+                                </li>
+                            </ul>
+                            <a href="{{ route('superadmin.report.index', array_filter(['department' => $department?->id], fn($v) => filled($v))) }}" class="btn btn-sm btn-danger" title="Clear Filters">Clear</a>
+
+                        </div>
+                    </div>
                     </form>
+                    
                 @endif
             </div>
         </div>
@@ -151,8 +196,7 @@
                             <th class="client-col">Client Name</th>
                             <th class="reference-col">Reference No</th>
                             <th class="marketing-col">Marketing Person</th>
-                            <th class="show-letter-col">Show Letter</th>
-                            <th class="items-col">Items</th>
+                            <th class="items-col">Report</th>
                             <th class="action-col">Action</th>
                         </tr>
                     </thead>
@@ -166,86 +210,57 @@
                             <td class="truncate-cell reference-col">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $booking->reference_no }}">{{ $booking->reference_no }}</div>
                             </td>
-                            <td class="marketing-col">{{ $booking->marketingPerson->name }}</td>
-                            <td class="show-letter-col">
-                                @if($booking->upload_letter_path)
-                                    <a href="{{url($booking->upload_letter_path)}}" target="_blank">View</a>
-                                @else
-                                    -
-                                @endif
-                            </td>
+                            <td class="marketing-col">{{ $booking->marketingPerson->name ?? '-' }}</td>
+                             
                             <td class="items-col">
-                                {{ $booking->items->count() }}
-                                @if($booking->items->count() > 0)
-                                    <a href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#itemsModal-{{ $booking->id }}">
-                                        <i data-feather="eye" class="feather-eye ms-1"></i>
-                                    </a>
-                                    <!-- Modal -->
-                                    <div class="modal fade" id="itemsModal-{{ $booking->id }}" tabindex="-1" aria-hidden="true">
-                                        <div class="modal-dialog modal-dialog-centered modal-lg">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title">Booking Items for {{ $booking->client_name }}</h5>
-                                                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                        <span aria-hidden="true">&times;</span> 
-                                                    </button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <div class="table-responsive">
-                                                        <table class="table table-bordered">
-                                                            <thead>
-                                                                <tr>
-                                                                    <th>Job Order No</th>
-                                                                    <th>Sample Description</th>
-                                                                    <th>Sample Quality</th>
-                                                                    <th>Status</th>
-                                                                    <th>Particulars</th>
-                                                                    <th>Expected Date</th>
-                                                                    <th>Amount</th>
-                                                                </tr>
-                                                            </thead>
-                                                            <tbody>
-                                                                @foreach($booking->items as $item)
-                                                                <tr>
-                                                                    <td>{{ $item->job_order_no }}</td>
-                                                                    <td>{{ $item->sample_description }}</td>
-                                                                    <td>{{ $item->sample_quality }}</td>
-                                                                    <td>{{ $item->status }}</td>
-                                                                    <td>{{ $item->particulars }}</td>
-                                                                    <td>{{ \Carbon\Carbon::parse($item->lab_expected_date)->format('d-m-Y') }}</td>
-                                                                    <td>{{ $item->amount }}</td>
-                                                                </tr>
-                                                                @endforeach
-                                                            </tbody>
-                                                        </table>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                @endif
+                                <a href="javascript:void(0)" class="btn btn-sm btn-outline-secondary js-show-reports" data-booking-id="{{ $booking->id }}">{{ $booking->reports_count ?? 0 }}</a>
                             </td>
                             <td class="action-col">
                                 <div class="d-flex justify-content-end align-items-center">
-                                    <a href="{{ route('superadmin.bookings.cards.all', [$booking->id]) }}"
-                                        target="_blank"
-                                        class="border rounded d-flex align-items-center p-2 text-decoration-none me-2"
-                                        aria-label="View booking">
-                                            <i data-feather="eye" class="feather-eye"></i>
-                                    </a>
+                                    @if($booking->upload_letter_path)
+                                        <a href="{{ url($booking->upload_letter_path) }}" target="_blank" class="border rounded d-flex align-items-center p-2 text-decoration-none me-2" aria-label="View letter">
+                                            <i data-feather="file" class="feather-file"></i>
+                                        </a>
+                                    @else
+                                        @php
+                                            $ref = trim((string) ($booking->reference_no ?? ''));
+                                            $safe = $ref !== '' ? preg_replace('/[^A-Za-z0-9_\-]/', '-', $ref) : null;
+                                            $dir = $safe ? "public/letters/{$safe}" : null;
+                                        @endphp
+                                        @if($dir && \Illuminate\Support\Facades\Storage::exists($dir))
+                                            @php
+                                                $files = collect(\Illuminate\Support\Facades\Storage::files($dir))
+                                                    ->reject(function($p){ $b = basename($p); return $b === '_meta.json' || str_starts_with($b, '_'); })
+                                                    ->values();
+                                                $first = $files->first();
+                                                $filename = $first ? basename($first) : null;
+                                                $url = $filename ? route('superadmin.reporting.letters.show', ['job' => $safe, 'filename' => $filename]) : null;
+                                            @endphp
+                                            @if($url)
+                                                <a href="{{ $url }}" target="_blank" class="border rounded d-flex align-items-center p-2 text-decoration-none me-2" aria-label="View letter">
+                                                    <i data-feather="file" class="feather-file"></i>
+                                                </a>
+                                            @else
+                                                <span class="text-muted me-2">-</span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted me-2">-</span>
+                                        @endif
+                                    @endif
 
-                                    <a href="{{ route('superadmin.bookings.edit', $booking->id) }}" 
-                                       class="border rounded d-flex align-items-center p-2 text-decoration-none me-2"
-                                       aria-label="Edit booking">
-                                        <i data-feather="edit" class="feather-edit"></i>
+                                    @php
+                                        $invoice = $booking->generatedInvoice;
+                                        $invoiceUrl = ($invoice && !empty($invoice->invoice_letter_path)) ? url($invoice->invoice_letter_path) : null;
+                                    @endphp
+                                    <a href="{{ $invoiceUrl ?? 'javascript:void(0)' }}"
+                                       target="_blank"
+                                       class="border rounded d-flex align-items-center justify-content-center p-2 text-decoration-none me-2 {{ $invoiceUrl ? '' : 'disabled text-muted' }}"
+                                       style="width:38px;height:38px;"
+                                       data-bs-toggle="tooltip"
+                                       title="{{ $invoiceUrl ? 'View Bill' : 'Bill not generated' }}"
+                                       {{ $invoiceUrl ? '' : 'aria-disabled="true"' }}>
+                                        <i data-feather="file-text" class="feather-file-text"></i>
                                     </a>
-
-                                    <!-- Delete Button -->
-                                    <button type="button" class="border rounded d-flex align-items-center p-2 btn-delete"
-                                            data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $booking->id }}"
-                                            aria-label="Delete booking">
-                                        <i data-feather="trash-2" class="feather-trash-2"></i>
-                                    </button>
 
                                     <!-- Delete Modal -->
                                     <div class="modal fade" id="deleteModal-{{ $booking->id }}" tabindex="-1" aria-hidden="true">
@@ -351,7 +366,7 @@
             <!-- Pagination -->
             <div class="p-3">
                 <div class="d-flex justify-content-between align-items-center mt-3 flex-wrap gap-2">
-                    <form method="GET" action="{{ route('superadmin.showbooking.showBooking', $department?->id) }}" class="d-flex align-items-center gap-2">
+                    <form method="GET" action="{{ route('superadmin.report.index', array_filter(['department' => $department?->id], fn($v) => filled($v))) }}" class="d-flex align-items-center gap-2">
                         @foreach(request()->except(['perPage','page']) as $key => $val)
                             <input type="hidden" name="{{ $key }}" value="{{ $val }}">
                         @endforeach
@@ -371,3 +386,43 @@
     </div>
 </div>
 @endsection
+
+@push('scripts')
+<script>
+document.addEventListener('click', async function(e){
+    const btn = e.target.closest('.js-show-reports');
+    if(!btn) return;
+    const bookingId = btn.dataset.bookingId;
+    if(!bookingId) return;
+
+    // Create modal container if missing
+    let modal = document.getElementById('bookingReportsModal');
+    if(!modal){
+        modal = document.createElement('div');
+        modal.id = 'bookingReportsModal';
+        modal.style = 'position:fixed;left:0;top:0;right:0;bottom:0;background:rgba(0,0,0,0.6);display:flex;align-items:center;justify-content:center;z-index:1050;';
+        modal.innerHTML = `
+            <div style="width:90%;max-width:900px;background:#fff;border-radius:6px;overflow:hidden;position:relative;">
+                <button type="button" id="bookingReportsClose" style="position:absolute;right:10px;top:10px;z-index:2;border:none;background:#fff;padding:8px 12px;border-radius:50%;cursor:pointer;font-size:18px;">✖</button>
+                <div id="bookingReportsContent" style="padding:16px;max-height:80vh;overflow:auto;"></div>
+            </div>`;
+        document.body.appendChild(modal);
+        document.getElementById('bookingReportsClose').addEventListener('click', ()=> modal.style.display='none');
+        modal.addEventListener('click', function(ev){ if(ev.target === modal){ modal.style.display='none'; } });
+    }
+
+    const content = document.getElementById('bookingReportsContent');
+    content.innerHTML = '<div style="padding:30px;text-align:center;">Loading...</div>';
+    modal.style.display = 'flex';
+
+    try{
+        const resp = await fetch(`{{ url('superadmin/report') }}/${bookingId}/reports`, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        if(!resp.ok) throw new Error('Failed to fetch reports');
+        const html = await resp.text();
+        content.innerHTML = html;
+    }catch(err){
+        content.innerHTML = '<div class="text-danger p-3">Error loading reports: '+(err.message||'')+'</div>';
+    }
+});
+</script>
+@endpush

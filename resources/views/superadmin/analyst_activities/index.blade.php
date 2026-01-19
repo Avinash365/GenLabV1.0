@@ -79,7 +79,7 @@
                             <!-- 3. Sample Description -->
                             <th>Sample Description</th>
                             <!-- 4. Quantity -->
-                            <th class="text-center">Quantity</th>
+                            <!-- <th class="text-center">Quantity</th> -->
                             <!-- 5. Lab Expected Date -->
                             <th class="text-center">Lab Expected Date</th>
                             <!-- 6. Date / Time -->
@@ -100,9 +100,9 @@
                             <td class="text-wrap" style="min-width: 250px; max-width: 450px;">
                                 {{ $job->sample_description }}
                             </td>
-                            <td class="text-center">
+                            <!-- <td class="text-center">
                                 <span class="badge bg-light text-dark border">1</span>
-                            </td>
+                            </td> -->
                             <td class="text-center">
                                 {{ $job->lab_expected_date && $job->lab_expected_date instanceof \DateTime ? $job->lab_expected_date->format('Y-m-d') : ($job->lab_expected_date ?? '-') }}
                             </td>

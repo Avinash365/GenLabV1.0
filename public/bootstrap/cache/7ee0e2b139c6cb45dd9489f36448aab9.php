@@ -14,7 +14,7 @@
         <div class="card-body">
             <form method="GET" action="<?php echo e(route('superadmin.reporting.received')); ?>" class="row g-2 align-items-end">
                 <div class="col-sm-4">
-                    <label class="form-label">Reference No</label>
+                    <label class="form-label">Job Order No</label>
                     <input type="text" name="job" value="<?php echo e($job); ?>" class="form-control" placeholder="Enter Reference No">
                 </div>
                 <div class="col-sm-2">
@@ -192,7 +192,7 @@
                                     <th style="width:40px; text-align:center;"><input type="checkbox" id="select-all-checkbox" title="Select all"></th>
                                     <th>Job No.</th>
                                     <!-- <th>Client Name</th> -->
-                                    <th>Description</th>
+                                    <th>Sample Details</th>
                                     <th>Status</th>
                                     <th id="column-header">Select Report</th>
                                     <th> view </th>
@@ -503,7 +503,7 @@
         <div class="modal-dialog modal-lg modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">Uploaded Letters</h5>
+                    <h5 class="modal-title">Uploaded Reports</h5>
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">

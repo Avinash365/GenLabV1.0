@@ -327,7 +327,11 @@
 
 
                         <!-- Single links -->
-                        <li><a href="#"><i class="ti ti-file-text fs-16 me-2"></i><span>Report</span></a></li>
+                        <li>
+                            <a href="<?php echo e(route('superadmin.report.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.report.index') ? 'active' : ''); ?>">
+                                <i class="ti ti-file-text fs-16 me-2"></i><span>Report</span>
+                            </a>
+                        </li>
                         
 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('lab-analysts.view'))): ?>
@@ -553,7 +557,7 @@
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.view')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.view') ? 'active' : ''); ?>">Marketing Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.office.expenses.view')); ?>" class="<?php echo e(Request::routeIs('superadmin.office.expenses.view') ? 'active' : ''); ?>">Office Expenses</a></li>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved', ['status' => 'pending'])); ?>" class="<?php echo e((Request::routeIs('superadmin.marketing.expenses.approved') && request('status','pending') === 'pending') ? 'active' : ''); ?>">Approve Expenses</a></li>
-                                <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved', ['status' => 'approved'])); ?>" class="<?php echo e((Request::routeIs('superadmin.marketing.expenses.approved') && request('status') === 'approved') ? 'active' : ''); ?>">Approved Expenses</a></li>
+                                <!-- <li><a href="<?php echo e(route('superadmin.marketing.expenses.approved', ['status' => 'approved'])); ?>" class="<?php echo e((Request::routeIs('superadmin.marketing.expenses.approved') && request('status') === 'approved') ? 'active' : ''); ?>">Approved Expenses</a></li> -->
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.rejected')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.rejected') ? 'active' : ''); ?>">Rejected Expenses</a></li>
                                 
                             </ul>
@@ -579,10 +583,11 @@
                                 </li>
                             </ul>
                         </li>
-                        <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Sale</span></a></li>
-                        <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Sale</span></a></li>
+                        <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Cell</span></a></li>
+                        <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Cell</span></a></li>
                         <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
+                        <li><a href="<?php echo e(route('superadmin.clients.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Client</span></a></li>
 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('report-format.create'))): ?>
                             <li>
