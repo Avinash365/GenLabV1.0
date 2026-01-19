@@ -227,8 +227,8 @@
                                     <div class="item-group border p-3 mb-3 rounded">
                                         <div class="row g-3">
                                             <div class="col-lg-4 col-sm-6 col-12">
-                                                <label class="form-label">Sample Description *</label>
-                                                <input type="text" name="booking_items[{{ $index }}][sample_description]" class="form-control" value="{{ $item['sample_description'] ?? '' }}" required>
+                                                <label class="form-label">Sample Description </label>
+                                                <input type="text" name="booking_items[{{ $index }}][sample_description]" class="form-control" value="{{ $item['sample_description'] ?? '' }}">
                                             </div>
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Particulars *</label>

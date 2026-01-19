@@ -231,7 +231,7 @@ class BookingController extends Controller
                 $new_booking->update($bookingData);
 
                 // Remove all previous items
-                $new_booking->items()->delete();
+                $new_booking->items()->forceDelete();
 
                 // Insert new items if provided
                 if ($request->has('booking_items')) {

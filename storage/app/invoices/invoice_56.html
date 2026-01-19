@@ -1,6 +1,6 @@
 <form id="previewInvoiceForm" method="POST" action="__ACTION_URL__">
 
-                <input type="hidden" name="_token" value="__CSRF_TOKEN__">
+                <input type="hidden" name="_token" value="__CSRF_TOKEN__"><input type="hidden" name="_method" value="PUT">
                 <input type="hidden" id="td_booking_id" name="booking_id" value="24">
 
                 <input type="hidden" name="invoice_data" id="preview_invoice_data">
@@ -42,7 +42,7 @@
 
                                 <td class="text-centre">
 
-                                    <img src="__QR_CODE_IMAGE__" width="100">
+                                    <img src="data:image/svg+xml;base64,PD94bWwgdmVyc2lvbj0iMS4wIiBlbmNvZGluZz0iVVRGLTgiPz4KPHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZlcnNpb249IjEuMSIgd2lkdGg9IjIwMCIgaGVpZ2h0PSIyMDAiIHZpZXdCb3g9IjAgMCAyMDAgMjAwIj48cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgZmlsbD0iI2ZmZmZmZiIvPjxnIHRyYW5zZm9ybT0ic2NhbGUoNS40MDUpIj48ZyB0cmFuc2Zvcm09InRyYW5zbGF0ZSgwLDApIj48cGF0aCBmaWxsLXJ1bGU9ImV2ZW5vZGQiIGQ9Ik04IDBMOCA0TDkgNEw5IDVMOCA1TDggN0w5IDdMOSA2TDEwIDZMMTAgOUw5IDlMOSAxMEw4IDEwTDggOUw3IDlMNyA4TDQgOEw0IDlMMiA5TDIgOEwwIDhMMCAxMUwxIDExTDEgMTJMMiAxMkwyIDExTDUgMTFMNSA5TDcgOUw3IDEwTDYgMTBMNiAxMUw3IDExTDcgMTJMNSAxMkw1IDEzTDQgMTNMNCAxMkwzIDEyTDMgMTNMMiAxM0wyIDE1TDMgMTVMMyAxNkwwIDE2TDAgMTdMMyAxN0wzIDE4TDYgMThMNiAxOUw3IDE5TDcgMjBMNiAyMEw2IDIxTDcgMjFMNyAyMkw2IDIyTDYgMjNMNyAyM0w3IDI0TDYgMjRMNiAyNUw1IDI1TDUgMjRMMyAyNEwzIDIyTDQgMjJMNCAyMUw1IDIxTDUgMjBMNCAyMEw0IDE5TDMgMTlMMyAyMEwyIDIwTDIgMThMMSAxOEwxIDE5TDAgMTlMMCAyMUwxIDIxTDEgMjBMMiAyMEwyIDIzTDEgMjNMMSAyMkwwIDIyTDAgMjNMMSAyM0wxIDI0TDIgMjRMMiAyNkwzIDI2TDMgMjdMNSAyN0w1IDI5TDcgMjlMNyAyOEw5IDI4TDkgMjlMOCAyOUw4IDMwTDkgMzBMOSAzMUw4IDMxTDggMzNMOSAzM0w5IDM0TDEwIDM0TDEwIDM1TDggMzVMOCAzN0w5IDM3TDkgMzZMMTAgMzZMMTAgMzVMMTEgMzVMMTEgMzZMMTIgMzZMMTIgMzdMMTMgMzdMMTMgMzVMMTUgMzVMMTUgMzZMMTQgMzZMMTQgMzdMMTYgMzdMMTYgMzZMMTcgMzZMMTcgMzdMMTggMzdMMTggMzZMMTkgMzZMMTkgMzdMMjAgMzdMMjAgMzZMMTkgMzZMMTkgMzNMMjAgMzNMMjAgMzRMMjEgMzRMMjEgMzdMMjIgMzdMMjIgMzVMMjMgMzVMMjMgMzZMMjQgMzZMMjQgMzdMMjUgMzdMMjUgMzZMMjQgMzZMMjQgMzVMMjcgMzVMMjcgMzdMMjggMzdMMjggMzVMMzAgMzVMMzAgMzZMMzIgMzZMMzIgMzVMMzEgMzVMMzEgMzNMMzMgMzNMMzMgMzFMMzQgMzFMMzQgMzNMMzUgMzNMMzUgMzBMMzYgMzBMMzYgMjlMMzcgMjlMMzcgMjhMMzUgMjhMMzUgMjdMMzQgMjdMMzQgMjhMMzIgMjhMMzIgMjdMMzMgMjdMMzMgMjZMMzYgMjZMMzYgMjVMMzcgMjVMMzcgMjRMMzYgMjRMMzYgMjNMMzUgMjNMMzUgMTlMMzYgMTlMMzYgMTdMMzUgMTdMMzUgMTZMMzcgMTZMMzcgMTVMMzYgMTVMMzYgMTRMMzMgMTRMMzMgMTNMMzYgMTNMMzYgMTJMMzcgMTJMMzcgMTFMMzYgMTFMMzYgMTBMMzUgMTBMMzUgOUwzNyA5TDM3IDhMMzMgOEwzMyA5TDMyIDlMMzIgOEwzMSA4TDMxIDExTDMwIDExTDMwIDlMMjggOUwyOCA4TDI5IDhMMjkgMEwyNiAwTDI2IDFMMjUgMUwyNSAwTDIzIDBMMjMgMUwyNCAxTDI0IDJMMjYgMkwyNiAzTDIzIDNMMjMgNUwyNCA1TDI0IDRMMjUgNEwyNSA1TDI4IDVMMjggN0wyNyA3TDI3IDZMMjYgNkwyNiA3TDI3IDdMMjcgMTFMMjggMTFMMjggMTJMMjkgMTJMMjkgMTFMMzAgMTFMMzAgMTNMMjYgMTNMMjYgMTRMMjQgMTRMMjQgMTNMMjUgMTNMMjUgMTBMMjYgMTBMMjYgOUwyNSA5TDI1IDhMMjQgOEwyNCA3TDI1IDdMMjUgNkwyNCA2TDI0IDdMMjMgN0wyMyA2TDIyIDZMMjIgMEwyMSAwTDIxIDFMMjAgMUwyMCAwTDE5IDBMMTkgMUwxNyAxTDE3IDBMMTYgMEwxNiAxTDE3IDFMMTcgM0wxOCAzTDE4IDJMMTkgMkwxOSA0TDE4IDRMMTggNUwxNyA1TDE3IDRMMTYgNEwxNiAyTDE1IDJMMTUgNEwxNCA0TDE0IDNMMTMgM0wxMyAyTDE0IDJMMTQgMUwxNSAxTDE1IDBMMTQgMEwxNCAxTDEzIDFMMTMgMEwxMCAwTDEwIDFMMTIgMUwxMiAzTDExIDNMMTEgMkw5IDJMOSAwWk0yNyAxTDI3IDNMMjYgM0wyNiA0TDI3IDRMMjcgM0wyOCAzTDI4IDFaTTIwIDNMMjAgNkwxOSA2TDE5IDVMMTggNUwxOCA2TDE3IDZMMTcgN0wxOCA3TDE4IDlMMTcgOUwxNyA4TDE2IDhMMTYgOUwxNCA5TDE0IDZMMTUgNkwxNSA3TDE2IDdMMTYgNEwxNSA0TDE1IDVMMTQgNUwxNCA2TDEzIDZMMTMgNUwxMSA1TDExIDRMMTAgNEwxMCA1TDExIDVMMTEgN0wxMiA3TDEyIDZMMTMgNkwxMyA4TDExIDhMMTEgOUwxMCA5TDEwIDEwTDkgMTBMOSAxMUw4IDExTDggMTRMNyAxNEw3IDEzTDYgMTNMNiAxNEw1IDE0TDUgMTdMNiAxN0w2IDE4TDcgMThMNyAxOUw4IDE5TDggMjFMMTAgMjFMMTAgMjBMMTEgMjBMMTEgMjFMMTQgMjFMMTQgMjJMMTMgMjJMMTMgMjNMMTIgMjNMMTIgMjRMMTEgMjRMMTEgMjJMMTAgMjJMMTAgMjNMOSAyM0w5IDI0TDcgMjRMNyAyNUw2IDI1TDYgMjZMNyAyNkw3IDI3TDYgMjdMNiAyOEw3IDI4TDcgMjdMOCAyN0w4IDI2TDcgMjZMNyAyNUw5IDI1TDkgMjRMMTEgMjRMMTEgMjVMMTAgMjVMMTAgMjdMOSAyN0w5IDI4TDExIDI4TDExIDI5TDkgMjlMOSAzMEwxMiAzMEwxMiAzMUwxMSAzMUwxMSAzMkw5IDMyTDkgMzNMMTAgMzNMMTAgMzRMMTEgMzRMMTEgMzNMMTQgMzNMMTQgMzRMMTUgMzRMMTUgMzNMMTcgMzNMMTcgMzJMMTYgMzJMMTYgMzFMMTggMzFMMTggMzNMMTkgMzNMMTkgMzJMMjAgMzJMMjAgMzNMMjEgMzNMMjEgMzRMMjIgMzRMMjIgMzNMMjQgMzNMMjQgMzRMMjYgMzRMMjYgMzNMMjggMzNMMjggMzRMMjcgMzRMMjcgMzVMMjggMzVMMjggMzRMMzAgMzRMMzAgMzNMMjggMzNMMjggMzBMMjYgMzBMMjYgMjlMMjggMjlMMjggMjhMMjkgMjhMMjkgMjdMMjggMjdMMjggMjhMMjcgMjhMMjcgMjdMMjUgMjdMMjUgMjZMMjQgMjZMMjQgMjhMMjUgMjhMMjUgMjlMMjQgMjlMMjQgMzBMMjUgMzBMMjUgMzFMMjMgMzFMMjMgMzBMMjIgMzBMMjIgMzNMMjEgMzNMMjEgMzBMMjAgMzBMMjAgMjlMMjEgMjlMMjEgMjZMMjAgMjZMMjAgMjVMMTkgMjVMMTkgMjRMMTggMjRMMTggMjVMMTkgMjVMMTkgMjdMMTggMjdMMTggMjZMMTcgMjZMMTcgMjRMMTYgMjRMMTYgMjNMMTcgMjNMMTcgMjFMMTkgMjFMMTkgMjJMMTggMjJMMTggMjNMMjEgMjNMMjEgMjJMMjUgMjJMMjUgMjNMMjIgMjNMMjIgMjRMMjUgMjRMMjUgMjVMMjYgMjVMMjYgMjZMMjcgMjZMMjcgMjVMMzAgMjVMMzAgMjZMMzEgMjZMMzEgMjVMMzMgMjVMMzMgMjNMMzQgMjNMMzQgMjFMMzMgMjFMMzMgMjBMMzQgMjBMMzQgMThMMzUgMThMMzUgMTdMMzQgMTdMMzQgMTVMMzMgMTVMMzMgMTRMMzIgMTRMMzIgMTVMMzEgMTVMMzEgMTNMMzMgMTNMMzMgMTJMMzQgMTJMMzQgMTFMMzUgMTFMMzUgMTJMMzYgMTJMMzYgMTFMMzUgMTFMMzUgMTBMMzIgMTBMMzIgMTFMMzEgMTFMMzEgMTNMMzAgMTNMMzAgMTRMMjggMTRMMjggMTVMMzEgMTVMMzEgMTdMMzAgMTdMMzAgMTZMMjggMTZMMjggMTdMMzAgMTdMMzAgMTlMMzEgMTlMMzEgMjFMMzAgMjFMMzAgMjBMMjYgMjBMMjYgMThMMjcgMThMMjcgMTdMMjYgMTdMMjYgMTZMMjcgMTZMMjcgMTVMMjUgMTVMMjUgMTZMMjMgMTZMMjMgMTVMMjIgMTVMMjIgMTdMMjEgMTdMMjEgMTZMMjAgMTZMMjAgMTNMMjEgMTNMMjEgMTRMMjMgMTRMMjMgMTNMMjEgMTNMMjEgMTJMMjAgMTJMMjAgMTBMMjEgMTBMMjEgOUwyMCA5TDIwIDhMMjEgOEwyMSA3TDIyIDdMMjIgNkwyMSA2TDIxIDNaTTE4IDZMMTggN0wxOSA3TDE5IDZaTTIwIDZMMjAgN0wyMSA3TDIxIDZaTTIzIDhMMjMgOUwyMiA5TDIyIDEwTDIzIDEwTDIzIDlMMjQgOUwyNCAxMEwyNSAxMEwyNSA5TDI0IDlMMjQgOFpNMSA5TDEgMTFMMiAxMUwyIDlaTTExIDlMMTEgMTJMMTAgMTJMMTAgMTNMOSAxM0w5IDE0TDggMTRMOCAxNUw3IDE1TDcgMTRMNiAxNEw2IDE1TDcgMTVMNyAxNkw2IDE2TDYgMTdMOCAxN0w4IDE1TDkgMTVMOSAxNkwxMCAxNkwxMCAxN0wxMSAxN0wxMSAyMEwxMiAyMEwxMiAxOEwxMyAxOEwxMyAxOUwxNCAxOUwxNCAxN0wxNSAxN0wxNSAyMEwxNCAyMEwxNCAyMUwxNSAyMUwxNSAyMkwxNCAyMkwxNCAyOUwxMyAyOUwxMyAyN0wxMiAyN0wxMiAyNkwxMyAyNkwxMyAyNUwxMSAyNUwxMSAyN0wxMiAyN0wxMiAyOUwxMyAyOUwxMyAzMUwxNCAzMUwxNCAyOUwxNSAyOUwxNSAzMUwxNiAzMUwxNiAzMEwxNyAzMEwxNyAyOUwxOCAyOUwxOCAyN0wxNyAyN0wxNyAyOUwxNSAyOUwxNSAyOEwxNiAyOEwxNiAyNEwxNSAyNEwxNSAyM0wxNiAyM0wxNiAyMUwxNSAyMUwxNSAyMEwxNiAyMEwxNiAxN0wxNyAxN0wxNyAyMEwxOSAyMEwxOSAyMUwyNSAyMUwyNSAyMkwyNyAyMkwyNyAyM0wyNiAyM0wyNiAyNEwyNyAyNEwyNyAyM0wyOCAyM0wyOCAyNEwzMCAyNEwzMCAyNUwzMSAyNUwzMSAyNEwzMiAyNEwzMiAyM0wzMyAyM0wzMyAyMUwzMSAyMUwzMSAyNEwzMCAyNEwzMCAyMUwyOCAyMUwyOCAyMkwyNyAyMkwyNyAyMUwyNiAyMUwyNiAyMEwyMyAyMEwyMyAxOUwyNSAxOUwyNSAxOEwyNCAxOEwyNCAxN0wyMyAxN0wyMyAxOUwyMSAxOUwyMSAxOEwyMCAxOEwyMCAxOUwxOSAxOUwxOSAxOEwxOCAxOEwxOCAxN0wyMCAxN0wyMCAxNkwxOCAxNkwxOCAxNUwxOSAxNUwxOSAxM0wxOCAxM0wxOCAxMUwxOSAxMUwxOSAxMEwyMCAxMEwyMCA5TDE5IDlMMTkgMTBMMTcgMTBMMTcgOUwxNiA5TDE2IDEwTDE1IDEwTDE1IDExTDE2IDExTDE2IDEzTDE0IDEzTDE0IDEyTDEzIDEyTDEzIDExTDE0IDExTDE0IDlaTTEyIDEwTDEyIDExTDEzIDExTDEzIDEwWk0xNiAxMEwxNiAxMUwxNyAxMUwxNyAxMFpNMjggMTBMMjggMTFMMjkgMTFMMjkgMTBaTTExIDEyTDExIDEzTDEwIDEzTDEwIDE0TDkgMTRMOSAxNUwxMCAxNUwxMCAxNkwxMSAxNkwxMSAxN0wxNCAxN0wxNCAxNkwxNSAxNkwxNSAxN0wxNiAxN0wxNiAxNUwxMyAxNUwxMyAxNEwxMiAxNEwxMiAxNUwxMSAxNUwxMSAxM0wxMyAxM0wxMyAxMlpNMCAxM0wwIDE1TDEgMTVMMSAxM1pNMTYgMTNMMTYgMTRMMTcgMTRMMTcgMTVMMTggMTVMMTggMTRMMTcgMTRMMTcgMTNaTTMgMTRMMyAxNUw0IDE1TDQgMTRaTTEyIDE1TDEyIDE2TDEzIDE2TDEzIDE1Wk0zMiAxNUwzMiAxNkwzMyAxNkwzMyAxNVpNMzEgMTdMMzEgMTlMMzMgMTlMMzMgMTdaTTkgMThMOSAyMEwxMCAyMEwxMCAxOFpNMjAgMTlMMjAgMjBMMjEgMjBMMjEgMTlaTTM1IDI0TDM1IDI1TDM2IDI1TDM2IDI0Wk0wIDI1TDAgMjZMMSAyNkwxIDI1Wk0zIDI1TDMgMjZMNSAyNkw1IDI1Wk0yMiAyNUwyMiAyOUwyMyAyOUwyMyAyNVpNMzAgMjdMMzAgMjhMMzEgMjhMMzEgMjdaTTAgMjhMMCAyOUwzIDI5TDMgMjhaTTE5IDI4TDE5IDI5TDIwIDI5TDIwIDI4Wk0yOSAyOUwyOSAzMkwzMiAzMkwzMiAyOVpNMzMgMjlMMzMgMzBMMzUgMzBMMzUgMjlaTTE4IDMwTDE4IDMxTDE5IDMxTDE5IDMwWk0zMCAzMEwzMCAzMUwzMSAzMUwzMSAzMFpNMjYgMzFMMjYgMzJMMjcgMzJMMjcgMzFaTTE0IDMyTDE0IDMzTDE1IDMzTDE1IDMyWk0xNiAzNEwxNiAzNUwxOCAzNUwxOCAzNFpNMzQgMzRMMzQgMzVMMzMgMzVMMzMgMzdMMzcgMzdMMzcgMzZMMzYgMzZMMzYgMzVMMzUgMzVMMzUgMzRaTTAgMEwwIDdMNyA3TDcgMFpNMSAxTDEgNkw2IDZMNiAxWk0yIDJMMiA1TDUgNUw1IDJaTTMwIDBMMzAgN0wzNyA3TDM3IDBaTTMxIDFMMzEgNkwzNiA2TDM2IDFaTTMyIDJMMzIgNUwzNSA1TDM1IDJaTTAgMzBMMCAzN0w3IDM3TDcgMzBaTTEgMzFMMSAzNkw2IDM2TDYgMzFaTTIgMzJMMiAzNUw1IDM1TDUgMzJaIiBmaWxsPSIjMDAwMDAwIi8+PC9nPjwvZz48L3N2Zz4K" width="100">
 
                                 </td>
                             </tr>
@@ -95,7 +95,7 @@
                         </thead>
 
                         <tbody>
-                                                                                                <tr class="item-row">
+                                                                                                <tr class="item-row selected">
                                         <!-- <td contenteditable="true">1</td> -->
                                         <td contenteditable="true" class="editable description ">
                                             Hii
@@ -103,18 +103,17 @@
                                         <td>911346478</td>
                                         <td>998346</td>
                                         <td contenteditable="true" class="editable qty ">
-                                            1
-                                        </td>
+                                            10</td>
                                         <td contenteditable="true" class="editable rate ">
                                             1,000.00
                                         </td>
-                                        <td class="amount">1000.00</td>
+                                        <td class="amount">10000.00</td>
                                     </tr>
                                                             
                             
                             <tr class="total-row">
                                 <td colspan="5" class="text-right">Total Amount</td>
-                                <td id="totalAmount">1000.00</td>
+                                <td id="totalAmount">10000.00</td>
                             </tr>
 
                             <tr class="total-row" id="discountRow">
@@ -127,7 +126,7 @@
 
                             <tr class="total-row" id="afterDiscountRow">
                                 <td colspan="5" class="text-right">After Discount</td>
-                                <td id="afterDiscount">1000.00</td>
+                                <td id="afterDiscount">10000.00</td>
                             </tr>
 
                             <tr class="total-row">
@@ -161,11 +160,11 @@
 
                             <tr class="total-row">
                                 <td colspan="5" class="text-right">Payable Amount</td>
-                                <td id="payableAmount">1000.00</td>
+                                <td id="payableAmount">10000.00</td>
                             </tr>
 
                             <tr>
-                                <th colspan="6" id="amountInWords" class="text-centre"><strong>Amount in Words:</strong> One Thousand Rupees Only</th>
+                                <th colspan="6" id="amountInWords" class="text-centre"><strong>Amount in Words:</strong> Ten Thousand Rupees Only</th>
                             </tr>
 
                         </tbody>

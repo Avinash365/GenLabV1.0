@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Invoice;
 use App\Models\InvoiceBookingItem;
-use App\Models\{NewBooking, Department, Client, PaymentSetting};
+use App\Models\{NewBooking, Department, Client, PaymentSetting, BookingItem};
 use Carbon\Carbon;
 use App\Services\{GetUserActiveDepartment, BillingService};
 use App\Services\InvoicePdfService;
@@ -245,6 +245,8 @@ class InvoiceController extends Controller
     public function updateBulk(Request $request, $invoiceId)
     {
 
+        // dd($request->all()); 
+        // exit; 
 
         $request->validate([
             'invoice_data' => 'required',
@@ -260,6 +262,19 @@ class InvoiceController extends Controller
 
         $bookingIds = json_decode($request->booking_ids, true) ?? [];
 
+        $amountMap = collect($invoiceData['items'] ?? [])
+                    ->filter(function ($item) {
+                        return !empty($item['job_order_no'])
+                            && $item['job_order_no'] !== 'Job Order No'
+                            && (float) $item['rate'] > 0;
+                    })
+                    ->mapWithKeys(function ($item) {
+                        return [
+                            trim($item['job_order_no']) => (float) $item['rate']
+                        ];
+                    });
+
+
         try {
 
             $invoice = Invoice::findOrFail($invoiceId);
@@ -270,12 +285,15 @@ class InvoiceController extends Controller
                 ? NewBooking::select('client_id', 'marketing_id')->find($firstBookingId)
                 : null;
 
-            DB::transaction(function () use ($invoice, $invoiceData, $bookingIds, $request, $booking) {
+            $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id(): null;  
+
+            DB::transaction(function () use ($invoice, $invoiceData, $bookingIds, $request, $booking, $generatedBy) {
 
                 /* ===================== UPDATE INVOICE HEADER ===================== */
                 $invoice->update([
                     'client_id' => $booking->client_id ?? null,
                     'marketing_user_code' => $booking->marketing_id ?? null,
+                    'invoice_date' => $invoiceData['booking_info']['invoice_date'] ?? now(), 
 
                     'new_booking_id' => $bookingIds[0] ?? null,
                     'invoice_booking_ids' => implode(',', $bookingIds),
@@ -286,6 +304,7 @@ class InvoiceController extends Controller
                     'name_of_work' => $invoiceData['booking_info']['name_of_work'] ?? null,
                     'client_gstin' => $invoiceData['booking_info']['client_gstin'] ?? null,
 
+                    'total_job_order_amount' => $invoiceData['totals']['total_amount'] ?? 0,
                     'discount_percent' => $invoiceData['totals']['discount_percent'] ?? 0,
                     'cgst_percent' => $invoiceData['totals']['cgst_percent'] ?? 0,
                     'sgst_percent' => $invoiceData['totals']['sgst_percent'] ?? 0,
@@ -294,9 +313,9 @@ class InvoiceController extends Controller
                     'gst_amount' => $this->calculateGstAmount($invoiceData['totals']),
                     'total_amount' => $invoiceData['totals']['payable_amount'] ?? 0,
 
+                    'round_of' => $invoiceData['totals']['round_off'] ?? 0,
                     'address' => $invoiceData['booking_info']['address'] ?? null,
-                    'invoice_date' => now(),
-                    'generated_by' => null,
+                    'generated_by' => $generatedBy,
                 ]);
 
                 /* ===================== DELETE OLD ITEMS ===================== */
@@ -387,13 +406,16 @@ class InvoiceController extends Controller
     public function update(Request $request, Invoice $invoice)
     {
         try {
-
-
             $html = $request->invoice_html;
             Storage::put(
                 "invoices/invoice_{$invoice->id}.html",
                 $html
             );
+
+            // dd($request->all()); 
+            // exit; 
+
+            $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id(): null;  
 
             $invoice_no = $request->input('invoice_no') ?? $invoice->invoice_no;
             $bookingId = $request->input('booking_id') ?? $invoice->new_booking_id;
@@ -437,7 +459,8 @@ class InvoiceController extends Controller
                 'total_amount' => $invoiceData['bill']['payable_amount'] ?? $invoice->total_amount,
                 'address' => $invoiceData['invoice']['address'] ?? $invoice->address,
                 'type' => $invoiceType,
-                'invoice_date' => $invoiceData['invoice']['invoice_date']
+                'invoice_date' => $invoiceData['invoice']['invoice_date'], 
+                'generated_by' => $generatedBy,
             ]);
 
             $invoiceId = $invoice->id;
@@ -481,16 +504,28 @@ class InvoiceController extends Controller
             }
 
             // Update booking items
-            $booking = NewBooking::with('items')->find($bookingId);
-            if ($booking && $booking->items->count() > 0) {
-                $amounts = array_column($invoiceData['items'], 'rate');
-                foreach ($booking->items as $index => $item) {
-                    if (isset($amounts[$index])) {
-                        $item->amount = $amounts[$index];
-                        $item->save();
-                    }
+            // $booking = NewBooking::with('items')->find($bookingId);
+            // if ($booking && $booking->items->count() > 0) {
+            //     $amounts = array_column($invoiceData['items'], 'rate');
+            //     foreach ($booking->items as $index => $item) {
+            //         if (isset($amounts[$index])) {
+            //             $item->amount = $amounts[$index];
+            //             $item->save();
+            //         }
+            //     }
+            // }
+
+            if ($invoiceData['amountMap']->isNotEmpty()) {
+                foreach ($invoiceData['amountMap'] as $jobOrderNo => $amount) {
+                    BookingItem::where('job_order_no', $jobOrderNo)
+                        ->update(['amount' => $amount]);
                 }
             }
+ 
+
+            // dd($invoiceData['amountMap']); 
+            // exit; 
+
 
             return redirect()->back()->with('success', 'Invoice updated successfully.');
 

@@ -10,7 +10,7 @@ use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
-use App\Models\{NewBooking, Department, Invoice, InvoiceBookingItem, PaymentSetting, SiteSetting, User, Client};
+use App\Models\{NewBooking,BookingItem, Department, Invoice, InvoiceBookingItem, PaymentSetting, SiteSetting, User, Client};
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BookingsExport;
@@ -229,10 +229,7 @@ class GenerateInvoiceStatusController extends Controller
             $booking = NewBooking::select('client_id', 'marketing_id')->find($bookingId);
         }
 
-        $generatedBy = Auth::id();
-        if (!User::where('id', $generatedBy)->exists()) {
-            $generatedBy = null; // automatically set NULL if user not found
-        }
+        $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id(): null; 
 
         $invoice = Invoice::create([
             'client_id' => $booking->client_id ?? null,
@@ -294,16 +291,12 @@ class GenerateInvoiceStatusController extends Controller
             ]);
         }
 
-
-
-        if ($booking = NewBooking::with('items')->find($invoiceData['booking_id'])) {
-            $amounts = array_column($invoiceData['items'], 'rate');
-            foreach ($booking->items as $i => $item) {
-                if (isset($amounts[$i])) {
-                    $item->update(['amount' => $amounts[$i]]);
+        if ($invoiceData['amountMap']->isNotEmpty()) {
+                foreach ($invoiceData['amountMap'] as $jobOrderNo => $amount) {
+                    BookingItem::where('job_order_no', $jobOrderNo)
+                        ->update(['amount' => $amount]);
                 }
             }
-        }
 
         return $invoice;
     }
@@ -344,6 +337,7 @@ class GenerateInvoiceStatusController extends Controller
     {
         // Get booking IDs from query string
         $bookingIds = $request->query('booking_ids', []);
+
 
 
         if (empty($bookingIds)) {
@@ -414,7 +408,7 @@ class GenerateInvoiceStatusController extends Controller
             'invoice_data' => 'required',
             'invoice_type' => 'required|string',
             'invoice_html' => 'required|string',
-        ]);
+        ]); 
 
 
         $invoiceData = json_decode($request->invoice_data, true);
@@ -424,6 +418,19 @@ class GenerateInvoiceStatusController extends Controller
         }
 
         $bookingIds = json_decode($request->booking_ids, true) ?? [];
+
+        $amountMap = collect($invoiceData['items'] ?? [])
+                    ->filter(function ($item) {
+                        return !empty($item['job_order_no'])
+                            && $item['job_order_no'] !== 'Job Order No'
+                            && (float) $item['rate'] > 0;
+                    })
+                    ->mapWithKeys(function ($item) {
+                        return [
+                            trim($item['job_order_no']) => (float) $item['rate']
+                        ];
+                    });
+
 
 
         try {
@@ -435,7 +442,9 @@ class GenerateInvoiceStatusController extends Controller
                 ? NewBooking::select('client_id', 'marketing_id')->find($firstBookingId)
                 : null;
 
-            DB::transaction(function () use ($invoiceData, $bookingIds, $request, $booking, &$invoice) {
+            $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id(): null; 
+
+            DB::transaction(function () use ($invoiceData, $bookingIds, $request, $booking, $generatedBy,  &$invoice) {
 
                 // Save Invoice Header
                 $invoice = Invoice::create([
@@ -451,7 +460,8 @@ class GenerateInvoiceStatusController extends Controller
                     'letter_date' => now(),
                     'name_of_work' => $invoiceData['booking_info']['name_of_work'] ?? null,
                     'client_gstin' => $invoiceData['booking_info']['client_gstin'] ?? null,
-                    'sac_code' => null,
+                    'sac_code' => 998346,
+                    'total_job_order_amount' => $invoiceData['totals']['total_amount'] ?? 0,
                     'discount_percent' => $invoiceData['totals']['discount_percent'] ?? 0,
                     'cgst_percent' => $invoiceData['totals']['cgst_percent'] ?? 0,
                     'sgst_percent' => $invoiceData['totals']['sgst_percent'] ?? 0,
@@ -459,8 +469,9 @@ class GenerateInvoiceStatusController extends Controller
                     'gst_amount' => $this->calculateGstAmount($invoiceData['totals']),
                     'total_amount' => $invoiceData['totals']['payable_amount'] ?? 0,
                     'address' => $invoiceData['booking_info']['address'] ?? null,
-                    'invoice_date' => now(),
-                    'generated_by' => null,
+                    'round_of' => $invoiceData['totals']['round_off'] ?? 0,
+                    'invoice_date' => $invoiceData['booking_info']['invoice_date'] ?? now(),
+                    'generated_by' => $generatedBy,
                 ]);
 
                 $items = collect($invoiceData['items'])
@@ -530,6 +541,14 @@ class GenerateInvoiceStatusController extends Controller
 
             });
 
+            // Update booking items amounts
+            if ($amountMap->isNotEmpty()) {
+                foreach ($amountMap as $jobOrderNo => $amount) {
+                    BookingItem::where('job_order_no', $jobOrderNo)
+                        ->update(['amount' => $amount]);
+                }
+            }
+
             $html = $request->invoice_html;
             Storage::put(
                 "invoices/invoice_{$invoice->id}.html",
@@ -559,6 +578,8 @@ class GenerateInvoiceStatusController extends Controller
     public function generateBulkInvoicePdf($id)
     {
         try {
+
+
             $invoice = Invoice::with('bookingItems')->findOrFail($id);
 
             $bookingIds = explode(',', $invoice->invoice_booking_ids);

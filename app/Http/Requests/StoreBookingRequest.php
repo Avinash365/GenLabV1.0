@@ -56,12 +56,12 @@ class StoreBookingRequest extends FormRequest
             'upload_letter_path' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:51200',
 
             'booking_items' => 'nullable|array',
-            'booking_items.*.sample_description' => 'required|string|max:255',
+            'booking_items.*.sample_description' => 'nullable|string|max:255',
             'booking_items.*.sample_quality' => 'required|string|max:255',
             'booking_items.*.particulars' => 'nullable|string|max:255',
             'booking_items.*.job_order_date' => ['nullable', 'date'],
             'booking_items.*.lab_expected_date' => 'required|date',
-            'booking_items.*.sample_details' => 'required|string',
+            'booking_items.*.sample_details' => 'nullable|string',
             'booking_items.*.amount' => 'required|numeric|min:0',
             'booking_items.*.lab_analysis_code' => ['required', Rule::exists('users', 'user_code')->whereNull('deleted_at')],
             'booking_items.*.job_order_no' => [

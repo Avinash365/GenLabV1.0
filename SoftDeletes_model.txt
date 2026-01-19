@@ -1,0 +1,13 @@
+SoftDeletes model 
+
+1.> BankTransaction 
+2.> BookingItem 
+3.> Department 
+4.> newBooking 
+5.> Product 
+6.> ProductCategory 
+7> ProductStockEntry 
+8> Profile 
+9> User 
+
+

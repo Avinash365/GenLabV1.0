@@ -29,6 +29,20 @@ class BillingService
 
         $bookingInfo = $data['booking_info'] ?? [];
 
+
+        $amountMap = collect($data['items'] ?? [])
+                    ->filter(function ($item) {
+                        return !empty($item['job_order_no'])
+                            && $item['job_order_no'] !== 'Job Order No'
+                            && (float) $item['rate'] > 0;
+                    })
+                    ->mapWithKeys(function ($item) {
+                        return [
+                            trim($item['job_order_no']) => (float) $item['rate']
+                        ];
+                    });
+
+
         
         $invoice = [
             'invoice_no'       => $bookingInfo['invoice_no'] ?? $this->generateInvoiceNo(),
@@ -115,7 +129,7 @@ class BillingService
             'payable_amount_in_text' => "Rupees " . ucfirst($this->numberToWordsService->convert(round($payableAmount))) . " only",
         ];
 
-        return compact('invoice', 'bankDetails', 'items', 'bill');
+        return compact('invoice', 'bankDetails', 'items', 'bill', 'amountMap');
     }
 
     /**
