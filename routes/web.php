@@ -110,6 +110,8 @@ Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadm
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
     // Booking trend API for dashboard charts
     Route::get('/dashboard/booking-trend', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingTrendChart'])->name('dashboard.bookingTrend');
+    // Bookings by department (counts + amounts) for dashboard
+    Route::get('/dashboard/bookings-by-department', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingsByDepartmentChart'])->name('dashboard.bookingsByDepartment');
 });
 
 // Cleared Expenses listing (saves PDFs under storage/public/marketing_expenses/in_account)
