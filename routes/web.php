@@ -59,6 +59,9 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web-settings.edit');
     Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web-settings.edit');
 
+    // Realtime dashboard data endpoint (polled by client for live updates)
+    Route::get('/dashboard/realtime', [DashboardController::class, 'realtime'])->name('dashboard.realtime');
+
 });
 
 

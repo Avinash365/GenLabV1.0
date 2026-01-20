@@ -123,7 +123,11 @@
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Booking Trend</h6>
-                        <div class="small text-muted">Last 30 days</div>
+                        <div class="booking-trend-range-toggle btn-group" role="group" aria-label="Booking Trend Range">
+                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="30">30D</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="90">90D</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="1Y">1Y</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <div class="chart-container" style="height: 280px;">
@@ -173,7 +177,8 @@
                                 }
 
                                 const ctx = document.getElementById('bookingsDeptBar').getContext('2d');
-                                new Chart(ctx, {
+                                // expose chart instance so realtime updater can refresh it
+                                window.__bookingsDeptBarChart = new Chart(ctx, {
                                     type: 'bar',
                                     data: {
                                         labels: labels,

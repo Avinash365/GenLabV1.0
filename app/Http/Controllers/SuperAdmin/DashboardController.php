@@ -252,6 +252,117 @@ class DashboardController extends Controller
     }
 
     /**
+     * Realtime data endpoint for dashboard widgets.
+     * Returns a compact JSON payload the frontend can poll to refresh charts.
+     */
+    public function realtime(Request $request)
+    {
+        $now = Carbon::now();
+
+        $bookingsByDepartment = \App\Models\NewBooking::whereNotNull('department_id')
+            ->whereNull('new_bookings.deleted_at')
+            ->join('departments', 'new_bookings.department_id', '=', 'departments.id')
+            ->where('departments.is_active', 1)
+            ->selectRaw('departments.name as department, COUNT(*) as total')
+            ->groupBy('departments.name')
+            ->orderByDesc('total')
+            ->limit(10)
+            ->pluck('total', 'department')
+            ->toArray();
+
+        $analystWorkloadAll = $this->getAllAnalystWorkload(null);
+        $analystWorkload30 = $this->getAllAnalystWorkload(30);
+        $analystWorkload90 = $this->getAllAnalystWorkload(90);
+
+        $overdueAll = BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->count();
+        $overdue30 = BookingItem::whereDate('lab_expected_date', '<', Carbon::today())
+            ->whereBetween('created_at', [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()->endOfDay()])
+            ->count();
+        $overdue90 = BookingItem::whereDate('lab_expected_date', '<', Carbon::today())
+            ->whereBetween('created_at', [Carbon::now()->subDays(89)->startOfDay(), Carbon::now()->endOfDay()])
+            ->count();
+
+        // Booking trend - support ranges via ?range=30|90|1Y
+        $trendRange = strtoupper((string) $request->query('range', '30'));
+        $trendLabels = [];
+        $trendValues = [];
+
+        if ($trendRange === '1Y' || $trendRange === '1YEAR' || $trendRange === '365') {
+            // Monthly buckets (last 12 months)
+            $start = $now->copy()->subMonths(11)->startOfMonth();
+            $end = $now->copy()->endOfMonth();
+
+            $rawTrend = \App\Models\NewBooking::whereBetween('created_at', [$start, $end])
+                ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as m, COUNT(*) as c")
+                ->groupBy('m')
+                ->orderBy('m')
+                ->pluck('c', 'm')
+                ->toArray();
+
+            $cursor = $start->copy();
+            for ($i = 0; $i < 12; $i++) {
+                $k = $cursor->format('Y-m');
+                $trendLabels[] = $cursor->format('M');
+                $trendValues[] = (int) ($rawTrend[$k] ?? 0);
+                $cursor->addMonth();
+            }
+        } else {
+            // Default: daily series for last N days (30 or 90)
+            $days = in_array($trendRange, ['90']) ? 90 : 30;
+            $start = $now->copy()->subDays($days - 1)->startOfDay();
+            $end = $now->copy()->endOfDay();
+
+            $rawTrend = \App\Models\NewBooking::whereBetween('created_at', [$start, $end])
+                ->selectRaw('DATE(created_at) as d, COUNT(*) as c')
+                ->groupBy('d')
+                ->orderBy('d')
+                ->pluck('c', 'd')
+                ->toArray();
+
+            $cursor = $start->copy();
+            while ($cursor->lte($end)) {
+                $k = $cursor->format('Y-m-d');
+                $trendLabels[] = $cursor->format('d M');
+                $trendValues[] = (int) ($rawTrend[$k] ?? 0);
+                $cursor->addDay();
+            }
+        }
+
+        // Booking status counts (raw status values)
+        $statusCounts = \App\Models\NewBooking::selectRaw('status, COUNT(*) as c')
+            ->groupBy('status')
+            ->pluck('c', 'status')
+            ->toArray();
+
+        // Invoice counts for donut
+        $paidCount = Invoice::whereIn('status', [1, 4])->count();
+        $cancelCount = Invoice::where('status', 2)->count();
+        $unpaidCount = Invoice::whereNotIn('status', [1, 4, 2])->count();
+
+        // Attendance counts (best-effort; assumes AttendanceRecord has 'status' string)
+        $present = AttendanceRecord::whereDate('created_at', Carbon::today())->where('status', 'present')->count();
+        $absent = AttendanceRecord::whereDate('created_at', Carbon::today())->where('status', 'absent')->count();
+        $late = AttendanceRecord::whereDate('created_at', Carbon::today())->where('status', 'late')->count();
+
+        return response()->json([
+            'bookingsByDepartment' => $bookingsByDepartment,
+            'analystWorkloadAll' => $analystWorkloadAll,
+            'analystWorkload30' => $analystWorkload30,
+            'analystWorkload90' => $analystWorkload90,
+            'overdueAll' => $overdueAll,
+            'overdue30' => $overdue30,
+            'overdue90' => $overdue90,
+            'bookingTrend' => [
+                'labels' => $trendLabels,
+                'values' => $trendValues,
+            ],
+            'bookingStatus' => $statusCounts,
+            'invoices' => [ 'paid' => $paidCount, 'unpaid' => $unpaidCount, 'cancel' => $cancelCount ],
+            'attendance' => [ 'present' => $present, 'absent' => $absent, 'late' => $late ],
+        ]);
+    }
+
+    /**
      * Helper: get analyst workload grouped by analyst name (case-insensitive user_code match)
      * @param int|null $days  Number of days (null => all time)
      * @param int $limit

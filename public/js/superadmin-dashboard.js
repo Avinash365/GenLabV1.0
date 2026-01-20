@@ -25,6 +25,8 @@
   gradientPurchase.addColorStop(1,'#ffd9b3');
 
   let currentRange = '1Y';
+  // booking trend range (30, 90, 1Y)
+  let bookingTrendRange = '30';
   let labels = [];
   let sales = [];
   let purchase = [];
@@ -89,6 +91,101 @@
     if(elPayment) elPayment.textContent = `₹ ${Number(paymentTotal || 0).toLocaleString(undefined, { maximumFractionDigits: 2 })}`;
   }
 
+  // Poll realtime data and update charts
+  async function pollRealtime(){
+    try{
+      const url = '/superadmin/dashboard/realtime' + (bookingTrendRange ? '?range=' + encodeURIComponent(bookingTrendRange) : '');
+      const res = await fetch(url, { headers:{ 'Accept':'application/json' }, cache: 'no-store' });
+      if(!res.ok) return;
+      const d = await res.json();
+
+      // Booking trend
+      if(window.__bookingTrendChart && d.bookingTrend){
+        window.__bookingTrendChart.data.labels = Array.isArray(d.bookingTrend.labels) ? d.bookingTrend.labels : window.__bookingTrendChart.data.labels;
+        window.__bookingTrendChart.data.datasets[0].data = Array.isArray(d.bookingTrend.values) ? d.bookingTrend.values : window.__bookingTrendChart.data.datasets[0].data;
+        window.__bookingTrendChart.update();
+      }
+
+      // Bookings by department
+      if(window.__bookingsDeptBarChart && d.bookingsByDepartment){
+        const obj = d.bookingsByDepartment || {};
+        const labels = Object.keys(obj);
+        const values = labels.map(k => Number(obj[k] || 0));
+        window.__bookingsDeptBarChart.data.labels = labels;
+        if(window.__bookingsDeptBarChart.data.datasets && window.__bookingsDeptBarChart.data.datasets[0]){
+          window.__bookingsDeptBarChart.data.datasets[0].data = values;
+        }
+        window.__bookingsDeptBarChart.update();
+      }
+
+      // Booking status donut (take up to first 3 values)
+      if(window.__bookingStatusDonutChart && d.bookingStatus){
+        const vals = Object.values(d.bookingStatus || {}).map(v=>Number(v||0));
+        const dataArr = [vals[0]||0, vals[1]||0, vals[2]||0];
+        window.__bookingStatusDonutChart.data.datasets[0].data = dataArr;
+        window.__bookingStatusDonutChart.update();
+      }
+
+      // Invoices donut
+      if(window.__invoiceDonutChart && d.invoices){
+        const inv = d.invoices || {};
+        window.__invoiceDonutChart.data.datasets[0].data = [Number(inv.paid||0), Number(inv.unpaid||0), Number(inv.cancel||0)];
+        window.__invoiceDonutChart.update();
+        const setVal = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        setVal('invPaid', Number(inv.paid||0)); setVal('invUnpaid', Number(inv.unpaid||0)); setVal('invCancel', Number(inv.cancel||0));
+      }
+
+      // Attendance donut
+      if(window.__attendanceDonutChart && d.attendance){
+        const a = d.attendance || {};
+        const present = Number(a.present||0); const absent = Number(a.absent||0); const late = Number(a.late||0);
+        window.__attendanceDonutChart.data.datasets[0].data = [present, absent, late];
+        window.__attendanceDonutChart.update();
+        const setTxt = (id,val)=>{ const el=document.getElementById(id); if(el) el.textContent = `${val}`; };
+        setTxt('attPresent', present); setTxt('attAbsent', absent); setTxt('attLate', late);
+      }
+
+      // Analyst workloads: update global data and re-render using existing renderer
+      if(d.analystWorkloadAll) window.analystWorkloadAll = d.analystWorkloadAll;
+      if(d.analystWorkload30) window.analystWorkload30 = d.analystWorkload30;
+      if(d.analystWorkload90) window.analystWorkload90 = d.analystWorkload90;
+      if(window.__renderAnalystChart){
+        // determine which range is active
+        const activeBtn = document.querySelector('.workload-range-toggle .btn.active');
+        const range = activeBtn ? activeBtn.getAttribute('data-range') : '30';
+        if(range === '30') window.__renderAnalystChart(window.analystWorkload30 || []);
+        else if(range === '90') window.__renderAnalystChart(window.analystWorkload90 || []);
+        else window.__renderAnalystChart(window.analystWorkloadAll || []);
+      }
+
+      // update bookingTrendRange button active state (in case server default differs)
+      try{
+        const activeBtn = document.querySelector('.booking-trend-range-toggle .btn[data-range="' + bookingTrendRange + '"]');
+        if(activeBtn){ document.querySelectorAll('.booking-trend-range-toggle .btn').forEach(b=>b.classList.remove('active')); activeBtn.classList.add('active'); }
+      }catch(e){}
+
+    }catch(e){
+      // silent
+      console.error('Realtime poll error', e);
+    }
+  }
+
+  // start polling every 10 seconds
+  setInterval(pollRealtime, 10000);
+  // run once after init
+  setTimeout(pollRealtime, 2000);
+
+  // Booking trend range buttons
+  document.querySelectorAll('.booking-trend-range-toggle .btn').forEach(btn=>{
+    btn.addEventListener('click', function(){
+      document.querySelectorAll('.booking-trend-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+      this.classList.add('active');
+      bookingTrendRange = this.getAttribute('data-range') || '30';
+      // immediately poll with new range
+      pollRealtime();
+    });
+  });
+
   async function loadRange(range){
     const url = `${apiUrl}?range=${encodeURIComponent(range)}`;
     const res = await fetch(url, {
@@ -140,7 +237,7 @@
 
   // Customers donut
   if(donut){
-    new Chart(donut, {
+    window.__customersDonutChart = new Chart(donut, {
       type: 'doughnut',
       data: {
         labels: ['First Time','Returning','Inactive'],
@@ -170,7 +267,7 @@
   if(bookingTrend){
     const labels = Array.from({length: 30}, (_,i)=> `${i+1}`);
     const data = labels.map(()=> rnd(10, 40));
-    new Chart(bookingTrend, {
+    window.__bookingTrendChart = new Chart(bookingTrend, {
       type: 'line',
       data: {
         labels,
@@ -194,7 +291,7 @@
 
   // Booking Status Donut
   if(bookingStatusDonut){
-    new Chart(bookingStatusDonut, {
+    window.__bookingStatusDonutChart = new Chart(bookingStatusDonut, {
       type: 'doughnut',
       data: {
         labels: ['Pending','Completed','Processing'],
@@ -212,7 +309,7 @@
   // Report Dispatch (stacked bar for modes: Email vs Print)
   if(dispatchBar){
     const labels = ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    new Chart(dispatchBar, {
+    window.__dispatchBarChart = new Chart(dispatchBar, {
       type: 'bar',
       data: {
         labels,
@@ -232,7 +329,7 @@
   // Attendance Donut
   if(attendanceDonut){
     const present = rnd(60,85), absent = rnd(5,20), late = 100 - present - absent;
-    new Chart(attendanceDonut, {
+    window.__attendanceDonutChart = new Chart(attendanceDonut, {
       type: 'doughnut',
       data: { labels: ['Present','Absent','Late'], datasets: [{ data: [present, absent, late], backgroundColor: ['#2bb673','#dc3545','#ffc107'], borderWidth: 0, cutout: '70%' }] },
       options: { plugins: { legend: { display: false } }, maintainAspectRatio: false }
@@ -259,6 +356,7 @@
         maintainAspectRatio: false
       }
     });
+    window.__invoiceDonutChart = invChart;
 
     fetch('/superadmin/dashboard/accounts-invoices-chart')
       .then(r => r.json())
@@ -328,9 +426,13 @@
       }
     }
 
-    // Choose default dataset: 30 days if available, else all
-    const defaultData = window.analystWorkload30 ?? window.analystWorkloadAll ?? [];
-    renderAnalystChart(defaultData);
+      // Choose default dataset: 30 days if available, else all
+      const defaultData = window.analystWorkload30 ?? window.analystWorkloadAll ?? [];
+      renderAnalystChart(defaultData);
+
+      // expose renderer and chart instance for realtime updates
+      window.__renderAnalystChart = renderAnalystChart;
+      window.__analystWorkloadChart = analystChart;
 
     // Attach toggle handlers for workload-specific buttons
     document.querySelectorAll('.workload-range-toggle .btn').forEach(btn => {
