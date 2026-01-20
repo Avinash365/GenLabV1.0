@@ -59,9 +59,6 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web-settings.edit');
     Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web-settings.edit');
 
-    // Realtime dashboard data endpoint (polled by client for live updates)
-    Route::get('/dashboard/realtime', [DashboardController::class, 'realtime'])->name('dashboard.realtime');
-
 });
 
 
@@ -111,6 +108,8 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->gr
 Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadmin.')->group(function(){
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Booking trend API for dashboard charts
+    Route::get('/dashboard/booking-trend', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingTrendChart'])->name('dashboard.bookingTrend');
 });
 
 // Cleared Expenses listing (saves PDFs under storage/public/marketing_expenses/in_account)
