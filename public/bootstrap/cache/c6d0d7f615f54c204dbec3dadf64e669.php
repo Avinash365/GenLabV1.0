@@ -182,5 +182,4 @@ document.addEventListener('DOMContentLoaded', function () {
     Object.keys(colButtons).forEach(col => setColButtonActive(col, isColumnFullyChecked(col)));
     setGlobalButtonActive(isGlobalFullyChecked());
 });
-</script>
-<?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/components/permissions-matrix.blade.php ENDPATH**/ ?>
+</script><?php /**PATH A:\GenTech\htdocs\GenlabV3.0\GenLabV3.0\resources\views/components/permissions-matrix.blade.php ENDPATH**/ ?>

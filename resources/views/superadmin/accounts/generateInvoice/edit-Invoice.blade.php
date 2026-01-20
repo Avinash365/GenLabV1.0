@@ -286,6 +286,33 @@
                             Discount Applicable
                         </label>
                     </div>
+
+                    <hr>
+
+{{-- ================= GST SETTINGS ================= --}}
+<div class="fw-semibold mb-2">🧾 GST Settings</div>
+
+<div class="mb-2">
+    <label class="small fw-semibold">GST Type</label>
+    <select class="form-select form-select-sm" id="gstType">
+        <option value="none">No GST</option>
+        <option value="cgst_sgst" selected>CGST + SGST</option>
+        <option value="igst">IGST</option>
+    </select>
+</div>
+
+<div class="mb-2">
+    <label class="small fw-semibold">GST Percentage (%)</label>
+    <input type="number" class="form-control form-control-sm"
+           id="gstPercentInput" value="18" min="0" step="0.01">
+</div>
+
+<button type="button"
+        class="btn btn-sm btn-outline-success w-100"
+        onclick="applyGSTFromSettings()">
+    ✅ Apply GST
+</button>
+
                     <hr>
                     {{-- ================= Generat Invoice ================= --}}
                     <div class="d-flex">
@@ -1035,4 +1062,34 @@
     <script>
         window.open(`/invoices/${invoiceId}/download`, '_blank');
     </script>
+
+
+<script>
+    function applyGSTFromSettings() {
+
+        const gstType = document.getElementById('gstType').value;
+        const gstPercent = parseFloat(
+            document.getElementById('gstPercentInput').value
+        ) || 0;
+
+        // Reset all first
+        document.getElementById('cgstPercent').innerText = '0';
+        document.getElementById('sgstPercent').innerText = '0';
+        document.getElementById('igstPercent').innerText = '0';
+
+        if (gstType === 'cgst_sgst') {
+            // Split GST equally
+            const half = gstPercent / 2;
+            document.getElementById('cgstPercent').innerText = half;
+            document.getElementById('sgstPercent').innerText = half;
+        }
+
+        if (gstType === 'igst') {
+            document.getElementById('igstPercent').innerText = gstPercent;
+        }
+
+        recalculateAll();
+    }
+</script>
+
 @endsection
