@@ -95,9 +95,13 @@
         @include('superadmin.layouts.include.sidebar')
         <!-- /Sidebar -->
 
-        <div class="page-wrapper">
-            @yield('content')
-            @include('superadmin.layouts.include.footer')
+        <div class="page-wrapper" style="min-height:calc(100vh - 80px); display:flex; flex-direction:column;">
+            <div class="content" style="flex:1 1 auto;">
+                @yield('content')
+            </div>
+            <div style="flex:0 0 auto;">
+                @include('superadmin.layouts.include.footer')
+            </div>
         </div>
 
     </div>

@@ -134,6 +134,14 @@ class DashboardController extends Controller
                     'department' => $departmentModel,
                     'user' => $user,
                     'payload' => $payload,
+                    'analystWorkloadAll' => $analystWorkloadAll,
+                    'analystWorkload30' => $analystWorkload30,
+                    'analystWorkload90' => $analystWorkload90,
+                    'overdueAll' => $overdueAll ?? 0,
+                    'overdue30' => $overdue30 ?? 0,
+                    'overdue90' => $overdue90 ?? 0,
+                    'lowStockItems' => $lowStockItems ?? [],
+                    'bookingsByDepartment' => $bookingsByDepartment ?? [],
                 ]);
             }
         }
@@ -144,6 +152,14 @@ class DashboardController extends Controller
             'department' => $departmentModel,
             'user' => $user,
             'payload' => $payload,
+            'analystWorkloadAll' => $analystWorkloadAll,
+            'analystWorkload30' => $analystWorkload30,
+            'analystWorkload90' => $analystWorkload90,
+            'overdueAll' => $overdueAll ?? 0,
+            'overdue30' => $overdue30 ?? 0,
+            'overdue90' => $overdue90 ?? 0,
+            'lowStockItems' => $lowStockItems ?? [],
+            'bookingsByDepartment' => $bookingsByDepartment ?? [],
         ]);
     }
 
