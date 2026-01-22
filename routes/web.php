@@ -108,6 +108,10 @@ Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->gr
 Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadmin.')->group(function(){
     Route::get('/profile', [ProfileController::class, 'index'])->name('profile');
     Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Booking trend API for dashboard charts
+    Route::get('/dashboard/booking-trend', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingTrendChart'])->name('dashboard.bookingTrend');
+    // Bookings by department (counts + amounts) for dashboard
+    Route::get('/dashboard/bookings-by-department', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingsByDepartmentChart'])->name('dashboard.bookingsByDepartment');
 });
 
 // Cleared Expenses listing (saves PDFs under storage/public/marketing_expenses/in_account)
@@ -172,6 +176,19 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     Route::get('/vehicles/download/{path}', [VehicleController::class, 'downloadFile'])->where('path', '.*')->name('vehicles.download');
     Route::delete('/vehicles/{vehicle}', [VehicleController::class, 'destroy'])->name('vehicles.destroy');
     Route::put('/vehicles/{vehicle}', [VehicleController::class, 'update'])->name('vehicles.update');
+});
+
+// Reception (Phone Directory)
+Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/reception', [App\Http\Controllers\Superadmin\ReceptionController::class, 'index'])->name('reception.index');
+    Route::get('/reception/export/pdf', [App\Http\Controllers\Superadmin\ReceptionController::class, 'exportPdf'])->name('reception.export.pdf');
+    Route::get('/reception/export/excel', [App\Http\Controllers\Superadmin\ReceptionController::class, 'exportExcel'])->name('reception.export.excel');
+    Route::get('/reception/create', [App\Http\Controllers\Superadmin\ReceptionController::class, 'create'])->name('reception.create');
+    Route::post('/reception', [App\Http\Controllers\Superadmin\ReceptionController::class, 'store'])->name('reception.store');
+    Route::get('/reception/{reception}', [App\Http\Controllers\Superadmin\ReceptionController::class, 'show'])->name('reception.show');
+    Route::get('/reception/{reception}/edit', [App\Http\Controllers\Superadmin\ReceptionController::class, 'edit'])->name('reception.edit');
+    Route::put('/reception/{reception}', [App\Http\Controllers\Superadmin\ReceptionController::class, 'update'])->name('reception.update');
+    Route::delete('/reception/{reception}', [App\Http\Controllers\Superadmin\ReceptionController::class, 'destroy'])->name('reception.destroy');
 });
 
 

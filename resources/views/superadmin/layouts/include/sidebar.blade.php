@@ -584,7 +584,11 @@
                         </li>
                         <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Cell</span></a></li>
                         <li><a href="#"><i class="ti ti-currency-dollar fs-16 me-2"></i><span>Remanent Cell</span></a></li>
-                        <li><a href="#"><i class="ti ti-headset fs-16 me-2"></i><span>Reception</span></a></li>
+                        <li>
+                            <a href="{{ route('superadmin.reception.index') }}" class="{{ Request::routeIs('superadmin.reception.*') ? 'active' : '' }}">
+                                <i class="ti ti-headset fs-16 me-2"></i><span>Reception</span>
+                            </a>
+                        </li>
                         <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
                         <li><a href="{{ route('superadmin.clients.index') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Client</span></a></li>
 

@@ -95,9 +95,13 @@
         <?php echo $__env->make('superadmin.layouts.include.sidebar', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
         <!-- /Sidebar -->
 
-        <div class="page-wrapper">
-            <?php echo $__env->yieldContent('content'); ?>
-            <?php echo $__env->make('superadmin.layouts.include.footer', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+        <div class="page-wrapper" style="min-height:calc(100vh - 80px); display:flex; flex-direction:column;">
+            <div class="content" style="flex:1 1 auto;">
+                <?php echo $__env->yieldContent('content'); ?>
+            </div>
+            <div style="flex:0 0 auto;">
+                <?php echo $__env->make('superadmin.layouts.include.footer', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
+            </div>
         </div>
 
     </div>

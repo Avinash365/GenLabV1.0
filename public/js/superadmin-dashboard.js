@@ -168,28 +168,61 @@
   // ============= Additional Widgets Aligned to Sidebar =============
   // Booking Trend (line chart)
   if(bookingTrend){
-    const labels = Array.from({length: 30}, (_,i)=> `${i+1}`);
-    const data = labels.map(()=> rnd(10, 40));
-    new Chart(bookingTrend, {
-      type: 'line',
-      data: {
-        labels,
-        datasets: [{
-          label: 'Bookings',
-          data,
-          borderColor: '#ff8a26',
-          backgroundColor: 'rgba(255,138,38,0.15)',
-          tension: 0.35,
-          fill: true,
-          pointRadius: 0
-        }]
-      },
-      options: {
-        responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f1f1' } } }
+    (function renderBookingTrend(){
+      let currentDays = '30';
+
+      async function fetchTrend(days){
+        try{
+          const url = '/superadmin/dashboard/booking-trend?days=' + encodeURIComponent(days);
+          const res = await fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+          if(!res.ok) throw new Error('Network');
+          return await res.json();
+        } catch(e){ return null; }
       }
-    });
+
+      let chartInstance = null;
+
+      async function draw(days){
+        const payload = await fetchTrend(days);
+        let labels = [], data = [];
+        if(payload && Array.isArray(payload.labels) && Array.isArray(payload.data)){
+          labels = payload.labels;
+          data = payload.data.map(v => Number(v || 0));
+        } else {
+          labels = Array.from({length: 30}, (_,i)=> `${i+1}`);
+          data = labels.map(()=> rnd(10, 40));
+        }
+
+        const cfg = {
+          type: 'line',
+          data: { labels, datasets: [{ label: 'Bookings', data, borderColor: '#ff8a26', backgroundColor: 'rgba(255,138,38,0.15)', tension: 0.35, fill: true, pointRadius: 0 }] },
+          options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { x: { grid: { display: false } }, y: { grid: { color: '#f1f1f1' } } } }
+        };
+
+        if(chartInstance){ chartInstance.data = cfg.data; chartInstance.options = cfg.options; chartInstance.update(); }
+        else { chartInstance = new Chart(bookingTrend, cfg); }
+
+        // update label
+        const labelEl = document.getElementById('bookingRangeLabel');
+        if(labelEl){
+          if(String(days) === 'all') labelEl.textContent = 'All time';
+          else labelEl.textContent = `Last ${String(days)} days`;
+        }
+      }
+
+      // initial draw
+      draw(currentDays);
+
+      // wire up toggle buttons
+      document.querySelectorAll('.booking-range-toggle [data-days]').forEach(btn=>{
+        btn.addEventListener('click', function(){
+          document.querySelectorAll('.booking-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+          this.classList.add('active');
+          currentDays = this.getAttribute('data-days') || '30';
+          draw(currentDays);
+        });
+      });
+    })();
   }
 
   // Booking Status Donut

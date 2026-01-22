@@ -61,17 +61,28 @@ class DashboardController extends Controller
             ->limit(5)
             ->get();
 
-        // Bookings by Department (label => count) - used on superadmin dashboard
-        $bookingsByDepartment = \App\Models\NewBooking::whereNotNull('department_id')
+        // Bookings by Department: return both booking counts and summed amount per department
+        $bookingsByDeptRaw = \App\Models\NewBooking::whereNotNull('department_id')
             ->whereNull('new_bookings.deleted_at')
             ->join('departments', 'new_bookings.department_id', '=', 'departments.id')
             ->where('departments.is_active', 1)
-            ->selectRaw('departments.name as department, COUNT(*) as total')
+            ->leftJoin('booking_items', function($join){
+                $join->on('booking_items.new_booking_id', '=', 'new_bookings.id')
+                     ->whereNull('booking_items.deleted_at');
+            })
+            ->selectRaw('departments.name as department, COUNT(DISTINCT new_bookings.id) as total, COALESCE(SUM(booking_items.amount), 0) as amount')
             ->groupBy('departments.name')
             ->orderByDesc('total')
             ->limit(10)
-            ->pluck('total', 'department')
-            ->toArray();
+            ->get();
+
+        $bookingsByDepartment = [];
+        foreach ($bookingsByDeptRaw as $row) {
+            $bookingsByDepartment[$row->department] = [
+                'total' => (int) ($row->total ?? 0),
+                'amount' => (float) ($row->amount ?? 0),
+            ];
+        }
 
         if (\Auth::guard('admin')->check()) {
             return view('superadmin.dashboard', [
@@ -123,6 +134,14 @@ class DashboardController extends Controller
                     'department' => $departmentModel,
                     'user' => $user,
                     'payload' => $payload,
+                    'analystWorkloadAll' => $analystWorkloadAll,
+                    'analystWorkload30' => $analystWorkload30,
+                    'analystWorkload90' => $analystWorkload90,
+                    'overdueAll' => $overdueAll ?? 0,
+                    'overdue30' => $overdue30 ?? 0,
+                    'overdue90' => $overdue90 ?? 0,
+                    'lowStockItems' => $lowStockItems ?? [],
+                    'bookingsByDepartment' => $bookingsByDepartment ?? [],
                 ]);
             }
         }
@@ -133,6 +152,14 @@ class DashboardController extends Controller
             'department' => $departmentModel,
             'user' => $user,
             'payload' => $payload,
+            'analystWorkloadAll' => $analystWorkloadAll,
+            'analystWorkload30' => $analystWorkload30,
+            'analystWorkload90' => $analystWorkload90,
+            'overdueAll' => $overdueAll ?? 0,
+            'overdue30' => $overdue30 ?? 0,
+            'overdue90' => $overdue90 ?? 0,
+            'lowStockItems' => $lowStockItems ?? [],
+            'bookingsByDepartment' => $bookingsByDepartment ?? [],
         ]);
     }
 
@@ -249,6 +276,93 @@ class DashboardController extends Controller
                 'outstanding' => $outstandingTotal,
             ],
         ]);
+    }
+
+    /**
+     * Return booking counts per day for the last N days (default 30)
+     */
+    public function bookingTrendChart(Request $request)
+    {
+        $daysParam = $request->query('days', '30');
+        $end = Carbon::today();
+
+        // Support explicit 'all' which will fetch from earliest booking up to today.
+        if (is_string($daysParam) && strtolower($daysParam) === 'all') {
+            $earliest = NewBooking::whereNull('deleted_at')->min('created_at');
+            $start = $earliest ? Carbon::parse($earliest)->startOfDay() : $end->copy()->subYears(1)->startOfDay();
+            $days = $start->diffInDays($end) + 1;
+            // cap to reasonable limit to avoid huge payloads
+            $days = min($days, 730);
+            $start = $end->copy()->subDays($days - 1)->startOfDay();
+        } else {
+            $days = (int) $daysParam;
+            $days = max(1, min(365, $days));
+            $start = Carbon::today()->subDays($days - 1)->startOfDay();
+        }
+
+        $raw = NewBooking::whereNull('deleted_at')
+            ->whereBetween('created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('DATE(created_at) as day, COUNT(*) as total')
+            ->groupBy('day')
+            ->orderBy('day')
+            ->pluck('total', 'day');
+
+        $labels = [];
+        $data = [];
+        $cursor = $start->copy();
+        for ($i = 0; $i < $days; $i++) {
+            $key = $cursor->format('Y-m-d');
+            $labels[] = $cursor->format('d M');
+            $data[] = (int) ($raw[$key] ?? 0);
+            $cursor->addDay();
+        }
+
+        return response()->json([
+            'days' => $days,
+            'labels' => $labels,
+            'data' => $data,
+        ]);
+    }
+
+    /**
+     * Return bookings by department with counts and amounts for the given days or 'all'.
+     */
+    public function bookingsByDepartmentChart(Request $request)
+    {
+        $daysParam = $request->query('days', '30');
+        $end = Carbon::today();
+
+        if (is_string($daysParam) && strtolower($daysParam) === 'all') {
+            // earliest booking date
+            $earliest = NewBooking::whereNull('deleted_at')->min('created_at');
+            $start = $earliest ? Carbon::parse($earliest)->startOfDay() : $end->copy()->subYears(1)->startOfDay();
+        } else {
+            $days = (int) $daysParam;
+            $days = max(1, min(365, $days));
+            $start = Carbon::today()->subDays($days - 1)->startOfDay();
+        }
+
+        $rows = NewBooking::whereNotNull('department_id')
+            ->whereNull('new_bookings.deleted_at')
+            ->join('departments', 'new_bookings.department_id', '=', 'departments.id')
+            ->where('departments.is_active', 1)
+            ->leftJoin('booking_items', function($join){
+                $join->on('booking_items.new_booking_id', '=', 'new_bookings.id')
+                     ->whereNull('booking_items.deleted_at');
+            })
+            ->whereBetween('new_bookings.created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('departments.name as department, COUNT(DISTINCT new_bookings.id) as total, COALESCE(SUM(booking_items.amount), 0) as amount')
+            ->groupBy('departments.name')
+            ->orderByDesc('total')
+            ->limit(20)
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[$r->department] = ['total' => (int) $r->total, 'amount' => (float) $r->amount];
+        }
+
+        return response()->json(['start' => $start->toDateString(), 'end' => $end->toDateString(), 'data' => $out]);
     }
 
     /**
