@@ -372,6 +372,13 @@
                                         Attendance
                                     </a>
                                 </li>
+
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.hr.holidays.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.hr.holidays.*') ? 'active' : ''); ?>">
+                                        Holidays
+                                    </a>
+                                </li>
+
                             </ul>
                         </li>
 

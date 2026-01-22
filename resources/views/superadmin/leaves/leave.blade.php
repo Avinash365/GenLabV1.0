@@ -208,8 +208,8 @@
 										</div>
 										<div class="col-lg-6">
 											<div class="mb-3">
-												<label class="form-label">Days/Hours <span class="text-danger"> *</span></label>
-												<input type="number" class="form-control" name="days_hours" id="days_hours" min="1" required>
+												<label class="form-label">No of Days</label>
+												<input type="text" class="form-control bg-light" id="calculated_days" readonly>
 											</div>
 										</div>
 										<div class="col-lg-6">
@@ -228,16 +228,18 @@
 								<div class="col-lg-12">
 									<div class="bg-light rounded p-3 pb-0">
 										<div class="row">
+ 
 											<div class="col-lg-6">
 												<div class="mb-3">
-													<label class="form-label">No of Days</label>
-													<input type="text" class="form-control bg-light" id="calculated_days" readonly>
+													<label class="form-label">Remaining Leaves</label>
+													<input type="text" class="form-control bg-light" id="remaining_leaves_add" value="" readonly>
 												</div>
 											</div>
 											<div class="col-lg-6">
 												<div class="mb-3">
-													<label class="form-label">Remaining Leaves</label>
-													<input type="text" class="form-control bg-light" value="30" readonly>
+													<label class="form-label">Deduct from Working Hours</label>
+													<input type="text" class="form-control bg-light" id="deduct_hours_add" value="0" readonly>
+													<input type="hidden" name="deduct_hours" id="deduct_hours_add_input" value="0">
 												</div>
 											</div>
 										</div>
@@ -342,13 +344,16 @@
 											<div class="col-lg-6">
 												<div class="mb-3">
 													<label class="form-label">No of Days</label>
-													<input type="text" class="form-control bg-light " value="01" readonly>
+													<input type="text" class="form-control bg-light " id="edit_no_days" value="01" readonly>
 												</div>
 											</div>
 											<div class="col-lg-6">
 												<div class="mb-3">
 													<label class="form-label">Remaining Leaves</label>
-													<input type="text" class="form-control bg-light " value="08" readonly>
+													<input type="text" class="form-control bg-light " id="remaining_leaves_edit" value="" readonly>
+													<label class="form-label mt-2">Deduct from Working Hours</label>
+													<input type="text" class="form-control bg-light " id="deduct_hours_edit" value="0" readonly>
+													<input type="hidden" name="deduct_hours" id="deduct_hours_edit_input" value="0">
 												</div>
 											</div>
 										</div>
@@ -545,6 +550,7 @@ document.addEventListener('DOMContentLoaded', function() {
 	}
 	const approveTemplate = @json(route('superadmin.leave.approve', ['leave' => '__leave__']));
 	const deleteTemplate = @json(route('superadmin.leave.destroy', ['leave' => '__leave__']));
+	const userSummaryTemplate = @json(route('superadmin.leave.user.summary', ['user' => '__USER__']));
 	const approveForm = document.getElementById('approve-form');
 	const deleteForm = document.getElementById('delete-form');
 
@@ -586,6 +592,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 const daysDiff = Math.ceil(timeDiff / (1000 * 3600 * 24)) + 1;
                 calculatedDays.value = daysDiff + (daysDiff === 1 ? ' Day' : ' Days');
                 daysHours.value = daysDiff;
+				// live update remaining/deduction when duration changes
+				if (typeof updateRemainingAdd === 'function') updateRemainingAdd();
             }
         }
     }
@@ -691,6 +699,162 @@ document.addEventListener('DOMContentLoaded', function() {
 
 		deleteForm.action = deleteTemplate.replace('__leave__', leaveId);
 	};
+
+	// Compute accrued leaves and update remaining values
+	const remainingAdd = document.getElementById('remaining_leaves_add');
+	const remainingEdit = document.getElementById('remaining_leaves_edit');
+	const editNoDaysEl = document.getElementById('edit_no_days');
+	const deductAddEl = document.getElementById('deduct_hours_add');
+	const deductAddInput = document.getElementById('deduct_hours_add_input');
+	const deductEditEl = document.getElementById('deduct_hours_edit');
+	const deductEditInput = document.getElementById('deduct_hours_edit_input');
+
+	function computeAccruedForMonth(monthNumber) {
+		return +(monthNumber * 1.5).toFixed(2);
+	}
+
+	function formatRemaining(val) {
+		if (Number.isInteger(val)) return val.toString();
+		return val.toFixed(2);
+	}
+
+	function updateRemainingAdd() {
+		try {
+			let month = new Date().getMonth() + 1; // 1..12 (default current month)
+			if (fromDate && fromDate.value) {
+				const d = new Date(fromDate.value);
+				if (!isNaN(d)) month = d.getMonth() + 1;
+			}
+
+			const userSelect = addLeaveForm ? addLeaveForm.querySelector('select[name="user_id"]') : null;
+			const usedLocal = Number(daysHours && daysHours.value ? daysHours.value : 0) || 0;
+
+			// If user selected, fetch server-side used count for that user/year/month
+			if (userSelect && userSelect.value) {
+				const url = userSummaryTemplate.replace('__USER__', userSelect.value) + '?month=' + month;
+				fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+					.then(function(res) { return res.json(); })
+					.then(function(data) {
+						const accrued = Number(data.accrued) || computeAccruedForMonth(month);
+						const used = Number(data.used) || 0;
+						// combine used server-side leaves plus current attempted days
+						const totalUsed = used + usedLocal;
+						let remaining = Math.max(0, +(accrued - used));
+						let deductHours = 0;
+						if (totalUsed > accrued) {
+							const extraDays = totalUsed - accrued;
+							deductHours = +(extraDays * 8).toFixed(2);
+							remaining = 0;
+						} else {
+							remaining = Math.max(0, +(accrued - totalUsed));
+						}
+						if (remainingAdd) remainingAdd.value = formatRemaining(remaining);
+						if (typeof deductAddEl !== 'undefined' && deductAddEl) deductAddEl.value = deductHours;
+						if (typeof deductAddInput !== 'undefined' && deductAddInput) deductAddInput.value = deductHours;
+					}).catch(function() {
+						// fallback to client-side calculation if AJAX fails
+						const accrued = computeAccruedForMonth(month);
+						const used = usedLocal;
+						let remaining = Math.max(0, +(accrued - used));
+						let deductHours = 0;
+						if (used > accrued) {
+							const extraDays = used - accrued;
+							deductHours = +(extraDays * 8).toFixed(2);
+							remaining = 0;
+						}
+						if (remainingAdd) remainingAdd.value = formatRemaining(remaining);
+						if (typeof deductAddEl !== 'undefined' && deductAddEl) deductAddEl.value = deductHours;
+						if (typeof deductAddInput !== 'undefined' && deductAddInput) deductAddInput.value = deductHours;
+					});
+				return;
+			}
+
+			// no user selected -> client-side only
+			const accrued = computeAccruedForMonth(month);
+			const used = usedLocal;
+			let remaining = Math.max(0, +(accrued - used));
+			let deductHours = 0;
+			if (used > accrued) {
+				const extraDays = used - accrued;
+				deductHours = +(extraDays * 8).toFixed(2);
+				remaining = 0;
+			}
+			if (remainingAdd) remainingAdd.value = formatRemaining(remaining);
+			if (typeof deductAddEl !== 'undefined' && deductAddEl) deductAddEl.value = deductHours;
+			if (typeof deductAddInput !== 'undefined' && deductAddInput) deductAddInput.value = deductHours;
+		} catch (e) {
+			// fail silently
+		}
+	}
+
+	function updateRemainingEdit() {
+		try {
+			const month = new Date().getMonth() + 1;
+			const accrued = computeAccruedForMonth(month);
+			const used = Number(editNoDaysEl && editNoDaysEl.value ? editNoDaysEl.value : 0) || 0;
+			let remaining = Math.max(0, +(accrued - used));
+			let deductHours = 0;
+			if (used > accrued) {
+				const extraDays = used - accrued;
+				// assume 1 day = 8 working hours
+				deductHours = +(extraDays * 8).toFixed(2);
+				remaining = 0;
+			}
+			if (remainingEdit) remainingEdit.value = formatRemaining(remaining);
+			if (typeof deductEditEl !== 'undefined' && deductEditEl) deductEditEl.value = deductHours;
+			if (typeof deductEditInput !== 'undefined' && deductEditInput) deductEditInput.value = deductHours;
+		} catch (e) {}
+	}
+
+	// Update when inputs change
+	if (daysHours) {
+		daysHours.addEventListener('input', updateRemainingAdd);
+		daysHours.addEventListener('change', updateRemainingAdd);
+	}
+	if (fromDate) fromDate.addEventListener('change', calculateDays);
+	if (toDate) toDate.addEventListener('change', calculateDays);
+
+	// edit modal: when no-of-days is changed, update remaining/deduction live
+	if (editNoDaysEl) {
+		editNoDaysEl.addEventListener('input', updateRemainingEdit);
+		editNoDaysEl.addEventListener('change', updateRemainingEdit);
+	}
+
+	// update when employee selected
+	if (addLeaveForm) {
+		const userSelect = addLeaveForm.querySelector('select[name="user_id"]');
+		if (userSelect) userSelect.addEventListener('change', updateRemainingAdd);
+	}
+
+	// ensure deduction values are set on submit
+	if (addLeaveForm) {
+		addLeaveForm.addEventListener('submit', function(e) {
+			updateRemainingAdd();
+			// no extra client-side blocking here; server should handle final enforcement
+		});
+	}
+
+	// For edit form (if it submits), set deduction before submit
+	const editForm = document.querySelector('#edit-leave form');
+	if (editForm) {
+		editForm.addEventListener('submit', function(e) {
+			updateRemainingEdit();
+		});
+	}
+
+	// Update on modal show (Bootstrap 5 custom event)
+	const addModalEl = document.getElementById('add-leave');
+	if (addModalEl) {
+		addModalEl.addEventListener('show.bs.modal', updateRemainingAdd);
+		// fallback: update when DOM element is focused/entered
+		addModalEl.addEventListener('mouseenter', updateRemainingAdd);
+	}
+
+	const editModalEl = document.getElementById('edit-leave');
+	if (editModalEl) {
+		editModalEl.addEventListener('show.bs.modal', updateRemainingEdit);
+		editModalEl.addEventListener('mouseenter', updateRemainingEdit);
+	}
 });
 
 function editLeave(leaveId) {

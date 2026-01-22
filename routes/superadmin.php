@@ -35,6 +35,7 @@ use App\Http\Controllers\SuperAdmin\LeaveController;
 use App\Http\Controllers\SuperAdmin\EmployeeController;
 use App\Http\Controllers\SuperAdmin\HR\AttendanceController;
 use App\Http\Controllers\SuperAdmin\HR\PayrollController;
+use App\Http\Controllers\SuperAdmin\HR\HolidayController;
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\Product\ProductStockEntryController;
 use App\Http\Controllers\Department\DepartmentController as DeptController;
@@ -806,6 +807,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/export/excel', [LeaveController::class, 'exportExcel'])->name('export.excel');
         Route::post('/', [LeaveController::class, 'store'])->name('store');
         Route::put('/{leave}', [LeaveController::class, 'update'])->name('update');
+        Route::get('/users/{user}/summary', [LeaveController::class, 'userLeaveSummary'])->name('user.summary');
         Route::put('/{leave}/approve', [LeaveController::class, 'approve'])->name('approve');
         Route::delete('/{leave}', [LeaveController::class, 'destroy'])->name('destroy');
         Route::post('/calculate-days', [LeaveController::class, 'calculateDays'])->name('calculate-days');
@@ -823,6 +825,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/attendance', [AttendanceController::class, 'index'])->name('attendance.index');
         Route::post('/attendance/manual', [AttendanceController::class, 'storeManual'])->name('attendance.store-manual');
         Route::post('/attendance/import-biometric', [AttendanceController::class, 'importBiometric'])->name('attendance.import-biometric');
+        // Holidays resource (index/store/update/destroy)
+        Route::resource('holidays', HolidayController::class)->only(['index','store','update','destroy']);
     });
 
     // Lab Analysts - reports dropdown and viewer

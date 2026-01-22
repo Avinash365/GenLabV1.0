@@ -371,6 +371,13 @@
                                         Attendance
                                     </a>
                                 </li>
+
+                                <li>
+                                    <a href="{{ route('superadmin.hr.holidays.index') }}" class="{{ Request::routeIs('superadmin.hr.holidays.*') ? 'active' : '' }}">
+                                        Holidays
+                                    </a>
+                                </li>
+
                             </ul>
                         </li>
 

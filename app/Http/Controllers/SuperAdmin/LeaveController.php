@@ -170,6 +170,34 @@ class LeaveController extends Controller
         return response()->json(['days' => $days]);
     }
 
+    /**
+     * Return leave summary for a user for the given year/month.
+     * Query params: month (1-12) optional, defaults to current month.
+     */
+    public function userLeaveSummary(User $user, Request $request)
+    {
+        $month = (int) $request->query('month', Carbon::now()->month);
+        $year = (int) $request->query('year', Carbon::now()->year);
+
+        // Sum approved leave days for the user in the given year
+        $used = Leave::query()
+            ->where('user_id', $user->id)
+            ->where('status', 'Approved')
+            ->whereYear('from_date', $year)
+            ->sum('days_hours');
+
+        // Accrued leaves from January up to provided month (1.5 per month)
+        $accrued = $month * 1.5;
+
+        $remaining = max(0, $accrued - $used);
+
+        return response()->json([
+            'used' => (float) $used,
+            'accrued' => (float) $accrued,
+            'remaining' => (float) $remaining,
+        ]);
+    }
+
     protected function resolveApproverUserId(): ?int
     {
         $webUser = Auth::guard('web')->user();
