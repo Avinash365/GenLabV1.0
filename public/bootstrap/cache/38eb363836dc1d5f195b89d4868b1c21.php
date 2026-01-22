@@ -236,7 +236,7 @@
                     </div>
                      <div class="col-lg-4 col-sm-6 col-12">
                         <label class="form-label">Sample Details</label>
-                        <input type="text" name="booking_items[0][sample_details]" class="form-control" required>
+                        <input type="text" name="booking_items[0][sample_details]" class="form-control" >
                     </div>
                 </div>
                 <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="display: none;">Remove</button>

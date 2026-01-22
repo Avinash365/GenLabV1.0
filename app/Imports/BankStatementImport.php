@@ -10,7 +10,10 @@ class BankStatementImport implements ToModel, WithHeadingRow
 {
     public function model(array $row)
 {
-    $date = isset($row['transaction_date']) ? Carbon::createFromFormat('d-m-Y', $row['date']) : null;
+    $date = !empty($row['transaction_date'])
+            ? Carbon::createFromFormat('d-m-Y', trim($row['transaction_date']))
+            : null;
+            
     $chqRef = $row['chq_ref_number'] ?? null;
 
     $exists = BankTransaction::where('date', $date)

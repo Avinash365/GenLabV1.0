@@ -54,7 +54,6 @@ class CashLetterController extends Controller
         }
 
         
-
         // Prepare data for Blade
         $client_id = $clientIds->first();
         $marketing_person_id = $marketingIds->first();
