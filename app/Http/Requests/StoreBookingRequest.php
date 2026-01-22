@@ -40,7 +40,7 @@ class StoreBookingRequest extends FormRequest
                 'string',
                 'max:500',
                 $bookingId
-                ? Rule::unique('new_bookings', 'reference_no')->ignore($bookingId)
+                ? Rule::unique('new_bookings', 'reference_no')->whereNull('deleted_at')->ignore($bookingId)
                 : 'unique:new_bookings,reference_no',
             ],
 

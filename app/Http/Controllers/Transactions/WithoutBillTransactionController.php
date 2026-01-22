@@ -85,6 +85,9 @@ class WithoutBillTransactionController extends Controller
     {
         try { 
 
+            // dd($request->all());     
+            // exit; 
+
             $validated = $request->validate([
                 'client_id'           => 'required|exists:clients,id',
                 'marketing_person_id' => 'required|exists:users,user_code',

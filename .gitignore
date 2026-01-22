@@ -50,6 +50,8 @@ desktop.ini
 /public/hot
 /public/mix-manifest.json
 /public/bootstrap
+/public/uploads
+/public/storage
 
 # Laravel cache (extra safety)
 bootstrap/cache/*.php

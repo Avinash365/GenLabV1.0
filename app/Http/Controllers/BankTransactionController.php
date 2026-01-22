@@ -10,7 +10,7 @@ use App\Models\BankTransaction;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\BankTransactionsExport;
-
+use Illuminate\Support\Facades\Log;
 
 use App\Models\{Client, User, NewBooking, Invoice}; 
 
@@ -112,6 +112,9 @@ class BankTransactionController extends Controller
             'file' => 'required|mimes:csv,txt,xlsx',
         ]);
 
+        // dd($request->file('file'));
+        // exit;
+
         try {
             Excel::import(new BankStatementImport, $request->file('file'));
             return redirect()->back()->with('success', 'Bank statement imported successfully!');
@@ -121,6 +124,15 @@ class BankTransactionController extends Controller
             return redirect()->back()->with('error', 'Duplicate entry or invalid reference detected. Import skipped for conflicting rows.');
         } catch (\Exception $e) {
             // Handle all other exceptions
+
+             Log::error('Bank Statement Import - General Error', [
+                'message' => $e->getMessage(),
+                'file'    => $e->getFile(),
+                'line'    => $e->getLine(),
+                'trace'   => $e->getTraceAsString(),
+            ]);
+
+
             return redirect()->back()->with('error', 'An unexpected error occurred: ');
         }
     } 
