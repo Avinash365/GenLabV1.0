@@ -67,9 +67,13 @@ class DashboardController extends Controller
                 'analystWorkloadAll' => Cache::get('dashboard:analyst:all', []),
                 'analystWorkload30' => Cache::get('dashboard:analyst:30', []),
                 'analystWorkload90' => Cache::get('dashboard:analyst:90', []),
+                'analystWorkload180' => Cache::get('dashboard:analyst:180', []),
+                'analystWorkload365' => Cache::get('dashboard:analyst:365', []),
                 'overdueAll' => Cache::get('dashboard:overdue:all', 0),
                 'overdue30' => Cache::get('dashboard:overdue:30', 0),
                 'overdue90' => Cache::get('dashboard:overdue:90', 0),
+                'overdue180' => Cache::get('dashboard:overdue:180', 0),
+                'overdue365' => Cache::get('dashboard:overdue:365', 0),
                 'lowStockItems' => Cache::get('dashboard:lowStockItems', collect()),
                 'bookingsByDepartment' => Cache::get('dashboard:bookings_by_dept:' . Carbon::today()->toDateString(), []),
                 'bookingsByMarketing' => Cache::get('dashboard:bookings_by_marketing:' . Carbon::today()->toDateString(), []),
@@ -101,6 +105,8 @@ class DashboardController extends Controller
         $analystWorkloadAll = Cache::remember('dashboard:analyst:all', 300, fn() => $this->getAllAnalystWorkload(null));
         $analystWorkload30 = Cache::remember('dashboard:analyst:30', 300, fn() => $this->getAllAnalystWorkload(30));
         $analystWorkload90 = Cache::remember('dashboard:analyst:90', 300, fn() => $this->getAllAnalystWorkload(90));
+        $analystWorkload180 = Cache::remember('dashboard:analyst:180', 300, fn() => $this->getAllAnalystWorkload(180));
+        $analystWorkload365 = Cache::remember('dashboard:analyst:365', 300, fn() => $this->getAllAnalystWorkload(365));
 
         // Fetch Low Stock Inventory (Items with Total Stock < 10)
         $lowStockItems = Cache::remember('dashboard:lowStockItems', 300, function () {
@@ -167,9 +173,13 @@ class DashboardController extends Controller
                 'analystWorkloadAll' => $analystWorkloadAll,
                 'analystWorkload30' => $analystWorkload30,
                 'analystWorkload90' => $analystWorkload90,
+                'analystWorkload180' => $analystWorkload180,
+                'analystWorkload365' => $analystWorkload365,
                 'overdueAll' => Cache::remember('dashboard:overdue:all', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->count()),
                 'overdue30' => Cache::remember('dashboard:overdue:30', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()->endOfDay()])->count()),
                 'overdue90' => Cache::remember('dashboard:overdue:90', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(89)->startOfDay(), Carbon::now()->endOfDay()])->count()),
+                'overdue180' => Cache::remember('dashboard:overdue:180', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(179)->startOfDay(), Carbon::now()->endOfDay()])->count()),
+                'overdue365' => Cache::remember('dashboard:overdue:365', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(364)->startOfDay(), Carbon::now()->endOfDay()])->count()),
                 'lowStockItems'   => $lowStockItems,
                 'bookingsByDepartment' => $bookingsByDepartment,
                 'bookingsByMarketing' => $bookingsByMarketing,
@@ -216,14 +226,18 @@ class DashboardController extends Controller
                     'user' => $user,
                     'payload' => $payload,
                     'analystWorkloadAll' => $analystWorkloadAll,
-                    'analystWorkload30' => $analystWorkload30,
-                    'analystWorkload90' => $analystWorkload90,
-                    'overdueAll' => $overdueAll ?? 0,
-                    'overdue30' => $overdue30 ?? 0,
-                    'overdue90' => $overdue90 ?? 0,
-                    'lowStockItems' => $lowStockItems ?? [],
-                    'bookingsByDepartment' => $bookingsByDepartment ?? [],
-                    'bookingsByMarketing' => $bookingsByMarketing ?? [],
+                        'analystWorkload30' => $analystWorkload30,
+                        'analystWorkload90' => $analystWorkload90,
+                        'analystWorkload180' => $analystWorkload180,
+                        'analystWorkload365' => $analystWorkload365,
+                        'overdueAll' => $overdueAll ?? 0,
+                        'overdue30' => $overdue30 ?? 0,
+                        'overdue90' => $overdue90 ?? 0,
+                        'overdue180' => $overdue180 ?? 0,
+                        'overdue365' => $overdue365 ?? 0,
+                        'lowStockItems' => $lowStockItems ?? [],
+                        'bookingsByDepartment' => $bookingsByDepartment ?? [],
+                        'bookingsByMarketing' => $bookingsByMarketing ?? [],
                 ]);
             }
         }
@@ -237,9 +251,13 @@ class DashboardController extends Controller
             'analystWorkloadAll' => $analystWorkloadAll,
             'analystWorkload30' => $analystWorkload30,
             'analystWorkload90' => $analystWorkload90,
+            'analystWorkload180' => $analystWorkload180,
+            'analystWorkload365' => $analystWorkload365,
             'overdueAll' => $overdueAll ?? 0,
             'overdue30' => $overdue30 ?? 0,
             'overdue90' => $overdue90 ?? 0,
+            'overdue180' => $overdue180 ?? 0,
+            'overdue365' => $overdue365 ?? 0,
             'lowStockItems' => $lowStockItems ?? [],
             'bookingsByDepartment' => $bookingsByDepartment ?? [],
             'bookingsByMarketing' => $bookingsByMarketing ?? [],

@@ -124,9 +124,10 @@
                         <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Marketing Persons (Bookings and Revenue)</h6>
                         <div class="d-flex align-items-center gap-2">
                             <div class="booking-range-toggle btn-group" role="group" aria-label="Booking Range">
-                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="30">30D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="90">90D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="all">All</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="1M">1M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="3M">3M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="6M">6M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="1Y">1Y</button>
                             </div>
                         </div>
                     </div>
@@ -147,9 +148,18 @@
                         window.__initialBookingsByMarketing = <?php echo json_encode($bookingsByMarketing ?? $__bookingsByDeptFallback); ?>;
 
                         (function renderBookingsDeptChart(){
-                            async function fetchDept(days){
+                            function normalizeDaysToken(token){
+                                if(!token) return '30';
+                                token = String(token).toUpperCase();
+                                if(token === 'ALL') return 'all';
+                                const map = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 };
+                                return map[token] ?? token;
+                            }
+
+                            async function fetchDept(daysToken){
                                 try{
-                                        const url = '/superadmin/dashboard/bookings-by-marketing?days=' + encodeURIComponent(days);
+                                    const days = normalizeDaysToken(daysToken);
+                                    const url = '/superadmin/dashboard/bookings-by-marketing?days=' + encodeURIComponent(days);
                                     const r = await fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
                                     if(!r.ok) return null;
                                     return await r.json();
@@ -262,7 +272,7 @@
 
                                 // initial draw: prefer fresh 'all' data from API, fallback to server snapshot
                                 (async function(){
-                                    const p = await fetchDept('all');
+                                    const p = await fetchDept('1M');
                                     if(p && p.data){
                                         drawFromRaw(p.data);
                                     } else {
@@ -278,7 +288,7 @@
                                         btn.addEventListener('click', async function(){
                                             cardEl.querySelectorAll('.booking-range-toggle .btn').forEach(b=>b.classList.remove('active'));
                                             this.classList.add('active');
-                                            const days = this.getAttribute('data-days') || '30';
+                                            const days = this.getAttribute('data-days') || '1M';
                                             const payload = await fetchDept(days);
                                             if(payload && payload.data){
                                                 drawFromRaw(payload.data);
@@ -301,9 +311,10 @@
                         <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-chart-bar"></i>Letters by Department</h6>
                         <div class="d-flex align-items-center gap-2">
                             <div class="dept-range-toggle btn-group" role="group" aria-label="Dept Range">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="30">30D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="90">90D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="all">All</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="1M">1M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="3M">3M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="6M">6M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="1Y">1Y</button>
                             </div>
                          </div>
                     </div>
@@ -324,8 +335,17 @@
                         window.__initialBookingsByDepartment = <?php echo json_encode($bookingsByDepartment ?? $__bookingsByDeptFallback); ?>;
 
                         (function renderBookingsDeptChart(){
-                            async function fetchDept(days){
+                            function normalizeDaysToken(token){
+                                if(!token) return '30';
+                                token = String(token).toUpperCase();
+                                if(token === 'ALL') return 'all';
+                                const map = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 };
+                                return map[token] ?? token;
+                            }
+
+                            async function fetchDept(daysToken){
                                 try{
+                                    const days = normalizeDaysToken(daysToken);
                                     const url = '/superadmin/dashboard/bookings-by-department?days=' + encodeURIComponent(days);
                                     const r = await fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
                                     if(!r.ok) return null;
@@ -439,14 +459,13 @@
 
                             // initial draw: prefer fresh 'all' data from API, fallback to server snapshot
                             (async function(){
-                                const p = await fetchDept('all');
+                                const p = await fetchDept('1M');
                                 if(p && p.data){
                                     drawFromRaw(p.data);
                                 } else {
                                     drawFromRaw(window.__initialBookingsByDepartment);
                                 }
                             })();
-
                             // attach toggles scoped to this card (dept-range-toggle controls)
                             (function(){
                                 const cardEl = document.currentScript?.closest('.card') || document;
@@ -455,7 +474,7 @@
                                     btn.addEventListener('click', async function(){
                                         cardEl.querySelectorAll('.dept-range-toggle .btn').forEach(b=>b.classList.remove('active'));
                                         this.classList.add('active');
-                                        const days = this.getAttribute('data-days') || '30';
+                                        const days = this.getAttribute('data-days') || '1M';
                                         const payload = await fetchDept(days);
                                         if(payload && payload.data){
                                             drawFromRaw(payload.data);
@@ -536,9 +555,10 @@
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-flask"></i> Lab Analysts - Workload</h6>
                         <div class="workload-range-toggle btn-group" role="group" aria-label="Workload Range">
-                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="30">30D</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="90">90D</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="all">All</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="1M">1M</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="3M">3M</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="6M">6M</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="1Y">1Y</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -553,9 +573,13 @@
                         window.analystWorkloadAll = <?php echo json_encode($analystWorkloadAll ?? [], 15, 512) ?>;
                         window.analystWorkload30 = <?php echo json_encode($analystWorkload30 ?? [], 15, 512) ?>;
                         window.analystWorkload90 = <?php echo json_encode($analystWorkload90 ?? [], 15, 512) ?>;
+                        window.analystWorkload180 = <?php echo json_encode($analystWorkload180 ?? [], 15, 512) ?>;
+                        window.analystWorkload365 = <?php echo json_encode($analystWorkload365 ?? [], 15, 512) ?>;
                         window.overdueAll = <?php echo json_encode($overdueAll ?? 0, 15, 512) ?>;
                         window.overdue30 = <?php echo json_encode($overdue30 ?? 0, 15, 512) ?>;
                         window.overdue90 = <?php echo json_encode($overdue90 ?? 0, 15, 512) ?>;
+                        window.overdue180 = <?php echo json_encode($overdue180 ?? 0, 15, 512) ?>;
+                        window.overdue365 = <?php echo json_encode($overdue365 ?? 0, 15, 512) ?>;
                         (function renderAnalystWorkload(){
                             function normalize(raw){
                                 if(!Array.isArray(raw)) return [];
@@ -572,12 +596,25 @@
                                 };
                             }
 
+                            function normalizeRangeToken(token){
+                                token = String(token || '').toUpperCase();
+                                const map = { '1M': '30', '3M': '90', '6M': '180', '1Y': '365' };
+                                if (map[token]) return map[token];
+                                if (token === 'ALL') return 'all';
+                                return token;
+                            }
+
                             function draw(rangeKey){
+                                const key = normalizeRangeToken(rangeKey);
                                 const raw = {
                                     '30': window.analystWorkload30 || [],
                                     '90': window.analystWorkload90 || [],
+                                    '180': window.analystWorkload180 || [],
+                                    '365': window.analystWorkload365 || [],
                                     'all': window.analystWorkloadAll || []
-                                }[String(rangeKey)];
+                                }[String(key)];
+
+                                console.debug('AnalystWorkload.draw', { rangeKey, key, rawCount: (raw && raw.length) || 0, sample: (raw && raw.slice ? raw.slice(0,3) : raw) });
 
                                 const normalized = normalize(raw);
                                 const data = buildChartData(normalized);
@@ -636,30 +673,39 @@
                                 });
                             }
 
-                                // initial draw (30D active by default)
+                                // initial draw (1M active by default)
                             function updateOverdueDisplay(rangeKey){
+                                const key = normalizeRangeToken(rangeKey);
                                 const val = {
                                     '30': window.overdue30 || 0,
                                     '90': window.overdue90 || 0,
+                                    '180': window.overdue180 || 0,
+                                    '365': window.overdue365 || 0,
                                     'all': window.overdueAll || 0,
-                                }[String(rangeKey)];
+                                }[String(key)];
                                 const el = document.getElementById('analystOverdueCount');
                                 if(el) el.textContent = Number(val).toLocaleString();
                             }
 
-                            draw('30');
-                            updateOverdueDisplay('30');
+                            draw('1M');
+                            updateOverdueDisplay('1M');
 
-                            // wire up toggle buttons
-                            document.querySelectorAll('.workload-range-toggle [data-range]').forEach(btn=>{
-                                btn.addEventListener('click', function(e){
-                                    document.querySelectorAll('.workload-range-toggle .btn').forEach(b=>b.classList.remove('active'));
-                                    this.classList.add('active');
-                                    const r = this.getAttribute('data-range') || '30';
-                                    draw(r === 'all' ? 'all' : String(r));
-                                    updateOverdueDisplay(r === 'all' ? 'all' : String(r));
+                            // wire up toggle buttons (scoped to card)
+                            (function(){
+                                const cardEl = document.currentScript?.closest('.card') || document;
+                                const btns = cardEl.querySelectorAll('.workload-range-toggle [data-range]');
+                                btns.forEach(btn=>{
+                                    btn.addEventListener('click', function(e){
+                                        cardEl.querySelectorAll('.workload-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+                                        this.classList.add('active');
+                                        const r = this.getAttribute('data-range') || '1M';
+                                        const mapped = normalizeRangeToken(r);
+                                        console.debug('AnalystWorkload.click', { r, mapped });
+                                        draw(mapped === 'all' ? 'all' : String(r));
+                                        updateOverdueDisplay(mapped === 'all' ? 'all' : String(r));
+                                    });
                                 });
-                            });
+                            })();
                         })();
                         </script>
                     </div>

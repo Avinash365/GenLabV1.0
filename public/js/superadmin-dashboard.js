@@ -365,20 +365,35 @@
       }
     }
 
-    // Choose default dataset: 30 days if available, else all
-    const defaultData = window.analystWorkload30 ?? window.analystWorkloadAll ?? [];
+    // Choose default dataset: map tokenized buttons (1M/3M/6M/1Y) to numeric windows
+    const mapTokenToKey = (t) => {
+      if(!t) return '30';
+      t = String(t).toUpperCase();
+      const map = { '1M': '30', '3M': '90', '6M': '180', '1Y': '365', 'ALL': 'all' };
+      return map[t] ?? t;
+    };
+
+    const defaultKey = mapTokenToKey('1M');
+    const defaultData = (defaultKey === '30' && window.analystWorkload30) ? window.analystWorkload30 : (defaultKey === '90' && window.analystWorkload90) ? window.analystWorkload90 : (defaultKey === '180' && window.analystWorkload180) ? window.analystWorkload180 : (defaultKey === '365' && window.analystWorkload365) ? window.analystWorkload365 : window.analystWorkloadAll ?? [];
     renderAnalystChart(defaultData);
 
-    // Attach toggle handlers for workload-specific buttons
-    document.querySelectorAll('.workload-range-toggle .btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.workload-range-toggle .btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        const range = btn.getAttribute('data-range');
-        if(range === '30') renderAnalystChart(window.analystWorkload30 ?? []);
-        else if(range === '90') renderAnalystChart(window.analystWorkload90 ?? []);
-        else renderAnalystChart(window.analystWorkloadAll ?? []);
+    // Attach toggle handlers for workload-specific buttons scoped to the workload card
+    (function(){
+      const cardEl = analystWorkloadChart.closest('.card') || document;
+      const btns = cardEl.querySelectorAll('.workload-range-toggle [data-range]');
+      btns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          cardEl.querySelectorAll('.workload-range-toggle .btn').forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+          const token = btn.getAttribute('data-range');
+          const key = mapTokenToKey(token);
+          if(key === '30') renderAnalystChart(window.analystWorkload30 ?? []);
+          else if(key === '90') renderAnalystChart(window.analystWorkload90 ?? []);
+          else if(key === '180') renderAnalystChart(window.analystWorkload180 ?? []);
+          else if(key === '365') renderAnalystChart(window.analystWorkload365 ?? []);
+          else renderAnalystChart(window.analystWorkloadAll ?? []);
+        });
       });
-    });
+    })();
   }
 })();
