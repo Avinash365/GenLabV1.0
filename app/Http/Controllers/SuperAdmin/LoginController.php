@@ -36,7 +36,7 @@ class LoginController extends Controller
         $loginService = app(SuperAdminLoginService::class);
 
         if ($loginService->login($request->only('email', 'password'))) {
-            return redirect()->route('superadmin.dashboard.index')->with('status', 'Logged in successfully');
+            return redirect()->route('superadmin.dashboard.index', ['post_login' => 1])->with('status', 'Logged in successfully');
         }
 
         return redirect()->back()->withErrors(['email' => 'Invalid credentials'])->withInput();

@@ -25,6 +25,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class DashboardController extends Controller
@@ -45,24 +46,74 @@ class DashboardController extends Controller
     {
         $activeDepartments = $this->departmentService->getDepartment();
 
+        // If the user is being redirected immediately after login we avoid running
+        // the heavy dashboard computations synchronously. The login flow appends
+        // ?post_login=1 so we can return a lightweight page and let the frontend
+        // fetch the heavy widgets via AJAX.
+        $req = request();
+
+        // Optional: enable query logging for a single request by appending
+        // ?debug_queries=1 (development only). This will write SQL events to the
+        // application log to help identify slow/duplicate queries during dashboard load.
+        if ($req->query('debug_queries')) {
+            DB::listen(function ($query) {
+                Log::info('dashboard_query', ['sql' => $query->sql, 'bindings' => $query->bindings, 'time' => $query->time]);
+            });
+        }
+        if ($req->query('post_login')) {
+            $minimal = [
+                'departments' => $activeDepartments,
+                // Prefer cached snapshots so small important widgets render immediately after login.
+                'analystWorkloadAll' => Cache::get('dashboard:analyst:all', []),
+                'analystWorkload30' => Cache::get('dashboard:analyst:30', []),
+                'analystWorkload90' => Cache::get('dashboard:analyst:90', []),
+                'overdueAll' => Cache::get('dashboard:overdue:all', 0),
+                'overdue30' => Cache::get('dashboard:overdue:30', 0),
+                'overdue90' => Cache::get('dashboard:overdue:90', 0),
+                'lowStockItems' => Cache::get('dashboard:lowStockItems', collect()),
+                'bookingsByDepartment' => Cache::get('dashboard:bookings_by_dept:' . Carbon::today()->toDateString(), []),
+            ];
+
+            if (\Auth::guard('admin')->check()) {
+                return view('superadmin.dashboard', $minimal);
+            }
+
+            $user = Auth::guard('web')->user();
+            if (!$user) {
+                abort(403, 'Unauthorized');
+            }
+
+            $departmentName = optional($user->employee)->department;
+
+            return view('superadmin.departments.default', array_merge($minimal, [
+                'departmentName' => $departmentName,
+                'department' => null,
+                'user' => $user,
+                'payload' => [],
+            ]));
+        }
+
         // Fetch Analyst Workload using case-insensitive join to users.user_code so
         // `lab_analysis_code` like "LAb032" maps to the correct user name where present.
         // Provide full lists (all lab analysts) for the widget. The chart can handle many items,
         // but we still provide 30/90 filters as well.
-        $analystWorkloadAll = $this->getAllAnalystWorkload(null);
-        $analystWorkload30 = $this->getAllAnalystWorkload(30);
-        $analystWorkload90 = $this->getAllAnalystWorkload(90);
+        $analystWorkloadAll = Cache::remember('dashboard:analyst:all', 300, fn() => $this->getAllAnalystWorkload(null));
+        $analystWorkload30 = Cache::remember('dashboard:analyst:30', 300, fn() => $this->getAllAnalystWorkload(30));
+        $analystWorkload90 = Cache::remember('dashboard:analyst:90', 300, fn() => $this->getAllAnalystWorkload(90));
 
         // Fetch Low Stock Inventory (Items with Total Stock < 10)
-        $lowStockItems = \App\Models\ProductStockEntry::select('product_code', \DB::raw('SUM(quantity) as total_qty'))
-            ->groupBy('product_code')
-            ->having('total_qty', '<', 10)
-            ->with('product')
-            ->limit(5)
-            ->get();
+        $lowStockItems = Cache::remember('dashboard:lowStockItems', 300, function () {
+            return \App\Models\ProductStockEntry::select('product_code', \DB::raw('SUM(quantity) as total_qty'))
+                ->groupBy('product_code')
+                ->having('total_qty', '<', 10)
+                ->with('product')
+                ->limit(5)
+                ->get();
+        });
 
         // Bookings by Department: return both booking counts and summed amount per department
-        $bookingsByDeptRaw = \App\Models\NewBooking::whereNotNull('department_id')
+        $bookingsByDeptRaw = Cache::remember('dashboard:bookings_by_dept:' . Carbon::today()->toDateString(), 300, function () {
+            return \App\Models\NewBooking::whereNotNull('department_id')
             ->whereNull('new_bookings.deleted_at')
             ->join('departments', 'new_bookings.department_id', '=', 'departments.id')
             ->where('departments.is_active', 1)
@@ -75,6 +126,7 @@ class DashboardController extends Controller
             ->orderByDesc('total')
             ->limit(10)
             ->get();
+        });
 
         $bookingsByDepartment = [];
         foreach ($bookingsByDeptRaw as $row) {
@@ -90,9 +142,9 @@ class DashboardController extends Controller
                 'analystWorkloadAll' => $analystWorkloadAll,
                 'analystWorkload30' => $analystWorkload30,
                 'analystWorkload90' => $analystWorkload90,
-                'overdueAll' => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->count(),
-                'overdue30' => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()->endOfDay()])->count(),
-                'overdue90' => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(89)->startOfDay(), Carbon::now()->endOfDay()])->count(),
+                'overdueAll' => Cache::remember('dashboard:overdue:all', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->count()),
+                'overdue30' => Cache::remember('dashboard:overdue:30', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(29)->startOfDay(), Carbon::now()->endOfDay()])->count()),
+                'overdue90' => Cache::remember('dashboard:overdue:90', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(89)->startOfDay(), Carbon::now()->endOfDay()])->count()),
                 'lowStockItems'   => $lowStockItems,
                 'bookingsByDepartment' => $bookingsByDepartment,
             ]);
@@ -119,7 +171,10 @@ class DashboardController extends Controller
         $departmentName = $primaryDepartmentName
             ?? ($role?->role_name ?? $identifier);
 
-        $payload = $this->buildDepartmentPayload($departmentSlug, $user, $departmentModel);
+        $payloadCacheKey = "dashboard:payload:" . ($departmentSlug ?? 'default') . ":user:" . $user->id;
+        $payload = Cache::remember($payloadCacheKey, 600, function () use ($departmentSlug, $user, $departmentModel) {
+            return $this->buildDepartmentPayload($departmentSlug, $user, $departmentModel);
+        });
 
         $candidateViews = array_filter([
             $departmentSlug ? "superadmin.departments.{$departmentSlug}.dashboard" : null,
