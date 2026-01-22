@@ -829,6 +829,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::resource('holidays', HolidayController::class)->only(['index','store','update','destroy']);
     });
 
+    // Backwards-compatible alias: some views reference superadmin.holidays.index
+    // Define a top-level named route to avoid RouteNotFound exceptions.
+    Route::get('holidays', [HolidayController::class, 'index'])->name('holidays.index');
+
     // Lab Analysts - reports dropdown and viewer
     Route::prefix('lab-analysts')->name('labanalysts.')->group(function () {
         Route::get('/', [LabAnalystController::class, 'index'])

@@ -210,6 +210,7 @@
 											<div class="mb-3">
 												<label class="form-label">No of Days</label>
 												<input type="text" class="form-control bg-light" id="calculated_days" readonly>
+												<input type="hidden" name="days_hours" id="days_hours" value="0">
 											</div>
 										</div>
 										<div class="col-lg-6">
@@ -532,6 +533,51 @@
 		margin-left: auto;
 	}
 }
+</style>
+<style>
+/* Strong overrides to constrain delete confirmation modal */
+#delete-modal .modal-dialog {
+	max-width: 520px !important;
+	margin: 1.25rem auto !important;
+}
+#delete-modal .modal-content {
+	border-radius: 12px !important;
+	max-height: calc(100vh - 80px) !important;
+	overflow: hidden !important;
+}
+#delete-modal .page-wrapper-new {
+	padding: 0 !important;
+}
+#delete-modal .page-wrapper-new .content {
+	padding: 1rem 1rem !important; /* reduce large padding */
+	min-height: unset !important;
+	height: auto !important;
+	display: flex !important;
+	flex-direction: column !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 0.5rem !important;
+}
+#delete-modal .page-wrapper-new .content .rounded-circle {
+	width: 56px !important;
+	height: 56px !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	padding: 0 !important;
+	border-radius: 50% !important;
+}
+
+#delete-modal .page-wrapper-new .content .rounded-circle i {
+	margin: 0 !important;
+	display: block !important;
+}
+#delete-modal .modal-footer-btn { 
+	padding-top: 0.5rem !important;
+}
+#delete-modal .modal-footer-btn .btn { min-width: 96px; }
+#delete-modal .modal-body p { margin-bottom: 0.5rem !important; }
+#delete-modal .content.p-5 { padding: 1rem !important; }
 </style>
 @endpush
 
