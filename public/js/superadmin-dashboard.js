@@ -213,15 +213,19 @@
       // initial draw
       draw(currentDays);
 
-      // wire up toggle buttons
-      document.querySelectorAll('.booking-range-toggle [data-days]').forEach(btn=>{
-        btn.addEventListener('click', function(){
-          document.querySelectorAll('.booking-range-toggle .btn').forEach(b=>b.classList.remove('active'));
-          this.classList.add('active');
-          currentDays = this.getAttribute('data-days') || '30';
-          draw(currentDays);
+      // wire up toggle buttons scoped to the Booking Trend card
+      (function(){
+        const cardEl = bookingTrend.closest('.card') || document;
+        const btns = cardEl.querySelectorAll('.booking-range-toggle [data-days]');
+        btns.forEach(btn=>{
+          btn.addEventListener('click', function(){
+            cardEl.querySelectorAll('.booking-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+            this.classList.add('active');
+            currentDays = this.getAttribute('data-days') || '30';
+            draw(currentDays);
+          });
         });
-      });
+      })();
     })();
   }
 

@@ -117,25 +117,184 @@
 
         <!-- Booking Trend & Department -->
         <div class="row g-3 mb-4">
+
             <div class="col-xl-8">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Booking Trend</h6>
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Marketing Persons (Bookings and Revenue)</h6>
                         <div class="d-flex align-items-center gap-2">
                             <div class="booking-range-toggle btn-group" role="group" aria-label="Booking Range">
                                 <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="30">30D</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-days="90">90D</button>
                                 <button type="button" class="btn btn-sm btn-outline-secondary" data-days="all">All</button>
                             </div>
-                         </div>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="chart-container" style="height: 280px;">
-                            <canvas id="bookingTrend"></canvas>
+                        <div class="chart-container" style="height:240px;">
+                            <canvas id="bookingsMarketingBar"></canvas>
                         </div>
+
+                        <script>
+                        <?php
+                            $__bookingsByDeptFallback = [
+                                'GENERAL' => ['total' => 10000, 'amount' => 1000000],
+                                'UTTRAKHAND' => ['total' => 8000, 'amount' => 800000],
+                                'NBCC' => ['total' => 2000, 'amount' => 200000],
+                                'BIS' => ['total' => 2500, 'amount' => 250000],
+                            ];
+                        ?>
+                        window.__initialBookingsByMarketing = <?php echo json_encode($bookingsByMarketing ?? $__bookingsByDeptFallback); ?>;
+
+                        (function renderBookingsDeptChart(){
+                            async function fetchDept(days){
+                                try{
+                                        const url = '/superadmin/dashboard/bookings-by-marketing?days=' + encodeURIComponent(days);
+                                    const r = await fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+                                    if(!r.ok) return null;
+                                    return await r.json();
+                                } catch(e){ return null; }
+                            }
+
+                            function drawFromRaw(raw){
+                                if(typeof Chart === 'undefined'){
+                                    return setTimeout(()=> drawFromRaw(raw), 50);
+                                }
+
+                                const rawObj = raw || {};
+                                const labels = [];
+                                const counts = [];
+                                const amounts = [];
+
+                                if(Array.isArray(rawObj)){
+                                    rawObj.forEach(item => {
+                                        if(item && typeof item === 'object'){
+                                            const label = item.label ?? Object.keys(item)[0];
+                                            labels.push(label);
+                                            counts.push(Number(item.total ?? item.value ?? 0));
+                                            amounts.push(Number(item.amount ?? 0));
+                                        }
+                                    });
+                                } else if(rawObj && typeof rawObj === 'object'){
+                                    for(const k in rawObj){
+                                        if(Object.prototype.hasOwnProperty.call(rawObj, k)){
+                                            labels.push(k);
+                                            const v = rawObj[k];
+                                            if(typeof v === 'object'){
+                                                counts.push(Number(v.total || 0));
+                                                amounts.push(Number(v.amount || 0));
+                                            } else {
+                                                counts.push(Number(v || 0));
+                                                amounts.push(0);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                const ctx = document.getElementById('bookingsMarketingBar').getContext('2d');
+                                function formatCurrencyCompact(v){
+                                    v = Number(v || 0);
+                                    if(isNaN(v)) return v;
+                                    // Crores (1 Cr = 1e7), Lakhs (1 L = 1e5), Thousands
+                                    if (v >= 10000000) return '₹ ' + (v/10000000).toFixed(1).replace(/\.0$/,'') + 'Cr';
+                                    if (v >= 100000) return '₹ ' + (v/100000).toFixed(1).replace(/\.0$/,'') + 'L';
+                                    if (v >= 1000) return '₹ ' + (v/1000).toFixed(1).replace(/\.0$/,'') + 'K';
+                                    return '₹ ' + v.toLocaleString();
+                                }
+
+                                // destroy previous instance for this chart if present
+                                if(window.__bookingsMarketingChart){ window.__bookingsMarketingChart.destroy(); }
+
+                                window.__bookingsMarketingChart = new Chart(ctx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: labels,
+                                        datasets: [
+                                            {
+                                                label: 'Bookings',
+                                                data: counts,
+                                                backgroundColor: '#1f77b4',
+                                                borderRadius: 4,
+                                                barThickness: 22,
+                                                yAxisID: 'y'
+                                            },
+                                            {
+                                                label: 'Amount (₹)',
+                                                data: amounts,
+                                                backgroundColor: '#ff7f0e',
+                                                borderRadius: 4,
+                                                barThickness: 22,
+                                                yAxisID: 'y1'
+                                            }
+                                        ]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            x: { grid: { display: false } },
+                                            y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Bookings' }, ticks: { maxTicksLimit: 6 } },
+                                            y1: {
+                                                beginAtZero: true,
+                                                position: 'right',
+                                                grid: { display: false },
+                                                ticks: { callback: formatCurrencyCompact, maxTicksLimit: 6 },
+                                                title: { display: true, text: 'Amount (₹)' }
+                                            }
+                                        },
+                                        plugins: {
+                                            legend: { position: 'bottom' },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(ctx){
+                                                        const v = ctx.raw || 0;
+                                                        if(ctx.dataset && /Amount/i.test(ctx.dataset.label || '')){
+                                                            return ctx.dataset.label + ': ' + formatCurrencyCompact(v);
+                                                        }
+                                                        return ctx.dataset.label + ': ' + Number(v).toLocaleString();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                                // initial draw: prefer fresh 'all' data from API, fallback to server snapshot
+                                (async function(){
+                                    const p = await fetchDept('all');
+                                    if(p && p.data){
+                                        drawFromRaw(p.data);
+                                    } else {
+                                        drawFromRaw(window.__initialBookingsByMarketing);
+                                    }
+                                })();
+
+                                // attach toggles scoped to this card (booking-range-toggle controls)
+                                (function(){
+                                    const cardEl = document.currentScript?.closest('.card') || document;
+                                    const buttons = cardEl.querySelectorAll('.booking-range-toggle [data-days]');
+                                    buttons.forEach(btn=>{
+                                        btn.addEventListener('click', async function(){
+                                            cardEl.querySelectorAll('.booking-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+                                            this.classList.add('active');
+                                            const days = this.getAttribute('data-days') || '30';
+                                            const payload = await fetchDept(days);
+                                            if(payload && payload.data){
+                                                drawFromRaw(payload.data);
+                                            } else {
+                                                drawFromRaw(window.__initialBookingsByMarketing);
+                                            }
+                                        });
+                                    });
+                                })();
+                        })();
+                        </script>
+
                     </div>
                 </div>
             </div>
+ 
             <div class="col-xl-4">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
@@ -288,20 +447,24 @@
                                 }
                             })();
 
-                            // attach toggles
-                            document.querySelectorAll('.dept-range-toggle [data-days]').forEach(btn=>{
-                                btn.addEventListener('click', async function(){
-                                    document.querySelectorAll('.dept-range-toggle .btn').forEach(b=>b.classList.remove('active'));
-                                    this.classList.add('active');
-                                    const days = this.getAttribute('data-days') || '30';
-                                    const payload = await fetchDept(days);
-                                    if(payload && payload.data){
-                                        drawFromRaw(payload.data);
-                                    } else {
-                                        drawFromRaw(window.__initialBookingsByDepartment);
-                                    }
+                            // attach toggles scoped to this card (dept-range-toggle controls)
+                            (function(){
+                                const cardEl = document.currentScript?.closest('.card') || document;
+                                const buttons = cardEl.querySelectorAll('.dept-range-toggle [data-days]');
+                                buttons.forEach(btn=>{
+                                    btn.addEventListener('click', async function(){
+                                        cardEl.querySelectorAll('.dept-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+                                        this.classList.add('active');
+                                        const days = this.getAttribute('data-days') || '30';
+                                        const payload = await fetchDept(days);
+                                        if(payload && payload.data){
+                                            drawFromRaw(payload.data);
+                                        } else {
+                                            drawFromRaw(window.__initialBookingsByDepartment);
+                                        }
+                                    });
                                 });
-                            });
+                            })();
                         })();
                         </script>
 
@@ -316,12 +479,18 @@
             <div class="col-xl-8">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-truck-delivery"></i> Report Dispatch</h6>
-                        <div class="small text-muted">This week</div>
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Booking Trend</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="booking-range-toggle btn-group" role="group" aria-label="Booking Range">
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="30">30D</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="90">90D</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="all">All</button>
+                            </div>
+                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="chart-container" style="height: 260px;">
-                            <canvas id="dispatchBar"></canvas>
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="bookingTrend"></canvas>
                         </div>
                     </div>
                 </div>

@@ -72,6 +72,7 @@ class DashboardController extends Controller
                 'overdue90' => Cache::get('dashboard:overdue:90', 0),
                 'lowStockItems' => Cache::get('dashboard:lowStockItems', collect()),
                 'bookingsByDepartment' => Cache::get('dashboard:bookings_by_dept:' . Carbon::today()->toDateString(), []),
+                'bookingsByMarketing' => Cache::get('dashboard:bookings_by_marketing:' . Carbon::today()->toDateString(), []),
             ];
 
             if (\Auth::guard('admin')->check()) {
@@ -136,6 +137,30 @@ class DashboardController extends Controller
             ];
         }
 
+        // Bookings by Marketing Person (snapshot) - used as server-side fallback
+        $bookingsByMarketingRaw = Cache::remember('dashboard:bookings_by_marketing:' . Carbon::today()->toDateString(), 300, function () {
+            return \App\Models\NewBooking::whereNotNull('marketing_id')
+                ->whereNull('new_bookings.deleted_at')
+                ->leftJoin('users', function($join){
+                    $join->on('new_bookings.marketing_id', '=', 'users.user_code');
+                })
+                ->leftJoin('booking_items', function($join){
+                    $join->on('booking_items.new_booking_id', '=', 'new_bookings.id')
+                         ->whereNull('booking_items.deleted_at');
+                })
+                ->selectRaw('COALESCE(users.name, new_bookings.marketing_id) as marketing, COUNT(DISTINCT new_bookings.id) as total, COALESCE(SUM(booking_items.amount), 0) as amount')
+                ->groupBy('marketing')
+                ->orderByDesc('total')
+                ->limit(10)
+                ->get();
+        });
+
+        $bookingsByMarketing = [];
+        foreach ($bookingsByMarketingRaw as $row) {
+            $key = (string) ($row->marketing ?? 'Unknown');
+            $bookingsByMarketing[$key] = ['total' => (int) ($row->total ?? 0), 'amount' => (float) ($row->amount ?? 0)];
+        }
+
         if (\Auth::guard('admin')->check()) {
             return view('superadmin.dashboard', [
                 'departments' => $activeDepartments,
@@ -147,6 +172,7 @@ class DashboardController extends Controller
                 'overdue90' => Cache::remember('dashboard:overdue:90', 300, fn() => \App\Models\BookingItem::whereDate('lab_expected_date', '<', Carbon::today())->whereBetween('created_at', [Carbon::now()->subDays(89)->startOfDay(), Carbon::now()->endOfDay()])->count()),
                 'lowStockItems'   => $lowStockItems,
                 'bookingsByDepartment' => $bookingsByDepartment,
+                'bookingsByMarketing' => $bookingsByMarketing,
             ]);
         }
 
@@ -197,6 +223,7 @@ class DashboardController extends Controller
                     'overdue90' => $overdue90 ?? 0,
                     'lowStockItems' => $lowStockItems ?? [],
                     'bookingsByDepartment' => $bookingsByDepartment ?? [],
+                    'bookingsByMarketing' => $bookingsByMarketing ?? [],
                 ]);
             }
         }
@@ -215,6 +242,7 @@ class DashboardController extends Controller
             'overdue90' => $overdue90 ?? 0,
             'lowStockItems' => $lowStockItems ?? [],
             'bookingsByDepartment' => $bookingsByDepartment ?? [],
+            'bookingsByMarketing' => $bookingsByMarketing ?? [],
         ]);
     }
 
@@ -415,6 +443,47 @@ class DashboardController extends Controller
         $out = [];
         foreach ($rows as $r) {
             $out[$r->department] = ['total' => (int) $r->total, 'amount' => (float) $r->amount];
+        }
+
+        return response()->json(['start' => $start->toDateString(), 'end' => $end->toDateString(), 'data' => $out]);
+    }
+
+    /**
+     * Return bookings grouped by marketing person (counts + amounts) for the given days or 'all'.
+     */
+    public function bookingsByMarketingChart(Request $request)
+    {
+        $daysParam = $request->query('days', '30');
+        $end = Carbon::today();
+
+        if (is_string($daysParam) && strtolower($daysParam) === 'all') {
+            $earliest = NewBooking::whereNull('deleted_at')->min('created_at');
+            $start = $earliest ? Carbon::parse($earliest)->startOfDay() : $end->copy()->subYears(1)->startOfDay();
+        } else {
+            $days = (int) $daysParam;
+            $days = max(1, min(365, $days));
+            $start = Carbon::today()->subDays($days - 1)->startOfDay();
+        }
+
+        $rows = NewBooking::whereNotNull('marketing_id')
+            ->whereNull('new_bookings.deleted_at')
+            ->leftJoin('users', function ($join) {
+                $join->on('new_bookings.marketing_id', '=', 'users.user_code');
+            })
+            ->leftJoin('booking_items', function($join){
+                $join->on('booking_items.new_booking_id', '=', 'new_bookings.id')
+                     ->whereNull('booking_items.deleted_at');
+            })
+            ->whereBetween('new_bookings.created_at', [$start->copy()->startOfDay(), $end->copy()->endOfDay()])
+            ->selectRaw('COALESCE(users.name, new_bookings.marketing_id) as marketing, COUNT(DISTINCT new_bookings.id) as total, COALESCE(SUM(booking_items.amount), 0) as amount')
+            ->groupBy('marketing')
+            ->orderByDesc('total')
+            ->limit(30)
+            ->get();
+
+        $out = [];
+        foreach ($rows as $r) {
+            $out[$r->marketing] = ['total' => (int) $r->total, 'amount' => (float) $r->amount];
         }
 
         return response()->json(['start' => $start->toDateString(), 'end' => $end->toDateString(), 'data' => $out]);

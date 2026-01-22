@@ -112,6 +112,8 @@ Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadm
     Route::get('/dashboard/booking-trend', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingTrendChart'])->name('dashboard.bookingTrend');
     // Bookings by department (counts + amounts) for dashboard
     Route::get('/dashboard/bookings-by-department', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingsByDepartmentChart'])->name('dashboard.bookingsByDepartment');
+    // Bookings by marketing person (counts + amounts) for dashboard
+    Route::get('/dashboard/bookings-by-marketing', [\App\Http\Controllers\SuperAdmin\DashboardController::class, 'bookingsByMarketingChart'])->name('dashboard.bookingsByMarketing');
 });
 
 // Cleared Expenses listing (saves PDFs under storage/public/marketing_expenses/in_account)
