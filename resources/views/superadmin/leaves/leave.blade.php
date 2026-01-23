@@ -178,10 +178,8 @@
 											<option value="">Select Leave Type</option>
 											<option value="Sick Leave">Sick Leave</option>
 											<option value="Casual Leave">Casual Leave</option>
-											<option value="Emergency Leave">Emergency Leave</option>
-											<option value="Annual Leave">Annual Leave</option>
-											<option value="Maternity Leave">Maternity Leave</option>
-											<option value="Paternity Leave">Paternity Leave</option>
+											<option value="Emergency Leave">Earned Leave</option>
+											<option value="Annual Leave">Privileged Leave</option>
 										</select>
 									</div>
 								</div>

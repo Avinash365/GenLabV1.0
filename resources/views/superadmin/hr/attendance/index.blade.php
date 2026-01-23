@@ -286,7 +286,17 @@
                                     </select>
                                 </div>
                                 <div class="col-12">
-                                    <label class="form-label">Import Notes</label>
+                                    <div class="d-flex justify-content-between align-items-start mb-2">
+                                        <div>
+                                            <label class="form-label">Import Notes</label>
+                                        </div>
+                                        <div>
+                                            <a href="{{ asset('assets/sample-attendance.csv') }}" class="btn btn-sm btn-outline-secondary" download="sample-attendance.csv">
+                                                <i class="ti ti-download me-1"></i>Download sample CSV
+                                            </a>
+                                        </div>
+                                    </div>
+
                                     <div class="p-3 border rounded bg-light small">
                                         <p class="mb-1">Ensure the CSV contains columns:</p>
                                         <ul class="ps-3 mb-2">
@@ -306,6 +316,32 @@
                 </div>
             </div>
 
+        </div>
+
+        <div class="col-12">
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <div>
+                            <h5 class="card-title mb-1">Monthly Attendance Export</h5>
+                            <p class="text-muted small mb-0">Download per-month summary of attendance, leaves and holidays.</p>
+                        </div>
+                    </div>
+
+                    <form class="row g-2 align-items-end" method="GET" action="{{ route('superadmin.hr.attendance.downloadMonthly') }}">
+                        <div class="col-auto">
+                            <label class="form-label small mb-0">Select Month</label>
+                            <input type="month" name="month" class="form-control form-control-sm" required>
+                        </div>
+                        <div class="col-auto">
+                            <button type="submit" class="btn btn-outline-primary btn-sm no-loader">Download Monthly Sheet</button>
+                        </div>
+                        <div class="col-12 mt-2">
+                            <p class="text-muted small mb-0">Columns: <code>employee_code</code>, <code>employee_name</code>, <code>total_attendance</code>, <code>total_leave</code>, <code>total_holidays</code>, <code>total_worked</code>.</p>
+                        </div>
+                    </form>
+                </div>
+            </div>
         </div>
 
         <div class="col-12 col-xl-5">

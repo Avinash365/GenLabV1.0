@@ -155,6 +155,11 @@ Route::middleware(['web','multi_auth:web,admin'])->group(function () {
     Route::post('/chat/messages/reaction', [App\Http\Controllers\ChatController::class, 'reaction'])->name('chat.reaction');
 });
 
+// Attendance export (monthly CSV)
+Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+    Route::get('/hr/attendance/download-monthly', [App\Http\Controllers\Superadmin\Hr\AttendanceExportController::class, 'downloadMonthly'])->name('hr.attendance.downloadMonthly');
+});
+
 use Spatie\Browsershot\Browsershot; 
 
 

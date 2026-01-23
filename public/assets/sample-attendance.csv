@@ -1,0 +1,4 @@
+employee_code,attendance_date,check_in,check_out,status,notes
+E001,2026-01-24,08:45,17:30,present,On time
+E002,2026-01-24,09:15,17:00,late,Arrived 30 mins late
+E003,2026-01-24,,,absent,No show
