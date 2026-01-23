@@ -157,7 +157,7 @@ Route::middleware(['web','multi_auth:web,admin'])->group(function () {
 
 // Attendance export (monthly CSV)
 Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
-    Route::get('/hr/attendance/download-monthly', [App\Http\Controllers\Superadmin\Hr\AttendanceExportController::class, 'downloadMonthly'])->name('hr.attendance.downloadMonthly');
+    Route::get('/hr/attendance/download-monthly', [App\Http\Controllers\SuperAdmin\HR\AttendanceExportController::class, 'downloadMonthly'])->name('hr.attendance.downloadMonthly');
 });
 
 use Spatie\Browsershot\Browsershot; 

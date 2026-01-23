@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Http\Controllers\Superadmin\Hr;
+namespace App\Http\Controllers\SuperAdmin\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\AttendanceRecord;
@@ -85,7 +85,7 @@ class AttendanceExportController extends Controller
                 $holidayCount = count($holidaysInMonth);
 
                 // Total worked is attendance plus holidays (leave shown separately)
-                $totalWorked = $attendanceTotal + $holidayCount - $leaveTotal;
+                $totalWorked = $attendanceTotal + $holidayCount;
 
                 fputcsv($handle, [
                     $emp->employee_code ?? '',
