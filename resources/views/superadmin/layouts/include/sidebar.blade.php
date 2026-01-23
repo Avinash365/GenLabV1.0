@@ -361,11 +361,18 @@
                                 </li>
                                 @if($showLeaveMenu)
                                     <li>
-                                        <a href="{{ route('superadmin.leave.Leave') }}" class="{{ Request::routeIs('superadmin.leave.*') ? 'active' : '' }}">
+                                        <a href="{{ route('superadmin.leave.Leave') }}" class="{{ Request::routeIs('superadmin.leave.Leave') ? 'active' : '' }}">
                                             Leaves
                                         </a>
                                     </li>
                                 @endif
+
+                                <li>
+                                    <a href="{{ route('superadmin.leave.approve.view') }}" class="{{ Request::routeIs('superadmin.leave.approve.view') ? 'active' : '' }}">
+                                        Approve Leaves
+                                    </a>
+                                </li>
+
                                 <li>
                                     <a href="{{ route('superadmin.hr.attendance.index') }}" class="{{ Request::routeIs('superadmin.hr.attendance.*') ? 'active' : '' }}">
                                         Attendance
@@ -377,7 +384,7 @@
                                         Holidays
                                     </a>
                                 </li>
-
+ 
                             </ul>
                         </li>
 

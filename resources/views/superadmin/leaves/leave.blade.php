@@ -111,14 +111,7 @@
 											</td>
 											<td class="action-table-data justify-content-end">
 												<div class="edit-delete-action">
-													@if(($leave->status ?? '') === 'Applied')
-													<button class="btn btn-sm btn-success me-1" onclick="approveLeave({{ $leave->id }}, 'Approved')">
-														<i class="ti ti-check"></i> Approve
-													</button>
-													<button class="btn btn-sm btn-danger me-1" onclick="approveLeave({{ $leave->id }}, 'Rejected')">
-														<i class="ti ti-x"></i> Reject
-													</button>
-													@endif
+													 
 													<a class="me-2 p-2" href="#" onclick="editLeave({{ $leave->id }})" data-bs-toggle="modal" data-bs-target="#edit-leave">
 														<i data-feather="edit" class="feather-edit"></i>
 													</a>

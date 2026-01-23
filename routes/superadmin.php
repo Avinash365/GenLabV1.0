@@ -32,6 +32,7 @@ use App\Http\Controllers\ListController;
 use App\Http\Controllers\SuperAdmin\IsCodesController;
 
 use App\Http\Controllers\SuperAdmin\LeaveController;
+use App\Http\Controllers\SuperAdmin\LeaveApproveController;
 use App\Http\Controllers\SuperAdmin\EmployeeController;
 use App\Http\Controllers\SuperAdmin\HR\AttendanceController;
 use App\Http\Controllers\SuperAdmin\HR\PayrollController;
@@ -804,6 +805,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::prefix('leaves')->name('leave.')->group(function () {
         Route::get('/', [LeaveController::class, 'index'])->name('Leave');
         Route::get('/export/pdf', [LeaveController::class, 'exportPdf'])->name('export.pdf');
+        // View for approving/reviewing leaves
+        Route::get('/approve', [LeaveApproveController::class, 'index'])->name('approve.view');
         Route::get('/export/excel', [LeaveController::class, 'exportExcel'])->name('export.excel');
         Route::post('/', [LeaveController::class, 'store'])->name('store');
         Route::put('/{leave}', [LeaveController::class, 'update'])->name('update');

@@ -362,11 +362,18 @@
                                 </li>
                                 <?php if($showLeaveMenu): ?>
                                     <li>
-                                        <a href="<?php echo e(route('superadmin.leave.Leave')); ?>" class="<?php echo e(Request::routeIs('superadmin.leave.*') ? 'active' : ''); ?>">
+                                        <a href="<?php echo e(route('superadmin.leave.Leave')); ?>" class="<?php echo e(Request::routeIs('superadmin.leave.Leave') ? 'active' : ''); ?>">
                                             Leaves
                                         </a>
                                     </li>
                                 <?php endif; ?>
+
+                                <li>
+                                    <a href="<?php echo e(route('superadmin.leave.approve.view')); ?>" class="<?php echo e(Request::routeIs('superadmin.leave.approve.view') ? 'active' : ''); ?>">
+                                        Approve Leaves
+                                    </a>
+                                </li>
+
                                 <li>
                                     <a href="<?php echo e(route('superadmin.hr.attendance.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.hr.attendance.*') ? 'active' : ''); ?>">
                                         Attendance
@@ -378,7 +385,7 @@
                                         Holidays
                                     </a>
                                 </li>
-
+ 
                             </ul>
                         </li>
 
