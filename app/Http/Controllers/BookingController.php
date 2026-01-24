@@ -113,9 +113,7 @@ class BookingController extends Controller
                     'm_s'
                 ]);
                 // dd($request->all());    
-                if ($department && strtolower($department->name) === 'bis') {
-                    $bookingData['sample_code'] = $request->sample_code;
-                }
+                // `sample_code` is stored per booking item now (booking_items table)
 
                 $bookingData['created_by_id'] = $creatorId;
                 $bookingData['created_by_type'] = $creatorType;
@@ -214,9 +212,7 @@ class BookingController extends Controller
                     'm_s',
                 ]);
 
-                if ($department && strtolower($department->name) === 'bis') {
-                    $bookingData['sample_code'] = $request->sample_code;
-                }
+                // `sample_code` is stored per booking item now (booking_items table)
 
                 $bookingData['created_by_id'] = $creatorId;
                 $bookingData['created_by_type'] = $creatorType;

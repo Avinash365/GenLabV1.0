@@ -140,10 +140,7 @@
                                     <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s')); ?>">
                                 </div> 
                             </div>
-                            <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none" id="misField">
-                                <label class="form-label">Sample Code<span class="text-danger">*</span></label>
-                                <input type="text" class="form-control" name="sample_code" placeholder="Enter MIS code">
-                            </div>
+                            
                         </div>
                     </div>
                 </div>
@@ -236,8 +233,14 @@
                     </div>
                      <div class="col-lg-4 col-sm-6 col-12">
                         <label class="form-label">Sample Details</label>
-                        <input type="text" name="booking_items[0][sample_details]" class="form-control" required>
+                        <input type="text" name="booking_items[0][sample_details]" class="form-control" >
                     </div>
+                    
+                    <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none misField">
+                        <label class="form-label">Sample Code<span class="text-danger">*</span></label>
+                        <input type="text" class="form-control" name="booking_items[0][sample_code]" placeholder="Enter MIS code">
+                    </div>
+
                 </div>
                 <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="display: none;">Remove</button>
     </div> 
@@ -452,18 +455,25 @@
             const $clone = $first.clone();
             const index = $('#itemsContainer .item-group').length;
 
+            const $prevGroup = $('#itemsContainer .item-group').eq(index-1);
+
             $clone.find('input, select').each(function(){
                 const name = $(this).attr('name');
+                const originalName = name; // keep for looking up prev value
                 if(name) $(this).attr('name', name.replace(/\d+/, index));
 
-                // Prefill all except amount, job_order_no, lab_analysis_input
+                // Prefill behavior:
+                // - copy amount from previous
+                // - auto-increment job_order_no
+                // - clear lab_analysis_input and its hidden code
+                // - explicitly copy sample_description, particulars, sample_quality, sample_details and sample_code from previous
                 if($(this).hasClass('amount')) {
-                    const prevAmount = $('#itemsContainer .item-group').eq(index-1).find('.amount').val();
+                    const prevAmount = $prevGroup.find('.amount').val();
                     $(this).val(prevAmount || '');
                 } 
                 else if($(this).hasClass('job_order_no')) {
                     // Auto-increment job order number
-                    const prevJob = $('#itemsContainer .item-group').eq(index-1).find('.job_order_no').val();
+                    const prevJob = $prevGroup.find('.job_order_no').val();
                     let prefix = '';
                     let num = 1;
 
@@ -477,12 +487,32 @@
                         }
                     }
                     $(this).val(prefix + num.toString().padStart(3,'0')); // e.g., AB-001 -> AB-002
-                } 
-                else if($(this).is('input[type=text]')) {
-                    // keep value as is (prefilled)
-                } 
-                else if($(this).is('select')) {
-                    $(this).prop('selectedIndex',0);
+                }
+                else if($(this).hasClass('lab_analysis_input')) {
+                    // clear lab analysis input and its hidden code when cloning
+                    $(this).val('');
+                    $(this).siblings('.lab_analysis_code_hidden').val('');
+                }
+                else {
+                    // if originalName maps to one of these keys, copy value from previous
+                    if (originalName) {
+                        const m = originalName.match(/booking_items\[(\d+)\]\[(.+)\]/);
+                        if (m) {
+                            const key = m[2];
+                            if (['sample_description','particulars','sample_quality','sample_details','sample_code'].includes(key)) {
+                                const prevVal = $prevGroup.find("[name='booking_items["+(index-1)+"]["+key+"]']").val();
+                                $(this).val(prevVal || '');
+                                return; // done for this input
+                            }
+                        }
+                    }
+
+                    if($(this).is('input[type=text]')) {
+                        // keep other text inputs as-is
+                    } 
+                    else if($(this).is('select')) {
+                        $(this).prop('selectedIndex',0);
+                    }
                 }
             });
 
@@ -521,10 +551,10 @@ $(document).ready(function () {
         let depName = $(this).find(':selected').text().trim().toLowerCase();
 
         if (depName === 'bis') {
-            $('#misField').removeClass('d-none');
+            $('.misField').removeClass('d-none');
         } else {
-            $('#misField').addClass('d-none');
-            $('#misField input').val('');
+            $('.misField').addClass('d-none');
+            $('.misField input').val('');
         }
     });
 
