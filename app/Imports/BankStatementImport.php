@@ -25,6 +25,7 @@ class BankStatementImport implements ToModel, WithHeadingRow
         return null;
     }
 
+
     return new BankTransaction([
         'date'                     => $date,
         'tran_id'                  => $row['tran_id'] ?? null, 
@@ -38,6 +39,7 @@ class BankStatementImport implements ToModel, WithHeadingRow
         'note'           => $row['note'] ?? null, 
         'marketing_person' => $row['marketing_person'] ?? null, 
     ]);
+    
 }
 
 }
