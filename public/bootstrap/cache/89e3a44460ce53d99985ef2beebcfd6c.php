@@ -224,10 +224,19 @@
                                     <?php endif; ?>
 
                                     <a href="<?php echo e(route('superadmin.bookings.cards.single', [$item->booking->id, $item->id])); ?>"
+                                        target="_blank" rel="noopener"
+                                        class="action-icon border rounded d-flex align-items-center p-2 text-decoration-none"
+                                        data-bs-toggle="tooltip" title="View Job card"
+                                        aria-label="View Job card">
+                                         <i data-feather="eye" class="feather-eye"></i>
+                                    </a>
+
+                                    <a href="<?php echo e(route('superadmin.bookings.cards.client', [$item->booking->id ?? 0, $item->id])); ?>"
                                        target="_blank"
                                        class="action-icon border rounded d-flex align-items-center p-2 text-decoration-none"
-                                       aria-label="View booking">
-                                        <i data-feather="eye" class="feather-eye"></i>
+                                        data-bs-toggle="tooltip" title="Print Client Card"
+                                       aria-label="Print Client Card">
+                                        <i data-feather="user" class="feather-user" title="Print Client Card"></i>
                                     </a>
 
                                     <a href="<?php echo e(route('superadmin.bookings.edit', $item->booking->id ?? 0)); ?>"

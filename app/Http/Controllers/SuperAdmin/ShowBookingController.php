@@ -12,6 +12,8 @@ use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BookingsExport;
 use Illuminate\Support\Facades\Storage;
 use App\Models\User;
+use App\Models\SiteSetting;
+use App\Services\NumberToWordsService;
 
 
 class ShowBookingController extends Controller
@@ -250,4 +252,31 @@ class ShowBookingController extends Controller
         return preg_replace('/[^A-Za-z0-9_\-]/', '-', trim($input)) ?: '';
     }
     
+    /**
+     * Render a client card (HTML) for printing; uses site settings for company info.
+     */
+    public function clientCard($bookingId, $itemId = null)
+    {
+        $booking = NewBooking::with('items')->findOrFail($bookingId);
+        $item = null;
+        if ($itemId) {
+            $item = $booking->items->firstWhere('id', $itemId);
+        }
+
+        $site = SiteSetting::first();
+
+        // Render as PDF to match booking card output
+        // compute amount in words using service
+        $numberToWords = app(NumberToWordsService::class)->convert(round($booking->total_amount ?? 0));
+        $amountInWords = $numberToWords ? ucfirst(trim($numberToWords)) . ' only' : '';
+
+        $pdf = Pdf::loadView('pdf.client_card', [
+            'booking' => $booking,
+            'item' => $item,
+            'site' => $site,
+            'amount_in_words' => $amountInWords,
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->stream('client_card.pdf');
+    }
 }

@@ -207,6 +207,11 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     Route::get('/report/{booking}/reports', [\App\Http\Controllers\Superadmin\ReportController::class, 'reports'])->name('report.reports');
 });
 
+// Client booking card (print) — renders an HTML page suitable for printing
+Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function(){
+    Route::get('/bookings/cards/client/{booking}/{item?}', [\App\Http\Controllers\SuperAdmin\ShowBookingController::class, 'clientCard'])->name('bookings.cards.client');
+});
+
 
 
 
