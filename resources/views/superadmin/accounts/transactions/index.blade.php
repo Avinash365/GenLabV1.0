@@ -56,14 +56,28 @@
             <div class="d-flex align-items-center">
 
                 <!-- Client Filter -->
-                <select name="client_id" class="form-select me-2" onchange="this.form.submit()">
-                    <option value="">All Clients</option>
-                    @foreach($clients as $client)
-                        <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                            {{ $client->name }}
-                        </option>
-                    @endforeach
-                </select>
+                <div class="position-relative me-2" style="width:180px; flex: 0 0 180px;">
+                    <input type="text"
+                        class="form-control client-search-input"
+                        placeholder="All Clients"
+                        autocomplete="off"
+                        value="{{ optional($clients->firstWhere('id', request('client_id')))->name ?? '' }}">
+
+                    <input type="hidden" name="client_id"
+                        class="client-id-hidden"
+                        value="{{ request('client_id') }}">
+
+                    <div class="dropdown-menu w-100 client-dropdown" style="max-height:500px; overflow:auto;">
+                        @foreach($clients as $client)
+                            <button type="button"
+                                class="dropdown-item client-option"
+                                data-id="{{ $client->id }}"
+                                data-name="{{ strtolower($client->name) }}">
+                                {{ $client->name }}
+                            </button>
+                        @endforeach
+                    </div>
+                </div>
 
                 <!-- Marketing Person Filter -->
                 <select name="marketing_id" class="form-select me-2" onchange="this.form.submit()">
@@ -110,6 +124,62 @@
 <div class="card mt-3 shadow-sm">
     <div class="card-body p-0">
         <div class="table-responsive">
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Client searchable dropdown
+    const containers = document.querySelectorAll('.position-relative');
+    containers.forEach(container => {
+        const input = container.querySelector('.client-search-input');
+        const hidden = container.querySelector('.client-id-hidden');
+        const dropdown = container.querySelector('.client-dropdown');
+        if (!input || !dropdown) return;
+
+        // Show dropdown on focus or click
+        const showDropdown = () => dropdown.classList.add('show');
+        const hideDropdown = () => dropdown.classList.remove('show');
+
+        input.addEventListener('focus', showDropdown);
+        input.addEventListener('click', showDropdown);
+
+        // Filter options
+        input.addEventListener('input', function () {
+            const q = this.value.toLowerCase().trim();
+            const options = dropdown.querySelectorAll('.client-option');
+            options.forEach(opt => {
+                const name = (opt.getAttribute('data-name') || '').toLowerCase();
+                if (!q || name.includes(q)) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+        });
+
+        // Click option
+        dropdown.addEventListener('click', function (e) {
+            const btn = e.target.closest('.client-option');
+            if (!btn) return;
+            const id = btn.getAttribute('data-id');
+            const name = btn.innerText.trim();
+            hidden.value = id;
+            input.value = name;
+
+            hideDropdown();
+
+            // submit the parent filter form
+            const form = container.closest('form');
+            if (form) form.submit();
+        });
+
+        // click outside to close
+        document.addEventListener('click', function (e) {
+            if (!container.contains(e.target)) hideDropdown();
+        });
+    });
+});
+</script>
+@endpush
             <table class="table table-hover table-striped align-middle mb-0">
                 <thead class="table-light position-sticky top-0">
                     <tr>
@@ -144,7 +214,22 @@
 
         <!-- Pagination -->
         <div class="mt-3 px-3 mb-3">
-            {{ $transactions->appends(request()->query())->links('pagination::bootstrap-5') }}
+            <div class="d-flex justify-content-between align-items-center flex-wrap gap-2">
+                <form method="GET" action="{{ route('superadmin.cashPayments.index') }}" class="d-flex align-items-center gap-2">
+                    @foreach(request()->except(['per_page','page']) as $key => $val)
+                        <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+                    @endforeach
+                    <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                    <select name="per_page" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+                        @foreach([25,50,100,150,200] as $size)
+                            <option value="{{ $size }}" {{ request('per_page',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
+                        @endforeach
+                    </select>
+                </form>
+                <div>
+                    {{ $transactions->appends(request()->query())->links('pagination::bootstrap-5') }}
+                </div>
+            </div>
         </div>
     </div>
 </div>
