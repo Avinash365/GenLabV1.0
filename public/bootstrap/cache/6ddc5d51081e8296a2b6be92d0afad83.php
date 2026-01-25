@@ -102,15 +102,15 @@
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12">
-                                    <label class="form-label">Contact No <span class="text-danger">*</span></label>
+                                    <label class="form-label">Contact No <span class="text-danger"></span></label>
                                     <input type="text" class="form-control" name="contact_no" 
-                                        value="<?php echo e(old('contact_no', $booking->contact_no)); ?>" required>
+                                        value="<?php echo e(old('contact_no', $booking->contact_no)); ?>" >
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
-                                    <label class="form-label">Contact Email <span class="text-danger">*</span></label>
+                                    <label class="form-label">Contact Email <span class="text-danger"></span></label>
                                     <input type="email" class="form-control" name="contact_email" 
-                                        value="<?php echo e(old('contact_email', $booking->contact_email)); ?>" required>
+                                        value="<?php echo e(old('contact_email', $booking->contact_email)); ?>" >
                                 </div>
 
                                 <div class="col-lg-4 col-sm-6 col-12 mt-3">
@@ -146,14 +146,7 @@
                                         <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s', $booking->m_s)); ?>">
                                     </div> 
                                 </div>
-                                 <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none" id="misField">
-                                <label class="form-label">Sample Code<span class="text-danger">*</span></label>
-                                <input type="text"
-       class="form-control"
-       name="sample_code"
-       value="<?php echo e(old('sample_code', $booking->sample_code ?? '')); ?>"
-       placeholder="Enter MIS code">
-                            </div>
+                                 
                             </div>
                         </div>
                     </div>
@@ -175,18 +168,12 @@
 
                             
                             <?php if(!empty($booking->upload_letter_path)): ?>
-                                <?php
-                                    $letterPath = $booking->upload_letter_path;
-                                    if (!empty($letterPath) && !str_starts_with($letterPath, 'http') && !str_starts_with($letterPath, '/')) {
-                                        $letterPath = asset('uploads/bookings/' . $letterPath);
-                                    }
-                                ?>
                                 
                                 <label class="form-label">Current Uploaded Letter:</label>
 
                                 
                                 <?php if(Str::endsWith($booking->upload_letter_path, ['jpg','jpeg','png','gif','webp'])): ?>
-                                    <img src="<?php echo e($letterPath); ?>" 
+                                    <img src="<?php echo e($booking->upload_letter_path); ?>" 
                                         alt="Uploaded Letter" 
                                         class="img-fluid mb-2 border p-1" 
                                         style="max-height: 200px;">
@@ -194,14 +181,14 @@
 
                                 
                                 <?php if(Str::endsWith($booking->upload_letter_path, ['pdf'])): ?>
-                                    <embed src="<?php echo e($letterPath); ?>" 
+                                    <embed src="<?php echo e($booking->upload_letter_path); ?>" 
                                         type="application/pdf" 
                                         class="w-100 mb-2" 
                                         style="height: 250px;">
                                 <?php endif; ?>
 
                                 <div class="mb-3">
-                                    <a href="<?php echo e($letterPath); ?>" target="_blank" class="btn btn-sm btn-primary">
+                                    <a href="<?php echo e($booking->upload_letter_path); ?>" target="_blank" class="btn btn-sm btn-primary">
                                         View / Download
                                     </a>
                                 </div>
@@ -233,8 +220,8 @@
                                     <div class="item-group border p-3 mb-3 rounded">
                                         <div class="row g-3">
                                             <div class="col-lg-4 col-sm-6 col-12">
-                                                <label class="form-label">Sample Description *</label>
-                                                <input type="text" name="booking_items[<?php echo e($index); ?>][sample_description]" class="form-control" value="<?php echo e($item['sample_description'] ?? ''); ?>" required>
+                                                <label class="form-label">Sample Description </label>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][sample_description]" class="form-control" value="<?php echo e($item['sample_description'] ?? ''); ?>">
                                             </div>
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Particulars *</label>
@@ -275,7 +262,19 @@
                                                 <input type="date" name="booking_items[<?php echo e($index); ?>][lab_expected_date]" class="form-control" 
                                                     value="<?php echo e(!empty($item['lab_expected_date']) ? \Carbon\Carbon::parse($item['lab_expected_date'])->format('Y-m-d') : ''); ?>" required>
                                             </div>
-                                        </div>
+                                             <div class="col-lg-4 col-sm-6 col-12">
+                                                <label class="form-label">Sample Details</label>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][sample_details]" class="form-control" value="<?php echo e($item['sample_details'] ?? ''); ?>" >
+                                            </div>
+                                                <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none misField">
+                                                    <label class="form-label">Sample Code<span class="text-danger">*</span></label>
+                                                    <input type="text"
+                                                        class="form-control"
+                                                        name="booking_items[<?php echo e($index); ?>][sample_code]"
+                                                        value="<?php echo e(old('booking_items.'. $index .'.sample_code', $item['sample_code'] ?? '')); ?>"
+                                                        placeholder="Enter MIS code">
+                                                </div>
+                                    </div>
                                         <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="<?php echo e($index == 0 ? 'display:none;' : ''); ?>">Remove</button>
                                     </div>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
@@ -352,10 +351,10 @@ $(document).ready(function () {
                         .toLowerCase();
 
         if (depName === 'bis') {
-            $('#misField').removeClass('d-none');
+            $('#misField, .misField').removeClass('d-none');
         } else {
-            $('#misField').addClass('d-none');
-            $('#misField input').val('');
+            $('#misField, .misField').addClass('d-none');
+            $('#misField input, .misField input').val('');
         }
     }
 
@@ -367,6 +366,97 @@ $(document).ready(function () {
 
 });
 </script>
+
+<script>
+$(document).ready(function () {
+
+    // -------------------------------
+    // Debounce helper
+    // -------------------------------
+    function debounce(fn, delay = 400) {
+        let timer;
+        return function (...args) {
+            clearTimeout(timer);
+            timer = setTimeout(() => fn.apply(this, args), delay);
+        };
+    }
+
+    let ajaxRequests = {};
+
+    function abortOldRequest(key) {
+        if (ajaxRequests[key]) {
+            ajaxRequests[key].abort();
+        }
+    }
+
+    // -------------------------------
+    // JOB ORDER SEARCH FUNCTION
+    // -------------------------------
+    function attachJobOrderSearch($input) {
+        const $dropdown = $input.siblings('.jobOrderList');
+
+        $input.off('keyup').on('keyup', debounce(function () {
+            const query = $input.val().trim();
+
+            if (query.length < 2) {
+                $dropdown.hide();
+                return;
+            }
+
+            abortOldRequest('job_orders');
+
+            ajaxRequests.job_orders = $.ajax({
+                url: "<?php echo e(route('superadmin.bookings.get.job.orders')); ?>",
+                data: { term: query },
+                success: function (data) {
+                    let html = data.length
+                        ? data.map(item =>
+                            `<button type="button" class="dropdown-item">${item}</button>`
+                          ).join('')
+                        : `<span class="dropdown-item disabled">No results</span>`;
+
+                    $dropdown.html(html).show();
+                }
+            });
+        }, 400));
+
+        $dropdown.off('click').on('click', 'button', function () {
+            $input.val($(this).text());
+            $dropdown.hide();
+        });
+    }
+
+    // -------------------------------
+    // INITIALIZE FOR EXISTING ITEMS
+    // -------------------------------
+    $('.job_order_no').each(function () {
+        attachJobOrderSearch($(this));
+    });
+
+    // -------------------------------
+    // WHEN ADD ITEM BUTTON CLICKED
+    // -------------------------------
+    $('#addItemBtn').on('click', function () {
+        setTimeout(function () {
+            $('#itemsContainer .item-group:last .job_order_no').each(function () {
+                attachJobOrderSearch($(this));
+            });
+        }, 100);
+    });
+
+    // -------------------------------
+    // CLOSE DROPDOWN ON OUTSIDE CLICK
+    // -------------------------------
+    $(document).on('click', function (e) {
+        if (!$(e.target).closest('.job_order_no, .jobOrderList').length) {
+            $('.jobOrderList').hide();
+        }
+    });
+
+});
+</script>
+
+
 
 
 <?php $__env->stopSection(); ?>

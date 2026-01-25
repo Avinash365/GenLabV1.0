@@ -184,7 +184,12 @@
                         @forelse($items as $item)
                         <tr class="table-row">
                             <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                            <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
+                            <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}{{ !empty($item->sample_code) ? ' / ' . $item->sample_code : '' }}">
+                                <div>{{ $item->job_order_no }}</div>
+                                @if(!empty($item->sample_code))
+                                    <div class="small text-muted">{{ $item->sample_code }}</div>
+                                @endif
+                            </td>
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
                             </td>

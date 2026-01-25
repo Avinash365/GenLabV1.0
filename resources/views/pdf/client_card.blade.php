@@ -66,7 +66,7 @@
 
             .footer {
                 text-align: right;
-                margin-top: 150px;
+                margin-top: 60px;
                 font-weight: bold;
             }
         </style>
@@ -170,7 +170,7 @@
                         <div class="lr-no">Particulars :- <span class="value5">{{ $it->particulars ?? '-' }}</span></div>
                         <div class="lr-no">Amount :- <span class="value5">{{ number_format($booking->total_amount ?? 0,2) }} @if(!empty($amount_in_words)) ({{ $amount_in_words }}) @endif</span></div>
                     </div>
-
+                    
                     <div class="footer">Booking Cell In-Charge</div>
                 </div>
             </div>

@@ -146,14 +146,7 @@
                                         <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="{{ old('m_s', $booking->m_s) }}">
                                     </div> 
                                 </div>
-                                 <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none" id="misField">
-                                <label class="form-label">Sample Code<span class="text-danger">*</span></label>
-                                <input type="text"
-       class="form-control"
-       name="sample_code"
-       value="{{ old('sample_code', $booking->sample_code ?? '') }}"
-       placeholder="Enter MIS code">
-                            </div>
+                                 
                             </div>
                         </div>
                     </div>
@@ -273,6 +266,14 @@
                                                 <label class="form-label">Sample Details</label>
                                                 <input type="text" name="booking_items[{{ $index }}][sample_details]" class="form-control" value="{{ $item['sample_details'] ?? '' }}" >
                                             </div>
+                                                <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none misField">
+                                                    <label class="form-label">Sample Code<span class="text-danger">*</span></label>
+                                                    <input type="text"
+                                                        class="form-control"
+                                                        name="booking_items[{{ $index }}][sample_code]"
+                                                        value="{{ old('booking_items.'. $index .'.sample_code', $item['sample_code'] ?? '') }}"
+                                                        placeholder="Enter MIS code">
+                                                </div>
                                     </div>
                                         <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="{{ $index == 0 ? 'display:none;' : '' }}">Remove</button>
                                     </div>
@@ -350,10 +351,10 @@ $(document).ready(function () {
                         .toLowerCase();
 
         if (depName === 'bis') {
-            $('#misField').removeClass('d-none');
+            $('#misField, .misField').removeClass('d-none');
         } else {
-            $('#misField').addClass('d-none');
-            $('#misField input').val('');
+            $('#misField, .misField').addClass('d-none');
+            $('#misField input, .misField input').val('');
         }
     }
 

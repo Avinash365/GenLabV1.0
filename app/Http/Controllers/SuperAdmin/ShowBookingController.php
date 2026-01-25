@@ -270,6 +270,12 @@ class ShowBookingController extends Controller
         $numberToWords = app(NumberToWordsService::class)->convert(round($booking->total_amount ?? 0));
         $amountInWords = $numberToWords ? ucfirst(trim($numberToWords)) . ' only' : '';
 
+        // Ensure LR is available on the booking object (booking card sets this earlier).
+        // Use the same placeholder as BookingCardService so client card matches booking card.
+        if (empty($booking->lr)) {
+            $booking->lr = '0101';
+        }
+
         $pdf = Pdf::loadView('pdf.client_card', [
             'booking' => $booking,
             'item' => $item,

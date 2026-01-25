@@ -35,7 +35,7 @@
         <!-- Search Form -->
         <div class="search-set">
             <form method="GET" action="{{ route('superadmin.client-ledger.index') }}" class="d-flex input-group">
-                <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
+                <input type="text" id="localSearch" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
                 <button class="btn btn-outline-secondary" type="submit">🔍</button>
             </form>
         </div>
@@ -122,8 +122,34 @@
         </div>
     </div>
 
-    <div class="card-footer">
-        {{ $clients->withQueryString()->links('pagination::bootstrap-5') }}
+    <div class="card-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <form method="GET" action="{{ route('superadmin.client-ledger.index') }}" id="perPageForm" class="d-flex align-items-center gap-2">
+                <label for="per_page" class="mb-0">Show</label>
+
+                {{-- Preserve existing query params except per_page and page --}}
+                @foreach(request()->except(['per_page','page']) as $key => $value)
+                    @if(is_array($value))
+                        @foreach($value as $v)
+                            <input type="hidden" name="{{ $key }}[]" value="{{ $v }}">
+                        @endforeach
+                    @else
+                        <input type="hidden" name="{{ $key }}" value="{{ $value }}">
+                    @endif
+                @endforeach
+
+                <select name="per_page" id="per_page" class="form-select form-select-sm" style="width: auto;">
+                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
+                    <option value="100" {{ request('per_page') == 100 ? 'selected' : '' }}>100</option>
+                    <option value="200" {{ request('per_page') == 200 ? 'selected' : '' }}>200</option>
+                </select>
+            </form>
+        </div>
+
+        <div>
+            {{ $clients->withQueryString()->links('pagination::bootstrap-5') }}
+        </div>
     </div>
 </div>
 
@@ -138,6 +164,39 @@
                 window.location = this.dataset.href;
             });
         });
+        const perPageSelect = document.getElementById('per_page');
+        if (perPageSelect) {
+            perPageSelect.addEventListener('change', function () {
+                document.getElementById('perPageForm').submit();
+            });
+        }
+        const localSearch = document.getElementById('localSearch');
+        if (localSearch) {
+            localSearch.addEventListener('input', function () {
+                const q = this.value.trim().toLowerCase();
+                const table = document.querySelector('table.table');
+                if (!table) return;
+                const tbodyRows = table.querySelectorAll('tbody tr');
+                let anyVisible = false;
+                tbodyRows.forEach(row => {
+                    const cols = row.querySelectorAll('td');
+                    if (cols.length === 1 && cols[0].hasAttribute('colspan')) {
+                        // "No records" row
+                        row.style.display = q === '' ? '' : 'none';
+                        return;
+                    }
+                    const text = row.textContent.toLowerCase();
+                    if (q === '' || text.indexOf(q) !== -1) {
+                        row.style.display = '';
+                        anyVisible = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                const tfoot = table.querySelector('tfoot');
+                if (tfoot) tfoot.style.display = (anyVisible || q === '') ? '' : 'none';
+            });
+        }
     });
 </script>
 @endpush

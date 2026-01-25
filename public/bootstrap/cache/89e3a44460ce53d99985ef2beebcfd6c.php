@@ -187,7 +187,12 @@
                         <?php $__empty_1 = true; $__currentLoopData = $items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
                         <tr class="table-row">
                             <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                            <td class="job-order-cell" data-bs-toggle="tooltip" title="<?php echo e($item->job_order_no); ?>"><?php echo e($item->job_order_no); ?></td>
+                            <td class="job-order-cell" data-bs-toggle="tooltip" title="<?php echo e($item->job_order_no); ?><?php echo e(!empty($item->sample_code) ? ' / ' . $item->sample_code : ''); ?>">
+                                <div><?php echo e($item->job_order_no); ?></div>
+                                <?php if(!empty($item->sample_code)): ?>
+                                    <div class="small text-muted"><?php echo e($item->sample_code); ?></div>
+                                <?php endif; ?>
+                            </td>
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->booking?->client_name ?? '-'); ?>"><?php echo e($item->booking?->client_name ?? '-'); ?></div>
                             </td>
