@@ -197,10 +197,9 @@
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
                             </td>
                             <td class="truncate-cell">
-                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
-                                @if(!empty($item->sample_details))
-                                    <div class="cell-inner text-muted mt-1" data-bs-toggle="tooltip" title="{{ $item->sample_details }}">{{ $item->sample_details }}</div>
-                                @endif
+                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}{{ !empty($item->sample_details) ? ' - ' . $item->sample_details : '' }}">
+                                    {{ $item->sample_description }}@if(!empty($item->sample_details)) <span class="text-muted"> {{ $item->sample_details }}</span>@endif
+                                </div>
                             </td>
                             <td class="truncate-cell sample-quality-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>

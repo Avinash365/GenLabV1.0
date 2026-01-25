@@ -603,7 +603,7 @@
                                 <i class="ti ti-headset fs-16 me-2"></i><span>Reception</span>
                             </a>
                         </li>
-                        <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
+                        <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>ULR</span></a></li>
                         <li><a href="{{ route('superadmin.clients.index') }}"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Client</span></a></li>
 
                         @if($user && ($user instanceof Admin || $user->hasPermission('report-format.create')))
