@@ -115,6 +115,7 @@ class ShowBookingByLetterController extends Controller
                 $like = '%' . $search . '%';
 
                 $q->where('job_order_no', 'like', $like)
+                    ->orWhere('sample_code', 'like', $like)
                     ->orWhere('sample_description', 'like', $like)
                     ->orWhere('sample_quality', 'like', $like)
                     ->orWhere('particulars', 'like', $like)
