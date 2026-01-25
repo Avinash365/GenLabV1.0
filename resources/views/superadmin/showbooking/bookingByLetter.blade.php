@@ -199,7 +199,7 @@
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
                                 @if(!empty($item->sample_details))
-                                    <div class="cell-inner small text-muted mt-1" data-bs-toggle="tooltip" title="{{ $item->sample_details }}">{{ $item->sample_details }}</div>
+                                    <div class="cell-inner text-muted mt-1" data-bs-toggle="tooltip" title="{{ $item->sample_details }}">{{ $item->sample_details }}</div>
                                 @endif
                             </td>
                             <td class="truncate-cell sample-quality-cell">

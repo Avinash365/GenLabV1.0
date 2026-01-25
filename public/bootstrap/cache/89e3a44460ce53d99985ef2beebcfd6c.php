@@ -202,7 +202,7 @@
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($item->sample_description); ?>"><?php echo e($item->sample_description); ?></div>
                                 <?php if(!empty($item->sample_details)): ?>
-                                    <div class="cell-inner small text-muted mt-1" data-bs-toggle="tooltip" title="<?php echo e($item->sample_details); ?>"><?php echo e($item->sample_details); ?></div>
+                                    <div class="cell-inner text-muted mt-1" data-bs-toggle="tooltip" title="<?php echo e($item->sample_details); ?>"><?php echo e($item->sample_details); ?></div>
                                 <?php endif; ?>
                             </td>
                             <td class="truncate-cell sample-quality-cell">
