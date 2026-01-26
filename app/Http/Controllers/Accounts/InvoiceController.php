@@ -199,7 +199,44 @@ class InvoiceController extends Controller
         set_time_limit(300);
         ini_set('memory_limit', '512M');
         $invoices = $this->buildQuery($request)->orderBy('invoice_no', 'desc')->get();
-        return Excel::download(new InvoicesExport($invoices), 'invoices.xlsx');
+        $filters = [];
+        $qs = $request->except(['_token','page']);
+        foreach($qs as $k => $v){
+            if(is_null($v) || $v === '') continue;
+            switch($k){
+                case 'search':
+                    $filters['Search'] = $v; break;
+                case 'client_id':
+                    $client = Client::find($v);
+                    $filters['Client'] = $client ? $client->name : $v; break;
+                case 'marketing_person':
+                case 'marketing':
+                    $user = null;
+                    if(is_numeric($v)) $user = User::find($v);
+                    if(!$user) $user = User::where('user_code', $v)->first(['name','user_code']);
+                    $filters['Marketing Person'] = $user ? ($user->name . ($user->user_code ? ' (' . $user->user_code . ')' : '')) : $v;
+                    break;
+                case 'department_id':
+                    $dept = Department::find($v);
+                    $filters['Department'] = $dept ? $dept->name : $v; break;
+                case 'payment_status':
+                    $filters['Payment Status'] = $v; break;
+                case 'month':
+                    $m = is_numeric($v) ? (int) $v : null;
+                    if($m){
+                        try{ $filters['Month'] = Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $v; }
+                    } else { $filters['Month'] = $v; }
+                    break;
+                case 'year':
+                    $filters['Year'] = $v; break;
+                case 'per_page':
+                    $filters['Rows Per Page'] = $v; break;
+                default:
+                    $filters[ucwords(str_replace(['_','-'], ' ', $k))] = $v;
+            }
+        }
+
+        return Excel::download(new InvoicesExport($invoices, $filters), 'invoices.xlsx');
     }
 
 

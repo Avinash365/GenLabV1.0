@@ -4,57 +4,52 @@ namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Illuminate\Support\Collection;
 
-class BankTransactionsExport implements FromCollection, WithHeadings, ShouldAutoSize, WithMapping, WithCustomStartCell, WithEvents
+class PurchaseBillsExport implements FromCollection, WithHeadings, WithMapping, WithCustomStartCell, WithEvents
 {
-    protected $transactions;
+    protected $bills;
     protected $filters = [];
 
     public function __construct(...$args)
     {
-        $this->transactions = $args[0] ?? collect();
-        $this->transactions = $this->transactions instanceof Collection ? $this->transactions : collect($this->transactions);
+        $this->bills = $args[0] ?? collect();
+        $this->bills = $this->bills instanceof Collection ? $this->bills : collect($this->bills);
         $this->filters = $args[1] ?? [];
     }
 
     public function collection()
     {
-        return $this->transactions;
+        return $this->bills;
     }
 
-    public function map($transaction): array
+    public function map($b): array
     {
         return [
-            $transaction->tran_id,
-            $transaction->value_date ? \Carbon\Carbon::parse($transaction->value_date)->format('d M Y') : '',
-            $transaction->date ? \Carbon\Carbon::parse($transaction->date)->format('d M Y') : '',
-            $transaction->transaction_remarks,
-            $transaction->chq_ref_no,
-            $transaction->withdrawal > 0 ? $transaction->withdrawal : '',
-            $transaction->deposit > 0 ? $transaction->deposit : '',
-            $transaction->closing_balance,
-            $transaction->note,
+            $b->description,
+            $b->party,
+            (float) $b->amount,
+            $b->purchased_by,
+            $b->gst_type,
+            $b->purchase_date ? \Carbon\Carbon::parse($b->purchase_date)->format('d-m-Y') : '',
+            $b->bill_upload ? 'Uploaded' : 'Not Uploaded'
         ];
     }
 
     public function headings(): array
     {
         return [
-            'Tran ID',
-            'Value Date',
-            'Txn Date',
-            'Remarks',
-            'Chq/Ref',
-            'Withdrawal',
-            'Deposit',
-            'Balance',
-            'Note',
+            'Description',
+            'Party',
+            'Amount',
+            'Purchased By',
+            'GST Type',
+            'Purchase Date',
+            'Bill'
         ];
     }
 
@@ -81,7 +76,7 @@ class BankTransactionsExport implements FromCollection, WithHeadings, ShouldAuto
                     $row++;
                 }
                 $headerRow = $row;
-                $sheet->getStyle('A'.$headerRow.':I'.$headerRow)->getFont()->setBold(true);
+                $sheet->getStyle('A'.$headerRow.':G'.$headerRow)->getFont()->setBold(true);
             }
         ];
     }

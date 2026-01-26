@@ -5,15 +5,20 @@ namespace App\Exports;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 use Maatwebsite\Excel\Concerns\WithMapping;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithCustomStartCell;
+use Maatwebsite\Excel\Events\AfterSheet;
 use Illuminate\Support\Collection;
 
-class InvoicesExport implements FromCollection, WithHeadings, WithMapping
+class InvoicesExport implements FromCollection, WithHeadings, WithMapping, WithCustomStartCell, WithEvents
 {
     protected $invoices;
-
-    public function __construct($invoices)
+    protected $filters = [];
+    public function __construct(...$args)
     {
+        $invoices = $args[0] ?? collect();
         $this->invoices = $invoices instanceof Collection ? $invoices : collect($invoices);
+        $this->filters = $args[1] ?? [];
     }
 
     public function collection()
@@ -32,6 +37,34 @@ class InvoicesExport implements FromCollection, WithHeadings, WithMapping
             'Total Amount',
             'Invoice Date',
             'Payment Status'
+        ];
+    }
+
+    public function startCell(): string
+    {
+        $fcount = count($this->filters ?: []);
+        $startRow = $fcount + 3; // title + filters + blank
+        return 'A' . $startRow;
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event){
+                $sheet = $event->sheet->getDelegate();
+                $row = 1;
+                if(!empty($this->filters)){
+                    $sheet->setCellValue('A'.$row, 'Applied Filters:');
+                    $row++;
+                    foreach($this->filters as $k => $v){
+                        $sheet->setCellValue('A'.$row, $k . ': ' . $v);
+                        $row++;
+                    }
+                    $row++;
+                }
+                $headerRow = $row;
+                $sheet->getStyle('A'.$headerRow.':H'.$headerRow)->getFont()->setBold(true);
+            }
         ];
     }
 

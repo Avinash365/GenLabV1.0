@@ -179,7 +179,7 @@
                 @php
                     $inAccountQs = array_merge(request()->query(), ['approved_section' => $approvedSection]);
                 @endphp
-                <a href="{{ route('superadmin.marketing.expenses.in_account', $inAccountQs) }}" class="btn btn-sm btn-primary me-2 js-in-account" data-url="{{ route('superadmin.marketing.expenses.in_account', $inAccountQs) }}">In Account</a>
+                <a href="{{ route('superadmin.marketing.expenses.in_account', $inAccountQs) }}" class="btn btn-sm btn-primary me-2 js-in-account" data-url="{{ route('superadmin.marketing.expenses.in_account', $inAccountQs) }}">Send To Account</a>
                 <a href="{{ route('superadmin.marketing.expenses.approved', array_merge(request()->query(), ['approved_section' => $approvedSection])) }}" class="btn btn-sm btn-outline-secondary js-approved-refresh" data-url="{{ route('superadmin.marketing.expenses.approved', array_merge(request()->query(), ['approved_section' => $approvedSection])) }}">Refresh</a>
             </div>
         </div>
@@ -260,16 +260,14 @@
                 const { value: ok } = await Swal.fire({
                     title: 'Approve Expense',
                     html:
-                    `<div class="text-start">
-                        <div class="d-flex justify-content-between align-items-center">
-                          <label class="form-label mb-1">Approving Amount</label>
-                          <small class="text-muted">Max: ${numberFormat(maxApprovable)}</small>
-                        </div>
-                        <input id="apprAmount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00" value="${maxApprovable.toFixed(2)}">
-                        <div class="mt-2 small">Due after approval: <strong id=\"apprDue\" class=\"text-danger\">${numberFormat(maxApprovable)}</strong></div>
-                        <label class="form-label mt-3">Description</label>
-                        <textarea id="apprNote" rows="2" class="form-control" placeholder="Optional"></textarea>
-                    </div>`,
+                                        `<div class="text-start">
+                                                <div class="d-flex justify-content-between align-items-center">
+                                                    <label class="form-label mb-1">Approving Amount</label>
+                                                    <small class="text-muted">Max: ${numberFormat(maxApprovable)}</small>
+                                                </div>
+                                                <input id="apprAmount" type="number" min="0" step="0.01" class="form-control" placeholder="0.00" value="${maxApprovable.toFixed(2)}">
+                                                <div class="mt-2 small">Due after approval: <strong id=\"apprDue\" class="text-danger">${numberFormat(maxApprovable)}</strong></div>
+                                        </div>`,
                     showCancelButton: true,
                     didOpen: () => {
                         const amtEl = document.getElementById('apprAmount');
@@ -297,13 +295,17 @@
                 });
                 if(!ok) return;
                 const amt = document.getElementById('apprAmount').value;
-                const note = document.getElementById('apprNote').value;
+                const noteEl = document.getElementById('apprNote');
+                const note = noteEl ? noteEl.value : '';
                 const params = new URLSearchParams({ approved_amount: amt, approval_note: note });
                 groupIds.forEach(gid => params.append('group_ids[]', gid));
 
                 const resp = await fetch(`{{ url('superadmin/marketing/expenses') }}/${id}/approve`,{
                     method:'PATCH',
-                    headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                    headers:{
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
                     body: params
                 });
                 const data = await resp.json();
@@ -334,7 +336,10 @@
 
                 const resp = await fetch(`{{ url('superadmin/marketing/expenses') }}/${id}/reject`,{
                     method:'PATCH',
-                    headers:{'X-CSRF-TOKEN': '{{ csrf_token() }}'},
+                    headers:{
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}',
+                        'Content-Type': 'application/x-www-form-urlencoded; charset=UTF-8'
+                    },
                     body: params
                 });
                 const data = await resp.json();

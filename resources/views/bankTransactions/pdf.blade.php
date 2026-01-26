@@ -17,6 +17,17 @@
     <h2>Bank Transactions</h2>
     <p>Generated on {{ now()->format('d M Y, h:i A') }}</p>
 
+    @if(!empty($filters))
+        <div style="margin-top:8px; margin-bottom:6px;">
+            <strong>Applied Filters:</strong>
+            <ul style="margin:4px 0 0 16px; padding:0;">
+                @foreach($filters as $k => $v)
+                    <li>{{ $k }}: {{ $v }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <table>
         <thead>
             <tr>

@@ -4,15 +4,16 @@ namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use Maatwebsite\Excel\Concerns\WithCustomStartCell;
+use Maatwebsite\Excel\Events\AfterSheet;
 
-class TransactionsExport implements FromCollection, WithHeadings
+class TransactionsExport implements FromCollection, WithHeadings, WithCustomStartCell, WithEvents
 {
     protected $transactions;
+    protected $filters = [];
 
-    public function __construct($transactions)
-    {
-        $this->transactions = $transactions;
-    }
+    
 
     public function collection()
     {
@@ -29,6 +30,13 @@ class TransactionsExport implements FromCollection, WithHeadings
         });
     }
 
+    // Support constructor with optional filters
+    public function __construct(...$args)
+    {
+        $this->transactions = $args[0] ?? collect();
+        $this->filters = $args[1] ?? [];
+    }
+
     public function headings(): array
     {
         return [
@@ -39,6 +47,37 @@ class TransactionsExport implements FromCollection, WithHeadings
             'Amount Received',
             'Payment Mode',
             'Transaction Date',
+        ];
+    }
+
+    // Place the collection (headings) start row below the filters
+    public function startCell(): string
+    {
+        $fcount = count($this->filters ?: []);
+        $startRow = $fcount + 3; // 1: title, fcount: filters, +1 blank
+        return 'A' . $startRow;
+    }
+
+    public function registerEvents(): array
+    {
+        return [
+            AfterSheet::class => function(AfterSheet $event) {
+                $sheet = $event->sheet->getDelegate();
+                $row = 1;
+                if(!empty($this->filters)){
+                    $sheet->setCellValue('A'.$row, 'Applied Filters:');
+                    $row++;
+                    foreach($this->filters as $k => $v){
+                        $sheet->setCellValue('A'.$row, $k . ': ' . $v);
+                        $row++;
+                    }
+                    // leave one blank row after filters
+                    $row++;
+                }
+                // Optionally style the header row (where headings will be written)
+                $headerRow = $row;
+                $sheet->getStyle('A'.$headerRow.':G'.$headerRow)->getFont()->setBold(true);
+            }
         ];
     }
 }

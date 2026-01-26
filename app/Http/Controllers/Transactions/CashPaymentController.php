@@ -87,7 +87,47 @@ class CashPaymentController extends Controller
     {
         $query = $this->getFilteredQuery($request);
         $transactions = $query->orderBy('transaction_date', 'desc')->get();
-        return Excel::download(new TransactionsExport($transactions), 'invoice_transactions.xlsx');
+        // Build human-friendly filters array similar to PDF export
+        $filters = [];
+        $qs = $request->except(['_token','page']);
+        foreach($qs as $k => $v){
+            if(is_null($v) || $v === '') continue;
+            switch($k){
+                case 'search':
+                    $filters['Search'] = $v; break;
+                case 'client_id':
+                    $client = Client::find($v);
+                    $filters['Client'] = $client ? $client->name : $v; break;
+                case 'marketing_id':
+                case 'marketing_person_code':
+                    $user = null;
+                    if(is_numeric($v)) $user = User::find($v);
+                    if(!$user) $user = User::where('user_code', $v)->first(['name','user_code']);
+                    $filters['Marketing Person'] = $user ? ($user->name . ($user->user_code ? ' (' . $user->user_code . ')' : '')) : $v;
+                    break;
+                case 'payment_mode':
+                    $filters['Payment Mode'] = ucfirst($v); break;
+                case 'from_date':
+                    $filters['From Date'] = $v; break;
+                case 'to_date':
+                    $filters['To Date'] = $v; break;
+                case 'month':
+                    $m = is_numeric($v) ? (int) $v : null;
+                    if($m){
+                        try{ $filters['Month'] = \Carbon\Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $v; }
+                    } else { $filters['Month'] = $v; }
+                    break;
+                case 'year':
+                    $filters['Year'] = $v; break;
+                case 'per_page':
+                case 'perPage':
+                    $filters['Rows Per Page'] = $v; break;
+                default:
+                    $filters[ucwords(str_replace(['_','-'], ' ', $k))] = $v;
+            }
+        }
+
+        return Excel::download(new TransactionsExport($transactions, $filters), 'invoice_transactions.xlsx');
     }
 
 

@@ -4,57 +4,60 @@ namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
-use Maatwebsite\Excel\Concerns\ShouldAutoSize;
 use Maatwebsite\Excel\Concerns\WithMapping;
 use Maatwebsite\Excel\Concerns\WithEvents;
 use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Illuminate\Support\Collection;
 
-class BankTransactionsExport implements FromCollection, WithHeadings, ShouldAutoSize, WithMapping, WithCustomStartCell, WithEvents
+class CashLetterPaymentsExport implements FromCollection, WithHeadings, WithMapping, WithCustomStartCell, WithEvents
 {
-    protected $transactions;
+    protected $payments;
     protected $filters = [];
 
     public function __construct(...$args)
     {
-        $this->transactions = $args[0] ?? collect();
-        $this->transactions = $this->transactions instanceof Collection ? $this->transactions : collect($this->transactions);
+        $this->payments = $args[0] ?? collect();
+        $this->payments = $this->payments instanceof Collection ? $this->payments : collect($this->payments);
         $this->filters = $args[1] ?? [];
     }
 
     public function collection()
     {
-        return $this->transactions;
+        return $this->payments;
     }
 
-    public function map($transaction): array
+    public function map($p): array
     {
+        $refs = collect(is_array($p->booking_ids) ? $p->booking_ids : ($p->booking_ids ? explode(',', $p->booking_ids) : []))
+                    ->map(fn($id) => optional(\App\Models\NewBooking::find($id))->reference_no)
+                    ->filter()
+                    ->values()
+                    ->implode(', ');
+
+        $statusMap = ['0'=>'Pending','1'=>'Partial','2'=>'Paid','3'=>'Settled'];
+
         return [
-            $transaction->tran_id,
-            $transaction->value_date ? \Carbon\Carbon::parse($transaction->value_date)->format('d M Y') : '',
-            $transaction->date ? \Carbon\Carbon::parse($transaction->date)->format('d M Y') : '',
-            $transaction->transaction_remarks,
-            $transaction->chq_ref_no,
-            $transaction->withdrawal > 0 ? $transaction->withdrawal : '',
-            $transaction->deposit > 0 ? $transaction->deposit : '',
-            $transaction->closing_balance,
-            $transaction->note,
+            $refs,
+            $p->client->name ?? 'N/A',
+            $p->marketingPerson->name ?? $p->marketing_person_id,
+            (float) $p->total_amount,
+            (float) $p->amount_received,
+            $statusMap[$p->transaction_status] ?? $p->transaction_status,
+            $p->created_at ? \Carbon\Carbon::parse($p->created_at)->format('d-m-Y') : ''
         ];
     }
 
     public function headings(): array
     {
         return [
-            'Tran ID',
-            'Value Date',
-            'Txn Date',
-            'Remarks',
-            'Chq/Ref',
-            'Withdrawal',
-            'Deposit',
-            'Balance',
-            'Note',
+            'Reference Nos',
+            'Client',
+            'Marketing Person',
+            'Total Amount',
+            'Received',
+            'Status',
+            'Created At'
         ];
     }
 
@@ -81,7 +84,7 @@ class BankTransactionsExport implements FromCollection, WithHeadings, ShouldAuto
                     $row++;
                 }
                 $headerRow = $row;
-                $sheet->getStyle('A'.$headerRow.':I'.$headerRow)->getFont()->setBold(true);
+                $sheet->getStyle('A'.$headerRow.':G'.$headerRow)->getFont()->setBold(true);
             }
         ];
     }

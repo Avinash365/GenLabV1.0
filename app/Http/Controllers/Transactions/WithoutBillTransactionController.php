@@ -10,6 +10,9 @@ use App\Models\{Client, CashLetterPayment, CashLetterPartialPaymentEntry, Depart
 use Illuminate\Support\Facades\Auth; 
 
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\CashLetterPaymentsExport;
 
 
 use App\Services\GetUserActiveDepartment;
@@ -75,6 +78,69 @@ class WithoutBillTransactionController extends Controller
         }
 
         return view('superadmin.cashPayments.index', compact('CashLetterPayment'));
+    }
+
+
+    public function exportPdf(Request $request)
+    {
+        $query = CashLetterPayment::query()->orderBy('created_at', 'desc');
+
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        if ($request->filled('transaction_status')) {
+            $query->where('transaction_status', $request->transaction_status);
+        }
+
+        $payments = $query->get();
+
+        // Build friendly filters
+        $filters = [];
+        if($request->filled('transaction_status')){
+            $map = ['0'=>'Pending','1'=>'Partial','2'=>'Paid','3'=>'Settled'];
+            $filters['Transaction Status'] = $map[$request->transaction_status] ?? $request->transaction_status;
+        }
+        if($request->filled('month')){
+            $m = is_numeric($request->month)?(int)$request->month:null;
+            if($m){ try{ $filters['Month'] = Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; } }
+        }
+        if($request->filled('year')) $filters['Year'] = $request->year;
+
+        $pdf = Pdf::loadView('superadmin.cashPayments.pdf_export', compact('payments','filters'));
+        return $pdf->download('cash_letter_payments.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $query = CashLetterPayment::query()->orderBy('created_at', 'desc');
+
+        if ($request->filled('year')) {
+            $query->whereYear('created_at', $request->year);
+        }
+        if ($request->filled('month')) {
+            $query->whereMonth('created_at', $request->month);
+        }
+        if ($request->filled('transaction_status')) {
+            $query->where('transaction_status', $request->transaction_status);
+        }
+
+        $payments = $query->get();
+
+        $filters = [];
+        if($request->filled('transaction_status')){
+            $map = ['0'=>'Pending','1'=>'Partial','2'=>'Paid','3'=>'Settled'];
+            $filters['Transaction Status'] = $map[$request->transaction_status] ?? $request->transaction_status;
+        }
+        if($request->filled('month')){
+            $m = is_numeric($request->month)?(int)$request->month:null;
+            if($m){ try{ $filters['Month'] = Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; } }
+        }
+        if($request->filled('year')) $filters['Year'] = $request->year;
+
+        return Excel::download(new CashLetterPaymentsExport($payments, $filters), 'cash_letter_payments.xlsx');
     }
 
 

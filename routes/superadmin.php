@@ -360,6 +360,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::post('withoutbilltransactions/storeRepay/{id}', [WithoutBillTransactionController::class, 'storeRepay'])->name('withoutbilltransactions.storeRepay');
 
         Route::get('cash-letter/index', [WithoutBillTransactionController::class, 'index'])->name('cashLetterTransactions.index');
+        Route::get('cash-letter/export/pdf', [WithoutBillTransactionController::class, 'exportPdf'])->name('cashLetterTransactions.exportPdf');
+        Route::get('cash-letter/export/excel', [WithoutBillTransactionController::class, 'exportExcel'])->name('cashLetterTransactions.exportExcel');
         Route::patch('/without-bill-payments/{id}/settle', [WithoutBillTransactionController::class, 'settle'])->name('cashLetterPaymet.settle');
 
 
@@ -989,6 +991,8 @@ Route::middleware(['multi_auth:web,admin'])->group(function () {
         });
 
     Route::prefix('purchase')->name('purchase.')->group(function () {
+        Route::get('/export-pdf', [PurchaseBillController::class, 'exportPdf'])->name('exportPdf');
+        Route::get('/export-excel', [PurchaseBillController::class, 'exportExcel'])->name('exportExcel');
         Route::get('/', [PurchaseBillController::class, 'index'])->name('index');
         Route::get('/upload', [PurchaseBillController::class, 'create'])->name('create');
         Route::post('/', [PurchaseBillController::class, 'store'])->name('store');
