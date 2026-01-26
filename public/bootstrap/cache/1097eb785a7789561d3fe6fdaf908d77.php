@@ -202,7 +202,7 @@
                                                                     <th>Job Order No</th>
                                                                     <th>Sample Description</th>
                                                                     <th>Sample Quality</th>
-                                                                    <th>Lab Analyst</th>
+                                                                    <th>Status</th>
                                                                     <th>Particulars</th>
                                                                     <th>Expected Date</th>
                                                                     <th>Amount</th>
@@ -214,7 +214,7 @@
                                                                     <td><?php echo e($item->job_order_no); ?></td>
                                                                     <td><?php echo e($item->sample_description); ?></td>
                                                                     <td><?php echo e($item->sample_quality); ?></td>
-                                                                    <td><?php echo e($item->lab_analysis_code); ?></td>
+                                                                    <td><?php echo e($item->status); ?></td>
                                                                     <td><?php echo e($item->particulars); ?></td>
                                                                     <td><?php echo e(\Carbon\Carbon::parse($item->lab_expected_date)->format('d-m-Y')); ?></td>
                                                                     <td><?php echo e($item->amount); ?></td>

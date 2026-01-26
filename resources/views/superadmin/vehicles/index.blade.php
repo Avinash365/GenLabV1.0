@@ -1,6 +1,24 @@
 @extends('superadmin.layouts.app')
 
 @section('content')
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
+
 <div class="container">
     <div class="page-header">
         <div class="add-item d-flex ms-1 mt-4">
@@ -10,8 +28,12 @@
         </div>
         
         <ul class="table-top-head list-inline d-flex gap-3" >
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVehicleModal">Add Vehicle</button>
 
+            @if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.create')))
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVehicleModal">Add Vehicle</button>
+            @endif
+
+            @if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.view')))
             <li class="list-inline-item">
                 <a href="{{ route('superadmin.vehicles.export.pdf', request()->query()) }}" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
@@ -22,6 +44,7 @@
                     </svg>
                 </a>
             </li>
+            @endif
             <li style="margin-right:22px;"><a href="{{ route('superadmin.vehicles.index', request()->query()) }}" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh" ></i></a></li>
         </ul>
     </div>
@@ -145,12 +168,17 @@
                     <td>{{ $v->handed_over_person }}</td>
                     <td>
                         <div class="d-flex gap-2">
+                                @if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.edit')))
                                 <button class="btn btn-sm btn-primary add-service-btn" data-id="{{ $v->id }}" data-name="{{ $v->name }}">Add Service</button>
-                                <form id="vehicle-delete-form-{{ $v->id }}" method="POST" action="{{ route('superadmin.vehicles.destroy', $v->id) }}" class="vehicle-delete-form" data-name="{{ $v->name }}">
-                                    @csrf
-                                    @method('DELETE')
-                                </form>
-                                <button type="button" class="btn btn-sm btn-danger vehicle-delete-btn" data-form-id="vehicle-delete-form-{{ $v->id }}" data-name="{{ $v->name }}">Delete</button>
+                                @endif
+
+                                @if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.delete')))
+                                    <form id="vehicle-delete-form-{{ $v->id }}" method="POST" action="{{ route('superadmin.vehicles.destroy', $v->id) }}" class="vehicle-delete-form" data-name="{{ $v->name }}">
+                                        @csrf
+                                        @method('DELETE')
+                                    </form>
+                                    <button type="button" class="btn btn-sm btn-danger vehicle-delete-btn" data-form-id="vehicle-delete-form-{{ $v->id }}" data-name="{{ $v->name }}">Delete</button>
+                                @endif
                         </div>
                     </td>
                 </tr>

@@ -9,6 +9,16 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    
+     @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
     @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
@@ -17,12 +27,20 @@
         </div>
     @endif
 
+
+    @php 
+        $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+    @endphp
+
     <div class="page-header ps-3 px-3">
-        <div class="d-flex justify-content-end mt-3 me-3 mb-4">
-            <a href="{{ route('superadmin.blank-invoices.create') }}" class="btn btn-primary">
-                <i class="bi bi-plus-lg"></i> Generate Blank PI
-            </a>
-        </div>
+
+        @if($user && ($user instanceof Admin || ($user->hasPermission('blank_invoice.create'))))
+            <div class="d-flex justify-content-end mt-3 me-3 mb-4">
+                <a href="{{ route('superadmin.blank-invoices.create') }}" class="btn btn-primary">
+                    <i class="bi bi-plus-lg"></i> Generate Blank PI
+                </a>
+            </div>
+        @endif
 
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
@@ -272,12 +290,12 @@
                                     @endif
                                 </td>
 
+
                                 <td>
+
                                     @if($invoice->status == 0)
                                         <a href="{{ route('superadmin.cashPayments.create', $invoice->id) }}">
                                             <span class="badge bg-warning">Pay <i class="fa fa-credit-card ms-2"></i></span>
-
-
                                         </a>
                                     @elseif($invoice->status == 1)
                                         <span class="badge bg-success">Paid</span>
@@ -308,6 +326,7 @@
                                         </span>
                                     @endif
 
+                                @if($user && ($user instanceof Admin || $user->hasPermission('invoice.edit')))
                                     <form action="{{ route('superadmin.invoices.cancel', $invoice->id) }}" method="POST"
                                         class="d-inline">
                                         @csrf
@@ -318,21 +337,27 @@
                                             <i data-feather="x-circle"></i>
                                         </button>
                                     </form>
+                                @endif
 
                                     @if($invoice->status == 0)
                                         <!-- Edit Button -->
                                         <!-- <a href="{{ route('superadmin.invoices.edit', $invoice->id) }}"  -->
-                                        <a href="{{ route('bookingInvoiceStatuses.editGenerateInvoice', $invoice->id) }}"
-                                            class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-                                            title="Edit">
-                                            <i data-feather="edit" class="feather-edit"></i>
-                                        </a>
+                                        
+                                        @if($user && ($user instanceof Admin || $user->hasPermission('invoice.edit')))
+                                            <a href="{{ route('bookingInvoiceStatuses.editGenerateInvoice', $invoice->id) }}"
+                                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+                                                title="Edit Invoice">
+                                                <i data-feather="edit" class="feather-edit"></i>
+                                            </a>
+                                        @endif
 
                                         <!-- Delete Button -->
-                                        <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete"
-                                            data-bs-toggle="modal" data-bs-target="#deleteModal{{ $invoice->id }}" title="Delete">
-                                            <i data-feather="trash-2" class="feather-trash-2"></i>
-                                        </button>
+                                        @if($user && ($user instanceof Admin || $user->hasPermission('invoice.delete')))
+                                            <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal{{ $invoice->id }}" title="Delete">
+                                                <i data-feather="trash-2" class="feather-trash-2"></i>
+                                            </button>
+                                        @endif
                                     @endif
                                 </td>
                             </tr>

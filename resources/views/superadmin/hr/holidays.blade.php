@@ -1,6 +1,23 @@
 @extends('superadmin.layouts.app')
 
 @section('content')
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
 <div class="containerr">
     <div class="page-header">
         <div class="add-item d-flex ms-1 mt-2">
@@ -11,8 +28,11 @@
  
         
         <ul class="table-top-head list-inline d-flex gap-3 mt-2">
-            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-holiday">Add Holiday</button>
+            @if($user && ($user instanceof Admin || $user->hasPermission('holiday.create')))
+             <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-holiday">Add Holiday</button>
+            @endif
 
+            @if($user && ($user instanceof Admin || $user->hasPermission('holiday.view')))
             <li class="list-inline-item">
                 <a href="{{ route('superadmin.reception.export.pdf', request()->query()) }}" class="no-loader" data-bs-toggle="tooltip" title="PDF">
                     <i class="fa fa-file-pdf fa-lg text-danger"></i>
@@ -23,7 +43,9 @@
                     <i class="fa fa-file-excel fa-lg text-success"></i>
                 </a>
             </li>
+
             <li style="margin-right:22px;"><a href="{{ route('superadmin.reception.index', request()->query()) }}" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh" ></i></a></li>
+            @endif
         </ul>
     </div>
 
@@ -195,6 +217,7 @@
                                 </span>
                             </td>
                             <td class="action-table-data">
+                                @if($user && ($user instanceof Admin || $user->hasPermission('holiday.edit')))
                                 <button class="btn btn-sm btn-outline-secondary me-2" 
                                     data-id="{{ $holiday->id }}"
                                     data-name="{{ $holiday->name }}"
@@ -204,12 +227,15 @@
                                     data-bs-toggle="modal" data-bs-target="#edit-holiday">
                                     Edit
                                 </button>
-
+                                @endif
+                                
+                                @if($user && ($user instanceof Admin || $user->hasPermission('holiday.delete')))
                                 <form method="POST" action="{{ route('superadmin.hr.holidays.destroy', $holiday) }}" class="d-inline-block holiday-delete-form">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="btn btn-sm btn-danger btn-delete">Delete</button>
                                 </form>
+                                @endif
                             </td>
                         </tr>
                     @empty

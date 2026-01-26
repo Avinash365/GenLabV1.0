@@ -11,6 +11,14 @@ use Illuminate\Support\Facades\Response;
 
 class ReceptionController extends Controller
 {
+
+    public function __construct(){
+        $this->middleware('permission:reception.view')->only('index', 'exportPdf', 'exportExcel', 'show');
+        $this->middleware('permission:reception.create')->only('create', 'store');
+        $this->middleware('permission:reception.edit')->only('edit', 'update');
+        $this->middleware('permission:reception.delete')->only('destroy');
+    }
+
     public function index()
     {
         $contacts = ReceptionContact::orderBy('name')->paginate(25);

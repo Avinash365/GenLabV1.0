@@ -3,6 +3,25 @@
 @section('title', 'Attendance')
 
 @section('content')
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
+
+
 <div class="content">
     <div class="card border-0 shadow-sm mb-4 attendance-hero-card">
         <div class="card-body py-4">
@@ -218,9 +237,11 @@
                                     <label class="form-label">Notes</label>
                                     <textarea class="form-control" name="notes" rows="2" placeholder="Optional notes about this attendance">{{ old('notes') }}</textarea>
                                 </div>
-                                <div class="col-12 col-lg-6 d-flex align-items-end">
-                                    <button type="submit" class="btn btn-primary w-100">Save Manual Attendance</button>
-                                </div>
+                                @if($user && ($user instanceof Admin || $user->hasPermission('manual_attendance.create')))
+                                    <div class="col-12 col-lg-6 d-flex align-items-end">
+                                        <button type="submit" class="btn btn-primary w-100">Save Manual Attendance</button>
+                                    </div>
+                                @endif
                             </form>
                         </div>
 
@@ -307,9 +328,11 @@
                                         <p class="mb-0">Manual entries remain untouched if a biometric row targets the same day.</p>
                                     </div>
                                 </div>
-                                <div class="col-12">
-                                    <button type="submit" class="btn btn-outline-primary">Import Biometric CSV</button>
-                                </div>
+                                @if($user && ($user instanceof Admin || ($user->hasPermission('biometric_attendance.create'))))
+                                    <div class="col-12">
+                                        <button type="submit" class="btn btn-outline-primary">Import Biometric CSV</button>
+                                    </div>
+                                @endif
                             </form>
                         </div>
                     </div>
@@ -333,9 +356,11 @@
                             <label class="form-label small mb-0">Select Month</label>
                             <input type="month" name="month" class="form-control form-control-sm" required>
                         </div>
+                        @if($user && ($user instanceof Admin || $user->hasPermission('attendance.view')))
                         <div class="col-auto">
                             <button type="submit" class="btn btn-outline-primary btn-sm no-loader">Download Monthly Sheet</button>
                         </div>
+                        @endif
                         <div class="col-12 mt-2">
                             <p class="text-muted small mb-0">Columns: <code>employee_code</code>, <code>employee_name</code>, <code>total_attendance</code>, <code>total_leave</code>, <code>total_holidays</code>, <code>total_worked</code>.</p>
                         </div>

@@ -2,6 +2,30 @@
 @section('title', 'Manage Quotations')
 @section('content')
 
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp 
+
+
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
+
 <div class="page-header">
         <div class="add-item d-flex ms-4 mt-3">
             <div class="page-title">
@@ -12,6 +36,7 @@
         
         <ul class="table-top-head list-inline d-flex gap-3" >
 
+        @if($user && ($user instanceof Admin || $user->hasPermission('quotation.create')))
             <div class="d-flex justify-content-end  ">
                 @can('create', App\Models\Profile::class)
                 <a href="{{ route('superadmin.quotations.create') }}" class="btn btn-primary">
@@ -19,6 +44,7 @@
                 </a>
                  @endcan
             </div>
+        @endif
  
             <li class="list-inline-item">
                 <a href="{{ route('superadmin.quotations.export.pdf', request()->all()) }}" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
@@ -156,17 +182,22 @@
                             <td>{{ \Carbon\Carbon::parse($quotation->quotation_date)->format('d-m-Y') }}</td>
                             <td>{{ $quotation->bill_issue_to }}</td>
                             <td class="d-flex">
-                                <!-- Edit Button -->
-                                <a href="{{ route('superadmin.quotations.edit', $quotation->id) }}" 
-                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
-                                    <i data-feather="edit" class="feather-edit"></i>
-                                </a>
 
-                                <!-- Delete Button -->
-                                <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete" 
-                                        data-bs-toggle="modal" data-bs-target="#deleteModal{{ $quotation->id }}">
-                                    <i data-feather="trash-2" class="feather-trash-2"></i>
-                                </button>
+                                @if($user && ($user instanceof Admin || $user->hasPermission('quotation.edit')))
+                                    <!-- Edit Button -->
+                                    <a href="{{ route('superadmin.quotations.edit', $quotation->id) }}" 
+                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                        <i data-feather="edit" class="feather-edit"></i>
+                                    </a>
+                                @endif 
+
+                                @if($user && ($user instanceof Admin || $user->hasPermission('quotation.delete')))
+                                    <!-- Delete Button -->
+                                    <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete" 
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal{{ $quotation->id }}">
+                                        <i data-feather="trash-2" class="feather-trash-2"></i>
+                                    </button>
+                                @endif
                             </td>
                         </tr>
 

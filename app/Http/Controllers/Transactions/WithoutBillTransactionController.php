@@ -21,6 +21,9 @@ class WithoutBillTransactionController extends Controller
 
     public function __construct(GetUserActiveDepartment $departmentService)
     {
+        $this->middleware('permission:cash_payment.view')->only('index');
+        $this->middleware('permission:cash_payment.create')->only('store');
+        $this->middleware('permission:cash_payment.edit')->only('storeRepay', 'settle');
         $this->departmentService = $departmentService;
     }
     

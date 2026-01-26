@@ -18,6 +18,16 @@ use App\Models\{Client, User, NewBooking, Invoice};
 
 class BankTransactionController extends Controller
 {
+
+    public function __construct()
+    {
+        
+        $this->middleware('permission:bank_transaction.view')->only('index', 'exportPdf', 'exportExcel');
+        $this->middleware('permission:bank_transaction.create')->only('upload');
+        $this->middleware('permission:bank_transaction.edit')->only('addNote');
+        $this->middleware('permission:bank_transaction.delete')->only('softDeleteOrUndo');
+
+    }
     private function getFilteredTransactions(Request $request)
     {
         // Start query
@@ -81,7 +91,7 @@ class BankTransactionController extends Controller
         $currentYear = now()->year;
         $years = range($currentYear - 10, $currentYear + 10);
         $years = array_reverse($years); // optional: show latest year first
-
+                  
         // Get paginated results
         $transactions = $query->paginate(10)->withQueryString();
 

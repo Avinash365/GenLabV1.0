@@ -21,6 +21,7 @@ class MarketingPersonLedger extends Controller
 
     public function __construct(GetUserActiveDepartment $departmentService)
     {
+        $this->middleware('permission:marketing_ledger.view')->only('index'); 
         $this->departmentService = $departmentService;
     }
 

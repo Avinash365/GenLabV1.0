@@ -1,185 +1,359 @@
+@php
+/* ===============================
+ | MENU → SUBMENU DEFINITIONS
+ | (UI ONLY – NOT permissions)
+ |===============================*/
+$menus = [
+    'booking' => [
+        'label' => 'Booking',
+        'modules' => [
+            'booking',
+        ],
+    ],  
+    'inventory' => [
+        'label' => 'Inventory',
+        'modules' => [
+            'product',
+            'category',
+            'store',
+            'supplier',
+            'unit',
+            'purchase',
+            'issue',
+        ],
+    ],
+
+    'reporting' => [
+        'label' => 'Reporting',
+        'modules' => [
+            'report_received',
+            'report_hold',
+            'report_reported',
+            'report_pendings',
+            'report_print_&_upload',
+            'report_analyst_Activity',
+            'report_upload_report_format',
+            'report_generate',
+            'report_dispatch',
+        ],
+    ],
+
+    'hr' => [
+        'label' => 'HR',
+        'modules' => [
+            'employee',
+            'approve_leave',
+            'leave',
+            'attendance',
+            'holiday',
+            'payroll',
+        ],
+    ],
+
+    'accounts' => [
+        'label' => 'Accounts',
+        'modules' => [
+            'all_letter', 
+            'cheque', 
+            'cheque_template',
+            'invoice',
+            'blank_invoice',
+            'quotation',
+            'blank_invoice',
+            'invoice_payment',
+            'cash_letter',
+            'cash_payment',
+            'bank_transaction',
+            'employee_salary',
+            'cleared_expense',
+            
+        ],
+    ],
+    'attachments' => [
+        'label' => 'Attachments',
+        'modules' => [
+            'is_code',
+            'calibration',
+            'profile',
+            'approval',
+            'letters', 
+            'documents',
+        ],
+    ],
+    'Expenses' => [
+        'label' => 'Expenses',
+        'modules' => [
+            'personal_expense',
+            'market_expense',
+            'office_expense',
+            'approve_expense',
+            'reject_expense',   
+        ],
+    ],  
+    'Transportation' => [
+        'label' => 'Transportation',
+        'modules' => [
+            'meter_reading',
+            'vehicle_registration',
+        ],
+    ], 
+    'settings' => [
+        'label' => 'Settings',
+        'modules' => [
+            'department',
+            'web_setting',
+            'bank_detail',
+        ],
+    ],
+    'others' => [
+        'label' => 'Others',
+        'modules' => [
+            'report',
+            'sample_cell',
+            'remanent_cell', 
+            'reception', 
+            'QLR', 
+            'client', 
+            'report_format',
+            'audit_trail',
+        ],
+    ],
+    'roles & permissions' => [
+        'label' => 'Roles & Permissions',
+        'modules' => [
+            'user',
+            'role',
+        ],
+    ],
+    'departments' => [
+        'label' => 'Departments',
+        'modules' => ['__department_dynamic__'], // special placeholder
+    ],
+];
+
+/* ===============================
+ | GROUP PERMISSIONS FROM DB
+ |===============================*/
+$groupedPermissions = $permissions->groupBy(function ($perm) {
+    return explode('.', $perm->permission_name)[0];
+});
+
+$oldPermissions = collect($oldPermissions ?? []);
+@endphp 
+
+@php
+    $departmentPermissions = $permissions
+    ->filter(fn ($perm) => Str::startsWith($perm->permission_name, 'dept_'))
+    ->groupBy(function ($perm) {
+    // dept_Chemistry.view → Chemistry
+    return explode('.', str_replace('dept_', '', $perm->permission_name))[0];
+    });
+@endphp
+
+
 <div class="mb-3">
-    <label class="form-label">Permissions</label>
+    <label class="form-label fw-semibold">Permissions</label>
 
-    <table class="table table-bordered table-sm align-middle text-center">
-        <thead>
-            <tr>
-                <th>
-                    <button type="button" class="btn btn-outline-secondary w-100" disabled>Module</button>
-                </th>
-                <th>
-                    <button type="button" class="btn btn-outline-secondary w-100" id="select_all_global_btn">All</button>
-                </th>
-                <th>
-                    <button type="button" class="btn btn-outline-secondary w-100 select_col_btn" data-col="view" id="btn_col_view">View</button>
-                </th>
-                <th>
-                    <button type="button" class="btn btn-outline-secondary w-100 select_col_btn" data-col="create" id="btn_col_create">Create</button>
-                </th>
-                <th>
-                    <button type="button" class="btn btn-outline-secondary w-100 select_col_btn" data-col="edit" id="btn_col_edit">Edit</button>
-                </th>
-                <th>
-                    <button type="button" class="btn btn-outline-secondary w-100 select_col_btn" data-col="delete" id="btn_col_delete">Delete</button>
-                </th>
-            </tr>
-        </thead>
-        <tbody>
-            @php
-                $groupedPermissions = $permissions->groupBy(function($perm) {
-                    return explode('.', $perm->name ?? $perm->permission_name)[0];
-                });
-                // Make sure $oldPermissions is a Collection so ->contains works safely
-                $oldPermissions = collect($oldPermissions ?? []);
-            @endphp
-
-            @foreach($groupedPermissions as $module => $perms)
+    <div class="table-responsive">
+        <table class="table table-bordered table-sm align-middle text-center">
+            <thead class="table-light">
                 <tr>
-                    <td>{{ ucfirst($module) }}</td>
-
-                    <!-- Row Select All -->
-                    <td>
-                        <input type="checkbox" class="select_row" data-row="{{ $module }}">
-                    </td>
-
+                    <th class="text-start" width="200">Menu / Module</th>
+                    <th width="80">
+                        <button type="button"
+                                class="btn btn-outline-secondary btn-sm w-100"
+                                id="select_all_global_btn">
+                            All
+                        </button>
+                    </th>
                     @foreach(['view','create','edit','delete'] as $action)
-                        @php
-                            $permission = $perms->firstWhere('permission_name', $module . '.' . $action)
-                                ?? $perms->firstWhere('name', $module . '.' . $action);
-                        @endphp
-                        <td>
-                            @if($permission)
-                                <input
-                                    type="checkbox"
-                                    class="checkbox_{{ $module }} {{ $action }}"
-                                    name="permissions[]"
-                                    value="{{ $permission->id }}"
-                                    {{ $oldPermissions->contains($permission->id) ? 'checked' : '' }}>
-                            @endif
-                        </td>
+                        <th width="90">
+                            <button type="button"
+                                    class="btn btn-outline-secondary btn-sm w-100 select_col_btn"
+                                    data-col="{{ $action }}">
+                                {{ ucfirst($action) }}
+                            </button>
+                        </th>
                     @endforeach
                 </tr>
+            </thead>
+
+            <tbody>
+            @foreach($menus as $menuKey => $menu)
+
+                {{-- PARENT MENU --}}
+                <tr class="table-secondary menu-row"
+                    data-menu="{{ $menuKey }}"
+                    style="cursor:pointer">
+                    <td class="text-start fw-bold">
+                        ▶ {{ $menu['label'] }}
+                    </td>
+                    <td colspan="5"></td>
+                </tr>
+
+                {{-- SUB MENUS --}}
+                @foreach($menu['modules'] as $module)
+
+                    @if($module === '__department_dynamic__')
+
+    @foreach($departmentPermissions as $deptName => $perms)
+        <tr class="submenu-row d-none"
+            data-parent="{{ $menuKey }}">
+
+            <td class="text-start ps-4 fw-semibold">
+                {{ $deptName }} Department
+            </td>
+
+            <td>
+                <input type="checkbox"
+                       class="form-check-input select_row"
+                       data-row="dept_{{ $deptName }}">
+            </td>
+
+            @foreach(['view','create','edit','delete'] as $action)
+                @php
+                    $permission = $perms->firstWhere(
+                        'permission_name',
+                        "dept_{$deptName}.{$action}"
+                    );
+                @endphp
+                <td>
+                    @if($permission)
+                        <input type="checkbox"
+                               class="form-check-input checkbox_dept_{{ $deptName }} {{ $action }}"
+                               name="permissions[]"
+                               value="{{ $permission->id }}"
+                               {{ $oldPermissions->contains($permission->id) ? 'checked' : '' }}>
+                    @else
+                        <span class="text-muted">—</span>
+                    @endif
+                </td>
             @endforeach
-        </tbody>
-    </table>
+        </tr>
+    @endforeach
+
+    @continue
+@endif
+                    @php
+                        $perms = $groupedPermissions->get($module);
+                    @endphp
+
+                    @if($perms)
+                        <tr class="submenu-row d-none"
+                            data-parent="{{ $menuKey }}">
+                            <td class="text-start ps-4">
+                                {{ Str::title(str_replace('_', ' ', $module)) }}
+                            </td>
+
+                            <td>
+                                <input type="checkbox"
+                                       class="form-check-input select_row"
+                                       data-row="{{ $module }}">
+                            </td>
+
+                            @foreach(['view','create','edit','delete'] as $action)
+                                @php
+                                    $permission = $perms->firstWhere(
+                                        'permission_name', "{$module}.{$action}"
+                                    );
+                                @endphp
+                                <td>
+                                    @if($permission)
+                                        <input type="checkbox"
+                                               class="form-check-input checkbox_{{ $module }} {{ $action }}"
+                                               name="permissions[]"
+                                               value="{{ $permission->id }}"
+                                               {{ $oldPermissions->contains($permission->id) ? 'checked' : '' }}>
+                                    @else
+                                        <span class="text-muted">—</span>
+                                    @endif
+                                </td>
+                            @endforeach
+                        </tr>
+                    @endif
+                @endforeach
+            @endforeach
+            </tbody>
+        </table>
+    </div>
 </div>
 
 <script>
 document.addEventListener('DOMContentLoaded', function () {
+
     const actions = ['view','create','edit','delete'];
-    const globalBtn = document.getElementById('select_all_global_btn');
-    const colButtons = {
-        view:   document.getElementById('btn_col_view'),
-        create: document.getElementById('btn_col_create'),
-        edit:   document.getElementById('btn_col_edit'),
-        delete: document.getElementById('btn_col_delete'),
-    };
 
-    function allPermissionCheckboxes() {
-        return Array.from(document.querySelectorAll('input[name="permissions[]"]'));
-    }
-    function rowMasterCheckboxes() {
-        return Array.from(document.querySelectorAll('.select_row'));
-    }
-    function setColumn(col, checked) {
-        document.querySelectorAll('input.' + col).forEach(cb => cb.checked = checked);
-    }
-    function isColumnFullyChecked(col) {
-        const boxes = Array.from(document.querySelectorAll('input.' + col));
-        // If a module has no checkbox for this action, we ignore it
-        return boxes.length > 0 && boxes.every(cb => cb.checked);
-    }
-    function setRow(rowModule, checked) {
-        document.querySelectorAll('.checkbox_' + rowModule).forEach(cb => cb.checked = checked);
-    }
-    function updateRowMaster(rowModule) {
-        const allChecked = actions.every(action => {
-            const el = document.querySelector('.checkbox_' + rowModule + '.' + action);
-            return !el || el.checked; // ignore missing action cells
+    /* ===============================
+     | MENU TOGGLE
+     |===============================*/
+    document.querySelectorAll('.menu-row').forEach(row => {
+        row.addEventListener('click', function () {
+            const menu = this.dataset.menu;
+
+            document
+                .querySelectorAll(`.submenu-row[data-parent="${menu}"]`)
+                .forEach(r => r.classList.toggle('d-none'));
         });
-        const rowMaster = document.querySelector('.select_row[data-row="' + rowModule + '"]');
-        if (rowMaster) rowMaster.checked = allChecked;
-    }
-    function updateAllRowMasters() {
-        rowMasterCheckboxes().forEach(row => updateRowMaster(row.dataset.row));
-    }
-    function setGlobal(checked) {
-        allPermissionCheckboxes().forEach(cb => cb.checked = checked);
-        rowMasterCheckboxes().forEach(row => row.checked = checked);
-        // Update column button UI states too
-        Object.keys(colButtons).forEach(col => setColButtonActive(col, checked && isColumnFullyChecked(col)));
-        setGlobalButtonActive(checked && allPermissionCheckboxes().every(cb => cb.checked));
-    }
-    function isGlobalFullyChecked() {
-        const boxes = allPermissionCheckboxes();
-        return boxes.length > 0 && boxes.every(cb => cb.checked);
+    });
+
+    /* ===============================
+     | HELPERS (VISIBLE ROWS ONLY)
+     |===============================*/
+    function visibleSubmenuRows() {
+        return Array.from(
+            document.querySelectorAll('.submenu-row:not(.d-none)')
+        );
     }
 
-    // UI helpers for button "active" state (Bootstrap)
-    function setColButtonActive(col, active) {
-        const btn = colButtons[col];
-        if (!btn) return;
-        btn.classList.toggle('active', !!active);
-    }
-    function setGlobalButtonActive(active) {
-        if (!globalBtn) return;
-        globalBtn.classList.toggle('active', !!active);
+    function visiblePermissionCheckboxes() {
+        return visibleSubmenuRows()
+            .flatMap(row => Array.from(row.querySelectorAll('input[name="permissions[]"]')));
     }
 
-    // -- Events --
+    function visibleActionCheckboxes(action) {
+        return visibleSubmenuRows()
+            .flatMap(row => Array.from(row.querySelectorAll('input.' + action)));
+    }
 
-    // Global All
-    if (globalBtn) {
-        globalBtn.addEventListener('click', function () {
-            const targetState = !isGlobalFullyChecked();
-            setGlobal(targetState);
+    /* ===============================
+     | GLOBAL ALL (VISIBLE ONLY)
+     |===============================*/
+    document.getElementById('select_all_global_btn')
+        .addEventListener('click', function () {
+
+            const boxes = visiblePermissionCheckboxes();
+            if (boxes.length === 0) return;
+
+            const allChecked = boxes.every(cb => cb.checked);
+            boxes.forEach(cb => cb.checked = !allChecked);
         });
-    }
 
-    // Column buttons
-    Object.keys(colButtons).forEach(col => {
-        const btn = colButtons[col];
-        if (!btn) return;
+    /* ===============================
+     | COLUMN BUTTONS (VISIBLE ONLY)
+     |===============================*/
+    document.querySelectorAll('.select_col_btn').forEach(btn => {
         btn.addEventListener('click', function () {
-            const targetState = !isColumnFullyChecked(col);
-            setColumn(col, targetState);
-            updateAllRowMasters();
-            // Update column button active state
-            setColButtonActive(col, isColumnFullyChecked(col));
-            // Update global button state
-            setGlobalButtonActive(isGlobalFullyChecked());
+
+            const action = this.dataset.col;
+            const boxes = visibleActionCheckboxes(action);
+            if (boxes.length === 0) return;
+
+            const allChecked = boxes.every(cb => cb.checked);
+            boxes.forEach(cb => cb.checked = !allChecked);
         });
     });
 
-    // Row masters
-    rowMasterCheckboxes().forEach(rowMaster => {
-        rowMaster.addEventListener('change', function () {
-            setRow(this.dataset.row, this.checked);
-            // After a row change, reflect column/global states
-            Object.keys(colButtons).forEach(col => setColButtonActive(col, isColumnFullyChecked(col)));
-            setGlobalButtonActive(isGlobalFullyChecked());
+    /* ===============================
+     | ROW SELECT (UNCHANGED)
+     |===============================*/
+    document.querySelectorAll('.select_row').forEach(row => {
+        row.addEventListener('change', function () {
+            const module = this.dataset.row;
+            document
+                .querySelectorAll('.checkbox_' + module)
+                .forEach(cb => cb.checked = this.checked);
         });
     });
 
-    // Individual permission checkboxes: keep UI synced if user clicks them directly
-    allPermissionCheckboxes().forEach(cb => {
-        cb.addEventListener('change', function () {
-            // Update that row master
-            const classes = Array.from(cb.classList);
-            const rowClass = classes.find(c => c.startsWith('checkbox_')); // like "checkbox_users"
-            if (rowClass) {
-                const rowModule = rowClass.replace('checkbox_', '');
-                updateRowMaster(rowModule);
-            }
-            // Update column buttons and global
-            Object.keys(colButtons).forEach(col => setColButtonActive(col, isColumnFullyChecked(col)));
-            setGlobalButtonActive(isGlobalFullyChecked());
-        });
-    });
-
-    // Initial sync on page load (for old() pre-checked)
-    updateAllRowMasters();
-    Object.keys(colButtons).forEach(col => setColButtonActive(col, isColumnFullyChecked(col)));
-    setGlobalButtonActive(isGlobalFullyChecked());
 });
 </script>

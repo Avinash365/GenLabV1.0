@@ -8,6 +8,13 @@ use App\Models\Holiday;
 
 class HolidayController extends Controller
 {
+    public function __construct(){
+        $this->middleware('permission:holiday.view')->only('index'); 
+        $this->middleware('permission:holiday.create')->only('store'); 
+        $this->middleware('permission:holiday.edit')->only('update'); 
+        $this->middleware('permission:holiday.delete')->only('destroy'); 
+    }
+
     public function index()
     {
         $perPage = (int) request('per_page', 10);

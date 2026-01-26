@@ -18,6 +18,8 @@ class ReportController extends Controller
     public function __construct(GetUserActiveDepartment $departmentService)
     {
         $this->departmentService = $departmentService;
+
+        $this->middleware('permission:report.view'); 
     }
 
     /**

@@ -2,6 +2,25 @@
 @section('title', 'Manage Categories')
 @section('content')
 
+
+
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
 <div class="row">
     <!-- Add Category Form -->
     <div class="col-xl-6">
@@ -43,21 +62,26 @@
                                 <td>{{ $key + 1 }}</td>
                                 <td>{{ $category->name }}</td>
                                 <td class="text-center">
-                                    <!-- Edit Button -->
-                                    <button type="button" 
-                                            class="btn btn-sm btn-primary" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#editCategoryModal{{ $category->id }}">
-                                        ✏️
-                                    </button>
 
-                                    <!-- Delete Button -->
-                                    <button type="button" 
-                                            class="btn btn-sm btn-danger" 
-                                            data-bs-toggle="modal" 
-                                            data-bs-target="#deleteCategoryModal{{ $category->id }}">
-                                        🗑️
-                                    </button>
+                                    @if($user && ($user instanceof Admin || ($user->hasPermission('category.edit'))))
+                                        <!-- Edit Button -->
+                                        <button type="button" 
+                                                class="btn btn-sm btn-primary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editCategoryModal{{ $category->id }}">
+                                            ✏️
+                                        </button>
+                                    @endif
+
+                                    @if($user && ($user instanceof Admin || ($user->hasPermission('category.delete'))))
+                                        <!-- Delete Button -->
+                                        <button type="button" 
+                                                class="btn btn-sm btn-danger" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#deleteCategoryModal{{ $category->id }}">
+                                            🗑️
+                                        </button>
+                                    @endif 
                                 </td>
                             </tr>
 

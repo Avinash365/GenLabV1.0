@@ -1,6 +1,23 @@
 @extends('superadmin.layouts.app')
 
 @section('content')
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
     <div class="page-header">
         <div class="add-item d-flex ms-4 mt-4">
             <div class="page-title">
@@ -10,20 +27,24 @@
         </div>
         
         <ul class="table-top-head list-inline d-flex gap-3" >
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReadingModal">Upload Reading</button>
-
-            <li class="list-inline-item">
-                @php $q = http_build_query(request()->only(['search','month','year','marketing_person'])); @endphp
-                <a href="{{ route('superadmin.meter-reading.export.pdf') }}{{ $q ? ('?'.$q) : '' }}" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
-            </li>
-            <li class="list-inline-item">
-                @php $q = http_build_query(request()->only(['search','month','year','marketing_person'])); @endphp
-                <a href="{{ route('superadmin.meter-reading.export.excel') }}{{ $q ? ('?'.$q) : '' }}" class="no-loader" data-bs-toggle="tooltip" title="Excel">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
-                        <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
-                    </svg>
-                </a>
-            </li>
+            @if($user && ($user instanceof Admin || $user->hasPermission('meter_reading.create')))
+                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadReadingModal">Upload Reading</button>
+            @endif
+            
+             @if($user && ($user instanceof Admin || $user->hasPermission('meter_reading.view')))
+                <li class="list-inline-item">
+                    @php $q = http_build_query(request()->only(['search','month','year','marketing_person'])); @endphp
+                    <a href="{{ route('superadmin.meter-reading.export.pdf') }}{{ $q ? ('?'.$q) : '' }}" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+                </li>
+                <li class="list-inline-item">
+                    @php $q = http_build_query(request()->only(['search','month','year','marketing_person'])); @endphp
+                    <a href="{{ route('superadmin.meter-reading.export.excel') }}{{ $q ? ('?'.$q) : '' }}" class="no-loader" data-bs-toggle="tooltip" title="Excel">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
+                            <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
+                        </svg>
+                    </a>
+                </li>
+            @endif
             <li style="margin-right:22px;"><a data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh" ></i></a></li>
         </ul>
     </div>

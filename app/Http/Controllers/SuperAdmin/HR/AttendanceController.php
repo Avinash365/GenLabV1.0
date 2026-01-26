@@ -18,7 +18,13 @@ use Illuminate\Support\Str;
 use Illuminate\Validation\Rule;
 
 class AttendanceController extends Controller
-{
+{   
+
+    public function __construct(){
+        $this->middleware('permission:attendance.view')->only('index'); 
+        $this->middleware('permission:manual_attendance.create')->only('storeManual'); 
+        $this->middleware('permission:biometric_attendance.create')->only('importBiometric'); 
+    }
     public function index(): View
     {
         $today = Carbon::today();
@@ -360,7 +366,7 @@ class AttendanceController extends Controller
         try {
             $result = $callback();
             return $result instanceof Collection ? $result : collect($result);
-        } catch (\Throwable $e) {
+        } catch (\Throwable $e) {   
             return collect();
         }
     }

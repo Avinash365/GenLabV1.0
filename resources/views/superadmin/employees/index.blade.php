@@ -3,15 +3,33 @@
 @section('title', 'Employees')
 
 @section('content')
+
+
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+               @endforeach
+            </ul>
+        </div>
+    @endif
+
+@php 
+    $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
 <div class="content">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h4 class="mb-0">Employees</h4>
             <p class="text-muted mb-0">Manage employee profiles, documents, addresses and banking information.</p>
         </div>
-        <a href="{{ route('superadmin.employees.create') }}" class="btn btn-primary">
-            <i class="ti ti-plus me-2"></i>Add Employee
-        </a>
+        @if($user && ($user instanceof Admin || $user->hasPermission('employee.create')))
+            <a href="{{ route('superadmin.employees.create') }}" class="btn btn-primary">
+                <i class="ti ti-plus me-2"></i>Add Employee
+            </a>
+        @endif
     </div>
 
     @if(session('success'))
@@ -93,10 +111,12 @@
                             <span class="badge rounded-pill bg-{{ $employee->employment_status === 'active' ? 'success' : ($employee->employment_status === 'probation' ? 'warning' : 'secondary') }} bg-opacity-10 text-{{ $employee->employment_status === 'active' ? 'success' : ($employee->employment_status === 'probation' ? 'warning' : 'muted') }} text-capitalize">
                                 {{ $employee->employment_status }}
                             </span>
-                            <a href="{{ route('superadmin.employees.show', $employee) }}" class="btn btn-sm btn-outline-primary">
-                                Manage
-                                <i class="ti ti-arrow-up-right ms-1"></i>
-                            </a>
+                            @if($user && ($user instanceof Admin || $user->hasPermission('employee.edit')))
+                                <a href="{{ route('superadmin.employees.show', $employee) }}" class="btn btn-sm btn-outline-primary">
+                                    Manage
+                                    <i class="ti ti-arrow-up-right ms-1"></i>
+                                </a>
+                            @endif
                         </div>
                     </div>
                 </div>

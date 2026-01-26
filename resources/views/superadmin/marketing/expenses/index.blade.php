@@ -3,6 +3,22 @@
 @section('title', 'Marketing Expenses')
 
 @section('content')
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
 <div class="card mt-3">
     <div class="page-header">
         <div class="add-item d-flex ms-4 mt-4">
@@ -12,11 +28,14 @@
             </div>
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
+            
+        @if($user && ($user instanceof Admin || ($user->hasPermission('expense_personal.create'))))
             @if(!Request::routeIs('superadmin.marketing.expenses.approved'))
-            <li class="list-inline-item">
-                <button id="btnUploadExpense" class="btn btn-sm btn-primary">Upload Expense</button>
-            </li>
+                <li class="list-inline-item">
+                    <button id="btnUploadExpense" class="btn btn-sm btn-primary">Upload Expense</button>
+                </li>
             @endif
+        @endif
             <li class="list-inline-item">
                 <a href="#" id="btnExportPdf" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>

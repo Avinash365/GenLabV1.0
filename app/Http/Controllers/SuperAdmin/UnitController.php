@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 class UnitController extends Controller
 {
     //
+    public function __construct(){
+        $this->middleware('permission:unit.view'); 
+    }
+
      public function index()
     {
         return view('superadmin.unit.Unit');  

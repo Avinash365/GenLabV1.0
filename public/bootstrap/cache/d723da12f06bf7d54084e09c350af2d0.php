@@ -1,6 +1,23 @@
 <?php $__env->startSection('title', 'Create New User'); ?>
 <?php $__env->startSection('content'); ?>
 
+
+
+<?php if($errors->any()): ?>
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($error); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
+
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
+
 <?php if(session('success')): ?>
   <div class="alert alert-success"><?php echo e(session('success')); ?></div>
 <?php endif; ?>
@@ -47,11 +64,17 @@
                 <a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a>
             </li>
         </ul>
-       <div class="page-btn">
-            <a href="<?php echo e(route('superadmin.productStockEntry.create')); ?>" class="btn btn-primary">
-                <i class="ti ti-circle-plus me-1"></i>Add Stock
-            </a>
-        </div>
+
+            <?php if($user && ($user instanceof Admin || ($user->hasPermission('product.edit')))): ?>
+                <div class="page-btn">
+                    <a href="<?php echo e(route('superadmin.productStockEntry.create')); ?>" class="btn btn-primary">
+                        <i class="ti ti-circle-plus me-1"></i>Add Stock
+                    </a>
+                </div>
+            <?php endif; ?>
+          
+  
+
     </div>
 
     <!-- /product list -->
@@ -71,7 +94,7 @@
                         </button>
                     </div>
                 </form> 
-                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create', App\Models\Product::class)): ?>
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create', arguments: App\Models\Product::class)): ?>
                     <div class="d-flex justify-content-end mt-3 me-3 mb-4">
                             <a href="<?php echo e(route('superadmin.products.addProduct')); ?>" class="btn btn-primary">
                                 <i class="bi bi-plus-lg"></i> Add New
@@ -143,6 +166,7 @@
                                     <td><?php echo e($product->remark); ?></td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
+                                            
                                             <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('update', $product)): ?>
                                                 <a href="javascript:void(0);" 
                                                 class="btn btn-sm  edit-product-btn"

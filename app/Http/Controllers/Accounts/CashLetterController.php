@@ -12,6 +12,10 @@ use App\Models\NewBooking;
 
 class CashLetterController extends Controller
 {  
+
+    public function __construct(){
+        $this->middleware('permission:cash_payment.create')->only('showMultiple'); 
+    }
    
     public function showMultiple(Request $request)
     {

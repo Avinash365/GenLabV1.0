@@ -3,6 +3,20 @@
 @section('title', 'Create New User')
 @section('content')
 
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
 
 
 
@@ -43,9 +57,11 @@
 								<a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a>
 							</li>
 						</ul>
-						<div class="page-btn">
-							<a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-stock"><i class="ti ti-circle-plus me-1"></i>Add Supplier</a>
-						</div>
+						@if($user && ($user instanceof Admin || $user->hasPermission('supplier.create')))
+							<div class="page-btn">
+								<a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#add-stock"><i class="ti ti-circle-plus me-1"></i>Add Supplier</a>
+							</div>
+						@endif
 					</div>
 					<!-- /product list -->
 					<div class="card">
@@ -109,12 +125,16 @@
 											
 											<td class="d-flex">
 												<div class="d-flex align-items-center edit-delete-action">
-													<a class="me-2 border rounded d-flex align-items-center p-2" href="#" data-bs-toggle="modal" data-bs-target="#edit-stock">
-														<i data-feather="edit" class="feather-edit"></i>
-													</a>
-													<a class="p-2 border rounded d-flex align-items-center" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete">
-														<i data-feather="trash-2" class="feather-trash-2"></i>
-													</a>
+													@if($user && ($user instanceof Admin || $user->hasPermission('supplier.edit')))
+														<a class="me-2 border rounded d-flex align-items-center p-2" href="#" data-bs-toggle="modal" data-bs-target="#edit-stock">
+															<i data-feather="edit" class="feather-edit"></i>
+														</a>
+													@endif
+													@if($user && ($user instanceof Admin || $user->hasPermission('supplier.delete')))
+														<a class="p-2 border rounded d-flex align-items-center" href="javascript:void(0);" data-bs-toggle="modal" data-bs-target="#delete">
+															<i data-feather="trash-2" class="feather-trash-2"></i>
+														</a>
+													@endif 
 												</div>
 												
 											</td>

@@ -18,6 +18,11 @@
     </div>
 @endif 
 
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
 <div class="content">
     <div class="page-header">
         <div class="add-item d-flex">
@@ -103,7 +108,6 @@
                         <button class="btn btn-outline-secondary" type="submit">Filter</button>
                     </form> 
                 </div> 
-
             </div>
 
             <!-- Department filter buttons -->
@@ -229,22 +233,28 @@
                                         <i data-feather="file-text"></i>
                                     </a>
 
+                                    @if($user && ($user instanceof Admin || $user->hasPermission('booking.edit')))
                                     <a href="" 
                                        class="btn btn-outline-primary d-flex align-items-center p-2">
                                         <i data-feather="edit"></i>
                                     </a>
+                                    @endif
 
-                                    <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2" 
-                                            data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $booking->id }}">
-                                        <i data-feather="trash-2"></i>
-                                    </button>
+                                    @if($user && ($user instanceof Admin || $user->hasPermission('booking.delete')))
+                                        <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2" 
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $booking->id }}">
+                                            <i data-feather="trash-2"></i>
+                                        </button>
+                                    @endif
 
-                                    <!-- Move / Transfer -->
-                                    <a href="#" 
-                                       class="btn btn-warning d-flex align-items-center p-2" 
-                                       title="Without Bill">
-                                        <i data-feather="corner-up-right"></i>
-                                    </a>
+                                    @if($user && ($user instanceof Admin || $user->hasPermission('cash_letter.edit')))
+                                        <!-- Move / Transfer -->
+                                        <a href="#" 
+                                        class="btn btn-warning d-flex align-items-center p-2" 
+                                        title="Without Bill">
+                                            <i data-feather="corner-up-right"></i>
+                                        </a>
+                                    @endif
 
                                     <!-- Delete Modal -->
                                     <div class="modal fade" id="deleteModal-{{ $booking->id }}" tabindex="-1" aria-hidden="true">
@@ -280,11 +290,14 @@
                 </div> 
 
                 <!-- Bulk Action Button -->
+
+             @if($user && ($user instanceof Admin || ($user->hasPermission('cash_payment.create'))))
                 <div class="p-3">
                     <button type="submit" class="btn btn-primary">
                         Pay
                     </button>
                 </div>
+                @endif 
             </form>
 
                 <!-- Pagination -->

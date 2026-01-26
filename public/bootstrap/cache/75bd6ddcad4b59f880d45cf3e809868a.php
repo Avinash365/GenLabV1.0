@@ -3,6 +3,22 @@
 <?php $__env->startSection('content'); ?>
 
 
+
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
+ 
+   <?php if($errors->any()): ?>
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+
 <?php if(session('success')): ?>
     <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
         <?php echo e(session('success')); ?>
@@ -20,11 +36,13 @@
 <?php endif; ?>
 
 
+<?php if($user && ($user instanceof Admin || $user->hasPermission('purchase_bill.create'))): ?>
 <div class="d-flex justify-content-end mt-3 me-3">
     <a href="<?php echo e(route('purchase.create')); ?>" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Add Purchase Bill
     </a>
 </div>
+<?php endif; ?>
 
 
 
@@ -127,17 +145,18 @@
                                 <?php endif; ?>
                             </td>
 
-                            <td class="text-nowrap">
+                            <?php if($user && ($user instanceof Admin || $user->hasPermission('purchase_bill.delete'))): ?>
+                                <td class="text-nowrap">
+                                    
                                 
-                               
-
-                                
-                                <button class="btn btn-sm btn-danger"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteBillModal<?php echo e($bill->id); ?>">
-                                    Delete
-                                </button>
-                            </td>
+                                    
+                                    <button class="btn btn-sm btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteBillModal<?php echo e($bill->id); ?>">
+                                        Delete
+                                    </button>
+                                </td>
+                            <?php endif; ?>
                         </tr>
 
                         

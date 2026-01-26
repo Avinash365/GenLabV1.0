@@ -36,13 +36,15 @@ class GenerateInvoiceStatusController extends Controller
         $this->invoicePdfService = $invoicePdfService;
         $this->numberToWordsService = $numberToWordsService;
 
+        $this->middleware('permission:invoice.create')->only('index');
+        
+        // $this->middleware('permission:invoice.create')->only('destroy');
+
     }
 
     public function index(Request $request, Department $department = null)
     {
        
-        
-
         $query = NewBooking::with(['items', 'department', 'marketingPerson', 'client'])
             ->where('payment_option', $request->payment_option ?? 'bill')
             ->whereNotNull('client_id')
@@ -304,7 +306,6 @@ class GenerateInvoiceStatusController extends Controller
     public function generateInvoice(GenerateInvoiceRequest $request)
     {
         try {
-            
             
             $invoiceType = $request->input('invoice_type');
             $invoiceData = $this->billingService->generateInvoiceData($request);

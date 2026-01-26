@@ -24,6 +24,13 @@ class EmployeeController extends Controller
     /**
      * Display a listing of the employees.
      */
+
+    public function __construct(){
+         $this->middleware('permission:employees.view')->only('index', 'show'); 
+         $this->middleware('permission:employees.edit')->only('edit', 'update');  
+         $this->middleware('permission:employees.create')->only('create', 'store'); 
+          $this->middleware('permission:employees.delete')->only('destroy'); 
+    }
     public function index(Request $request): View
     {
         $query = Employee::query()->orderBy('first_name');

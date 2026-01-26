@@ -2,6 +2,10 @@
 
 @section('title', 'Purchase Bills')
 
+
+
+  
+
 @section('content')
 <div class="card mt-3">
     <div class="page-header">

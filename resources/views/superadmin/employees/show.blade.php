@@ -3,20 +3,39 @@
 @section('title', $employee->full_name)
 
 @section('content')
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
 <div class="content">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h4 class="mb-0">{{ $employee->full_name }}</h4>
             <p class="text-muted mb-0">Comprehensive profile for {{ $employee->designation ?? 'the employee' }}.</p>
         </div>
-        <div class="d-flex gap-2">
-            <a href="{{ route('superadmin.employees.index') }}" class="btn btn-outline-secondary"><i class="ti ti-arrow-left me-2"></i>Back to list</a>
-            <form method="POST" action="{{ route('superadmin.employees.destroy', $employee) }}" onsubmit="return confirm('Are you sure you want to remove this employee?');">
-                @csrf
-                @method('DELETE')
-                <button type="submit" class="btn btn-outline-danger"><i class="ti ti-trash me-2"></i>Remove</button>
-            </form>
-        </div>
+        @if($user && ($user instanceof Admin || $user->hasPermission('employee.delete')))
+            <div class="d-flex gap-2">
+                <a href="{{ route('superadmin.employees.index') }}" class="btn btn-outline-secondary"><i class="ti ti-arrow-left me-2"></i>Back to list</a>
+                <form method="POST" action="{{ route('superadmin.employees.destroy', $employee) }}" onsubmit="return confirm('Are you sure you want to remove this employee?');">
+                    @csrf
+                    @method('DELETE')
+                    <button type="submit" class="btn btn-outline-danger"><i class="ti ti-trash me-2"></i>Remove</button>
+                </form>
+            </div>
+        @endif
     </div>
 
     @if(session('success'))

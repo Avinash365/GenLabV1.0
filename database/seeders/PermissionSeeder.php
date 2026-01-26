@@ -4,160 +4,151 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\Permission;
+use Illuminate\Support\Str;
 
 class PermissionSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
     public function run(): void
     {
-        $defaultPermissions = [
-            // User
-            'user.view',
-            'user.create',
-            'user.edit',
-            'user.delete',
+        /*
+        |--------------------------------------------------------------------------
+        | Menu Configuration (Single Source of Truth)
+        |--------------------------------------------------------------------------
+        */
+        $menus = [
 
-            // Roles
-            'role.view',
-            'role.create',
-            'role.edit',
-            'role.delete',
+            'booking' => ['booking'],
 
-            // Bookings
-            'booking.view',
-            'booking.create',
-            'booking.edit',
-            'booking.delete',
+            'inventory' => [
+                'product', 'category', 'store', 'supplier', 'unit',
+                'purchase', 'issue',
+            ],
 
-            // Products
-            'product.view',
-            'product.create',
-            'product.edit',
-            'product.delete',
+            'reporting' => [
+                'report-format',
+                'report_received',
+                'report_hold',
+                'report_reported',
+                'report_pending',
+                'report_print_upload',
+                'report_analyst_activity',
+                'report_format',
+                'report_generate',
+                'report_dispatch',
+            ],
 
-            // Departments
-            'department.view',
-            'department.create',
-            'department.edit',
-            'department.delete', 
+            'hr' => [
+                'employee',
+                'leave',
+                'attendance',
+                'manual_attendance', 
+                'biometric_attendance', 
+                'holiday',
+                'payroll',
+                'approve_leave',
+            ],
 
-            // Inventory 
-            'inventory.view', 
-            'inventory.edit', 
-            'inventory.create', 
-            'inventory.delete', 
+            'accounts' => [
+                'client_assigned',
+                'client_ledger', 
+                'marketing_ledger',
+                'invoice',
+                'quotation',
+                'amount_approved',
+                'invoice_payment',
+                'cash_letter',
+                'cash_payment',
+                'bank_transaction',
+                'purchase_bill',
+                'employee_salary',
+                'cleared_expense',
+                'cheque',
+                'cheque_template',
+                'blank_invoice', 
+            ],
 
+            'attachments' => [
+                'iscode',
+                'calibration',
+                'profile',
+                'approval',
+                'letter',
+                'document',
+            ],
 
-            //Reporting 
-            'reporting.view', 
-            'reporting.edit', 
-            'reporting.create', 
-            'reporting.delete', 
+            'expenses' => [
+                'personal_expense',
+                'marketing_expense',
+                'expense_office',
+                'approve_expense',
+                'reject_expense',
+            ],
 
-            // lab Analysts 
-            'lab-analysts.view', 
-            'lab-analysts.create', 
-            'lab-analysts.edit', 
-            'lab-analysts.delete', 
+            'transportation' => [
+                'meter_reading',
+                'vehicle_registration',
+            ],
 
+            'settings' => [
+                'department',
+                'role',
+                'user',
+                'web_setting',
+                'bank_detail',
+            ],
 
-            // Accounts
-            'accounts.view',
-            'accounts.create',
-            'accounts.edit',
-            'accounts.delete',
+            'others' => [
+                'report',
+                'sample_cell',
+                'remanent_cell',
+                'reception',
+                'qlr',
+                'client',
+                'audit_trail',
+                'lab-analysts', 
+            ],
+        ];
 
-            // Content
-            'content.view',
-            'content.create',
-            'content.edit',
-            'content.delete',
+        /*
+        |--------------------------------------------------------------------------
+        | Default Actions
+        |--------------------------------------------------------------------------
+        */
+        $defaultActions = ['view', 'create', 'edit', 'delete'];
 
-            // Settings
-            'settings.view',
-            'settings.create',
-            'settings.edit',
-            'settings.delete', 
+        /*
+        |--------------------------------------------------------------------------
+        | Action Overrides (Important)
+        |--------------------------------------------------------------------------
+        */
+        $customActions = [
+            'attendance'          => ['view'],
+            'report_received'     => ['view'],
+            'audit_trail'         => ['view'],
+            'approve_leave'       => ['approve'],
+            'approve_expense'     => ['approve'],
+            'reject_expense'      => ['reject'],
+        ];
 
-            // Approval
-            'approval.view',
-            'approval.create',
-            'approval.edit',
-            'approval.delete',
+        /*
+        |--------------------------------------------------------------------------
+        | Generate Permissions
+        |--------------------------------------------------------------------------
+        */
+        foreach ($menus as $modules) {
+            foreach ($modules as $module) {
 
-            // Calibration
-            'calibration.view',
-            'calibration.create',
-            'calibration.edit',
-            'calibration.delete',
+                $module = Str::snake(strtolower($module));
 
-            // Document
-            'document.view',
-            'document.create',
-            'document.edit',
-            'document.delete',
+                $actions = $customActions[$module] ?? $defaultActions;
 
-            // Letter
-            'letter.view',
-            'letter.create',
-            'letter.edit',
-            'letter.delete',
-
-            // IS Code
-            'iscode.view',
-            'iscode.create',
-            'iscode.edit',
-            'iscode.delete',
-
-            // Profile
-            'profile.view',
-            'profile.create',
-            'profile.edit',
-            'profile.delete', 
-
-            // report formate 
-            'report-format.view',
-            'report-format.create',
-            'report-format.edit',
-            'report-format.delete', 
-
-            // report generate 
-            'report-generate.view',
-            'report-generate.create',
-            'report-generate.edit',
-            'report-generate.delete',  
-
-
-            // leave 
-            'leave.view', 
-            'leave.edit', 
-            'leave.create', 
-            'leave.delete', 
-
-            // account 
-            'account.view',
-            'account.create',
-            'account.edit',
-            'account.delete',  
-
-            //Web Settings 
-            'web-settings.view', 
-            'web-settings.edit', 
-
-            // bank Settings 
-            'bank-details.view', 
-            'bank-details.edit', 
-
-
-        ]; 
-
-        foreach ($defaultPermissions as $permission) {
-            Permission::firstOrCreate(
-                ['permission_name' => $permission], // unique column in your table
-                ['description' => ucfirst(str_replace('.', ' ', $permission))]
-            );
+                foreach ($actions as $action) {
+                    Permission::firstOrCreate(
+                        ['permission_name' => "{$module}.{$action}"],
+                        ['description' => ucfirst(str_replace('_', ' ', "{$module} {$action}"))]
+                    );
+                }
+            }
         }
     }
 }

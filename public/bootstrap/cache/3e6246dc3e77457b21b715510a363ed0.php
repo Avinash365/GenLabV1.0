@@ -2,11 +2,36 @@
 <?php $__env->startSection('content'); ?>
 
 
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
+
+
+    <?php if($errors->any()): ?>
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+    <?php if(session('success')): ?>
+        <div class="alert alert-success">
+            <?php echo e(session('success')); ?>
+
+        </div>
+    <?php endif; ?>
+
+
+<?php if($user && ($user instanceof Admin || $user->hasPermission('blank_invoice.create'))): ?>
 <div class="d-flex justify-content-end mt-3 me-3">
     <a href="<?php echo e(route('superadmin.blank-invoices.create')); ?>" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Generate Blank PI
     </a>
 </div>  
+<?php endif; ?>
 
 <!-- Table List -->
 <div class="card mt-4">
@@ -18,6 +43,7 @@
             <button class="btn btn-outline-primary" type="submit">Search</button>
         </form>
     </div>
+
     <div class="card-body">
         <div class="table-responsive">
             <table class="table  table-hover align-middle">
@@ -46,21 +72,28 @@
                             <td><?php echo e(\Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y')); ?></td>
                            <td><?php echo e(optional($invoice->created_at)->format('d-m-y')); ?></td>
 <td class="d-flex">
-    <!-- Edit Button as Icon -->
-    <a href="<?php echo e(route('superadmin.blank-invoices.edit', $invoice->id)); ?>" 
-       class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-       title="Edit">
-        <i data-feather="edit" class="feather-edit"></i>
-    </a>
 
-    <!-- Delete Button as Icon -->
-    <button type="button" 
-            class="p-2 border rounded d-flex align-items-center btn-delete" 
-            data-bs-toggle="modal" 
-            data-bs-target="#deleteModal<?php echo e($invoice->id); ?>"
-            title="Delete">
-        <i data-feather="trash-2" class="feather-trash-2"></i>
-    </button>
+
+    <!-- Edit Button as Icon -->
+
+    <?php if($user && ($user instanceof Admin || $user->hasPermission('blank_invoice.edit'))): ?>
+        <a href="<?php echo e(route('superadmin.blank-invoices.edit', $invoice->id)); ?>" 
+        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+        title="Edit">
+            <i data-feather="edit" class="feather-edit"></i>
+        </a>
+    <?php endif; ?>
+
+    <?php if($user && ($user instanceof Admin || $user->hasPermission('blank_invoice.delete'))): ?>
+        <!-- Delete Button as Icon -->
+        <button type="button" 
+                class="p-2 border rounded d-flex align-items-center btn-delete" 
+                data-bs-toggle="modal" 
+                data-bs-target="#deleteModal<?php echo e($invoice->id); ?>"
+                title="Delete">
+            <i data-feather="trash-2" class="feather-trash-2"></i>
+        </button>
+    <?php endif; ?>
 </td>
                         </tr>
 

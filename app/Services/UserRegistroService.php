@@ -17,8 +17,8 @@ class UserRegistroService
     
     
     public function index(){ 
-        $perPage = (int) request('perPage', 25);
-        if (!in_array($perPage, [25, 50, 100])) $perPage = 25;
+        $perPage = (int) request('perPage', 5);
+        if (!in_array($perPage, [10,25, 50, 100])) $perPage = 5;
         $users = User::with(['role.permissions'])->paginate($perPage)->withQueryString();
         $roles = Role::all();
         $permissions = Permission::all();

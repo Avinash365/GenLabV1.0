@@ -1,6 +1,12 @@
 <?php $__env->startSection('title', 'Generate Invoice'); ?>
 <?php $__env->startSection('content'); ?>
 
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
+
+
+
     <?php if($errors->any()): ?>
         <div class="alert alert-danger">
             <ul class="mb-0">
@@ -341,20 +347,25 @@
                                             </td>
 
                                             <td class="d-flex align-items-center gap-2">
-                                                <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.edit', $booking->id)); ?>"
-                                                    class="btn btn-success d-flex align-items-center p-2" title="Generate Invoice">
-                                                    <i data-feather="file-text"></i>
-                                                </a>
+
+                                                <?php if($user && ($user instanceof Admin || ($user->hasPermission('invoice.create')))): ?>
+                                                    <a href="<?php echo e(route('superadmin.bookingInvoiceStatuses.edit', $booking->id)); ?>"
+                                                        class="btn btn-success d-flex align-items-center p-2" title="Generate Invoice">
+                                                        <i data-feather="file-text"></i>
+                                                    </a>
+                                                <?php endif; ?>
 
                                                 <!-- <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
                                                                 class="btn btn-outline-primary d-flex align-items-center p-2">
                                                                     <i data-feather="edit"></i>
                                                                 </a> -->
 
-                                                <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2"
-                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">
-                                                    <i data-feather="trash-2"></i>
-                                                </button>
+                                                <?php if($user && ($user instanceof Admin || ($user->hasPermission('invoice.delete')))): ?>    
+                                                    <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2"
+                                                        data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">
+                                                        <i data-feather="trash-2"></i>
+                                                    </button>
+                                                <?php endif; ?>
 
                                                 <!-- Move / Transfer -->
                                                 <a href="#" class="btn btn-warning d-flex align-items-center p-2"

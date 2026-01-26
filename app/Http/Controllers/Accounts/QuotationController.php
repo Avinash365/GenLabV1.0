@@ -29,6 +29,12 @@ class QuotationController extends Controller
     protected $numberToWordsService;
     public function __construct(NumberToWordsService $numberToWordsService)
     {
+        
+        $this->middleware('permission:quotation.view')->only('index');
+        $this->middleware('permission:quotation.create')->only('create', 'store','generateQuotations');
+        $this->middleware('permission:quotation.edit')->only('edit', 'update');
+        $this->middleware('permission:quotation.delete')->only('destroy');
+
         $this->numberToWordsService = $numberToWordsService;
 
     }
