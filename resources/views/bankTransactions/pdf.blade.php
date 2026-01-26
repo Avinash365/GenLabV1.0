@@ -32,26 +32,34 @@
         <thead>
             <tr>
                 <th>Tran ID</th>
-                <th>Value Date</th>
                 <th>Txn Date</th>
-                <th>Remarks</th>
-                <th>Chq/Ref</th>
+                <th>Remarks / Note</th>
+                <th>Associated Client(s)</th>
+                <th>Marketing Person</th>
+                <th>Invoice No.</th>
+                <th>Reference No.</th>
                 <th>Withdrawal</th>
                 <th>Deposit</th>
-                <th>Balance</th>
             </tr>
         </thead>
         <tbody>
             @foreach($transactions as $transaction)
+            @php
+                $clients = $transaction->clients->pluck('name')->implode(', ');
+                $marketingName = optional(\App\Models\User::find($transaction->marketing_person))->name ?? ($transaction->marketing_person ?: '-');
+                $invoiceNos = \Illuminate\Support\Facades\DB::table('bank_transaction_invoice')->where('bank_transaction_id', $transaction->id)->pluck('invoice_no')->implode(', ');
+                $refNos = \Illuminate\Support\Facades\DB::table('bank_transaction_ref')->where('bank_transaction_id', $transaction->id)->pluck('ref_no')->implode(', ');
+            @endphp
             <tr>
                 <td>{{ $transaction->tran_id }}</td>
-                <td>{{ \Carbon\Carbon::parse($transaction->value_date)->format('d M Y') }}</td>
-                <td>{{ \Carbon\Carbon::parse($transaction->date)->format('d M Y') }}</td>
-                <td>{{ \Illuminate\Support\Str::limit($transaction->transaction_remarks, 50) }}</td>
-                <td>{{ $transaction->chq_ref_no }}</td>
+                <td>{{ $transaction->date ? \Carbon\Carbon::parse($transaction->date)->format('d M Y') : '' }}</td>
+                <td>{{ \Illuminate\Support\Str::limit(($transaction->transaction_remarks ?: '') . ( $transaction->note ? ' | Note: '.$transaction->note : ''), 150) }}</td>
+                <td>{{ $clients ?: '-' }}</td>
+                <td>{{ $marketingName }}</td>
+                <td>{{ $invoiceNos ?: '-' }}</td>
+                <td>{{ $refNos ?: '-' }}</td>
                 <td class="text-right">{{ $transaction->withdrawal > 0 ? number_format($transaction->withdrawal, 2) : '-' }}</td>
                 <td class="text-right">{{ $transaction->deposit > 0 ? number_format($transaction->deposit, 2) : '-' }}</td>
-                <td class="text-right">{{ number_format($transaction->closing_balance, 2) }}</td>
             </tr>
             @endforeach
         </tbody>

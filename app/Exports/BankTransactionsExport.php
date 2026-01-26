@@ -30,16 +30,27 @@ class BankTransactionsExport implements FromCollection, WithHeadings, ShouldAuto
 
     public function map($transaction): array
     {
+        // Associated clients
+        $clients = $transaction->clients ?? collect();
+        $clientsStr = $clients->pluck('name')->implode(', ');
+
+        // Marketing person name (fallback to raw field)
+        $marketingName = optional(\App\Models\User::find($transaction->marketing_person))->name ?? ($transaction->marketing_person ?: '');
+
+        // Invoice and ref numbers from pivot tables
+        $invoiceNos = \Illuminate\Support\Facades\DB::table('bank_transaction_invoice')->where('bank_transaction_id', $transaction->id)->pluck('invoice_no')->implode(', ');
+        $refNos = \Illuminate\Support\Facades\DB::table('bank_transaction_ref')->where('bank_transaction_id', $transaction->id)->pluck('ref_no')->implode(', ');
+
         return [
             $transaction->tran_id,
-            $transaction->value_date ? \Carbon\Carbon::parse($transaction->value_date)->format('d M Y') : '',
             $transaction->date ? \Carbon\Carbon::parse($transaction->date)->format('d M Y') : '',
-            $transaction->transaction_remarks,
-            $transaction->chq_ref_no,
+            ($transaction->transaction_remarks ?: '') . ($transaction->note ? ' | Note: '.$transaction->note : ''),
+            $clientsStr,
+            $marketingName,
+            $invoiceNos,
+            $refNos,
             $transaction->withdrawal > 0 ? $transaction->withdrawal : '',
             $transaction->deposit > 0 ? $transaction->deposit : '',
-            $transaction->closing_balance,
-            $transaction->note,
         ];
     }
 
@@ -47,14 +58,14 @@ class BankTransactionsExport implements FromCollection, WithHeadings, ShouldAuto
     {
         return [
             'Tran ID',
-            'Value Date',
             'Txn Date',
-            'Remarks',
-            'Chq/Ref',
+            'Remarks / Note',
+            'Associated Client(s)',
+            'Marketing Person',
+            'Invoice Nos',
+            'Reference Nos',
             'Withdrawal',
             'Deposit',
-            'Balance',
-            'Note',
         ];
     }
 

@@ -47,8 +47,17 @@ class BankTransactionController extends Controller
                 ->orWhere('deposit', 'like', "%{$search}%")
                 ->orWhere('marketing_person', 'like', "%{$search}%")
                 ->orWhere('transaction_remarks', 'like', "%{$search}%")
-                ->orWhere('chq_ref_no', 'like', "%{$search}%");
+                ->orWhere('chq_ref_no', 'like', "%{$search}%")
+                ->orWhere('tran_id', 'like', "%{$search}%");
             });
+
+            // If search looks like a date, also try matching the txn date
+            try {
+                $d = \Carbon\Carbon::parse($search);
+                $query->orWhereDate('date', $d->format('Y-m-d'));
+            } catch (\Exception $e) {
+                // not a date, ignore
+            }
         }
 
         // Filter by year
@@ -113,7 +122,9 @@ class BankTransactionController extends Controller
         }
         if ($request->filled('year')) $filters['Year'] = $request->year;
 
-        $pdf = Pdf::loadView('bankTransactions.pdf', compact('transactions','filters'));
+        $pdf = Pdf::loadView('bankTransactions.pdf', compact('transactions','filters'))
+              ->setPaper('a4', 'landscape');
+
         return $pdf->download('bank-transactions.pdf');
     }
 
