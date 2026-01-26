@@ -90,11 +90,22 @@ class AttendanceController extends Controller
             'recent_logs' => $recentEsslLogs,
         ];
 
+        $attendanceCounts = AttendanceRecord::select('status', DB::raw('COUNT(*) as total'))
+            ->whereDate('attendance_date', $today)
+            ->groupBy('status')
+            ->pluck('total', 'status');
+
+        $presentCount = (int) ($attendanceCounts[AttendanceRecord::STATUS_PRESENT] ?? 0);
+
+        $loggedTotal = array_sum($attendanceCounts->toArray());
+        $loggedExcludingLeave = $loggedTotal - (int) ($attendanceCounts[AttendanceRecord::STATUS_ON_LEAVE] ?? 0);
+
         $metrics = [
-            'present' => max($activeEmployees - $employeesOnApprovedLeaveToday, 0),
-            'onLeave' => $employeesOnApprovedLeaveToday,
+            'present' => $presentCount,
+            // Prefer attendance records (status 'on_leave') but fall back to approved leave requests
+            'onLeave' => (int) ($attendanceCounts[AttendanceRecord::STATUS_ON_LEAVE] ?? $employeesOnApprovedLeaveToday),
             'late' => 0,
-            'missingLogs' => 0,
+            'missingLogs' => max($activeEmployees - $employeesOnApprovedLeaveToday - $loggedExcludingLeave, 0),
         ];
 
         return view('superadmin.hr.attendance.index', [

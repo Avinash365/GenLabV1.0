@@ -184,7 +184,12 @@
                         @forelse($items as $item)
                         <tr class="table-row">
                             <td class="checkbox-col"><label class="checkboxs"><input type="checkbox"><span class="checkmarks"></span></label></td>
-                            <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}">{{ $item->job_order_no }}</td>
+                            <td class="job-order-cell" data-bs-toggle="tooltip" title="{{ $item->job_order_no }}{{ !empty($item->sample_code) ? ' / ' . $item->sample_code : '' }}">
+                                <div>{{ $item->job_order_no }}</div>
+                                @if(!empty($item->sample_code))
+                                    <div class="small text-muted">{{ $item->sample_code }}</div>
+                                @endif
+                            </td>
                             <td class="truncate-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->client_name ?? '-' }}">{{ $item->booking?->client_name ?? '-' }}</div>
                             </td>
@@ -192,7 +197,9 @@
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->reference_no ?? '-' }}">{{ $item->booking?->reference_no ?? '-' }}</div>
                             </td>
                             <td class="truncate-cell">
-                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}">{{ $item->sample_description }}</div>
+                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_description }}{{ !empty($item->sample_details) ? ' - ' . $item->sample_details : '' }}">
+                                    {{ $item->sample_description }}@if(!empty($item->sample_details)) <span class="text-muted"> {{ $item->sample_details }}</span>@endif
+                                </div>
                             </td>
                             <td class="truncate-cell sample-quality-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->sample_quality }}">{{ $item->sample_quality }}</div>
@@ -221,10 +228,19 @@
                                     @endif
 
                                     <a href="{{ route('superadmin.bookings.cards.single', [$item->booking->id, $item->id]) }}"
+                                        target="_blank" rel="noopener"
+                                        class="action-icon border rounded d-flex align-items-center p-2 text-decoration-none"
+                                        data-bs-toggle="tooltip" title="View Job card"
+                                        aria-label="View Job card">
+                                         <i data-feather="eye" class="feather-eye"></i>
+                                    </a>
+
+                                    <a href="{{ route('superadmin.bookings.cards.client', [$item->booking->id ?? 0, $item->id]) }}"
                                        target="_blank"
                                        class="action-icon border rounded d-flex align-items-center p-2 text-decoration-none"
-                                       aria-label="View booking">
-                                        <i data-feather="eye" class="feather-eye"></i>
+                                        data-bs-toggle="tooltip" title="Print Client Card"
+                                       aria-label="Print Client Card">
+                                        <i data-feather="user" class="feather-user" title="Print Client Card"></i>
                                     </a>
 
                                     <a href="{{ route('superadmin.bookings.edit', $item->booking->id ?? 0) }}"

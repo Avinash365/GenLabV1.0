@@ -33,7 +33,7 @@
         <!-- Search Form -->
         <div class="search-set">
             <form method="GET" action="<?php echo e(route('superadmin.client-ledger.index')); ?>" class="d-flex input-group">
-                <input type="text" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search...">
+                <input type="text" id="localSearch" name="search" value="<?php echo e(request('search')); ?>" class="form-control" placeholder="Search...">
                 <button class="btn btn-outline-secondary" type="submit">🔍</button>
             </form>
         </div>
@@ -123,9 +123,35 @@
         </div>
     </div>
 
-    <div class="card-footer">
-        <?php echo e($clients->withQueryString()->links('pagination::bootstrap-5')); ?>
+    <div class="card-footer d-flex flex-wrap align-items-center justify-content-between gap-2">
+        <div>
+            <form method="GET" action="<?php echo e(route('superadmin.client-ledger.index')); ?>" id="perPageForm" class="d-flex align-items-center gap-2">
+                <label for="per_page" class="mb-0">Show</label>
 
+                
+                <?php $__currentLoopData = request()->except(['per_page','page']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $value): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <?php if(is_array($value)): ?>
+                        <?php $__currentLoopData = $value; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $v): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <input type="hidden" name="<?php echo e($key); ?>[]" value="<?php echo e($v); ?>">
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                    <?php else: ?>
+                        <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($value); ?>">
+                    <?php endif; ?>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                <select name="per_page" id="per_page" class="form-select form-select-sm" style="width: auto;">
+                    <option value="25" <?php echo e(request('per_page') == 25 ? 'selected' : ''); ?>>25</option>
+                    <option value="50" <?php echo e(request('per_page') == 50 ? 'selected' : ''); ?>>50</option>
+                    <option value="100" <?php echo e(request('per_page') == 100 ? 'selected' : ''); ?>>100</option>
+                    <option value="200" <?php echo e(request('per_page') == 200 ? 'selected' : ''); ?>>200</option>
+                </select>
+            </form>
+        </div>
+
+        <div>
+            <?php echo e($clients->withQueryString()->links('pagination::bootstrap-5')); ?>
+
+        </div>
     </div>
 </div>
 
@@ -140,6 +166,39 @@
                 window.location = this.dataset.href;
             });
         });
+        const perPageSelect = document.getElementById('per_page');
+        if (perPageSelect) {
+            perPageSelect.addEventListener('change', function () {
+                document.getElementById('perPageForm').submit();
+            });
+        }
+        const localSearch = document.getElementById('localSearch');
+        if (localSearch) {
+            localSearch.addEventListener('input', function () {
+                const q = this.value.trim().toLowerCase();
+                const table = document.querySelector('table.table');
+                if (!table) return;
+                const tbodyRows = table.querySelectorAll('tbody tr');
+                let anyVisible = false;
+                tbodyRows.forEach(row => {
+                    const cols = row.querySelectorAll('td');
+                    if (cols.length === 1 && cols[0].hasAttribute('colspan')) {
+                        // "No records" row
+                        row.style.display = q === '' ? '' : 'none';
+                        return;
+                    }
+                    const text = row.textContent.toLowerCase();
+                    if (q === '' || text.indexOf(q) !== -1) {
+                        row.style.display = '';
+                        anyVisible = true;
+                    } else {
+                        row.style.display = 'none';
+                    }
+                });
+                const tfoot = table.querySelector('tfoot');
+                if (tfoot) tfoot.style.display = (anyVisible || q === '') ? '' : 'none';
+            });
+        }
     });
 </script>
 <?php $__env->stopPush(); ?>

@@ -15,6 +15,7 @@ class BookingItem extends Model
     protected $fillable = [
         'new_booking_id',
         'sample_description',
+        'sample_code',
         'sample_quality',
         'lab_expected_date',
         'amount',

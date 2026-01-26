@@ -55,7 +55,7 @@
                     <form method="GET"  class="d-flex input-group">
                         <input type="hidden" name="payment_option" value="without_bill">
                         <input type="text" name="search" value="{{ request('search') }}" class="form-control" placeholder="Search...">
-                        <button class="btn btn-outline-secondary ms-2" type="submit" formaction="{{ route('superadmin.bookingInvoiceStatuses.index', $department?->id) }}">🔍</button>
+                        <button class="btn btn-outline-secondary " type="submit" formaction="{{ route('superadmin.bookingInvoiceStatuses.index', $department?->id) }}">🔍</button>
                     </form>
                 </div>
 
@@ -76,14 +76,28 @@
 
 
                         <!-- Client Filter -->
-                        <select name="client_id" class="form-control">
-                            <option value="">Select Client</option>
-                            @foreach($clients as $client)
-                                <option value="{{ $client->id }}" {{ request('client_id') == $client->id ? 'selected' : '' }}>
-                                    {{ $client->name }}
-                                </option>
-                            @endforeach
-                        </select>
+                        <div class="position-relative" style="width:180px; flex: 0 0 160px;">
+                            <input type="text"
+                                class="form-control client-search-input"
+                                placeholder="Client..."
+                                autocomplete="off"
+                                value="{{ optional($clients->firstWhere('id', request('client_id')))->name ?? '' }}">
+
+                            <input type="hidden" name="client_id"
+                                class="client-id-hidden"
+                                value="{{ request('client_id') }}">
+
+                            <div class="dropdown-menu w-100 client-dropdown" style="max-height:500px; overflow:auto;">
+                                @foreach($clients as $client)
+                                    <button type="button"
+                                        class="dropdown-item client-option"
+                                        data-id="{{ $client->id }}"
+                                        data-name="{{ strtolower($client->name) }}">
+                                        {{ $client->name }}
+                                    </button>
+                                @endforeach
+                            </div>
+                        </div>
 
                         <!-- Month Filter -->
                         <select name="month" class="form-control">
@@ -326,6 +340,60 @@
         let checkboxes = document.querySelectorAll('input[name="booking_ids[]"]');
         checkboxes.forEach(cb => cb.checked = this.checked);
     });
+</script>
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Client searchable dropdown
+    const containers = document.querySelectorAll('.position-relative');
+    containers.forEach(container => {
+        const input = container.querySelector('.client-search-input');
+        const hidden = container.querySelector('.client-id-hidden');
+        const dropdown = container.querySelector('.client-dropdown');
+        if (!input || !dropdown) return;
+
+        // Show dropdown on focus or click
+        const showDropdown = () => dropdown.classList.add('show');
+        const hideDropdown = () => dropdown.classList.remove('show');
+
+        input.addEventListener('focus', showDropdown);
+        input.addEventListener('click', showDropdown);
+
+        // Filter options
+        input.addEventListener('input', function () {
+            const q = this.value.toLowerCase().trim();
+            const options = dropdown.querySelectorAll('.client-option');
+            options.forEach(opt => {
+                const name = (opt.getAttribute('data-name') || '').toLowerCase();
+                if (!q || name.includes(q)) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+        });
+
+        // Click option
+        dropdown.addEventListener('click', function (e) {
+            const btn = e.target.closest('.client-option');
+            if (!btn) return;
+            const id = btn.getAttribute('data-id');
+            const name = btn.innerText.trim();
+            hidden.value = id;
+            input.value = name;
+
+            hideDropdown();
+
+            // submit the parent filter form if present
+            const form = container.closest('form');
+            if (form) form.submit();
+        });
+
+        // click outside to close
+        document.addEventListener('click', function (e) {
+            if (!container.contains(e.target)) hideDropdown();
+        });
+    });
+});
 </script>
 @endpush
 

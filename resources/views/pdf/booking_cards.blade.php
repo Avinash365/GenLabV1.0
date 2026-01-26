@@ -91,7 +91,7 @@
             </div>
 
             <div class="table">
-                <div class="lr-no">Job Order No :-  <span class="value1">{{ $item->job_order_no }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $booking->sample_code ?? '' }} </span>
+                <div class="lr-no">Job Order No :-  <span class="value1">{{ $item->job_order_no }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $item->sample_code ?? '' }} </span>
                    
                 </div>
                 <div class="lr-no">Job Order Date :- <span class="value2">{{ \Carbon\Carbon::parse($item->job_order_date)->format('d/m/Y') }}</span></div>
@@ -126,7 +126,7 @@
                 </div>
 
                 <div class="table">
-                    <div class="lr-no">Job Order No :- <span class="value1">{{ $it->job_order_no }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $booking->sample_code ?? '' }}</span> 
+                    <div class="lr-no">Job Order No :- <span class="value1">{{ $it->job_order_no }}&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{{ $it->sample_code ?? '' }}</span> 
                        
                     </div>
                     <div class="lr-no">Job Order Date :- <span class="value2">{{ \Carbon\Carbon::parse($it->job_order_date)->format('d/m/Y') }}</span></div>

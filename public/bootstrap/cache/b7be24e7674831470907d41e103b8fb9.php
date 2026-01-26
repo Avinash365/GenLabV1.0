@@ -138,6 +138,8 @@
                 <?php
                     $__first = $items->first();
                     $__singleLetter = $__first?->booking?->upload_letter_path ?: null;
+                    $invoice = $__first?->booking?->generatedInvoice ?? null;
+                    $__singleInvoice = ($invoice && !empty($invoice->invoice_letter_path)) ? url($invoice->invoice_letter_path) : null;
                 ?>
                 
                 <?php
@@ -155,12 +157,22 @@
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
                             </button>
                             <button type="button" class="btn btn-outline-secondary" id="show-letter-btn" <?php echo e(empty($__singleLetter) ? 'disabled' : ''); ?>>Show Letter</button>
+                            <a href="<?php echo e($__singleInvoice ?? 'javascript:void(0)'); ?>"
+                               target="_blank"
+                               class="border rounded d-flex align-items-center justify-content-center p-2 text-decoration-none me-2 <?php echo e($__singleInvoice ? '' : 'disabled text-muted'); ?>"
+                               style="width:38px;height:38px;"
+                               data-bs-toggle="tooltip"
+                               title="<?php echo e($__singleInvoice ? 'View Bill' : 'Bill not generated'); ?>"
+                               <?php echo e($__singleInvoice ? '' : 'aria-disabled="true"'); ?>>
+                                <i data-feather="file-text" class="feather-file-text"></i>
+                            </a>
                         </div>
                     </form>
                 </div>
                 <?php if($__singleLetter): ?>
                     <input type="hidden" id="single-letter-url" value="<?php echo e($__singleLetter); ?>">
                 <?php endif; ?>
+                
             </div>
         </div>
     </div>
@@ -419,6 +431,24 @@
             window.open(single.value, '_blank');
         }
     }
+    async function openInvoice() {
+        const single = document.getElementById('single-invoice-url');
+        if (single && single.value) {
+            window.open(single.value, '_blank');
+            return;
+        }
+        await ensureSwal();
+        if (window.Swal) {
+            Swal.fire({
+                icon: 'info',
+                title: 'Invoice not Generated',
+                text: 'No invoice is available for this booking.',
+                confirmButtonColor: '#092C4C'
+            });
+        } else {
+            alert('Invoice not Generated');
+        }
+    }
     async function loadLetters(showModal = true) {
         try {
             const listUrl = uploadForm ? uploadForm.getAttribute('data-list-url') : '';
@@ -531,6 +561,11 @@
     if (showLetterBtn && showLetterBtn.dataset.bound !== '1') {
         showLetterBtn.dataset.bound = '1';
         showLetterBtn.addEventListener('click', function() { openBookingLetter(); });
+    }
+    const showInvoiceBtn = document.getElementById('show-invoice-btn');
+    if (showInvoiceBtn && showInvoiceBtn.dataset.bound !== '1') {
+        showInvoiceBtn.dataset.bound = '1';
+        showInvoiceBtn.addEventListener('click', function() { openInvoice(); });
     }
     refreshLettersCount();
 

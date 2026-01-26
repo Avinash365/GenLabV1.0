@@ -200,7 +200,9 @@ class ReportController extends Controller
         })->values();
         $bookings->setCollection($sorted);
 
-        $marketingPersons = User::orderBy('name')->get(['name','user_code']);
+        $marketingPersons = User::whereHas('role', function($q) {
+            $q->where('slug', 'marketing_person');
+        })->orderBy('name')->get(['name','user_code']);
 
         return view('superadmin.report.report', compact('departments', 'department', 'bookings', 'marketingPersons'));
     }
