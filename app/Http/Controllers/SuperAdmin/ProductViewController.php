@@ -14,6 +14,10 @@ use Barryvdh\DomPDF\Facade\Pdf;
 
 class ProductViewController extends Controller
 {
+    
+    public function __construct(){
+        $this->middleware('permission:product.view'); 
+    }
     public function index(Request $request, $categoryId = null)
     {
         $this->authorize('view', Product::class);

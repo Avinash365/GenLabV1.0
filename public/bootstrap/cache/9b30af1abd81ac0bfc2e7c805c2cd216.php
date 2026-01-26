@@ -3,15 +3,63 @@
 
 
 
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?> 
 
-<div class="d-flex justify-content-end mt-3 me-3">
-    <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create', App\Models\Profile::class)): ?>
-        <a href="<?php echo e(route('superadmin.quotations.create')); ?>" class="btn btn-primary">
-            <i class="bi bi-plus-lg"></i> Generate Quotation
-        </a>
+
+    <?php if($errors->any()): ?>
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </ul>
+        </div>
     <?php endif; ?>
-</div>
 
+    <?php if(session('success')): ?>
+        <div class="alert alert-success">
+            <?php echo e(session('success')); ?>
+
+        </div>
+    <?php endif; ?>
+
+
+<div class="page-header">
+        <div class="add-item d-flex ms-4 mt-3">
+            <div class="page-title">
+                <h4>Quotation</h4>
+                <h6>Manage Quotation</h6>
+            </div>
+        </div>
+        
+        <ul class="table-top-head list-inline d-flex gap-3" >
+
+        <?php if($user && ($user instanceof Admin || $user->hasPermission('quotation.create'))): ?>
+            <div class="d-flex justify-content-end  ">
+                <?php if (app(\Illuminate\Contracts\Auth\Access\Gate::class)->check('create', App\Models\Profile::class)): ?>
+                <a href="<?php echo e(route('superadmin.quotations.create')); ?>" class="btn btn-primary">
+                <i class="bi bi-plus-lg"></i> Generate Quotation
+                </a>
+                 <?php endif; ?>
+            </div>
+        <?php endif; ?>
+ 
+            <li class="list-inline-item">
+                <a href="<?php echo e(route('superadmin.quotations.export.pdf', request()->all())); ?>" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+            </li>
+            <li class="list-inline-item">
+                <a href="<?php echo e(route('superadmin.quotations.export.excel', request()->all())); ?>" class="no-loader" data-bs-toggle="tooltip" title="Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
+                        <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
+                    </svg>
+                </a>
+            </li>
+            <li style="margin-right:22px;"><a href="<?php echo e(route('superadmin.quotations.index')); ?>" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh" ></i></a></li>
+        </ul>
+    </div>
+ 
 <!-- <h5 class="card-title">Generated Quotations</h5>  -->
 <!-- Table List -->
 <div class="card mt-4">
@@ -135,17 +183,22 @@
                             <td><?php echo e(\Carbon\Carbon::parse($quotation->quotation_date)->format('d-m-Y')); ?></td>
                             <td><?php echo e($quotation->bill_issue_to); ?></td>
                             <td class="d-flex">
-                                <!-- Edit Button -->
-                                <a href="<?php echo e(route('superadmin.quotations.edit', $quotation->id)); ?>" 
-                                class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
-                                    <i data-feather="edit" class="feather-edit"></i>
-                                </a>
 
-                                <!-- Delete Button -->
-                                <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete" 
-                                        data-bs-toggle="modal" data-bs-target="#deleteModal<?php echo e($quotation->id); ?>">
-                                    <i data-feather="trash-2" class="feather-trash-2"></i>
-                                </button>
+                                <?php if($user && ($user instanceof Admin || $user->hasPermission('quotation.edit'))): ?>
+                                    <!-- Edit Button -->
+                                    <a href="<?php echo e(route('superadmin.quotations.edit', $quotation->id)); ?>" 
+                                    class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none">
+                                        <i data-feather="edit" class="feather-edit"></i>
+                                    </a>
+                                <?php endif; ?> 
+
+                                <?php if($user && ($user instanceof Admin || $user->hasPermission('quotation.delete'))): ?>
+                                    <!-- Delete Button -->
+                                    <button type="button" class="p-2 border rounded d-flex align-items-center btn-delete" 
+                                            data-bs-toggle="modal" data-bs-target="#deleteModal<?php echo e($quotation->id); ?>">
+                                        <i data-feather="trash-2" class="feather-trash-2"></i>
+                                    </button>
+                                <?php endif; ?>
                             </td>
                         </tr>
 

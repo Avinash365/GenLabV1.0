@@ -9,6 +9,10 @@ use Illuminate\Support\Facades\Storage;
 
 class WebSettingController extends Controller
 {
+    public function __construct(){
+        $this->middleware('permission:web_setting.edit'); 
+    }
+    
     public function edit()
     {
         $setting = SiteSetting::first();

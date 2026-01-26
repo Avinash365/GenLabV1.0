@@ -13,6 +13,14 @@ use Illuminate\Database\Eloquent\ModelNotFoundException;
 class PaymentSettingController extends Controller
 {
     // List all payment settings
+
+    public function __construct(){
+        $this->middleware('permission:bank_detail.view')->only('index'); 
+         $this->middleware('permission:bank_detail.create')->only('create', 'store');  
+          $this->middleware('permission:bank_detail.edit')->only('update'); 
+           $this->middleware('permission:bank_detail.delete')->only('destroy'); 
+    }
+
     public function index()
     {
         $bank =PaymentSetting::first(); 

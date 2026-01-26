@@ -13,6 +13,14 @@ use App\Exports\VehiclesExport;
 
 class VehicleController extends Controller
 {
+
+    public function __construct(){
+        $this->middleware('permission:vehicle_registration.view')->only('index', 'exportPdf', 'exportExcel');
+        $this->middleware('permission:vehicle_registration.create')->only('create', 'store', 'storeService');
+        $this->middleware('permission:vehicle_registration.edit')->only('update');
+        $this->middleware('permission:vehicle_registration.delete')->only('destroy');
+    }
+
     public function index()
     {
         $request = request();

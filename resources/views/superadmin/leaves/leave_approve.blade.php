@@ -2,6 +2,21 @@
 @section('title', 'Create New User')
 @section('content')
 
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
    
                 <div class="content">
                     <div class="page-header">
@@ -83,7 +98,7 @@
                                             <th>Days/Hours</th>
                                             <th>Applied On</th>
                                             <th>Status</th>
-                                            <th class="no-sort"></th>
+                                            <th class="no-sort">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -109,13 +124,17 @@
                                             <td class="action-table-data justify-content-end">
                                                 <div class="edit-delete-action">
                                                     @if(($leave->status ?? '') === 'Applied')
-                                                    <button class="btn btn-sm btn-success me-1" onclick="approveLeave({{ $leave->id }}, 'Approved')">
-                                                        <i class="ti ti-check"></i> Approve
-                                                    </button>
+                                                    @if($user && ($user instanceof Admin || $user->hasPermission('approve_leave.create')))
+                                                        <button class="btn btn-sm btn-success me-1" onclick="approveLeave({{ $leave->id }}, 'Approved')">
+                                                            <i class="ti ti-check"></i> Approve
+                                                        </button>
+                                                
                                                     <button class="btn btn-sm btn-danger me-1" onclick="approveLeave({{ $leave->id }}, 'Rejected')">
                                                         <i class="ti ti-x"></i> Reject
                                                     </button>
                                                     @endif
+                                                    @endif
+
                                                      
                                                 </div>
                                             </td>

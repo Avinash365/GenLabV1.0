@@ -3,11 +3,35 @@
 @section('content')
 
 
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
+    @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+    @if (session('success'))
+        <div class="alert alert-success">
+            {{ session('success') }}
+        </div>
+    @endif
+
+
+@if($user && ($user instanceof Admin || $user->hasPermission('blank_invoice.create')))
 <div class="d-flex justify-content-end mt-3 me-3">
     <a href="{{ route('superadmin.blank-invoices.create') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Generate Blank PI
     </a>
 </div>  
+@endif
 
 <!-- Table List -->
 <div class="card mt-4">
@@ -19,6 +43,7 @@
             <button class="btn btn-outline-primary" type="submit">Search</button>
         </form>
     </div>
+
     <div class="card-body">
         <div class="table-responsive">
             <table class="table  table-hover align-middle">
@@ -47,21 +72,28 @@
                             <td>{{ \Carbon\Carbon::parse($invoice->letter_date)->format('d-m-Y') }}</td>
                            <td>{{ optional($invoice->created_at)->format('d-m-y') }}</td>
 <td class="d-flex">
-    <!-- Edit Button as Icon -->
-    <a href="{{ route('superadmin.blank-invoices.edit', $invoice->id) }}" 
-       class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
-       title="Edit">
-        <i data-feather="edit" class="feather-edit"></i>
-    </a>
 
-    <!-- Delete Button as Icon -->
-    <button type="button" 
-            class="p-2 border rounded d-flex align-items-center btn-delete" 
-            data-bs-toggle="modal" 
-            data-bs-target="#deleteModal{{ $invoice->id }}"
-            title="Delete">
-        <i data-feather="trash-2" class="feather-trash-2"></i>
-    </button>
+
+    <!-- Edit Button as Icon -->
+
+    @if($user && ($user instanceof Admin || $user->hasPermission('blank_invoice.edit')))
+        <a href="{{ route('superadmin.blank-invoices.edit', $invoice->id) }}" 
+        class="me-2 border rounded d-flex align-items-center p-2 text-decoration-none"
+        title="Edit">
+            <i data-feather="edit" class="feather-edit"></i>
+        </a>
+    @endif
+
+    @if($user && ($user instanceof Admin || $user->hasPermission('blank_invoice.delete')))
+        <!-- Delete Button as Icon -->
+        <button type="button" 
+                class="p-2 border rounded d-flex align-items-center btn-delete" 
+                data-bs-toggle="modal" 
+                data-bs-target="#deleteModal{{ $invoice->id }}"
+                title="Delete">
+            <i data-feather="trash-2" class="feather-trash-2"></i>
+        </button>
+    @endif
 </td>
                         </tr>
 

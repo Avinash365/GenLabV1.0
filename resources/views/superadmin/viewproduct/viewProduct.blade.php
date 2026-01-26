@@ -2,6 +2,23 @@
 @section('title', 'Create New User')
 @section('content')
 
+
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
 @if (session('success'))
   <div class="alert alert-success">{{ session('success') }}</div>
 @endif
@@ -48,11 +65,17 @@
                 <a data-bs-toggle="tooltip" data-bs-placement="top" title="Collapse" id="collapse-header"><i class="ti ti-chevron-up"></i></a>
             </li>
         </ul>
-       <div class="page-btn">
-            <a href="{{ route('superadmin.productStockEntry.create') }}" class="btn btn-primary">
-                <i class="ti ti-circle-plus me-1"></i>Add Stock
-            </a>
-        </div>
+
+            @if($user && ($user instanceof Admin || ($user->hasPermission('product.edit'))))
+                <div class="page-btn">
+                    <a href="{{ route('superadmin.productStockEntry.create') }}" class="btn btn-primary">
+                        <i class="ti ti-circle-plus me-1"></i>Add Stock
+                    </a>
+                </div>
+            @endif
+          
+  
+
     </div>
 
     <!-- /product list -->
@@ -72,7 +95,7 @@
                         </button>
                     </div>
                 </form> 
-                @can('create', App\Models\Product::class)
+                @can('create', arguments: App\Models\Product::class)
                     <div class="d-flex justify-content-end mt-3 me-3 mb-4">
                             <a href="{{ route('superadmin.products.addProduct') }}" class="btn btn-primary">
                                 <i class="bi bi-plus-lg"></i> Add New
@@ -143,6 +166,7 @@
                                     <td>{{ $product->remark }}</td>
                                     <td class="text-center">
                                         <div class="d-flex justify-content-center gap-2">
+                                            
                                             @can('update', $product)
                                                 <a href="javascript:void(0);" 
                                                 class="btn btn-sm  edit-product-btn"

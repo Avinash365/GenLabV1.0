@@ -14,6 +14,13 @@ use App\Exports\MeterReadingsExport;
 
 class MeterReadingController extends Controller
 {
+
+    public function __construct(){
+        $this->middleware('permission:meter_reading.view')->only('index', 'exportPdf', 'exportExcel');
+        $this->middleware('permission:meter_reading.create')->only('upload');
+           
+    }
+
     protected function buildQuery(Request $request)
     {
         $query = MeterReading::with('user');

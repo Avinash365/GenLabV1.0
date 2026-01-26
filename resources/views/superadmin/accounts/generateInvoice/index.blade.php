@@ -2,6 +2,12 @@
 @section('title', 'Generate Invoice')
 @section('content')
 
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
+
     @if ($errors->any())
         <div class="alert alert-danger">
             <ul class="mb-0">
@@ -348,20 +354,25 @@
                                             </td>
 
                                             <td class="d-flex align-items-center gap-2">
-                                                <a href="{{ route('superadmin.bookingInvoiceStatuses.edit', $booking->id) }}"
-                                                    class="btn btn-success d-flex align-items-center p-2" title="Generate Invoice">
-                                                    <i data-feather="file-text"></i>
-                                                </a>
+
+                                                @if($user && ($user instanceof Admin || ($user->hasPermission('invoice.create'))))
+                                                    <a href="{{ route('superadmin.bookingInvoiceStatuses.edit', $booking->id) }}"
+                                                        class="btn btn-success d-flex align-items-center p-2" title="Generate Invoice">
+                                                        <i data-feather="file-text"></i>
+                                                    </a>
+                                                @endif
 
                                                 <!-- <a href="{{ route('superadmin.bookings.edit', $booking->id) }}" 
                                                                 class="btn btn-outline-primary d-flex align-items-center p-2">
                                                                     <i data-feather="edit"></i>
                                                                 </a> -->
 
-                                                <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2"
-                                                    data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $booking->id }}">
-                                                    <i data-feather="trash-2"></i>
-                                                </button>
+                                                @if($user && ($user instanceof Admin || ($user->hasPermission('invoice.delete'))))    
+                                                    <button type="button" class="btn btn-outline-danger d-flex align-items-center p-2"
+                                                        data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $booking->id }}">
+                                                        <i data-feather="trash-2"></i>
+                                                    </button>
+                                                @endif
 
                                                 <!-- Move / Transfer -->
                                                 <a href="#" class="btn btn-warning d-flex align-items-center p-2"

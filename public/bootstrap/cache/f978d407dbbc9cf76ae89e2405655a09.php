@@ -25,6 +25,9 @@
     );
 ?>
 
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
 
 
     <div class="content">
@@ -35,10 +38,12 @@
                     <h6>Assign Client</h6>
                 </div>
 
-                <!-- 🔹 Register Client Button (opens popup) -->
-                <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerClientModal">
-                    + Register Client
-                </button>
+                <?php if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.create')))): ?>
+                    <!-- 🔹 Register Client Button (opens popup) -->
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerClientModal">
+                        + Register Client
+                    </button>
+                <?php endif; ?>
             </div>
         </div>
        
@@ -234,7 +239,9 @@
                                 <th style="width:350px;">Client Name</th>
                                 <th style="width:300px;">Reference No</th>
                                 <th>Marketing Person</th>
-                                <th>Assign Client</th>
+                                <?php if($user && ($user instanceof Admin || $user->hasPermission('client_assigned.edit'))): ?>
+                                    <th>Assign Client</th>
+                                <?php endif; ?>
                                 <th>Payment</th>
                                 <th>Action</th>
                             </tr>
@@ -260,7 +267,7 @@
                                     </td>
                                     <td><?php echo e($booking->marketingPerson->name ?? '-'); ?></td>
                                    
-
+                                    <?php if($user && ($user instanceof Admin || $user->hasPermission('client_assigned.edit'))): ?>
                                     <!-- Assign Client Dropdown -->
                                     <td>
                                         <form action="<?php echo e(route('superadmin.clients.assignBooking', parameters: $booking->id)); ?>"
@@ -273,7 +280,9 @@
                                             </div>
                                         </form>
                                     </td>
-                                   <td>
+                                    <?php endif; ?> 
+
+                                <td>
     <form method="POST"
           action="<?php echo e(route('superadmin.bookings.change.payment.option', $booking->id)); ?>"
           class="d-inline">
@@ -373,54 +382,62 @@
                                                 <i data-feather="file-text"></i>
                                             </span>
                                         <?php endif; ?>
-                                        <?php if($booking->client_id): ?>
-                                            <form method="POST"
-                                                action="<?php echo e(route('superadmin.bookings.unassignClient', $booking->id)); ?>"
-                                                
-                                                class="me-2">
-                                                <?php echo csrf_field(); ?>
-                                                <?php echo method_field('PATCH'); ?>
 
-                                                <button type="submit"
-                                                        class="p-2 border rounded btn btn-link text-danger"
-                                                        title="Unassign Client">
-                                                    <i data-feather="user-x"></i>
-                                                </button>
-                                            </form>
-                        
+                                        <?php if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit')))): ?>
+                                            <?php if($booking->client_id): ?>
+                                                <form method="POST"
+                                                    action="<?php echo e(route('superadmin.bookings.unassignClient', $booking->id)); ?>"
+                                                    
+                                                    class="me-2">
+                                                    <?php echo csrf_field(); ?>
+                                                    <?php echo method_field('PATCH'); ?>
+
+                                                    <button type="submit"
+                                                            class="p-2 border rounded btn btn-link text-danger"
+                                                            title="Unassign Client">
+                                                        <i data-feather="user-x"></i>
+                                                    </button>
+                                                </form>
+                            
+                                            <?php endif; ?>
                                         <?php endif; ?>
-                                        <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>"
-                                            class="me-2 p-2 border rounded">
-                                            <i data-feather="edit"></i>
-                                        </a>
-                                        <button type="button" class="p-2 border rounded btn-delete" data-bs-toggle="modal"
-                                            data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">
-                                            <i data-feather="trash-2"></i>
-                                        </button>
-                                        <div class="modal fade" id="deleteModal-<?php echo e($booking->id); ?>" tabindex="-1">
-                                            <div class="modal-dialog modal-dialog-centered">
-                                                <div class="modal-content">
-                                                    <div class="modal-body text-center">
-                                                        <div class="icon-success bg-danger-transparent text-danger mb-2">
-                                                            <i class="ti ti-trash"></i>
-                                                        </div>
-                                                        <h5>Are you sure you want to delete this booking?</h5>
-                                                        <div class="d-flex justify-content-center gap-2 mt-3">
-                                                            <button type="button" class="btn btn-secondary"
-                                                                data-bs-dismiss="modal">Cancel</button>
-                                                            <form
-                                                                action="<?php echo e(route('superadmin.bookings.destroy', $booking->id)); ?>"
-                                                                method="POST">
-                                                                <?php echo csrf_field(); ?>
-                                                                <?php echo method_field('DELETE'); ?>
-                                                                <button type="submit" class="btn btn-danger">Delete</button>
-                                                            </form>
+
+                                        <?php if($user && ($user instanceof Admin || ($user->hasPermission('booking.edit')))): ?>
+                                            <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>"
+                                                class="me-2 p-2 border rounded">
+                                                <i data-feather="edit"></i>
+                                            </a>
+                                        <?php endif; ?> 
+
+                                        <?php if($user && ($user instanceof Admin || ($user->hasPermission('booking.delete')))): ?>
+                                            <button type="button" class="p-2 border rounded btn-delete" data-bs-toggle="modal"
+                                                data-bs-target="#deleteModal-<?php echo e($booking->id); ?>">
+                                                <i data-feather="trash-2"></i>
+                                            </button>
+                                            <div class="modal fade" id="deleteModal-<?php echo e($booking->id); ?>" tabindex="-1">
+                                                <div class="modal-dialog modal-dialog-centered">
+                                                    <div class="modal-content">
+                                                        <div class="modal-body text-center">
+                                                            <div class="icon-success bg-danger-transparent text-danger mb-2">
+                                                                <i class="ti ti-trash"></i>
+                                                            </div>
+                                                            <h5>Are you sure you want to delete this booking?</h5>
+                                                            <div class="d-flex justify-content-center gap-2 mt-3">
+                                                                <button type="button" class="btn btn-secondary"
+                                                                    data-bs-dismiss="modal">Cancel</button>
+                                                                <form
+                                                                    action="<?php echo e(route('superadmin.bookings.destroy', $booking->id)); ?>"
+                                                                    method="POST">
+                                                                    <?php echo csrf_field(); ?>
+                                                                    <?php echo method_field('DELETE'); ?>
+                                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                                </form>
+                                                            </div>
                                                         </div>
                                                     </div>
                                                 </div>
                                             </div>
-                                        </div>
-
+                                        <?php endif; ?>
                                     </td>
                                 </tr>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
@@ -438,37 +455,41 @@
 
         </div>
     </div>
-            </div>
-            <div class="ms-2 d-flex justify-content-between">
-                        
-                    <form method="POST"
-      action="<?php echo e(route('superadmin.clients.assignBulkBookings')); ?>"
-      id="bulkAssignForm"
-      class="d-flex align-items-center gap-2 mb-2">
+    </div>
+    
+    
+<div class="ms-2 d-flex justify-content-between">
 
-    <?php echo csrf_field(); ?>
+<?php if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit')))): ?>                        
+    <form method="POST"
+        action="<?php echo e(route('superadmin.clients.assignBulkBookings')); ?>"
+        id="bulkAssignForm"
+        class="d-flex align-items-center gap-2 mb-2">
+
+        <?php echo csrf_field(); ?>
 
     <!-- Selected IDs will auto-submit via checkboxes -->
     
     <!-- Client search -->
-    <div class="position-relative client-search-float"  style="min-width:250px;">
-        <input type="text"
-               class="form-control bulk-client-input"
-               placeholder="Search client..."
-               autocomplete="off">
+        <div class="position-relative client-search-float"  style="min-width:250px;">
+            <input type="text"
+                class="form-control bulk-client-input"
+                placeholder="Search client..."
+                autocomplete="off">
 
-        <input type="hidden"
-               name="client_id"
-               class="bulk-client-id">
+            <input type="hidden"
+                name="client_id"
+                class="bulk-client-id">
 
-        <div class="dropdown-menu w-100 bulk-client-dropdown"
-             style="max-height:300px; overflow:auto;"></div>
-    </div>
+            <div class="dropdown-menu w-100 bulk-client-dropdown"
+                style="max-height:300px; overflow:auto;"></div>
+        </div>
 
-    <button type="submit" class="btn btn-primary">
-        Assign Selected
-    </button>
-</form>
+        <button type="submit" class="btn btn-primary">
+            Assign Selected
+        </button>
+    </form>
+<?php endif; ?> 
                          
         <div class="d-flex align-items-center">
             <label for="perPageSelect" class="me-2 fw-semibold text-muted">

@@ -3,6 +3,22 @@
 @section('content')
 
 
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+ 
+   @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
+
 @if(session('success'))
     <div class="alert alert-success alert-dismissible fade show mx-3 mt-3" role="alert">
         {{ session('success') }}
@@ -18,6 +34,7 @@
 @endif
 
 {{-- ADD PURCHASE BILL --}}
+@if($user && ($user instanceof Admin || $user->hasPermission('purchase_bill.create')))
 <div class="d-flex justify-content-end mt-3 me-3 gap-3">
     <a href="{{ route('purchase.create') }}" class="btn btn-primary">
         <i class="bi bi-plus-lg"></i> Add Purchase Bill
@@ -35,6 +52,7 @@
         </li>
     </ul>
 </div>
+@endif
 
 
 
@@ -133,17 +151,18 @@
                                 @endif
                             </td>
 
-                            <td class="text-nowrap">
-                                {{-- EDIT --}}
-                               
-
-                                {{-- DELETE --}}
-                                <button class="btn btn-sm btn-danger"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#deleteBillModal{{ $bill->id }}">
-                                    Delete
-                                </button>
-                            </td>
+                            @if($user && ($user instanceof Admin || $user->hasPermission('purchase_bill.delete')))
+                                <td class="text-nowrap">
+                                    {{-- EDIT --}}
+                                
+                                    {{-- DELETE --}}
+                                    <button class="btn btn-sm btn-danger"
+                                            data-bs-toggle="modal"
+                                            data-bs-target="#deleteBillModal{{ $bill->id }}">
+                                        Delete
+                                    </button>
+                                </td>
+                            @endif
                         </tr>
 
                         {{-- DELETE MODAL --}}

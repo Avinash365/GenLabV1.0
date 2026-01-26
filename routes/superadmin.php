@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\BookingController;
 use App\Http\Controllers\CalibrationController;
 use App\Http\Controllers\ISCodeController;
-use App\Http\Controllers\OtpAuthController;
+use App\Http\Controllers\OtpAuthController;   
 use App\Http\Controllers\JobOrderController;
 
 use App\Http\Controllers\SuperAdmin\DashboardController;
@@ -86,6 +86,7 @@ use App\Http\Controllers\Accounts\ManualInvoicePaymentController;
 
 
 
+
 // =======================
 // Super Admin Login Routes
 // =======================
@@ -99,6 +100,8 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 // ==============================
 // Super Admin Protected Routes
 // ============================== 
+
+
 
 Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
 
@@ -136,7 +139,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/expenses/export/excel', [MarketingExpenseController::class, 'exportExcel'])->name('expenses.export.excel');
         Route::get('/persons', [MarketingExpenseController::class, 'officePersons'])->name('persons');
         Route::post('/expenses/send-for-approval', [MarketingExpenseController::class, 'sendPersonalForApproval'])->name('expenses.send');
-        Route::put('/expenses/{expense}', [MarketingExpenseController::class, 'updatePersonal'])->name('expenses.update');
+        Route::put('/expenses/{expense}', [MarketingExpenseController::class, 'updatePersonal'])->name(name: 'expenses.update');
         Route::delete('/expenses/{expense}', [MarketingExpenseController::class, 'destroyPersonal'])->name('expenses.destroy');
     });
 
@@ -145,6 +148,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::get('dashboard/invoice-payment-chart', [DashboardController::class, 'invoicePaymentChart'])
         ->name('dashboard.invoicePaymentChart');    Route::get('dashboard/accounts-invoices-chart', [DashboardController::class, 'accountsInvoicesChart'])
         ->name('dashboard.accounts-invoices-chart');
+    
+    
     // Role & Permission Management
     Route::prefix('role-and-permissions')
         ->name('roles.')
@@ -158,6 +163,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('{role}', [RoleAndPermissionController::class, 'show'])->name('show');
         });
 
+    
     // User Management
     Route::prefix('users')
         ->name('users.')
@@ -174,6 +180,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::post('{id}/send-notification', [UserController::class, 'sendNotification'])->name('sendNotification');
 
         });
+    
 
     // Booking Management
     Route::prefix('bookings')
@@ -212,7 +219,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/booking/{bookingId}/cards/{itemId}', [BookingController::class, 'showBookingCards'])->name('cards.single');
             
             Route::patch('/bookings/{id}/payment-option',[BookingController::class, 'changePaymentOption'])->name('change.payment.option');
-        });
+    });
 
     //Product
     Route::prefix('products')
@@ -227,7 +234,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             // Delete product
             Route::delete('/{product}', [ProductController::class, 'destroy'])->name('destroy');
-        });
+    });
 
     //Product
     Route::prefix('viewproduct')->name('viewproduct.')->group(function () {
@@ -247,7 +254,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::resource('iscodes', ISCodeController::class);
 
 
-    Route::middleware(['permission:account.edit'])->group(function () {
+  
+
 
         Route::resource('blank-invoices', BlankInvoiceController::class);
 
@@ -256,32 +264,45 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::get('bookingInvoiceStatuses/export/pdf', [GenerateInvoiceStatusController::class, 'exportPdf'])->name('bookingInvoiceStatuses.exportPdf');
         Route::get('bookingInvoiceStatuses/export/excel', [GenerateInvoiceStatusController::class, 'exportExcel'])->name('bookingInvoiceStatuses.exportExcel');
+        
         Route::resource('bookingInvoiceStatuses', GenerateInvoiceStatusController::class);
+                
 
         Route::post('bookingInvoiceStatuses/generate-invoice/{booking}', [GenerateInvoiceStatusController::class, 'generateInvoice'])
-            ->name('bookingInvoiceStatuses.generateInvoice');
+            ->middleware(['permission:invoice.create'])->name('bookingInvoiceStatuses.generateInvoice');
+
 
         Route::get('booking-invoice-statuses/bulk-generate', [GenerateInvoiceStatusController::class, 'bulkGenerate'])
-            ->name('bookingInvoiceStatuses.bulkGenerate');
+            ->middleware(['permission:invoice.create'])->name('bookingInvoiceStatuses.bulkGenerate');
+
 
         Route::post('/booking-invoice-statuses/store-bulk', [GenerateInvoiceStatusController::class, 'storeBulk'])
-            ->name('bookingInvoiceStatuses.storeBulk');
+            ->middleware(['permission:invoice.create'])->name('bookingInvoiceStatuses.storeBulk');
 
+        
+        
         // ===================== EDIT GENERATE INVOICE =====================
         // Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
 
         Route::get('invoices/export/pdf', [InvoiceController::class, 'exportPdf'])->name('invoices.export.pdf');
         Route::get('invoices/export/excel', [InvoiceController::class, 'exportExcel'])->name('invoices.export.excel');
+        
         Route::resource('invoices', InvoiceController::class);
+          
 
 
         Route::PUT('invoices/generate-invoice/{invoices}', [InvoiceController::class, 'generateInvoice'])
             ->name('invoices.generateInvoice');
 
-        Route::put('invoices/bulk-update/{invoice}', [InvoiceController::class, 'updateBulk'])->name('invoices.bulkUpdate');
+        Route::put('invoices/bulk-update/{invoice}', [InvoiceController::class, 'updateBulk'])
+               ->middleware(['permission:invoice.edit'])->name('invoices.bulkUpdate');
 
-        Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])->name('gstin.upload');
-        Route::patch('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])->name('invoices.cancel');
+        Route::post('/gstin/upload', [InvoiceController::class, 'uploadFile'])
+               ->middleware(['permission:invoice.edit'])->name('gstin.upload'); 
+
+        Route::patch('invoices/{invoice}/cancel', [InvoiceController::class, 'cancel'])
+              ->middleware(['permission:invoice.edit'])->name('invoices.cancel');
+
 
         // Meter Reading - DB-backed (meter_readings table)
         Route::prefix('meter-reading')->name('meter-reading.')->group(function () {
@@ -291,18 +312,16 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::get('/export/excel', [MeterReadingController::class, 'exportExcel'])->name('export.excel');
         });
 
-
-
         Route::resource('quotations', QuotationController::class);
         Route::get('quotations-export/pdf', [QuotationController::class, 'exportPdf'])->name('quotations.export.pdf');
         Route::get('quotations-export/csv', [QuotationController::class, 'exportExcel'])->name('quotations.export.excel');
-        Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])
-            ->name('quotations.generateQuotations');
+        Route::GET('quotations/generate-quotations/{quotations}', [QuotationController::class, 'generateQuotations'])->name('quotations.generateQuotations');
 
 
         Route::get('payment-settings/call-function/{id}', [PaymentSettingController::class, 'callFunction'])->name('payment-settings.callFunction');
 
-
+        
+        
         Route::resource('marketing-person-ledger', MarketingPersonLedger::class)->only(['index', 'show']);
 
 
@@ -315,15 +334,22 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/{user_code}/cash-all-transactions', [MarketingPersonLedger::class, 'fetchClientAllBookings'])->name('marketing.cashAllTransactions');
         Route::get('/{user_code}/all-clients', [MarketingPersonLedger::class, 'fetchGroupedBookings'])->name('marketing.allClients');
 
-        Route::resource('clients', ClientController::class)->only(['index', 'store', 'destroy']);
-        Route::put('clients/{client}', [ClientController::class, 'update'])->name('clients.update');
-        
-        Route::post('clients/{client}/assign-booking', [ClientController::class, 'assignBooking'])->name('clients.assignBooking');
-        Route::post('/clients/assign-bulk-bookings', [ClientController::class, 'assignBulkBookings'])->name('clients.assignBulkBookings');
-        Route::patch('/bookings/{booking}/unassign-client',[ClientController::class, 'unassignBooking'])->name('bookings.unassignClient');
 
-        Route::get('client-ledger', [ClientLedgerController::class, 'index'])->name('client-ledger.index');
-        Route::get('client-ledger/{id}', [ClientLedgerController::class, 'show'])->name('client-ledger.show');
+        Route::resource('clients', ClientController::class)
+                ->only(['index', 'store', 'destroy']);
+           
+
+        Route::put('clients/{client}', [ClientController::class, 'update'])->middleware(['permission:client_assigned.edit'])->name('clients.update');
+        
+        Route::post('clients/{client}/assign-booking', [ClientController::class, 'assignBooking'])->middleware(['permission:client_assigned.edit'])->name('clients.assignBooking');
+        Route::post('/clients/assign-bulk-bookings', [ClientController::class, 'assignBulkBookings'])->middleware(['permission:client_assigned.edit'])->name('clients.assignBulkBookings');
+        Route::patch('/bookings/{booking}/unassign-client',[ClientController::class, 'unassignBooking'])->middleware(['permission:client_assigned.edit'])->name('bookings.unassignClient');
+
+        Route::get('client-ledger', [ClientLedgerController::class, 'index'])->middleware(['permission:client_assigned.view'])->name('client-ledger.index');
+        Route::get('client-ledger/{id}', [ClientLedgerController::class, 'show'])->middleware(['permission:client_assigned.view'])->name('client-ledger.show');
+
+
+
 
         // AJAX routes
         Route::get('client/{id}/bookings', [ClientLedgerController::class, 'fetchBookings'])->name('client.bookings');
@@ -345,14 +371,24 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('cheque-templates/{bank}/fetch', [ChequeTemplateController::class, 'fetch'])->name('cheque-templates.fetch');
 
 
-        Route::get('cash-payments/create/{id}', [CashPaymentController::class, 'create'])->name('cashPayments.create');
-        Route::post('cash-payments/store', [CashPaymentController::class, 'store'])->name('cashPayments.store');
-        Route::get('cash-payments/repay/{id}', [CashPaymentController::class, 'repay'])->name('cashPayments.repay'); 
+        Route::get('cash-payments/create/{id}', [CashPaymentController::class, 'create'])
+               ->middleware(['permission:invoice_payment.create'])->name('cashPayments.create');
+
+
+        Route::post('cash-payments/store', [CashPaymentController::class, 'store'])
+              ->middleware(['permission:invoice_payment.create'])->name('cashPayments.store');
+
+        Route::get('cash-payments/repay/{id}', [CashPaymentController::class, 'repay'])
+              ->middleware(['permission:invoice_payment.edit'])->name('cashPayments.repay'); 
+
         Route::get('cash-payments/export/pdf', [CashPaymentController::class, 'exportPdf'])->name('cashPayments.exportPdf');
         Route::get('cash-payments/export/excel', [CashPaymentController::class, 'exportExcel'])->name('cashPayments.exportExcel');
-        Route::get('cash-payments/', [CashPaymentController::class, 'index'])->name('cashPayments.index');
+        
+        Route::get('cash-payments/', [CashPaymentController::class, 'index'])
+               ->middleware(['permission:invoice_payment.view'])->name('cashPayments.index');
 
-        Route::post('superadmin/cash-repay-payment/{invoice}', [CashPaymentController::class, 'storeRepay'])->name('cashPayments.storeRepay');
+        Route::post('superadmin/cash-repay-payment/{invoice}', [CashPaymentController::class, 'storeRepay'])
+               ->middleware(['permission:invoice_payment.edit'])->name('cashPayments.storeRepay');
 
 
         // Cash Transaction
@@ -369,16 +405,18 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('accounts/payroll', [PayrollReviewController::class, 'index'])->name('accounts.payroll.index');
         Route::get('accounts/payroll/{cycle}/download-bank', [PayrollReviewController::class, 'downloadBankCsv'])->name('accounts.payroll.download-bank');
 
+
         // Cheques
-        Route::get('cheques', [ChequeController::class, 'index'])->name('cheques.index');
-        Route::post('cheques', [ChequeController::class, 'store'])->name('cheques.store');
-        Route::post('cheques/{cheque}/receive', [ChequeController::class, 'receive'])->name('cheques.receive');
-        Route::post('cheques/receive', [ChequeController::class, 'storeReceived'])->name('cheques.storeReceived');
-        Route::post('cheques/{cheque}/toggle-deposit', [ChequeController::class, 'toggleDeposit'])->name('cheques.toggleDeposit');
-        Route::get('cheques/{cheque}/edit', [ChequeController::class, 'edit'])->name('cheques.edit');
-        Route::put('cheques/{cheque}', [ChequeController::class, 'update'])->name('cheques.update');
-        Route::delete('cheques/{cheque}', [ChequeController::class, 'destroy'])->name('cheques.destroy');
-        Route::get('cheques/{cheque}/print-preview', [ChequeController::class, 'printPreview'])->name('cheques.printPreview');
+        Route::get('cheques', [ChequeController::class, 'index'])->middleware(['permission:cheque.view'])->name('cheques.index');
+        Route::post('cheques', [ChequeController::class, 'store'])->middleware(['permission:cheque.create'])->name('cheques.store');
+        Route::post('cheques/{cheque}/receive', [ChequeController::class, 'receive'])->middleware(['permission:cheque.create'])->name('cheques.receive');
+        Route::post('cheques/receive', [ChequeController::class, 'storeReceived'])->middleware(['permission:cheque.create'])->name('cheques.storeReceived');
+        Route::post('cheques/{cheque}/toggle-deposit', [ChequeController::class, 'toggleDeposit'])->middleware(['permission:cheque.edit'])->name('cheques.toggleDeposit');
+        Route::get('cheques/{cheque}/edit', [ChequeController::class, 'edit'])->middleware(['permission:cheque.edit'])->name('cheques.edit');
+        Route::put('cheques/{cheque}', [ChequeController::class, 'update'])->middleware(['permission:cheque.edit'])->name('cheques.update');
+        Route::delete('cheques/{cheque}', [ChequeController::class, 'destroy'])->middleware(['permission:cheque.delete'])->name('cheques.destroy');
+        Route::get('cheques/{cheque}/print-preview', [ChequeController::class, 'printPreview'])->middleware(['permission:cheque.view'])->name('cheques.printPreview');
+
 
         Route::get('cash-letter/payments', [CashLetterController::class, 'showMultiple'])->name('cashLetter.payments.showMultiple');
 
@@ -577,6 +615,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
                 return response()->streamDownload($callback, $filename, $headers);
             })->name('export.excel');
+
+
             Route::get('/', function (\Illuminate\Http\Request $request) {
                 // Fetch users to populate select and to resolve user names for metadata
                 $users = \App\Models\User::orderBy('name')->get()->keyBy('id');
@@ -747,8 +787,6 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
         Route::post('/bank/note/{id}', [BankTransactionController::class, 'addNote'])->name('bank.addNote');
         Route::patch('/bank/soft-delete/{id}', [BankTransactionController::class, 'softDeleteOrUndo'])->name('bank.softDeleteOrUndo');
-
-    });
 
 
     // Store
@@ -975,8 +1013,12 @@ Route::middleware(['multi_auth:web,admin'])->group(function () {
     // delete email from list route
     Route::delete('/emails/{id}', [EmailController::class, 'destroy'])->name('emails.destroy');
 
-    Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])->name('bookingInvoiceStatuses.editGenerateInvoice');
-    Route::get('invoices/{invoice}/download', [GenerateInvoiceStatusController::class, 'downloadInvoice'])->name('invoices.download');
+    Route::get('bookingInvoiceStatuses/edit-generate-invoice/{id}', [GenerateInvoiceStatusController::class, 'editGenerateInvoice'])
+            ->middleware(['permission:invoice.edit'])->name('bookingInvoiceStatuses.editGenerateInvoice');
+
+
+    Route::get('invoices/{invoice}/download', [GenerateInvoiceStatusController::class, 'downloadInvoice'])
+            ->middleware(['permission:invoice.view'])->name('invoices.download'); 
 
     Route::get('/invoices/missing', [InvoiceController::class, 'missingInvoices'])->name('invoices.missing');
 

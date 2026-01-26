@@ -25,6 +25,10 @@ class PayrollController extends Controller
     protected const DEFAULT_MONTHLY_MINUTES = 8 * 60 * 22; // 22 working days assumption
     protected const MAX_TRACKABLE_MINUTES_PER_DAY = 16 * 60;
 
+    public function __construct(){
+        $this->middleware('permission:payroll.view'); 
+    }
+
     public function index(Request $request): View
     {
         [$month, $year] = $this->resolvePeriod($request);

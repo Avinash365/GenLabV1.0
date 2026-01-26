@@ -15,6 +15,12 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class LeaveController extends Controller
 {
+    
+    public function __construct(){
+        $this->middleware('permission:approve_leave.view')->only('exportPdf', 'exportExcel'); 
+        $this->middleware('permission:approve_leave.create')->only('approve'); 
+    }
+
     public function index(Request $request)
     {
         try {

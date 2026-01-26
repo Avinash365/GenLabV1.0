@@ -37,6 +37,9 @@ class InvoiceController extends Controller
     // Inject BillingService
     public function __construct(BillingService $billingService, InvoicePdfService $invoicePdfService, GetUserActiveDepartment $departmentService, CashPaymentController $cashPaymentController)
     {
+        $this->middleware('permission:invoice.view')->only('index');
+        $this->middleware('permission:invoice.delete')->only('destroy');
+
         $this->departmentService = $departmentService;
         $this->billingService = $billingService;
         $this->invoicePdfService = $invoicePdfService;
@@ -71,8 +74,8 @@ class InvoiceController extends Controller
 
         // Marketing person filter (dropdown)
         if ($request->filled('marketing_person')) {
-             $query->whereHas('relatedBooking.marketingPerson', function ($q) use ($request) {
-                $q->where('id', (int)$request->marketing_person);
+            $query->whereHas('relatedBooking.marketingPerson', function ($q) use ($request) {
+                $q->where('id', (int) $request->marketing_person);
             });
         }
 
@@ -147,8 +150,8 @@ class InvoiceController extends Controller
         $query = $this->buildQuery($request);
         $query->orderBy('invoice_no', 'desc');
 
-        $perPage = (int) $request->get('per_page', 5); 
-        $perPage = in_array($perPage, [2,10, 25, 50, 100, 500]) ? $perPage : 25;    
+        $perPage = (int) $request->get('per_page', 5);
+        $perPage = in_array($perPage, [2, 10, 25, 50, 100, 500]) ? $perPage : 25;
 
         $invoices = $query->paginate($perPage)->withQueryString();
         $departments = $this->departmentService->getDepartment();
@@ -245,6 +248,7 @@ class InvoiceController extends Controller
     {
         try {
 
+
             $gstinApiUrl = config('services.gstin.url');
             $gstinApiKey = config('services.gstin.key');
 
@@ -299,17 +303,32 @@ class InvoiceController extends Controller
 
         $bookingIds = json_decode($request->booking_ids, true) ?? [];
 
+        // $amountMap = collect($invoiceData['items'] ?? [])
+        //             ->filter(function ($item) {
+        //                 return !empty($item['job_order_no'])
+        //                     && $item['job_order_no'] !== 'Job Order No'
+        //                     && (float) $item['rate'] > 0;
+        //             })
+        //             ->mapWithKeys(function ($item) {
+        //                 return [
+        //                     trim($item['job_order_no']) => (float) $item['rate']
+        //                 ];
+        //             });
+
         $amountMap = collect($invoiceData['items'] ?? [])
-                    ->filter(function ($item) {
-                        return !empty($item['job_order_no'])
-                            && $item['job_order_no'] !== 'Job Order No'
-                            && (float) $item['rate'] > 0;
-                    })
-                    ->mapWithKeys(function ($item) {
-                        return [
-                            trim($item['job_order_no']) => (float) $item['rate']
-                        ];
-                    });
+            ->filter(function ($item) {
+                return !empty($item['job_order_no'])
+                    && $item['job_order_no'] !== 'Job Order No';
+            })
+            ->mapWithKeys(function ($item) {
+                $qty = floatval(str_replace(',', '', $item['qty'] ?? 0));
+                $rate = floatval(str_replace(',', '', $item['rate'] ?? 0));
+
+
+                return [
+                    trim($item['job_order_no']) => $qty * $rate
+                ];
+            });
 
 
         try {
@@ -322,7 +341,7 @@ class InvoiceController extends Controller
                 ? NewBooking::select('client_id', 'marketing_id')->find($firstBookingId)
                 : null;
 
-            $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id(): null;  
+            $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id() : null;
 
             DB::transaction(function () use ($invoice, $invoiceData, $bookingIds, $request, $booking, $generatedBy) {
 
@@ -330,7 +349,7 @@ class InvoiceController extends Controller
                 $invoice->update([
                     'client_id' => $booking->client_id ?? null,
                     'marketing_user_code' => $booking->marketing_id ?? null,
-                    'invoice_date' => $invoiceData['booking_info']['invoice_date'] ?? now(), 
+                    'invoice_date' => $invoiceData['booking_info']['invoice_date'] ?? now(),
 
                     'new_booking_id' => $bookingIds[0] ?? null,
                     'invoice_booking_ids' => implode(',', $bookingIds),
@@ -420,6 +439,15 @@ class InvoiceController extends Controller
                 $request->invoice_html
             );
 
+
+
+            if ($amountMap->isNotEmpty()) {
+                foreach ($amountMap as $jobOrderNo => $amount) {
+                    BookingItem::where('job_order_no', $jobOrderNo)
+                ->update(['amount' => $amount]);
+                }
+            }
+
             /* ===================== GENERATE PDF ===================== */
             return redirect()->back()->with('success', 'Invoice updated successfully.');
 
@@ -452,7 +480,7 @@ class InvoiceController extends Controller
             // dd($request->all()); 
             // exit; 
 
-            $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id(): null;  
+            $generatedBy = Auth::guard('web')->check() ? Auth::guard('web')->id() : null;
 
             $invoice_no = $request->input('invoice_no') ?? $invoice->invoice_no;
             $bookingId = $request->input('booking_id') ?? $invoice->new_booking_id;
@@ -496,7 +524,7 @@ class InvoiceController extends Controller
                 'total_amount' => $invoiceData['bill']['payable_amount'] ?? $invoice->total_amount,
                 'address' => $invoiceData['invoice']['address'] ?? $invoice->address,
                 'type' => $invoiceType,
-                'invoice_date' => $invoiceData['invoice']['invoice_date'], 
+                'invoice_date' => $invoiceData['invoice']['invoice_date'],
                 'generated_by' => $generatedBy,
             ]);
 
@@ -558,7 +586,7 @@ class InvoiceController extends Controller
                         ->update(['amount' => $amount]);
                 }
             }
- 
+
 
             // dd($invoiceData['amountMap']); 
             // exit; 

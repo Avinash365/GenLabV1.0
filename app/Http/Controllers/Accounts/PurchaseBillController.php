@@ -18,6 +18,14 @@ class PurchaseBillController extends Controller
     /**
      * List purchase bills
      */
+
+    public function __construct(){
+        $this->middleware('permission:purchase_bill.view')->only('index'); 
+        $this->middleware('permission:purchase_bill.create')->only('store', 'create'); 
+        $this->middleware('permission:purchase_bill.edit')->only('update'); 
+        $this->middleware('permission:purchase_bill.delete')->only('destroy'); 
+    }
+
    public function index(Request $request)
 {
     try {

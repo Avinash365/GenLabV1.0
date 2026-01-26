@@ -28,7 +28,28 @@ class MarketingExpenseController extends Controller
     protected FCMService $fcmService; 
 
     public function __construct(FCMService $fcmService){
+        
         $this->fcmService  = $fcmService; 
+        
+        // $this->middleware('permission:marketing_expense.view')->only('index');
+        //  $this->middleware('permission:marketing_expense.edit')->only('index');
+        //    $this->middleware('permission:marketing_expense.delete')->only('index');
+
+
+        // $this->middleware('permission:personal_expense.view')->only('personal');
+        //   $this->middleware('permission:personal_expense.create')->only('store');
+        //     $this->middleware('permission:personal_expense.edit')->only('updatePersonal');
+        //        $this->middleware('permission:personal_expense.delete')->only('destroyPersonal');
+                    
+
+
+        // $this->middleware('permission:approve_expense.view')->only('approved');
+        //     $this->middleware('permission:approve_expense.create')->only('approve');
+        //         $this->middleware('permission:approve_expense.delete')->only('reject');
+
+        // $this->middleware('permission:reject_expense.view')->only('approved');
+        
+       
     }
 
     public function index(Request $request)
@@ -50,7 +71,7 @@ class MarketingExpenseController extends Controller
 
     public function approved(Request $request)
     {
-       
+
         $section = $request->input('section', 'marketing');
         if(!in_array($section, ['marketing', 'office', 'personal'], true)){
             $section = 'marketing';
@@ -1332,6 +1353,7 @@ class MarketingExpenseController extends Controller
             'Content-Disposition' => 'attachment; filename="'.$filename.'"',
         ]);
     }
+
 
     public function approve(Request $request, MarketingExpense $expense)
     {

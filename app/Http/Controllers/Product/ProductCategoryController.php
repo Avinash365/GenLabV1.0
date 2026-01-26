@@ -13,6 +13,14 @@ class ProductCategoryController extends Controller
     /**
      * Display a listing of the resource.
      */
+
+    public function __construct(){
+        $this->middleware('permission:category.view')->only('index', 'view'); 
+        $this->middleware('permission:category.create')->only('create', 'store'); 
+        $this->middleware('permission:category.edit')->only('edit', 'update'); 
+        $this->middleware('permission:category.delete')->only('destroy'); 
+    }   
+
     public function index()
     {
         try {

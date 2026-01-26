@@ -34,12 +34,12 @@
                                 @foreach(request()->except(['perPage','page']) as $key => $val)
                                     <input type="hidden" name="{{ $key }}" value="{{ $val }}">
                                 @endforeach
-                                <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                <!-- <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                                 <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
                                     @foreach([25,50,100, 250] as $size)
                                         <option value="{{ $size }}" {{ request('perPage',25)==$size ? 'selected' : '' }}>{{ $size }}</option>
                                     @endforeach
-                                </select>
+                                </select> -->
                             </form>
                             <!-- <div class="mb-0">
                                 {{ $users->appends(request()->all())->links('pagination::bootstrap-5') }}
@@ -260,14 +260,40 @@
                         </div>
                     </div>
                 </div>
+
+    <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+
+        {{-- Per Page Selector --}}
+        <form method="GET" action="{{ route('superadmin.users.index') }}" class="d-flex align-items-center gap-2 mb-0">
+            @foreach(request()->except(['perPage','page']) as $key => $val)
+                <input type="hidden" name="{{ $key }}" value="{{ $val }}">
+            @endforeach
+
+            <label class="small mb-0">Rows per page:</label>
+
+            <select name="perPage"
+                    class="form-select form-select-sm w-auto"
+                    onchange="this.form.submit()">
+                @foreach([5,10,25,50,100,250] as $size)
+                    <option value="{{ $size }}"
+                        {{ request('perPage',25) == $size ? 'selected' : '' }}>
+                        {{ $size }}
+                    </option>
+                @endforeach
+            </select>
+        </form>
+
+        {{-- Pagination Links --}}
+        <div>
+            {{ $users->appends(request()->all())->links('pagination::bootstrap-5') }}
+        </div>
+
+    </div>
+
             </div>
         </div>
     </div>
 </div> 
-
-
-
-@endsection
 
 @push('scripts')
 <script>
@@ -305,4 +331,88 @@
     searchInput.addEventListener('input', applyFilter);
 })();
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const actions = ['view','create','edit','delete'];
+
+    /* ===============================
+     | MENU TOGGLE
+     |===============================*/
+    document.querySelectorAll('.menu-row').forEach(row => {
+        row.addEventListener('click', function () {
+            const menu = this.dataset.menu;
+
+            document
+                .querySelectorAll(`.submenu-row[data-parent="${menu}"]`)
+                .forEach(r => r.classList.toggle('d-none'));
+        });
+    });
+
+    /* ===============================
+     | HELPERS (VISIBLE ROWS ONLY)
+     |===============================*/
+    function visibleSubmenuRows() {
+        return Array.from(
+            document.querySelectorAll('.submenu-row:not(.d-none)')
+        );
+    }
+
+    function visiblePermissionCheckboxes() {
+        return visibleSubmenuRows()
+            .flatMap(row => Array.from(row.querySelectorAll('input[name="permissions[]"]')));
+    }
+
+    function visibleActionCheckboxes(action) {
+        return visibleSubmenuRows()
+            .flatMap(row => Array.from(row.querySelectorAll('input.' + action)));
+    }
+
+    /* ===============================
+     | GLOBAL ALL (VISIBLE ONLY)
+     |===============================*/
+    document.getElementById('select_all_global_btn')
+        .addEventListener('click', function () {
+
+            const boxes = visiblePermissionCheckboxes();
+            if (boxes.length === 0) return;
+
+            const allChecked = boxes.every(cb => cb.checked);
+            boxes.forEach(cb => cb.checked = !allChecked);
+        });
+
+    /* ===============================
+     | COLUMN BUTTONS (VISIBLE ONLY)
+     |===============================*/
+    document.querySelectorAll('.select_col_btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+
+            const action = this.dataset.col;
+            const boxes = visibleActionCheckboxes(action);
+            if (boxes.length === 0) return;
+
+            const allChecked = boxes.every(cb => cb.checked);
+            boxes.forEach(cb => cb.checked = !allChecked);
+        });
+    });
+
+    /* ===============================
+     | ROW SELECT (UNCHANGED)
+     |===============================*/
+    document.querySelectorAll('.select_row').forEach(row => {
+        row.addEventListener('change', function () {
+            const module = this.dataset.row;
+            document
+                .querySelectorAll('.checkbox_' + module)
+                .forEach(cb => cb.checked = this.checked);
+        });
+    });
+
+});
+</script>
 @endpush
+
+@endsection
+
+

@@ -2,13 +2,24 @@
 @section('title', 'Manage Clients')
 @section('content')
 
+
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
 {{-- Create Client Button --}}
 
-<div class="d-flex justify-content-end mt-3 me-3">
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
-        <i class="bi bi-plus-lg"></i> Add Client
-    </button>
-</div>
+@if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.create'))))
+    <div class="d-flex justify-content-end mt-3 me-3">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
+            <i class="bi bi-plus-lg"></i> Add Client
+        </button>
+    </div>
+@endif
+
+
 
 
 {{-- Client List --}}
@@ -60,21 +71,28 @@
                         </td>
                         <td>
                            
-                            <button class="btn btn-sm btn-primary"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#editClientModal{{ $client->id }}">
-                                Edit
-                            </button>
+                            @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
+                                <button class="btn btn-sm btn-primary"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#editClientModal{{ $client->id }}">
+                                    Edit
+                                </button>
+                            @endif
+
                         
-                            <button class="btn btn-sm btn-danger"
-                                    data-bs-toggle="modal"
-                                    data-bs-target="#deleteClientModal{{ $client->id }}">
-                                Delete
-                            </button>
+                              @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
+                                <button class="btn btn-sm btn-danger"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#deleteClientModal{{ $client->id }}">
+                                    Delete
+                                </button>
+                            @endif
                            
                         </td>
                     </tr>
 
+
+                    @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
                     {{-- Edit Client Modal --}}
                     <div class="modal fade" id="editClientModal{{ $client->id }}" tabindex="-1">
                         <div class="modal-dialog">
@@ -128,7 +146,10 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
+
+                    @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
                     {{-- Delete Client Modal --}}
                     <div class="modal fade" id="deleteClientModal{{ $client->id }}" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">
@@ -155,6 +176,7 @@
                             </div>
                         </div>
                     </div>
+                    @endif
 
                 @empty
                     <tr>

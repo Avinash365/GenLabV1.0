@@ -1,6 +1,23 @@
 @extends('superadmin.layouts.app')
 
 @section('content')
+
+@if ($errors->any())
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            @foreach ($errors->all() as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
+
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
+
 <div class="containerr">
     <div class="page-header">
         <div class="add-item d-flex ms-1 mt-2">
@@ -29,8 +46,11 @@
         </div>
         
         <ul class="table-top-head list-inline d-flex gap-3 mt-2">
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#receptionCreateModal">Add Contact</button>
+            @if($user && ($user instanceof Admin || ($user->hasPermission('reception.create'))))
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#receptionCreateModal">Add Contact</button>
+            @endif
 
+            @if($user && ($user instanceof Admin || ($user->hasPermission('reception.view'))))
             <li class="list-inline-item">
                 <a href="{{ route('superadmin.reception.export.pdf', request()->query()) }}" class="no-loader" data-bs-toggle="tooltip" title="PDF">
                     <i class="fa fa-file-pdf fa-lg text-danger"></i>
@@ -41,6 +61,7 @@
                     <i class="fa fa-file-excel fa-lg text-success"></i>
                 </a>
             </li>
+            @endif
             <li style="margin-right:22px;"><a href="{{ route('superadmin.reception.index', request()->query()) }}" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh" ></i></a></li>
         </ul>
     </div>
@@ -149,13 +170,20 @@
                         <td>{{ $c->phone }}</td>
                         <td>{{ $c->alternate_phone }}</td>
                         <td>
+                            @if($user && ($user instanceof Admin || ($user->hasPermission('reception.view'))))
                             <button type="button" data-url="{{ route('superadmin.reception.show', $c) }}" class="btn btn-sm btn-outline-primary btn-show">View</button>
+                            @endif
+                            @if($user && ($user instanceof Admin || ($user->hasPermission('reception.edit'))))
                             <button type="button" data-url="{{ route('superadmin.reception.edit', $c) }}" class="btn btn-sm btn-outline-secondary btn-edit">Edit</button>
+                            @endif
+
+                            @if($user && ($user instanceof Admin || ($user->hasPermission('reception.delete'))))
                             <form action="{{ route('superadmin.reception.destroy', $c) }}" method="POST" class="d-inline-block delete-form">
                                 @csrf
                                 @method('DELETE')
                                 <button type="button" class="btn btn-sm btn-outline-danger btn-delete">Delete</button>
                             </form>
+                            @endif
                         </td>
                     </tr>
                 @endforeach

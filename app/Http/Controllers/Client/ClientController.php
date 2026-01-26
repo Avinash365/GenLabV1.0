@@ -9,6 +9,12 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
+    public function __construct(){
+           $this->middleware('permission:client_assigned.view')->only(['index']);
+           $this->middleware('permission:client_assigned.create')->only(['store']);
+           $this->middleware('permission:client_assigned.delete')->only(['destroy']);
+    }
+
     public function index(Request $request)
     {
         try {

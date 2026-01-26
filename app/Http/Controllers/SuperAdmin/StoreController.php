@@ -7,7 +7,11 @@ use Illuminate\Http\Request;
 
 class StoreController extends Controller
 {
-     public function index()
+    
+    public function __construct(){
+        $this->middleware('permission:store.view'); 
+    }
+    public function index()
     {
         return view('superadmin.store.Store');  
     }

@@ -1,16 +1,26 @@
 <?php $__env->startSection('content'); ?>
+
+
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
+
 <div class="content">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <div>
         <h4 class="mb-1">Cheques</h4>
       </div>
-      <div class="d-flex gap-2">
-        <?php if(($status ?? '') === 'received'): ?>
-          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#receiveChequeModal">+ Receive Cheque</button>
-        <?php else: ?>
-          <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#issueChequeModal">+ Issue Cheque</button>
-        <?php endif; ?>
-      </div>
+
+      <?php if($user && ($user instanceof Admin || ($user->hasPermission('cheque.create')))): ?>
+        <div class="d-flex gap-2">
+          <?php if(($status ?? '') === 'received'): ?>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#receiveChequeModal">+ Receive Cheque</button>
+          <?php else: ?>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#issueChequeModal">+ Issue Cheque</button>
+          <?php endif; ?>
+        </div>
+      <?php endif; ?>
+
     </div>
 
     <div class="card">
@@ -119,13 +129,22 @@
                     <td><span class="badge bg-<?php echo e($chq->status==='issued' ? 'warning' : ($chq->status==='received' ? 'success' : 'secondary')); ?>"><?php echo e(ucfirst($chq->status)); ?></span></td>
                     <td class="text-end">
                       <div class="btn-group btn-group-sm" role="group" style="gap:5px;">
-                        <a href="<?php echo e(route('superadmin.cheques.edit', $chq)); ?>" class="btn btn-outline-secondary"><i class="fa fa-edit"></i></a>
-                        <form method="POST" action="<?php echo e(route('superadmin.cheques.destroy', $chq)); ?>" onsubmit="return confirm('Delete this cheque?');">
-                          <?php echo csrf_field(); ?>
-                          <?php echo method_field('DELETE'); ?>
-                          <button type="submit" class="btn btn-outline-danger"><i class="fa fa-trash"></i></button>
-                        </form>
-                        <a href="<?php echo e(route('superadmin.cheques.printPreview', $chq)); ?>" class="btn btn-primary"><i class="fa fa-print"></i></a>
+
+                        <?php if($user && ($user instanceof Admin || ($user->hasPermission('cheque.edit')))): ?>
+                          <a href="<?php echo e(route('superadmin.cheques.edit', $chq)); ?>" class="btn btn-outline-secondary"><i class="fa fa-edit"></i></a>
+                        <?php endif; ?>
+
+                        <?php if($user && ($user instanceof Admin || ($user->hasPermission('cheque.delete')))): ?>
+                          <form method="POST" action="<?php echo e(route('superadmin.cheques.destroy', $chq)); ?>" onsubmit="return confirm('Delete this cheque?');">
+                            <?php echo csrf_field(); ?>
+                            <?php echo method_field('DELETE'); ?>
+                            <button type="submit" class="btn btn-outline-danger"><i class="fa fa-trash"></i></button>
+                          </form>
+                        <?php endif; ?>
+
+                        <?php if($user && ($user instanceof Admin || ($user->hasPermission('cheque.view')))): ?>
+                          <a href="<?php echo e(route('superadmin.cheques.printPreview', $chq)); ?>" class="btn btn-primary"><i class="fa fa-print"></i></a>
+                        <?php endif; ?>
                       </div>
                     </td>
                   </tr>

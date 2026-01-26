@@ -25,6 +25,11 @@ class BlankInvoiceController extends Controller
 
     public function __construct(InvoicePdfService $invoicePdfService, NumberToWordsService $numberToWordsService)
     {
+        
+        $this->middleware('permission:blank_invoice.view')->only('index'); 
+        $this->middleware('permission:blank_invoice.create')->only('create', 'store');
+        $this->middleware('permission:blank_invoice.edit')->only('update', 'edit');
+        $this->middleware('permission:blank_invoice.delete')->only('destroy');
 
         $this->invoicePdfService = $invoicePdfService;
         $this->numberToWordsService = $numberToWordsService;
@@ -46,7 +51,7 @@ class BlankInvoiceController extends Controller
         })
         ->latest()
         ->paginate(10)
-        ->withQueryString();
+        ->withQueryString();    
 
     return view(
         'superadmin.accounts.invoiceList.index_blank',

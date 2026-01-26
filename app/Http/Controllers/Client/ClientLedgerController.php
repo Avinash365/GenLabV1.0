@@ -12,6 +12,12 @@ use App\Models\{Invoice,TdsPayment,CashLetterPayment};
 
 class ClientLedgerController extends Controller
 {
+     public function __construct()
+    {
+        
+        $this->middleware('permission:client_ledger.view')->only('index'); 
+    }
+
     public function index(Request $request)
     {  
         try {

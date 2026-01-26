@@ -52,6 +52,7 @@ class CalibrationPolicy
     /**
      * Determine whether the user can delete the model.
      */
+    
     public function delete(Admin|User $user, Calibration $calibration): bool
     {
          if ($user instanceof Admin) return true;

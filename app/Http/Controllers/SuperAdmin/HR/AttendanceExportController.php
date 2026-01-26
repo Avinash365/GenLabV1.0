@@ -13,6 +13,10 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class AttendanceExportController extends Controller
 {
+   
+    public function __construct(){
+        $this->middleware('permission:attendance.view'); 
+    }
     public function downloadMonthly(Request $request)
     {
         $request->validate([

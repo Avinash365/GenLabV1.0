@@ -2,6 +2,11 @@
 
 @section('content')
 
+    
+@php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+@endphp
+
     <!-- Notifications -->
     @if (session('success'))
         <div class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
@@ -14,6 +19,16 @@
         <div class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
             <i class="fas fa-exclamation-circle me-2"></i>{{ session('error') }}
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    @endif
+
+       @if ($errors->any())
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                @foreach ($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
         </div>
     @endif
 
@@ -38,29 +53,31 @@
             </div>
         </div>
 
-        <!-- Upload Section -->
-        <div class="card shadow-sm border-0 mb-4">
-            <div class="card-header bg-white py-3">
-                <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-upload me-2 text-primary"></i>Upload Statement</h5>
-            </div>
-            <div class="card-body">
-                <form action="{{ route('superadmin.bank.upload') }}" method="POST" enctype="multipart/form-data">
-                    @csrf
-                    <div class="row align-items-center g-3">
-                        <div class="col-md-9">
-                            <label class="form-label text-muted small text-uppercase fw-bold">Select File (CSV/Excel)</label>
-                            <input type="file" class="form-control form-control-lg" name="file" required>
+        @if($user && ($user instanceof Admin || ($user->hasPermission('bank_transaction.create'))))
+            <!-- Upload Section -->
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-upload me-2 text-primary"></i>Upload Statement</h5>
+                </div>
+                <div class="card-body">
+                    <form action="{{ route('superadmin.bank.upload') }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="row align-items-center g-3">
+                            <div class="col-md-9">
+                                <label class="form-label text-muted small text-uppercase fw-bold">Select File (CSV/Excel)</label>
+                                <input type="file" class="form-control form-control-lg" name="file" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label d-none d-md-block">&nbsp;</label>
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="fa fa-cloud-upload-alt me-2"></i>Upload
+                                </button>
+                            </div>
                         </div>
-                        <div class="col-md-3">
-                            <label class="form-label d-none d-md-block">&nbsp;</label>
-                            <button type="submit" class="btn btn-primary btn-lg w-100">
-                                <i class="fa fa-cloud-upload-alt me-2"></i>Upload
-                            </button>
-                        </div>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
-        </div>
+        @endif
 
         <!-- Filters Section -->
         <div class="card shadow-sm border-0 mb-4">
@@ -139,7 +156,7 @@
                                 <th>Chq/Ref</th>
                                 <th class="text-danger">Withdrawal</th>
                                 <th class="text-success">Deposit</th>
-                                <th>Balance</th>
+                                <!-- <th>Balance</th> -->
                                 <th>Note</th>
                                 <th class="text-end pe-3">Actions</th>
                             </tr>
@@ -173,9 +190,11 @@
                                         {{ $withdrawal > 0 ? number_format($withdrawal, 2) : '-' }}</td>
                                     <td class="text-success fw-bold">{{ $deposit > 0 ? number_format($deposit, 2) : '-' }}
                                     </td>
-                                    <td class="fw-bold">{{ number_format((float) $transaction->closing_balance, 2) }}</td>
+                                    <!-- <td class="fw-bold">{{ number_format((float) $transaction->closing_balance, 2) }}</td> -->
                                     <td class="text-truncate" style="max-width: 150px;" title="{{ $transaction->note }}">
                                         {{ $transaction->note ?? '-' }}</td>
+                                    
+                                @if($user && ($user instanceof Admin || ($user->hasPermission('bank_transaction.edit'))))
                                     <td class="text-end pe-3">
                                         <div class="btn-group btn-group-sm">
                                             <!-- Note Button containing Data -->
@@ -214,7 +233,8 @@
                                                 </button>
                                             @endif
                                         </div>
-                                    </td>
+                                    </td> 
+                                @endif
                                 </tr>
                             @empty
                                 <tr>
