@@ -30,6 +30,8 @@ class WebSettingController extends Controller
             'company_name' => 'nullable|string|max:255',
             'company_address' => 'nullable|string',
             'project_title' => 'nullable|string|max:255',
+            'footer_credit' => 'nullable|string|max:255',
+            'footer_copyright' => 'nullable|string',
         ]);
 
         $setting = SiteSetting::first();
@@ -56,6 +58,9 @@ class WebSettingController extends Controller
         $setting->company_name = $data['company_name'] ?? $setting->company_name;
         $setting->company_address = $data['company_address'] ?? $setting->company_address;
         $setting->project_title = $data['project_title'] ?? $setting->project_title;
+        // Footer branding fields
+        $setting->footer_credit = $data['footer_credit'] ?? $setting->footer_credit;
+        $setting->footer_copyright = $data['footer_copyright'] ?? $setting->footer_copyright;
 
         $setting->save();
 
