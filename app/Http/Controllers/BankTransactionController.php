@@ -47,8 +47,17 @@ class BankTransactionController extends Controller
                 ->orWhere('deposit', 'like', "%{$search}%")
                 ->orWhere('marketing_person', 'like', "%{$search}%")
                 ->orWhere('transaction_remarks', 'like', "%{$search}%")
-                ->orWhere('chq_ref_no', 'like', "%{$search}%");
+                ->orWhere('chq_ref_no', 'like', "%{$search}%")
+                ->orWhere('tran_id', 'like', "%{$search}%");
             });
+
+            // If search looks like a date, also try matching the txn date
+            try {
+                $d = \Carbon\Carbon::parse($search);
+                $query->orWhereDate('date', $d->format('Y-m-d'));
+            } catch (\Exception $e) {
+                // not a date, ignore
+            }
         }
 
         // Filter by year
@@ -106,15 +115,39 @@ class BankTransactionController extends Controller
     public function exportPdf(Request $request)
     {
         $transactions = $this->getFilteredTransactions($request)->get();
-        
-        $pdf = Pdf::loadView('bankTransactions.pdf', compact('transactions'));
+        // Build friendly filters
+        $filters = [];
+        if ($request->filled('search')) $filters['Search'] = $request->search;
+        if ($request->filled('status')){
+            $map = ['credit'=>'Credited','debit'=>'Debited','softdeleted'=>'Suspense'];
+            $filters['Status'] = $map[$request->status] ?? $request->status;
+        }
+        if ($request->filled('month')){
+            try{ $m = is_numeric($request->month)?(int)$request->month:null; if($m) $filters['Month'] = \Carbon\Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; }
+        }
+        if ($request->filled('year')) $filters['Year'] = $request->year;
+
+        $pdf = Pdf::loadView('bankTransactions.pdf', compact('transactions','filters'))
+              ->setPaper('a4', 'landscape');
+
         return $pdf->download('bank-transactions.pdf');
     }
 
     public function exportExcel(Request $request)
     {
         $transactions = $this->getFilteredTransactions($request)->get();
-        return Excel::download(new BankTransactionsExport($transactions), 'bank-transactions.xlsx');
+        $filters = [];
+        if ($request->filled('search')) $filters['Search'] = $request->search;
+        if ($request->filled('status')){
+            $map = ['credit'=>'Credited','debit'=>'Debited','softdeleted'=>'Suspense'];
+            $filters['Status'] = $map[$request->status] ?? $request->status;
+        }
+        if ($request->filled('month')){
+            try{ $m = is_numeric($request->month)?(int)$request->month:null; if($m) $filters['Month'] = \Carbon\Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; }
+        }
+        if ($request->filled('year')) $filters['Year'] = $request->year;
+
+        return Excel::download(new BankTransactionsExport($transactions, $filters), 'bank-transactions.xlsx');
     }
 
 

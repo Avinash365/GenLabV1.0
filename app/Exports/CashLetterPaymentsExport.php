@@ -10,43 +10,54 @@ use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Illuminate\Support\Collection;
 
-class BookingsExport implements FromCollection, WithHeadings, WithCustomStartCell, WithEvents
+class CashLetterPaymentsExport implements FromCollection, WithHeadings, WithMapping, WithCustomStartCell, WithEvents
 {
-    protected $bookings;
+    protected $payments;
     protected $filters = [];
 
     public function __construct(...$args)
     {
-        $bookings = $args[0] ?? collect();
-        $this->bookings = $bookings instanceof Collection ? $bookings : collect($bookings);
+        $this->payments = $args[0] ?? collect();
+        $this->payments = $this->payments instanceof Collection ? $this->payments : collect($this->payments);
         $this->filters = $args[1] ?? [];
     }
 
     public function collection()
     {
-        return $this->bookings->values()->map(function($b, $i) {
-            return [
-                $i + 1,
-                $b->client_name,
-                $b->reference_no,
-                optional($b->marketingPerson)->name,
-                $b->items->count(),
-                $b->job_order_date ? \Carbon\Carbon::parse($b->job_order_date)->format('Y-m-d') : '',
-                optional($b->department)->name,
-            ];
-        });
+        return $this->payments;
+    }
+
+    public function map($p): array
+    {
+        $refs = collect(is_array($p->booking_ids) ? $p->booking_ids : ($p->booking_ids ? explode(',', $p->booking_ids) : []))
+                    ->map(fn($id) => optional(\App\Models\NewBooking::find($id))->reference_no)
+                    ->filter()
+                    ->values()
+                    ->implode(', ');
+
+        $statusMap = ['0'=>'Pending','1'=>'Partial','2'=>'Paid','3'=>'Settled'];
+
+        return [
+            $refs,
+            $p->client->name ?? 'N/A',
+            $p->marketingPerson->name ?? $p->marketing_person_id,
+            (float) $p->total_amount,
+            (float) $p->amount_received,
+            $statusMap[$p->transaction_status] ?? $p->transaction_status,
+            $p->created_at ? \Carbon\Carbon::parse($p->created_at)->format('d-m-Y') : ''
+        ];
     }
 
     public function headings(): array
     {
         return [
-            '#',
-            'Client Name',
-            'Reference No',
+            'Reference Nos',
+            'Client',
             'Marketing Person',
-            'Items Count',
-            'Job Order Date',
-            'Department',
+            'Total Amount',
+            'Received',
+            'Status',
+            'Created At'
         ];
     }
 

@@ -10,43 +10,46 @@ use Maatwebsite\Excel\Concerns\WithCustomStartCell;
 use Maatwebsite\Excel\Events\AfterSheet;
 use Illuminate\Support\Collection;
 
-class BookingsExport implements FromCollection, WithHeadings, WithCustomStartCell, WithEvents
+class PurchaseBillsExport implements FromCollection, WithHeadings, WithMapping, WithCustomStartCell, WithEvents
 {
-    protected $bookings;
+    protected $bills;
     protected $filters = [];
 
     public function __construct(...$args)
     {
-        $bookings = $args[0] ?? collect();
-        $this->bookings = $bookings instanceof Collection ? $bookings : collect($bookings);
+        $this->bills = $args[0] ?? collect();
+        $this->bills = $this->bills instanceof Collection ? $this->bills : collect($this->bills);
         $this->filters = $args[1] ?? [];
     }
 
     public function collection()
     {
-        return $this->bookings->values()->map(function($b, $i) {
-            return [
-                $i + 1,
-                $b->client_name,
-                $b->reference_no,
-                optional($b->marketingPerson)->name,
-                $b->items->count(),
-                $b->job_order_date ? \Carbon\Carbon::parse($b->job_order_date)->format('Y-m-d') : '',
-                optional($b->department)->name,
-            ];
-        });
+        return $this->bills;
+    }
+
+    public function map($b): array
+    {
+        return [
+            $b->description,
+            $b->party,
+            (float) $b->amount,
+            $b->purchased_by,
+            $b->gst_type,
+            $b->purchase_date ? \Carbon\Carbon::parse($b->purchase_date)->format('d-m-Y') : '',
+            $b->bill_upload ? 'Uploaded' : 'Not Uploaded'
+        ];
     }
 
     public function headings(): array
     {
         return [
-            '#',
-            'Client Name',
-            'Reference No',
-            'Marketing Person',
-            'Items Count',
-            'Job Order Date',
-            'Department',
+            'Description',
+            'Party',
+            'Amount',
+            'Purchased By',
+            'GST Type',
+            'Purchase Date',
+            'Bill'
         ];
     }
 

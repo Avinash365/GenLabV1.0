@@ -8,6 +8,10 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\PurchaseBillsExport;
+use Carbon\Carbon;
 
 class PurchaseBillController extends Controller
 {
@@ -69,6 +73,73 @@ class PurchaseBillController extends Controller
         return back()->with('error', 'Failed to load purchase bills');
     }
 }
+
+    public function exportPdf(Request $request)
+    {
+        $query = PurchaseBill::query()->orderBy('purchase_date', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "{$search}%")
+                  ->orWhere('party', 'like', "{$search}%")
+                  ->orWhere('purchased_by', 'like', "{$search}%");
+            });
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('purchase_date', $request->month);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('purchase_date', $request->year);
+        }
+
+        $bills = $query->get();
+
+        $filters = [];
+        if ($request->filled('search')) $filters['Search'] = $request->search;
+        if ($request->filled('month')){
+            $m = is_numeric($request->month)?(int)$request->month:null;
+            if($m){ try{ $filters['Month'] = Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; } }
+        }
+        if ($request->filled('year')) $filters['Year'] = $request->year;
+
+        $pdf = Pdf::loadView('superadmin.accounts.PurchaseBill.pdf_export', compact('bills','filters'));
+        return $pdf->download('purchase_bills.pdf');
+    }
+
+    public function exportExcel(Request $request)
+    {
+        $query = PurchaseBill::query()->orderBy('purchase_date', 'desc');
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->where('description', 'like', "{$search}%")
+                  ->orWhere('party', 'like', "{$search}%")
+                  ->orWhere('purchased_by', 'like', "{$search}%");
+            });
+        }
+
+        if ($request->filled('month')) {
+            $query->whereMonth('purchase_date', $request->month);
+        }
+        if ($request->filled('year')) {
+            $query->whereYear('purchase_date', $request->year);
+        }
+
+        $bills = $query->get();
+
+        $filters = [];
+        if ($request->filled('search')) $filters['Search'] = $request->search;
+        if ($request->filled('month')){
+            $m = is_numeric($request->month)?(int)$request->month:null;
+            if($m){ try{ $filters['Month'] = Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; } }
+        }
+        if ($request->filled('year')) $filters['Year'] = $request->year;
+
+        return Excel::download(new PurchaseBillsExport($bills, $filters), 'purchase_bills.xlsx');
+    }
 
 
     /**

@@ -16,5 +16,7 @@ class SiteSetting extends Model
         'company_name',
         'company_address',
         'project_title',
+        'footer_credit',
+        'footer_copyright',
     ];
 }

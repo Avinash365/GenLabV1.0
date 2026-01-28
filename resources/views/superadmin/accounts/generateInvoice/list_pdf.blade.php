@@ -18,6 +18,20 @@
 </head>
 <body>
     <h2>{{ $title ?? 'Booking List' }}</h2>
+    @php
+        $filters = $filters ?? [];
+    @endphp
+    @if(count($filters))
+        <div style="margin-bottom:8px;font-size:11px;">
+            <strong>Applied Filters:</strong>
+            <ul style="margin:4px 0 8px 18px;padding:0;">
+                @foreach($filters as $k => $v)
+                    <li>{{ $k }}: {{ $v }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
+
     <table>
         <thead>
             <tr>

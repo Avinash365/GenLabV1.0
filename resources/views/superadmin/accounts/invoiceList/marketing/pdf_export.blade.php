@@ -15,8 +15,55 @@
 </head>
 <body>
     <h2>Invoices List</h2>
+    @php
+        $filters = [];
+        $qs = request()->except(['_token','page']);
+        foreach($qs as $k => $v){
+            if(is_null($v) || $v === '') continue;
+            switch($k){
+                case 'search':
+                    $filters['Search'] = $v; break;
+                case 'client_id':
+                    $client = \App\Models\Client::find($v);
+                    $filters['Client'] = $client ? $client->name : $v; break;
+                case 'marketing_person':
+                case 'marketing':
+                    $user = null;
+                    if(is_numeric($v)) $user = \App\Models\User::find($v);
+                    if(!$user) $user = \App\Models\User::where('user_code', $v)->first(['name','user_code']);
+                    $filters['Marketing Person'] = $user ? ($user->name . ($user->user_code ? ' (' . $user->user_code . ')' : '')) : $v;
+                    break;
+                case 'department_id':
+                    $dept = \App\Models\Department::find($v);
+                    $filters['Department'] = $dept ? $dept->name : $v; break;
+                case 'payment_status':
+                    $filters['Payment Status'] = $v; break;
+                case 'month':
+                    $m = is_numeric($v) ? (int) $v : null;
+                    if($m){
+                        try{ $filters['Month'] = \Carbon\Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $v; }
+                    } else { $filters['Month'] = $v; }
+                    break;
+                case 'year':
+                    $filters['Year'] = $v; break;
+                default:
+                    $filters[ucwords(str_replace(['_','-'], ' ', $k))] = $v;
+            }
+        }
+    @endphp
+
     <div class="meta">
         generated on {{ now()->format('d-M-Y H:i') }}
+        @if(count($filters))
+            <div style="margin-top:6px;font-size:10px;color:#333;">
+                <strong>Applied Filters:</strong>
+                <span>
+                    @foreach($filters as $k=>$v)
+                        {{ $k }}: {{ $v }}@if(!$loop->last), @endif
+                    @endforeach
+                </span>
+            </div>
+        @endif
     </div>
     <table>
         <thead>

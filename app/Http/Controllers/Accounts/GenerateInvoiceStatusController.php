@@ -811,8 +811,28 @@ class GenerateInvoiceStatusController extends Controller
         $bookings = $query->latest()->get();
 
         $title = ($request->payment_option === 'without_bill') ? 'Cash Letter' : 'Booking List';
+        // Build friendly filters for export
+        $filters = [];
+        if($request->filled('search')) $filters['Search'] = $request->search;
+        if($request->filled('marketing_person')){
+            $user = User::where('user_code', $request->marketing_person)->orWhere('id', $request->marketing_person)->first(['name','user_code']);
+            $filters['Marketing Person'] = $user ? ($user->name . ($user->user_code ? ' ('.$user->user_code.')' : '')) : $request->marketing_person;
+        }
+        if($request->filled('client_id')){
+            $client = Client::find($request->client_id);
+            $filters['Client'] = $client ? $client->name : $request->client_id;
+        }
+        if($request->filled('department')){
+            $dept = Department::find($request->department);
+            $filters['Department'] = $dept ? $dept->name : $request->department;
+        }
+        if($request->filled('month')){
+            $m = is_numeric($request->month) ? (int)$request->month : null;
+            if($m){ try{ $filters['Month'] = Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; } }
+        }
+        if($request->filled('year')) $filters['Year'] = $request->year;
 
-        $pdf = Pdf::loadView('superadmin.accounts.generateInvoice.list_pdf', compact('bookings', 'title'));
+        $pdf = Pdf::loadView('superadmin.accounts.generateInvoice.list_pdf', compact('bookings', 'title', 'filters'));
         return $pdf->download('invoices_list.pdf');
     }
 
@@ -820,6 +840,26 @@ class GenerateInvoiceStatusController extends Controller
     {
         $query = $this->getFilteredQuery($request);
         $bookings = $query->latest()->get();
-        return Excel::download(new BookingsExport($bookings), 'invoices_list.xlsx');
+        $filters = [];
+        if($request->filled('search')) $filters['Search'] = $request->search;
+        if($request->filled('marketing_person')){
+            $user = User::where('user_code', $request->marketing_person)->orWhere('id', $request->marketing_person)->first(['name','user_code']);
+            $filters['Marketing Person'] = $user ? ($user->name . ($user->user_code ? ' ('.$user->user_code.')' : '')) : $request->marketing_person;
+        }
+        if($request->filled('client_id')){
+            $client = Client::find($request->client_id);
+            $filters['Client'] = $client ? $client->name : $request->client_id;
+        }
+        if($request->filled('department')){
+            $dept = Department::find($request->department);
+            $filters['Department'] = $dept ? $dept->name : $request->department;
+        }
+        if($request->filled('month')){
+            $m = is_numeric($request->month) ? (int)$request->month : null;
+            if($m){ try{ $filters['Month'] = Carbon::create()->month($m)->format('F'); }catch(\Exception $e){ $filters['Month'] = $request->month; } }
+        }
+        if($request->filled('year')) $filters['Year'] = $request->year;
+
+        return Excel::download(new BookingsExport($bookings, $filters), 'invoices_list.xlsx');
     }
 }

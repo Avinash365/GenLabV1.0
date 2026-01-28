@@ -160,6 +160,24 @@
                     </div>
                 </div>
 
+                <!-- Footer branding settings -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Footer Copyright</label>
+                            <input type="text" name="footer_copyright" value="{{ old('footer_copyright', optional($setting)->footer_copyright) }}" class="form-control" placeholder="{{ date('Y') }} &amp;copy; Company Name. All Right Reserved">
+                            <small class="text-muted d-block mt-1">Shown on the left side of the footer; may include year and company name.</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Footer Branding / Credit</label>
+                            <input type="text" name="footer_credit" value="{{ old('footer_credit', optional($setting)->footer_credit) }}" class="form-control" placeholder="Designed &amp; Developed By Gen SkyTech">
+                            <small class="text-muted d-block mt-1">Shown on the right side of the footer (designer/developer credit).</small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="text-end">
                     <button type="button" id="reset_btn" class="btn btn-outline-secondary me-2">Reset</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
