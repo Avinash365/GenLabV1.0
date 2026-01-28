@@ -71,13 +71,13 @@
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Letter Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" name="letter_date" 
-                                        value="<?php echo e(old('letter_date', $booking->letter_date ? \Carbon\Carbon::parse($booking->letter_date)->format('Y-m-d') : '')); ?>" 
+                                        value="<?php echo e(old('letter_date', $booking->getRawOriginal('letter_date') ? substr($booking->getRawOriginal('letter_date'),0,10) : '')); ?>" 
                                         required>
                                 </div>
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Job Order Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" name="job_order_date" 
-                                        value="<?php echo e(old('job_order_date', $booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('Y-m-d') : '')); ?>" 
+                                        value="<?php echo e(old('job_order_date', $booking->getRawOriginal('job_order_date') ? substr($booking->getRawOriginal('job_order_date'),0,10) : '')); ?>" 
                                         required>
                                 </div>
                                 <div class="col-sm-4 col-12">
@@ -238,7 +238,7 @@
                                                                     type="date" 
                                                                     class="form-control" 
                                                                     name="booking_items[<?php echo e($index); ?>][job_order_date]" 
-                                                                    value="<?php echo e(!empty($item['job_order_date']) ? \Carbon\Carbon::parse($item['job_order_date'])->format('Y-m-d') : ''); ?>"
+                                                                    value="<?php echo e(!empty($item['job_order_date']) ? substr($item['job_order_date'], 0, 10) : ''); ?>"
 
                                                                     required
                                                                 >
@@ -261,7 +261,7 @@
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Lab Expected Date *</label>
                                                 <input type="date" name="booking_items[<?php echo e($index); ?>][lab_expected_date]" class="form-control" 
-                                                    value="<?php echo e(!empty($item['lab_expected_date']) ? \Carbon\Carbon::parse($item['lab_expected_date'])->format('Y-m-d') : ''); ?>" required>
+                                                    value="<?php echo e(!empty($item['lab_expected_date']) ? substr($item['lab_expected_date'],0,10) : ''); ?>" required>
                                             </div>
                                              <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Sample Details</label>

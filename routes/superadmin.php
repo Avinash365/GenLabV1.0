@@ -401,6 +401,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::patch('/without-bill-payments/{id}/settle', [WithoutBillTransactionController::class, 'settle'])->name('cashLetterPaymet.settle');
 
 
+        // Exports for Account Bookings (Letters)
+        Route::get('accountBookingsLetters/export/pdf', [AccountsLetterController::class, 'exportPdf'])->name('accountBookingsLetters.exportPdf');
+        Route::get('accountBookingsLetters/export/excel', [AccountsLetterController::class, 'exportExcel'])->name('accountBookingsLetters.exportExcel');
+
         Route::resource('accountBookingsLetters', AccountsLetterController::class);
         Route::get('accounts/payroll', [PayrollReviewController::class, 'index'])->name('accounts.payroll.index');
         Route::get('accounts/payroll/{cycle}/download-bank', [PayrollReviewController::class, 'downloadBankCsv'])->name('accounts.payroll.download-bank');

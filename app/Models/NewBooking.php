@@ -37,7 +37,7 @@ class NewBooking extends Model
     ];
 
     protected $casts = [
-        'job_order_date' => 'date',
+        // store job_order_date as raw DB date string to avoid timezone shifts
         'hold_status' => 'boolean',
     ];
 
