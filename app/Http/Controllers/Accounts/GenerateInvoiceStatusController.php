@@ -580,7 +580,6 @@ class GenerateInvoiceStatusController extends Controller
     {
         try {
 
-
             $invoice = Invoice::with('bookingItems')->findOrFail($id);
 
             $bookingIds = explode(',', $invoice->invoice_booking_ids);
@@ -689,7 +688,19 @@ class GenerateInvoiceStatusController extends Controller
             $qrcode = $this->invoicePdfService->generateQrCode($invoice->total_amount, "Invoice #{$invoice->invoice_no}");
             $qrcodeBase64 = 'data:image/svg+xml;base64,' . $qrcode;
 
-            $html = str_replace('__QR_CODE_IMAGE__', $qrcodeBase64, $html);
+                if (str_contains($html, '__QR_CODE_IMAGE__')) {
+                    // First time (template)
+                    $html = str_replace('__QR_CODE_IMAGE__', $qrcodeBase64, $html);
+                
+                    } else {
+                    //  Second time onwards (already replaced HTML)
+                    $html = preg_replace(
+                        '/(<img[^>]+src=")data:image\/svg\+xml;base64[^"]*(")/',
+                        '$1' . $qrcodeBase64 . '$2',
+                        $html,
+                        1
+                    );
+                }
 
             if (!empty($invoice->invoice_booking_ids)) {
                 $html = str_replace('__ACTION_URL__', route('superadmin.invoices.bulkUpdate', $invoice->id), $html); 
@@ -709,6 +720,8 @@ class GenerateInvoiceStatusController extends Controller
 
     public function downloadInvoice(Invoice $invoice)
     {
+        // dd();
+        // exit;  
         return $this->invoicePdfService->generateHtml2Pdf($invoice);
     }
 

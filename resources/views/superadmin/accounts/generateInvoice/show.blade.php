@@ -330,7 +330,7 @@
                             @else
                                 @for($i = 1; $i <= 9; $i++)
                                     <tr class="item-row">
-                                        <td>{{ $i }}</td>
+                                        <!-- <td>{{ $i }}</td> -->
                                         <td contenteditable="true" class="editable description"></td>
                                         <td></td>
                                         <td></td>

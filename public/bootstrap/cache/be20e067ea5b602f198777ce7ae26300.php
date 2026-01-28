@@ -274,7 +274,7 @@
                     <div class="fw-semibold mb-2">Calculation Options</div>
 
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="enableRoundOff" checked>
+                        <input class="form-check-input" type="checkbox" id="enableRoundOff" >
                         <label class="form-check-label fw-semibold">
                             Enable Round Off
                         </label>
@@ -282,7 +282,7 @@
 
                     <div class="form-check">
                         <input class="form-check-input" type="checkbox" id="enableDiscount" checked>
-                        <label class="form-check-label fw-semibold">
+                        <label class="form-check-label fw-semibold" >
                             Discount Applicable
                         </label>
                     </div>

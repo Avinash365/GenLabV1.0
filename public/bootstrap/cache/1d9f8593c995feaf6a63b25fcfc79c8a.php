@@ -340,7 +340,7 @@
                             <?php else: ?>
                                 <?php for($i = 1; $i <= 9; $i++): ?>
                                     <tr class="item-row">
-                                        <td><?php echo e($i); ?></td>
+                                        <!-- <td><?php echo e($i); ?></td> -->
                                         <td contenteditable="true" class="editable description"></td>
                                         <td></td>
                                         <td></td>
@@ -540,14 +540,14 @@
                     <div class="fw-semibold mb-2">Calculation Options</div>
 
                     <div class="form-check mb-2">
-                        <input class="form-check-input" type="checkbox" id="enableRoundOff" checked>
+                        <input class="form-check-input" type="checkbox" id="enableRoundOff" >
                         <label class="form-check-label fw-semibold">
                             Enable Round Off
                         </label>
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="enableDiscount" checked>
+                        <input class="form-check-input" type="checkbox" id="enableDiscount" >
                         <label class="form-check-label fw-semibold">
                             Discount Applicable
                         </label>

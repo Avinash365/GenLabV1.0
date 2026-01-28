@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('bank_transactions', function (Blueprint $table) {
             $table->id();
+            $table->bigInteger('bank_id');
             $table->date('date')->nullable();
             $table->string('tran_id')->nullable();
             $table->string('transaction_remarks')->nullable();

@@ -10,6 +10,7 @@ class BankTransaction extends Model
     use SoftDeletes;
 
     protected $fillable = [
+        'bank_id', 
         'date',
         'tran_id',
         'transaction_remarks',

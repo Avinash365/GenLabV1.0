@@ -58,7 +58,9 @@ class InvoicePdfService
     public function generateHtml2Pdf(Invoice $invoice, string $view = 'superadmin.accounts.generateInvoice.bill_pdf-new', string $filename = 'invoice.pdf'){
         
         $amount = $invoice->total_amount ?? '1';
-
+       
+        // dd($amount); 
+        // exit; 
         // Fetch UPI & Holder Name from DB
         $paymentSetting = PaymentSetting::latest()->first();
 
@@ -79,6 +81,12 @@ class InvoicePdfService
 
         $html = str_replace('__QR_CODE_IMAGE__',$qrcodeBase64,$html); 
         
+        $html = preg_replace(
+                        '/(<img[^>]+src=")data:image\/svg\+xml;base64[^"]*(")/',
+                        '$1' . $qrcodeBase64 . '$2',
+                        $html,
+                        1
+                    );
         
         $pdf = Pdf::loadView($view, compact('html'))->setPaper('A4');
 
