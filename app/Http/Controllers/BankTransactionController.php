@@ -63,7 +63,12 @@ class BankTransactionController extends Controller
         // Filter by year
         if ($request->filled('year')) {
             $query->whereYear('date', $request->year);
+        } 
+
+        if ($request->filled('bank_id')) {
+            $query->where('bank_id', $request->bank_id);
         }
+
 
         // Filter by month
         if ($request->filled('month')) {
@@ -153,13 +158,14 @@ class BankTransactionController extends Controller
     {
         $request->validate([
             'file' => 'required|mimes:csv,txt,xlsx',
+            'bank_id' => 'required',
         ]);
 
         // dd($request->file('file'));
         // exit;
 
         try {
-            Excel::import(new BankStatementImport, $request->file('file'));
+            Excel::import(new BankStatementImport($request->bank_id), $request->file('file'));
             return redirect()->back()->with('success', 'Bank statement imported successfully!');
 
         } catch (QueryException $e) {

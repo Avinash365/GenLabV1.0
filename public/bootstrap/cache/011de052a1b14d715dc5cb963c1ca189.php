@@ -785,10 +785,11 @@
                         </li>
                         <?php endif; ?>
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('qlr.view'))): ?>
-                        <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>QLR</span></a></li>
+                        <li><a href="#"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>ULR</span></a></li>
                         <?php endif; ?>
                         
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('client.view'))): ?>
+                        
                         <li><a href="<?php echo e(route('superadmin.clients.index')); ?>"><i class="ti ti-clipboard-list fs-16 me-2"></i><span>Client</span></a></li>
                         <?php endif; ?>
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('report-format.create'))): ?>

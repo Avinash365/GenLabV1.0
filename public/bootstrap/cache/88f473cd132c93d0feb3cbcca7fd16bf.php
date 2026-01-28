@@ -59,7 +59,7 @@
                 <div class="card-header bg-white py-3">
                     <h5 class="mb-0 fw-bold text-dark"><i class="fa fa-upload me-2 text-primary"></i>Upload Statement</h5>
                 </div>
-                <div class="card-body">
+                <!-- <div class="card-body">
                     <form action="<?php echo e(route('superadmin.bank.upload')); ?>" method="POST" enctype="multipart/form-data">
                         <?php echo csrf_field(); ?>
                         <div class="row align-items-center g-3">
@@ -75,7 +75,62 @@
                             </div>
                         </div>
                     </form>
-                </div>
+                </div> -->
+                <div class="card-body">
+    <form action="<?php echo e(route('superadmin.bank.upload')); ?>" method="POST" enctype="multipart/form-data">
+        <?php echo csrf_field(); ?>
+
+        <div class="row align-items-center g-3">
+
+            
+            <div class="col-md-4">
+                <label class="form-label text-muted small text-uppercase fw-bold">
+                    Select Bank
+                </label>
+                <select name="bank_id" class="form-select form-select-lg" required>
+                    <option value="">-- Select Bank --</option>
+
+                    <option value="1">State Bank of India (SBI)</option>
+                    <option value="2">HDFC Bank</option>
+                    <option value="3">ICICI Bank</option>
+                    <option value="4">Axis Bank</option>
+                    <option value="5">Punjab National Bank (PNB)</option>
+                    <option value="6">Bank of Baroda</option>
+                    <option value="7">Canara Bank</option>
+                    <option value="8">Union Bank of India</option>
+                    <option value="9">Kotak Mahindra Bank</option>
+                    <option value="10">IndusInd Bank</option>
+                    <option value="11">Yes Bank</option>
+                    <option value="12">IDFC First Bank</option>
+                    <option value="13">Indian Bank</option>
+                    <option value="14">Central Bank of India</option>
+                    <option value="15">UCO Bank</option>
+                    <option value="16">Bank of India</option>
+                    <option value="17">IDBI Bank</option>
+                    <option value="18">Federal Bank</option>
+                    <option value="19">South Indian Bank</option>
+                    <option value="20">RBL Bank</option>
+                </select>
+            </div>
+
+            
+            <div class="col-md-5">
+                <label class="form-label text-muted small text-uppercase fw-bold">
+                    Select File (CSV / Excel)
+                </label>
+                <input type="file" class="form-control form-control-lg" name="file" required>
+            </div>
+
+            
+            <div class="col-md-3">
+                <label class="form-label d-none d-md-block">&nbsp;</label>
+                <button type="submit" class="btn btn-primary btn-lg w-100">
+                    <i class="fa fa-cloud-upload-alt me-2"></i>Upload
+                </button>
+            </div>
+        </div>
+    </form>
+</div>
             </div>
         <?php endif; ?>
 
@@ -87,7 +142,7 @@
             <div class="card-body">
                 <form id="filterForm" action="<?php echo e(route('superadmin.bank.upload')); ?>" method="GET">
                     <div class="row g-3">
-                        <div class="col-md-4">
+                        <div class="col-md-2">
                             <label for="search" class="form-label fw-semibold">Search</label>
                             <div class="input-group">
                                 <span class="input-group-text bg-light"><i class="fa fa-search text-muted"></i></span>
@@ -96,6 +151,8 @@
                             </div>
                         </div>
 
+                
+ 
                         <div class="col-md-2">
                             <label for="status" class="form-label fw-semibold">Status</label>
                             <select name="status" class="form-select filter-select">
@@ -119,6 +176,35 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
+                        <div class="col-md-2">
+                <label class="form-label text-muted small text-uppercase fw-bold">
+                    Select Bank
+                </label>
+                <select name="bank_id" class="form-select filter-select" >
+                    <option value="">-- Select Bank --</option>
+
+                    <option value="1">State Bank of India (SBI)</option>
+                    <option value="2">HDFC Bank</option>
+                    <option value="3">ICICI Bank</option>
+                    <option value="4">Axis Bank</option>
+                    <option value="5">Punjab National Bank (PNB)</option>
+                    <option value="6">Bank of Baroda</option>
+                    <option value="7">Canara Bank</option>
+                    <option value="8">Union Bank of India</option>
+                    <option value="9">Kotak Mahindra Bank</option>
+                    <option value="10">IndusInd Bank</option>
+                    <option value="11">Yes Bank</option>
+                    <option value="12">IDFC First Bank</option>
+                    <option value="13">Indian Bank</option>
+                    <option value="14">Central Bank of India</option>
+                    <option value="15">UCO Bank</option>
+                    <option value="16">Bank of India</option>
+                    <option value="17">IDBI Bank</option>
+                    <option value="18">Federal Bank</option>
+                    <option value="19">South Indian Bank</option>
+                    <option value="20">RBL Bank</option>
+                </select>
+            </div>
 
                         <div class="col-md-2">
                             <label for="month" class="form-label fw-semibold">Month</label>

@@ -281,8 +281,8 @@
                     </div>
 
                     <div class="form-check">
-                        <input class="form-check-input" type="checkbox" id="enableDiscount" >
-                        <label class="form-check-label fw-semibold">
+                        <input class="form-check-input" type="checkbox" id="enableDiscount" checked>
+                        <label class="form-check-label fw-semibold" >
                             Discount Applicable
                         </label>
                     </div>

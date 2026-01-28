@@ -154,15 +154,29 @@
                             </select>
 
                             
-                            <select name="client_id" class="form-control" style="width:180px">
-                                <option value="">Client</option>
+                        <div class="position-relative" style="width:180px; flex: 0 0 180px;">
+                            <input type="text"
+                                class="form-control client-search-input"
+                                placeholder="Search client..."
+                                autocomplete="off"
+                                value="<?php echo e(optional($clients->firstWhere('id', request('client_id')))->name ?? ''); ?>">
+
+                            <input type="hidden" name="client_id"
+                                class="client-id-hidden"
+                                value="<?php echo e(request('client_id')); ?>">
+
+                            <div class="dropdown-menu w-100 client-dropdown" style="max-height:500px; overflow:auto;">
                                 <?php $__currentLoopData = $clients; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $client): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($client->id); ?>" <?php echo e(request('client_id') == $client->id ? 'selected' : ''); ?>>
+                                    <button type="button"
+                                        class="dropdown-item client-option"
+                                        data-id="<?php echo e($client->id); ?>"
+                                        data-name="<?php echo e(strtolower($client->name)); ?>">
                                         <?php echo e($client->name); ?>
 
-                                    </option>
+                                    </button>
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
+                            </div>
+                        </div>
 
                             
                             <select name="month" class="form-control" style="width:140px">
@@ -603,6 +617,61 @@ document.addEventListener('DOMContentLoaded', function () {
         mainForm.submit();
     });
 
+});
+</script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    // Client searchable dropdown
+    const containers = document.querySelectorAll('.position-relative');
+    containers.forEach(container => {
+        const input = container.querySelector('.client-search-input');
+        const hidden = container.querySelector('.client-id-hidden');
+        const dropdown = container.querySelector('.client-dropdown');
+        if (!input || !dropdown) return;
+
+        // Show dropdown on focus or click
+        const showDropdown = () => dropdown.classList.add('show');
+        const hideDropdown = () => dropdown.classList.remove('show');
+
+        input.addEventListener('focus', showDropdown);
+        input.addEventListener('click', showDropdown);
+
+        // Filter options
+        input.addEventListener('input', function () {
+            const q = this.value.toLowerCase().trim();
+            const options = dropdown.querySelectorAll('.client-option');
+            options.forEach(opt => {
+                const name = (opt.getAttribute('data-name') || '').toLowerCase();
+                if (!q || name.includes(q)) {
+                    opt.style.display = '';
+                } else {
+                    opt.style.display = 'none';
+                }
+            });
+        });
+
+        // Click option
+        dropdown.addEventListener('click', function (e) {
+            const btn = e.target.closest('.client-option');
+            if (!btn) return;
+            const id = btn.getAttribute('data-id');
+            const name = btn.innerText.trim();
+            hidden.value = id;
+            input.value = name;
+
+            hideDropdown();
+
+            // submit the parent filter form if present
+            const form = document.getElementById('invoiceFilterForm');
+            if (form) form.submit();
+        });
+
+        // click outside to close
+        document.addEventListener('click', function (e) {
+            if (!container.contains(e.target)) hideDropdown();
+        });
+    });
 });
 </script>
 <?php $__env->stopPush(); ?>

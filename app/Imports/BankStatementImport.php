@@ -14,6 +14,12 @@ class BankStatementImport implements ToModel, WithHeadingRow
     /**
      * Clean amount fields (NA, empty, commas)
      */
+    protected $bankId;   //  store bank_id
+
+    public function __construct($bankId)
+    {
+        $this->bankId = $bankId;
+    }
     private function cleanAmount($value)
     {
         if (
@@ -95,6 +101,8 @@ class BankStatementImport implements ToModel, WithHeadingRow
         }
 
         return new BankTransaction([
+            'bank_id' => $this->bankId,
+            
             'date' => $date,
 
             'tran_id' => $row['tran_id'] ?? null,
