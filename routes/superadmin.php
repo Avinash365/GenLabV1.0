@@ -913,6 +913,12 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
         Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
         Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
+        // Dispatched-only listing and quick exports
+        Route::get('/dispatched', [ReportingController::class, 'dispatched'])->name('dispatched');
+        Route::get('/dispatched/export/pdf', [ReportingController::class, 'dispatchedExportPdf'])->name('dispatched.export.pdf');
+        Route::get('/dispatched/export/excel', [ReportingController::class, 'dispatchedExportExcel'])->name('dispatched.export.excel');
+        Route::post('/handover/{item}', [ReportingController::class, 'handoverOne'])->name('handoverOne');
+        Route::get('/handover/{item}/history', [ReportingController::class, 'handoverHistory'])->name('handover.history');
         Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
         Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
         Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');
