@@ -12,6 +12,10 @@ use App\Services\GetUserActiveDepartment;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Maatwebsite\Excel\Facades\Excel;
 use App\Exports\BookingItemsExport;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
+use App\Jobs\BookingItemsExportJob;
 
 class ShowBookingByLetterController extends Controller
 {
@@ -215,5 +219,59 @@ class ShowBookingByLetterController extends Controller
         }
 
         return Excel::download(new BookingItemsExport($items), 'booking_items.xlsx');
+    }
+
+    /**
+     * Queue an export job and return a token to poll for completion.
+     */
+    public function queueExport(Request $request)
+    {
+        $type = $request->input('type', 'excel');
+
+        $filters = $request->only(['search','month','year','department','marketing','use_created_at']);
+
+        $token = (string) Str::uuid();
+
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $userId = $user->id ?? null;
+
+        // dispatch job
+        BookingItemsExportJob::dispatch($filters, $type, $token, $userId)->onQueue('exports');
+
+        return response()->json(['token' => $token], 202);
+    }
+
+    /**
+     * Check export status for a token.
+     */
+    public function exportStatus($token)
+    {
+        $key = 'export_result_' . $token;
+        $result = Cache::get($key);
+        if (!$result) {
+            return response()->json(['status' => 'pending'], 202);
+        }
+        return response()->json(['status' => 'ready', 'result' => $result]);
+    }
+
+    /**
+     * Download generated export file by token.
+     */
+    public function downloadExport($token)
+    {
+        $key = 'export_result_' . $token;
+        $result = Cache::get($key);
+        if (!$result || empty($result['path'])) {
+            abort(404);
+        }
+
+        $path = $result['path'];
+        $fileName = $result['filename'] ?? basename($path);
+
+        if (!Storage::exists($path)) {
+            abort(404);
+        }
+
+        return Storage::download($path, $fileName);
     }
 }

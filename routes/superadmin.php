@@ -208,6 +208,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::delete('/bookingByLetter/{bookingItem}', [ShowBookingByLetterController::class, 'destroy'])->name('bookingByLetter.destroy');
             Route::get('/bookingByLetter/export/pdf', [ShowBookingByLetterController::class, 'exportPdf'])->name('bookingByLetter.exportPdf');
             Route::get('/bookingByLetter/export/excel', [ShowBookingByLetterController::class, 'exportExcel'])->name('bookingByLetter.exportExcel');
+            Route::post('/bookingByLetter/export/queue', [ShowBookingByLetterController::class, 'queueExport'])->name('bookingByLetter.queueExport');
+            Route::get('/bookingByLetter/export/status/{token}', [ShowBookingByLetterController::class, 'exportStatus'])->name('bookingByLetter.exportStatus');
+            Route::get('/bookingByLetter/export/download/{token}', [ShowBookingByLetterController::class, 'downloadExport'])->name('bookingByLetter.downloadExport');
 
             Route::get('/superadmin/bookings/autocomplete', [BookingController::class, 'getAutocomplete'])->name('autocomplete');
 

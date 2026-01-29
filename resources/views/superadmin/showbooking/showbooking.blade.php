@@ -19,6 +19,39 @@
 @endif 
 
 <div class="content">
+    <!-- Export overlay shown while preparing large exports -->
+    <div id="exportOverlay" style="display:none;">
+        <div class="export-overlay-backdrop"></div>
+        <div class="export-overlay-panel">
+            <div class="export-spinner" aria-hidden="true"></div>
+            <div class="export-text">
+                <div class="export-title">Preparing export...</div>
+                <div class="export-estimate" id="exportEstimate">Estimated time: calculating...</div>
+            </div>
+        </div>
+    </div>
+    <!-- Confirmation modal for large exports -->
+    <div class="modal fade" id="exportConfirmModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-body">
+                    <div class="d-flex align-items-start gap-3">
+                        <div class="bg-warning text-white rounded-circle d-flex align-items-center justify-content-center" style="width:44px;height:44px;">
+                            <i class="ti ti-alert" style="font-size:20px"></i>
+                        </div>
+                        <div>
+                            <h5 class="mb-1">Large export</h5>
+                            <p class="mb-0" id="exportConfirmMessage">This export may be very large.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer gap-2">
+                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="button" id="exportConfirmProceed" class="btn btn-primary">Proceed with export</button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="page-header">
         <div class="add-item d-flex">
             <div class="page-title">
@@ -28,10 +61,23 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.showbooking.exportPdf', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v))) }}" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+                @php
+                    $exportParams = array_filter([
+                        'department' => $department?->id,
+                        'search' => request('search'),
+                        'month' => request('month'),
+                        'year' => request('year'),
+                        'marketing' => request('marketing'),
+                        'use_created_at' => request('use_created_at'),
+                    ], fn($v) => filled($v));
+                    $exportQ = http_build_query($exportParams);
+                    $totalItems = isset($bookings) && method_exists($bookings, 'total') ? $bookings->total() : (is_countable($bookings) ? count($bookings) : 0);
+                    $exportLimit = 1000;
+                @endphp
+                <a href="{{ route('superadmin.showbooking.exportPdf') }}{{ $exportQ ? ('?'.$exportQ) : '' }}" class="no-loader export-link export-pdf" data-bs-toggle="tooltip" title="PDF" data-total="{{ $totalItems }}" data-has-filters="{{ count($exportParams) ? 1 : 0 }}" data-limit="{{ $exportLimit }}"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <a href="{{ route('superadmin.showbooking.exportExcel', array_filter(['department' => $department?->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at'), 'page' => request('page', 1), 'perPage' => request('perPage', 25)], fn($v) => filled($v))) }}" class="no-loader" data-bs-toggle="tooltip" title="Excel">
+                <a href="{{ route('superadmin.showbooking.exportExcel') }}{{ $exportQ ? ('?'.$exportQ) : '' }}" class="no-loader export-link export-excel" data-bs-toggle="tooltip" title="Excel" data-total="{{ $totalItems }}" data-has-filters="{{ count($exportParams) ? 1 : 0 }}" data-limit="{{ $exportLimit }}">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
                         <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
                     </svg>
@@ -327,6 +373,14 @@
                     .reference-col { min-width: 120px; }
                     .marketing-col { min-width: 120px; }
                 }
+                /* Export overlay styles */
+                #exportOverlay { position: fixed; inset: 0; z-index: 2000; display: none; }
+                .export-overlay-backdrop { position: absolute; inset: 0; background: rgba(0,0,0,0.45); }
+                .export-overlay-panel { position: absolute; left: 50%; top: 40%; transform: translate(-50%, -40%); background: #fff; padding: 24px 28px; border-radius: 8px; display:flex; align-items:center; gap:16px; box-shadow: 0 8px 30px rgba(0,0,0,0.25); min-width: 300px; }
+                .export-spinner { width:40px; height:40px; border:4px solid #e9e9e9; border-top-color: #007bff; border-radius:50%; animation: spin 1s linear infinite; }
+                @keyframes spin { to { transform: rotate(360deg); } }
+                .export-text .export-title { font-weight:600; margin-bottom:6px; }
+                .export-text .export-estimate { color:#666; font-size:0.95rem; }
             </style>
             @endpush
 
@@ -379,4 +433,62 @@
         </div>
     </div>
 </div>
+<script>
+    // Export handling: show modal for large exports, display overlay with estimate, then download via fetch
+    document.addEventListener('DOMContentLoaded', function () {
+        const links = document.querySelectorAll('.export-link');
+        links.forEach(link => {
+            link.addEventListener('click', function (e) {
+                const total = parseInt(this.dataset.total || '0', 10);
+                const hasFilters = this.dataset.hasFilters === '1';
+                const limit = parseInt(this.dataset.limit || '1000', 10);
+                const href = this.href;
+
+                if (total > limit && !hasFilters) {
+                    e.preventDefault();
+                    const modalEl = document.getElementById('exportConfirmModal');
+                    const msgEl = document.getElementById('exportConfirmMessage');
+                    const proceedBtn = document.getElementById('exportConfirmProceed');
+                    const formatted = total.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+                    msgEl.textContent = `This export would include ${formatted} rows and may be too large. Apply filters to reduce the data before exporting.`;
+                    const bsModal = new bootstrap.Modal(modalEl);
+                    bsModal.show();
+                    const handler = function () { bsModal.hide(); startExport(href, total); proceedBtn.removeEventListener('click', handler); };
+                    proceedBtn.addEventListener('click', handler);
+                    return;
+                }
+
+                e.preventDefault();
+                startExport(href, total);
+            });
+        });
+    });
+
+    function startExport(href, total) {
+        const overlay = document.getElementById('exportOverlay');
+        const estimateEl = document.getElementById('exportEstimate');
+        const rowsPerSecond = 50;
+        const secs = Math.max(3, Math.ceil(total / rowsPerSecond));
+        function formatTime(s) { if (s < 60) return s + ' seconds'; const m = Math.floor(s/60); const r = s % 60; return m + ' min ' + (r ? r + ' sec' : ''); }
+        if (overlay && estimateEl) { estimateEl.textContent = 'Estimated time: ' + formatTime(secs); overlay.style.display = 'block'; }
+
+        const controller = new AbortController();
+        const signal = controller.signal;
+        const timeoutMs = 5 * 60 * 1000;
+        const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+
+        fetch(href, { credentials: 'same-origin', signal })
+            .then(response => { clearTimeout(timeoutId); if (!response.ok) throw new Error('Server error: ' + response.status); return response.blob().then(blob => ({ blob, response })); })
+            .then(({ blob, response }) => {
+                let filename = 'export';
+                const disp = response.headers.get('content-disposition') || '';
+                const m1 = /filename\*=(?:UTF-8'')?([^;\n]+)/i.exec(disp);
+                const m2 = /filename=\"?([^;\n\"]+)\"?/i.exec(disp);
+                if (m1) filename = decodeURIComponent(m1[1]); else if (m2) filename = m2[1];
+                const url = window.URL.createObjectURL(blob); const a = document.createElement('a'); a.href = url; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(url);
+            })
+            .catch(err => { if (err.name === 'AbortError') alert('Export timed out. Try applying more filters.'); else alert('Export failed: ' + (err.message || err)); })
+            .finally(() => { if (overlay) overlay.style.display = 'none'; });
+    }
+</script>
 @endsection
