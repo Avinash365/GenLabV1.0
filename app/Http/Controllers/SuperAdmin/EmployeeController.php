@@ -356,9 +356,9 @@ class EmployeeController extends Controller
             'gender' => ['nullable', 'string', 'max:40'],
             'blood_group' => ['nullable', 'string', 'max:10'],
             'profile_photo' => ['nullable', 'image', 'max:2048'],
-            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:5120'],
+            'resume' => ['nullable', 'file', 'mimes:pdf,doc,docx', 'max:25600'],
             'other_documents' => ['nullable', 'array'],
-            'other_documents.*' => ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:5120'],
+            'other_documents.*' => ['file', 'mimes:pdf,doc,docx,jpg,jpeg,png', 'max:25600'],
         ]);
 
         $payload = Arr::except($data, ['profile_photo', 'resume', 'other_documents']);
@@ -410,6 +410,46 @@ class EmployeeController extends Controller
         }
 
         return $file->store($directory, 'public');
+    }
+
+    /**
+     * Remove a single uploaded document from the employee's additional details.
+     */
+    public function destroyDocument(Request $request, Employee $employee, $index)
+    {
+        $index = (int) $index;
+
+        $additional = $employee->additional_details ?? [];
+        $documents = $additional['other_documents'] ?? [];
+
+        if (!isset($documents[$index])) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Document not found.'], 404);
+            }
+
+            return redirect()
+                ->route('superadmin.employees.show', $employee)
+                ->with('success', 'Document not found.');
+        }
+
+        $doc = $documents[$index];
+
+        if (!empty($doc['path'])) {
+            Storage::disk('public')->delete($doc['path']);
+        }
+
+        array_splice($documents, $index, 1);
+        $additional['other_documents'] = $documents;
+        $employee->additional_details = $additional;
+        $employee->save();
+
+        if ($request->expectsJson()) {
+            return response()->json(['success' => true, 'message' => 'Document removed successfully.']);
+        }
+
+        return redirect()
+            ->route('superadmin.employees.show', $employee)
+            ->with('success', 'Document removed successfully.');
     }
 
     protected function splitName(string $name): array

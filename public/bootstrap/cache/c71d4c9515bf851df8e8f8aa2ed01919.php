@@ -1,15 +1,33 @@
 <?php $__env->startSection('title', 'Employees'); ?>
 
 <?php $__env->startSection('content'); ?>
+
+
+    <?php if($errors->any()): ?>
+        <div class="alert alert-danger">
+            <ul class="mb-0">
+                <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <li><?php echo e($error); ?></li>
+               <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </ul>
+        </div>
+    <?php endif; ?>
+
+<?php 
+    $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
+
 <div class="content">
     <div class="d-flex flex-wrap justify-content-between align-items-center gap-3 mb-4">
         <div>
             <h4 class="mb-0">Employees</h4>
             <p class="text-muted mb-0">Manage employee profiles, documents, addresses and banking information.</p>
         </div>
-        <a href="<?php echo e(route('superadmin.employees.create')); ?>" class="btn btn-primary">
-            <i class="ti ti-plus me-2"></i>Add Employee
-        </a>
+        <?php if($user && ($user instanceof Admin || $user->hasPermission('employee.create'))): ?>
+            <a href="<?php echo e(route('superadmin.employees.create')); ?>" class="btn btn-primary">
+                <i class="ti ti-plus me-2"></i>Add Employee
+            </a>
+        <?php endif; ?>
     </div>
 
     <?php if(session('success')): ?>
@@ -94,10 +112,12 @@
                                 <?php echo e($employee->employment_status); ?>
 
                             </span>
-                            <a href="<?php echo e(route('superadmin.employees.show', $employee)); ?>" class="btn btn-sm btn-outline-primary">
-                                Manage
-                                <i class="ti ti-arrow-up-right ms-1"></i>
-                            </a>
+                            <?php if($user && ($user instanceof Admin || $user->hasPermission('employee.edit'))): ?>
+                                <a href="<?php echo e(route('superadmin.employees.show', $employee)); ?>" class="btn btn-sm btn-outline-primary">
+                                    Manage
+                                    <i class="ti ti-arrow-up-right ms-1"></i>
+                                </a>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>

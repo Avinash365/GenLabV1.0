@@ -253,6 +253,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::resource('importantLetter', ImportantLetterController::class);
     Route::resource('documents', DocumentController::class);
     Route::resource('employees', EmployeeController::class);
+    Route::delete('employees/{employee}/documents/{index}', [EmployeeController::class, 'destroyDocument'])->name('employees.documents.destroy')->middleware('permission:employees.edit');
     Route::resource('calibrations', CalibrationController::class);
     Route::resource('iscodes', ISCodeController::class);
 
