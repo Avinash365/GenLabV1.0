@@ -293,7 +293,9 @@ class InvoiceController extends Controller
             'invoice_data' => 'required',
             'invoice_type' => 'required|string',
             'invoice_html' => 'required|string',
-        ]);
+        ]); 
+
+        
 
         $invoiceData = json_decode($request->invoice_data, true);
 
@@ -484,7 +486,7 @@ class InvoiceController extends Controller
 
             $invoice_no = $request->input('invoice_no') ?? $invoice->invoice_no;
             $bookingId = $request->input('booking_id') ?? $invoice->new_booking_id;
-            $invoiceType = $request->input('typeOption') ?? $invoice->type;
+            $invoiceType = $request->input('invoice_type') ?? $invoice->type;
 
             $invoiceData = $this->billingService->generateInvoiceData($request);
 
