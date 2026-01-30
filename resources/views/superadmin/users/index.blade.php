@@ -72,39 +72,7 @@
                                                     </button>
 
                                                     <!-- Permissions Modal -->
-                                                    <div class="modal fade" id="permissionsModal{{ $user->id }}" tabindex="-1" aria-labelledby="permissionsModalLabel{{ $user->id }}" aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="permissionsModalLabel{{ $user->id }}">
-                                                                        Permissions for {{ $user->name }}
-                                                                    </h5>
-                                                                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span> 
-                                                            </button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <form action="{{ route('superadmin.users.updatePermissions', $user->id) }}" method="POST">
-                                                                        @csrf
-                                                                        @method('PUT')
-
-                                                                        {{-- Show all permissions, pre-check only user's permissions --}}
-                                                                        <x-permissions-matrix 
-                                                                            :permissions="$permissions" 
-                                                                            :oldPermissions="old('permissions', $user->permissions->pluck('id') ?? [])" 
-                                                                        />
-
-                                                                        <div class="mt-3 text-end">
-                                                                            <button type="submit" class="btn btn-primary">
-                                                                                Update
-                                                                            </button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                    
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                   
                                                 @else
                                                     <span class="text-muted">No permissions available</span>
                                                 @endif
@@ -198,6 +166,39 @@
                                                         </div>
                                                     </div>
                                                 </div> 
+                                                 <div class="modal fade" id="permissionsModal{{ $user->id }}" tabindex="-1" aria-labelledby="permissionsModalLabel{{ $user->id }}" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="permissionsModalLabel{{ $user->id }}">
+                                                                        Permissions for {{ $user->name }}
+                                                                    </h5>
+                                                                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span> 
+                                                            </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <form action="{{ route('superadmin.users.updatePermissions', $user->id) }}" method="POST">
+                                                                        @csrf
+                                                                        @method('PUT')
+
+                                                                        {{-- Show all permissions, pre-check only user's permissions --}}
+                                                                        <x-permissions-matrix 
+                                                                            :permissions="$permissions" 
+                                                                            :oldPermissions="old('permissions', $user->permissions->pluck('id') ?? [])" 
+                                                                        />
+
+                                                                        <div class="mt-3 text-end">
+                                                                            <button type="submit" class="btn btn-primary">
+                                                                                Update
+                                                                            </button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                    
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
                                                 <!-- Send Notification Modal -->
                                                     <div class="modal fade" id="sendNotificationModal{{ $user->id }}" tabindex="-1"
@@ -276,7 +277,7 @@
                     onchange="this.form.submit()">
                 @foreach([5,10,25,50,100,250] as $size)
                     <option value="{{ $size }}"
-                        {{ request('perPage',25) == $size ? 'selected' : '' }}>
+                        {{ request('perPage',10) == $size ? 'selected' : '' }}>
                         {{ $size }}
                     </option>
                 @endforeach

@@ -73,56 +73,7 @@
                                                     </button>
 
                                                     <!-- Permissions Modal -->
-                                                    <div class="modal fade" id="permissionsModal<?php echo e($user->id); ?>" tabindex="-1" aria-labelledby="permissionsModalLabel<?php echo e($user->id); ?>" aria-hidden="true">
-                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
-                                                            <div class="modal-content">
-                                                                <div class="modal-header">
-                                                                    <h5 class="modal-title" id="permissionsModalLabel<?php echo e($user->id); ?>">
-                                                                        Permissions for <?php echo e($user->name); ?>
-
-                                                                    </h5>
-                                                                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
-                                                                <span aria-hidden="true">&times;</span> 
-                                                            </button>
-                                                                </div>
-                                                                <div class="modal-body">
-                                                                    <form action="<?php echo e(route('superadmin.users.updatePermissions', $user->id)); ?>" method="POST">
-                                                                        <?php echo csrf_field(); ?>
-                                                                        <?php echo method_field('PUT'); ?>
-
-                                                                        
-                                                                        <?php if (isset($component)) { $__componentOriginald8aafa9796c5652dedc7569d8a586d97 = $component; } ?>
-<?php if (isset($attributes)) { $__attributesOriginald8aafa9796c5652dedc7569d8a586d97 = $attributes; } ?>
-<?php $component = App\View\Components\PermissionsMatrix::resolve(['permissions' => $permissions,'oldPermissions' => old('permissions', $user->permissions->pluck('id') ?? [])] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
-<?php $component->withName('permissions-matrix'); ?>
-<?php if ($component->shouldRender()): ?>
-<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
-<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
-<?php $attributes = $attributes->except(\App\View\Components\PermissionsMatrix::ignoredParameterNames()); ?>
-<?php endif; ?>
-<?php $component->withAttributes([]); ?>
-<?php echo $__env->renderComponent(); ?>
-<?php endif; ?>
-<?php if (isset($__attributesOriginald8aafa9796c5652dedc7569d8a586d97)): ?>
-<?php $attributes = $__attributesOriginald8aafa9796c5652dedc7569d8a586d97; ?>
-<?php unset($__attributesOriginald8aafa9796c5652dedc7569d8a586d97); ?>
-<?php endif; ?>
-<?php if (isset($__componentOriginald8aafa9796c5652dedc7569d8a586d97)): ?>
-<?php $component = $__componentOriginald8aafa9796c5652dedc7569d8a586d97; ?>
-<?php unset($__componentOriginald8aafa9796c5652dedc7569d8a586d97); ?>
-<?php endif; ?>
-
-                                                                        <div class="mt-3 text-end">
-                                                                            <button type="submit" class="btn btn-primary">
-                                                                                Update
-                                                                            </button>
-                                                                        </div>
-                                                                    </form>
-                                                                </div>
-                                    
-                                                            </div>
-                                                        </div>
-                                                    </div>
+                                                   
                                                 <?php else: ?>
                                                     <span class="text-muted">No permissions available</span>
                                                 <?php endif; ?>
@@ -217,6 +168,56 @@
                                                         </div>
                                                     </div>
                                                 </div> 
+                                                 <div class="modal fade" id="permissionsModal<?php echo e($user->id); ?>" tabindex="-1" aria-labelledby="permissionsModalLabel<?php echo e($user->id); ?>" aria-hidden="true">
+                                                        <div class="modal-dialog modal-lg modal-dialog-centered">
+                                                            <div class="modal-content">
+                                                                <div class="modal-header">
+                                                                    <h5 class="modal-title" id="permissionsModalLabel<?php echo e($user->id); ?>">
+                                                                        Permissions for <?php echo e($user->name); ?>
+
+                                                                    </h5>
+                                                                    <button type="button" class="close" data-bs-dismiss="modal" aria-label="Close">
+                                                                <span aria-hidden="true">&times;</span> 
+                                                            </button>
+                                                                </div>
+                                                                <div class="modal-body">
+                                                                    <form action="<?php echo e(route('superadmin.users.updatePermissions', $user->id)); ?>" method="POST">
+                                                                        <?php echo csrf_field(); ?>
+                                                                        <?php echo method_field('PUT'); ?>
+
+                                                                        
+                                                                        <?php if (isset($component)) { $__componentOriginald8aafa9796c5652dedc7569d8a586d97 = $component; } ?>
+<?php if (isset($attributes)) { $__attributesOriginald8aafa9796c5652dedc7569d8a586d97 = $attributes; } ?>
+<?php $component = App\View\Components\PermissionsMatrix::resolve(['permissions' => $permissions,'oldPermissions' => old('permissions', $user->permissions->pluck('id') ?? [])] + (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag ? $attributes->all() : [])); ?>
+<?php $component->withName('permissions-matrix'); ?>
+<?php if ($component->shouldRender()): ?>
+<?php $__env->startComponent($component->resolveView(), $component->data()); ?>
+<?php if (isset($attributes) && $attributes instanceof Illuminate\View\ComponentAttributeBag): ?>
+<?php $attributes = $attributes->except(\App\View\Components\PermissionsMatrix::ignoredParameterNames()); ?>
+<?php endif; ?>
+<?php $component->withAttributes([]); ?>
+<?php echo $__env->renderComponent(); ?>
+<?php endif; ?>
+<?php if (isset($__attributesOriginald8aafa9796c5652dedc7569d8a586d97)): ?>
+<?php $attributes = $__attributesOriginald8aafa9796c5652dedc7569d8a586d97; ?>
+<?php unset($__attributesOriginald8aafa9796c5652dedc7569d8a586d97); ?>
+<?php endif; ?>
+<?php if (isset($__componentOriginald8aafa9796c5652dedc7569d8a586d97)): ?>
+<?php $component = $__componentOriginald8aafa9796c5652dedc7569d8a586d97; ?>
+<?php unset($__componentOriginald8aafa9796c5652dedc7569d8a586d97); ?>
+<?php endif; ?>
+
+                                                                        <div class="mt-3 text-end">
+                                                                            <button type="submit" class="btn btn-primary">
+                                                                                Update
+                                                                            </button>
+                                                                        </div>
+                                                                    </form>
+                                                                </div>
+                                    
+                                                            </div>
+                                                        </div>
+                                                    </div>
 
                                                 <!-- Send Notification Modal -->
                                                     <div class="modal fade" id="sendNotificationModal<?php echo e($user->id); ?>" tabindex="-1"
@@ -296,7 +297,7 @@
                     onchange="this.form.submit()">
                 <?php $__currentLoopData = [5,10,25,50,100,250]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                     <option value="<?php echo e($size); ?>"
-                        <?php echo e(request('perPage',25) == $size ? 'selected' : ''); ?>>
+                        <?php echo e(request('perPage',10) == $size ? 'selected' : ''); ?>>
                         <?php echo e($size); ?>
 
                     </option>

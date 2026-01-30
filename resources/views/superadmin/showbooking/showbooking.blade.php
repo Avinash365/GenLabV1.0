@@ -166,7 +166,7 @@
                             <td class="truncate-cell reference-col">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $booking->reference_no }}">{{ $booking->reference_no }}</div>
                             </td>
-                            <td class="marketing-col">{{ $booking->marketingPerson->name }}</td>
+                            <td class="marketing-col">{{ $booking->marketingPerson?->name ?? '' }}</td>
                             <td class="show-letter-col">
                                 @if($booking->upload_letter_path)
                                     <a href="{{url($booking->upload_letter_path)}}" target="_blank">View</a>

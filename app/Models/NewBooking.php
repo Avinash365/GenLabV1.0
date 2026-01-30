@@ -68,7 +68,7 @@ class NewBooking extends Model
 
     public function marketingPerson()
     {
-         return $this->belongsTo(User::class, 'marketing_id', 'user_code');
+         return $this->belongsTo(User::class, 'marketing_id', 'user_code')->withTrashed();;
     }
 
     public function generatedInvoice()

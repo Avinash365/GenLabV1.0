@@ -169,7 +169,7 @@
                             <td class="truncate-cell reference-col">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="<?php echo e($booking->reference_no); ?>"><?php echo e($booking->reference_no); ?></div>
                             </td>
-                            <td class="marketing-col"><?php echo e($booking->marketingPerson->name); ?></td>
+                            <td class="marketing-col"><?php echo e($booking->marketingPerson?->name ?? ''); ?></td>
                             <td class="show-letter-col">
                                 <?php if($booking->upload_letter_path): ?>
                                     <a href="<?php echo e(url($booking->upload_letter_path)); ?>" target="_blank">View</a>
@@ -234,8 +234,17 @@
                                     <a href="<?php echo e(route('superadmin.bookings.cards.all', [$booking->id])); ?>"
                                         target="_blank"
                                         class="border rounded d-flex align-items-center p-2 text-decoration-none me-2"
+                                        data-bs-toggle="tooltip" title="View Job card"
                                         aria-label="View booking">
                                             <i data-feather="eye" class="feather-eye"></i>
+                                    </a>
+
+                                    <a href="<?php echo e(route('superadmin.bookings.cards.client', [$booking->id])); ?>"
+                                        target="_blank"
+                                        class="border rounded d-flex align-items-center p-2 text-decoration-none me-2"
+                                        data-bs-toggle="tooltip" title="View Client card"
+                                        aria-label="View booking">
+                                            <i data-feather="user" class="feather-user"></i>
                                     </a>
 
                                     <a href="<?php echo e(route('superadmin.bookings.edit', $booking->id)); ?>" 
