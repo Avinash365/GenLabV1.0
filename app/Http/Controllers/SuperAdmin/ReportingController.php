@@ -1189,7 +1189,17 @@ class ReportingController extends Controller
             if ($marketing) { $request->merge(['marketing' => $marketing]); }
         }
 
-        $q = BookingItem::query()->with(['booking','analyst','receivedBy'])->whereNotNull('dispatched_at');
+        $handOver = $request->boolean('hand_over');
+
+        if ($handOver) {
+            // Only show items that were submitted (handed over to client)
+            $q = BookingItem::query()->with(['booking','analyst','receivedBy'])->whereNotNull('submitted_to');
+        } else {
+            // Show dispatched items that have NOT yet been submitted to client
+            $q = BookingItem::query()->with(['booking','analyst','receivedBy'])
+                ->whereNotNull('dispatched_at')
+                ->whereNull('submitted_to');
+        }
 
         if ($search !== '') {
             $q->where(function($qq) use ($search) {
@@ -1209,11 +1219,21 @@ class ReportingController extends Controller
             $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
         }
 
-        $items = $q->latest('dispatched_at')->paginate($perPage)->withQueryString();
+        // Order appropriately
+        if ($handOver) {
+            $items = $q->latest('submitted_at')->paginate($perPage)->withQueryString();
+        } else {
+            $items = $q->latest('dispatched_at')->paginate($perPage)->withQueryString();
+        }
 
         $marketingPersons = \App\Models\User::whereHas('marketingBookings')->orderBy('name')->get(['id','name','user_code']);
         $isAdmin = Auth::guard('admin')->check();
         $isEmpty = ($items->total() === 0);
+
+        $viewPath = resource_path('views/superadmin/Dispatched Reports/dispatched.blade.php');
+        if (file_exists($viewPath)) {
+            return view()->file($viewPath, compact('items','search','month','year','marketingPersons','isAdmin','isEmpty'));
+        }
 
         return view('superadmin.reporting.dispatched', compact('items','search','month','year','marketingPersons','isAdmin','isEmpty'));
     }
@@ -1232,7 +1252,12 @@ class ReportingController extends Controller
             if ($marketing) { $request->merge(['marketing' => $marketing]); }
         }
 
-        $q = BookingItem::query()->with(['booking'])->whereNotNull('dispatched_at');
+        $pdfHandOver = $request->boolean('hand_over');
+        if ($pdfHandOver) {
+            $q = BookingItem::query()->with(['booking'])->whereNotNull('submitted_to');
+        } else {
+            $q = BookingItem::query()->with(['booking'])->whereNotNull('dispatched_at')->whereNull('submitted_to');
+        }
         if ($search !== '') {
             $q->where(function($qq) use ($search) {
                 $qq->where('job_order_no', 'like', "%{$search}%")
@@ -1269,7 +1294,12 @@ class ReportingController extends Controller
             if ($marketing) { $request->merge(['marketing' => $marketing]); }
         }
 
-        $q = BookingItem::query()->with(['booking'])->whereNotNull('dispatched_at');
+        $excelHandOver = $request->boolean('hand_over');
+        if ($excelHandOver) {
+            $q = BookingItem::query()->with(['booking'])->whereNotNull('submitted_to');
+        } else {
+            $q = BookingItem::query()->with(['booking'])->whereNotNull('dispatched_at')->whereNull('submitted_to');
+        }
         if ($search !== '') {
             $q->where(function($qq) use ($search) {
                 $qq->where('job_order_no', 'like', "%{$search}%")
@@ -1406,6 +1436,9 @@ class ReportingController extends Controller
             $item->dispatched_by_id = $dispatcherId;
         }
     $item->dispatched_by_name = $dispatcherName;
+    if (Schema::hasColumn('booking_items', 'status')) {
+        $item->status = 'Dispatched';
+    }
     foreach ($meta as $k => $v) { $item->{$k} = $v; }
         $item->save();
         $item->refresh();
@@ -1430,21 +1463,51 @@ class ReportingController extends Controller
         $payload = $request->validate([
             'ids' => ['required', 'array'],
             'ids.*' => ['integer', 'exists:booking_items,id'],
-            'meta.dispatch_by' => ['required','string','max:100'],
-            'meta.dispatch_person_name' => ['required','string','max:150'],
-            'meta.dispatch_assignment_no' => ['required','string','max:100'],
+            // dispatch meta (existing)
+            'meta.dispatch_by' => ['sometimes','string','max:100'],
+            'meta.dispatch_person_name' => ['sometimes','string','max:150'],
+            'meta.dispatch_assignment_no' => ['sometimes','string','max:100'],
             'meta.dispatch_comment' => ['nullable','string','max:2000'],
+            // submission (hand-over) meta
+            'meta.submitted_to' => ['sometimes','string','max:191'],
         ]);
         $dispatcherId = auth('web')->check() ? auth('web')->id() : null;
         $dispatcherName = auth('web')->check()
             ? optional(auth('web')->user())->name
             : (auth('admin')->check() ? optional(auth('admin')->user())->name : null);
-        $update = [
-            'dispatched_at' => now(),
-            'dispatched_by_name' => $dispatcherName,
-        ] + (Schema::hasColumn('booking_items', 'dispatched_by_id') ? ['dispatched_by_id' => $dispatcherId] : []);
+        $update = [];
+
+        // If dispatch meta provided, mark dispatched
+        if (!empty($payload['meta']['dispatch_person_name']) || !empty($payload['meta']['dispatch_by'])) {
+            $update = array_merge($update, [
+                'dispatched_at' => now(),
+                'dispatched_by_name' => $dispatcherName,
+            ] + (Schema::hasColumn('booking_items', 'dispatched_by_id') ? ['dispatched_by_id' => $dispatcherId] : []));
+            if (Schema::hasColumn('booking_items', 'status')) {
+                $update['status'] = 'Dispatched';
+            }
+        }
+
+        // Apply provided meta fields directly (for dispatch_* keys)
         if (!empty($payload['meta'])) {
-            foreach ($payload['meta'] as $k => $v) { $update[$k] = $v; }
+            foreach ($payload['meta'] as $k => $v) {
+                // skip submitted_to here (handled separately)
+                if ($k === 'submitted_to') continue;
+                $update[$k] = $v;
+            }
+        }
+
+        // If submission (hand-over) info provided, set submitted fields
+        if (!empty($payload['meta']['submitted_to'])) {
+            if (Schema::hasColumn('booking_items', 'submitted_to')) {
+                $update['submitted_to'] = $payload['meta']['submitted_to'];
+            }
+            if (Schema::hasColumn('booking_items', 'submitted_at')) {
+                $update['submitted_at'] = now();
+            }
+            if (Schema::hasColumn('booking_items', 'status')) {
+                $update['status'] = 'Submitted to client';
+            }
         }
         \App\Models\BookingItem::whereIn('id', $payload['ids'])->update($update);
 

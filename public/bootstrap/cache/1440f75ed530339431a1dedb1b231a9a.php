@@ -62,7 +62,9 @@
                     $marketingBookingActive = Request::routeIs('superadmin.bookings.bookingByLetter.marketing') || 
                                               Request::routeIs('superadmin.showbooking.marketing.*');
                     
-                    $marketingReportsActive = Request::routeIs('superadmin.reporting.*') && !Request::routeIs('superadmin.reporting.dispatched');
+                    $marketingReportsActive = Request::routeIs('superadmin.reporting.*') 
+                        && !Request::routeIs('superadmin.reporting.dispatched*') 
+                        && !Request::routeIs('superadmin.reporting.dispatch*');
                 ?>
                 <ul>
                     <li class="submenu-open">
@@ -140,13 +142,13 @@
 
                             <li>
                                 <a href="<?php echo e(route('superadmin.personal.expenses.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">
-                                    <i data-feather="dollar-sign" class="feather-16 me-2"></i><span>Expense</span>
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Expense</span>
                                 </a>
                             </li>
 
                             <li>
                                 <a href="<?php echo e(route('superadmin.marketing.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.quotations.*') ? 'active' : ''); ?>">
-                                    <i data-feather="file" class="feather-16 me-2"></i><span>Quotation</span>
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
                                 </a>
                             </li>
                             
@@ -165,13 +167,18 @@
 
                             <li>
                                 <a href="<?php echo e(route('superadmin.reporting.marketing.holdcancel.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.marketing.holdcancel.index') ? 'active' : ''); ?>">
-                                    <i data-feather="pause" class="feather-16 me-2"></i><span>Hold & Canceled</span>
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Hold & Canceled</span>
                                 </a>
                             </li>
 
                             <li>
-                                <a href="<?php echo e(route('superadmin.reporting.dispatched', $reportParams)); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatched') ? 'active' : ''); ?>">
+                                <a href="<?php echo e(route('superadmin.reporting.dispatched', $reportParams ?? [])); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatched*') ? 'active' : ''); ?>">
                                     <i class="ti ti-truck fs-16 me-2"></i><span>Dispatched Reports</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?php echo e(route('superadmin.reporting.dispatched', array_merge($reportParams ?? [], ['hand_over' => 1]))); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatched*') && request('hand_over') ? 'active' : ''); ?>">
+                                    <i class="ti ti-truck fs-16 me-2"></i><span>Client Hand Over</span>
                                 </a>
                             </li>
 
@@ -197,8 +204,9 @@
                                        Request::routeIs('superadmin.issue.*');
 
                     // Reporting
-                    // Consider reporting active for most reporting routes but exclude the dispatched-only page
-                    $reportingActive = Request::routeIs('superadmin.reporting.*') && !Request::routeIs('superadmin.reporting.dispatched');
+                    $reportingActive = Request::routeIs('superadmin.reporting.*') 
+                        && !Request::routeIs('superadmin.reporting.dispatched*') 
+                        && !Request::routeIs('superadmin.reporting.dispatch*');
 
                     // HR (already partially defined as $hrMenuOpen below, but let's consolidate)
                     $hrActive = Request::routeIs('superadmin.employees.*') || 
@@ -710,11 +718,11 @@
                         <?php endif; ?>
 
                         <!-- Other single links -->
-                        <!-- <li>
-                            <a href="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatch') ? 'active' : ''); ?>">
+                        <li>
+                            <a href="<?php echo e(route('superadmin.reporting.dispatch', $reportParams ?? [])); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatch*') ? 'active' : ''); ?>">
                                 <i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span>
                             </a>
-                        </li> -->
+                        </li>
 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('expense_personal.view') 
                                     || $user->hasPermission('expense_marketing.view') || 
