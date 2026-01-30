@@ -258,9 +258,9 @@ class BookingController extends Controller
                 );
             }
 
-            return redirect()
-                ->back()
-                ->with('success', 'Booking updated successfully!');
+            // Refresh model and stream booking cards PDF (same behaviour as store)
+            $new_booking->refresh();
+            return $this->bookingCardService->renderCardsForBooking($new_booking);
 
 
         } catch (\Exception $e) {

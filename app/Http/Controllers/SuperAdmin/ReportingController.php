@@ -9,6 +9,9 @@ use App\Models\BookingItem;
 use App\Models\NewBooking;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\DispatchedExport;
 use App\Models\ReportEditorFile;  
 use Illuminate\Support\Facades\Storage;
 
@@ -1165,6 +1168,222 @@ class ReportingController extends Controller
         $q->latest('id');
         $items = $q->paginate($perPage)->withQueryString();
         return view('superadmin.reporting.dispatch', compact('items', 'job', 'header', 'readyJobs', 'month', 'year', 'status'));
+    }
+
+    /**
+     * Dispatched reports listing (marketing-scoped).
+     */
+    public function dispatched(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $search = trim((string) $request->get('search'));
+        $month = $request->get('month');
+        $year = $request->get('year');
+        $perPage = (int) $request->get('per_page', $request->get('perPage', 25));
+        if (!in_array($perPage, [25, 50, 100, 250], true)) { $perPage = 25; }
+
+        // Enforce marketing scoping for marketing users
+        $marketing = $request->get('marketing');
+        if ($this->isMarketingUser($user)) {
+            $marketing = $marketing ?: ($user->user_code ?? $user->id ?? null);
+            if ($marketing) { $request->merge(['marketing' => $marketing]); }
+        }
+
+        $q = BookingItem::query()->with(['booking','analyst','receivedBy'])->whereNotNull('dispatched_at');
+
+        if ($search !== '') {
+            $q->where(function($qq) use ($search) {
+                $qq->where('job_order_no', 'like', "%{$search}%")
+                   ->orWhere('sample_description', 'like', "%{$search}%")
+                   ->orWhereHas('booking', function($b) use ($search) {
+                        $b->where('client_name', 'like', "%{$search}%");
+                   });
+            });
+        }
+
+        if (is_numeric($month)) { $q->whereMonth('dispatched_at', (int)$month); }
+        if (is_numeric($year)) { $q->whereYear('dispatched_at', (int)$year); }
+
+        if (!empty($marketing)) {
+            // Booking stores marketing person in `marketing_id` (user_code). Filter by that.
+            $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
+        }
+
+        $items = $q->latest('dispatched_at')->paginate($perPage)->withQueryString();
+
+        $marketingPersons = \App\Models\User::whereHas('marketingBookings')->orderBy('name')->get(['id','name','user_code']);
+        $isAdmin = Auth::guard('admin')->check();
+        $isEmpty = ($items->total() === 0);
+
+        return view('superadmin.reporting.dispatched', compact('items','search','month','year','marketingPersons','isAdmin','isEmpty'));
+    }
+
+    public function dispatchedExportPdf(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $search = trim((string) $request->get('search'));
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        // Enforce marketing scoping for marketing users
+        $marketing = $request->get('marketing');
+        if ($this->isMarketingUser($user)) {
+            $marketing = $marketing ?: ($user->user_code ?? $user->id ?? null);
+            if ($marketing) { $request->merge(['marketing' => $marketing]); }
+        }
+
+        $q = BookingItem::query()->with(['booking'])->whereNotNull('dispatched_at');
+        if ($search !== '') {
+            $q->where(function($qq) use ($search) {
+                $qq->where('job_order_no', 'like', "%{$search}%")
+                   ->orWhere('sample_description', 'like', "%{$search}%")
+                   ->orWhereHas('booking', function($b) use ($search) {
+                        $b->where('client_name', 'like', "%{$search}%");
+                   });
+            });
+        }
+        if (is_numeric($month)) { $q->whereMonth('dispatched_at', (int)$month); }
+        if (is_numeric($year)) { $q->whereYear('dispatched_at', (int)$year); }
+        if (!empty($marketing)) {
+            $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
+        }
+
+        $items = $q->latest('dispatched_at')->get();
+
+        $pdf = Pdf::loadView('superadmin.reporting.exports.dispatched_pdf', compact('items'));
+        $filename = 'dispatched_reports_'.now()->format('Ymd_His').'.pdf';
+        return $pdf->download($filename);
+    }
+
+    public function dispatchedExportExcel(Request $request)
+    {
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $search = trim((string) $request->get('search'));
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        // Enforce marketing scoping for marketing users
+        $marketing = $request->get('marketing');
+        if ($this->isMarketingUser($user)) {
+            $marketing = $marketing ?: ($user->user_code ?? $user->id ?? null);
+            if ($marketing) { $request->merge(['marketing' => $marketing]); }
+        }
+
+        $q = BookingItem::query()->with(['booking'])->whereNotNull('dispatched_at');
+        if ($search !== '') {
+            $q->where(function($qq) use ($search) {
+                $qq->where('job_order_no', 'like', "%{$search}%")
+                   ->orWhere('sample_description', 'like', "%{$search}%")
+                   ->orWhereHas('booking', function($b) use ($search) {
+                        $b->where('client_name', 'like', "%{$search}%");
+                   });
+            });
+        }
+        if (is_numeric($month)) { $q->whereMonth('dispatched_at', (int)$month); }
+        if (is_numeric($year)) { $q->whereYear('dispatched_at', (int)$year); }
+        if (!empty($marketing)) {
+            $q->whereHas('booking', function($b) use ($marketing) { $b->where('marketing_id', $marketing); });
+        }
+
+        $items = $q->latest('dispatched_at')->get();
+
+        $rows = [];
+        foreach ($items as $item) {
+            $rows[] = [
+                $item->job_order_no,
+                $item->booking?->client_name ?? '',
+                $item->sample_description,
+                optional($item->dispatched_at)->format('Y-m-d H:i:s'),
+                $item->dispatched_by_name ?? '',
+            ];
+        }
+
+        $filename = 'dispatched_reports_'.now()->format('Ymd_His').'.xlsx';
+        return Excel::download(new DispatchedExport($rows), $filename);
+    }
+
+    /**
+     * Record a handover to client for a single booking item.
+     */
+    public function handoverOne(Request $request, \App\Models\BookingItem $item)
+    {
+        $data = $request->validate([
+            'client_name' => ['required','string','max:255'],
+            'note' => ['nullable','string','max:2000'],
+        ]);
+
+        $user = Auth::guard('admin')->user() ?: Auth::user();
+        $byId = $user ? $user->id : null;
+        $byName = $user ? ($user->name ?? ($user->email ?? null)) : null;
+
+        // create handover record
+        $handover = \App\Models\BookingItemHandover::create([
+            'booking_item_id' => $item->id,
+            'client_name' => $data['client_name'],
+            'note' => $data['note'] ?? null,
+            'handed_over_by_id' => $byId,
+            'handed_over_by_name' => $byName,
+            // store explicit datetime string to avoid DB adapter casting issues
+            'handed_over_at' => now()->toDateTimeString(),
+        ]);
+
+        // ensure we have fresh values from DB (some DB drivers may modify default values)
+        $handover->refresh();
+
+        // update last handed over summary fields on booking_items if columns exist
+        if (\Illuminate\Support\Facades\Schema::hasColumn('booking_items', 'last_handed_over_at')) {
+            $item->last_handed_over_at = now();
+        }
+        if (\Illuminate\Support\Facades\Schema::hasColumn('booking_items', 'last_handed_over_to')) {
+            $item->last_handed_over_to = $data['client_name'];
+        }
+        // mark booking item status as handed over
+        $item->status = 'hand over';
+        $item->save();
+
+        // compute count and last handover info to return to AJAX client
+        $count = \App\Models\BookingItemHandover::where('booking_item_id', $item->id)->count();
+        $last = \App\Models\BookingItemHandover::where('booking_item_id', $item->id)
+            ->latest('handed_over_at')
+            ->first();
+
+        if ($request->ajax() || $request->wantsJson() || $request->expectsJson()) {
+            return response()->json([
+                'ok' => true,
+                'client' => $data['client_name'],
+                'at' => $handover->handed_over_at->toDateTimeString(),
+                'count' => $count,
+                'last' => $last ? [
+                    'client' => $last->client_name,
+                    'at' => optional($last->handed_over_at)->toDateTimeString(),
+                    'by' => $last->handed_over_by_name,
+                    'note' => $last->note,
+                ] : null,
+            ], 200);
+        }
+
+        return back()->with('success', 'Handed over to client: ' . $data['client_name']);
+    }
+
+    /**
+     * Return handover history for a booking item (JSON).
+     */
+    public function handoverHistory(Request $request, \App\Models\BookingItem $item)
+    {
+        $history = \App\Models\BookingItemHandover::where('booking_item_id', $item->id)
+            ->orderBy('handed_over_at', 'desc')
+            ->get(['id','client_name','note','handed_over_by_name','handed_over_at','created_at'])
+            ->map(function($h){
+                return [
+                    'id' => $h->id,
+                    'client' => $h->client_name,
+                    'note' => $h->note,
+                    'by' => $h->handed_over_by_name,
+                    'at' => optional($h->handed_over_at ?: $h->created_at)->toDateTimeString(),
+                ];
+            });
+
+        return response()->json(['ok' => true, 'history' => $history], 200);
     }
 
     /**

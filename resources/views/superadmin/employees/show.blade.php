@@ -44,6 +44,7 @@
             <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
         </div>
     @endif
+    <div id="ajax-alert-container"></div>
 
     <div class="row g-4">
         <div class="col-lg-4">
@@ -140,12 +141,15 @@
                                     <div class="collapse mt-2" id="otherDocumentsCollapse">
                                         <ul class="list-unstyled ps-4 mb-0 small">
                                             @foreach($employee->other_documents as $index => $document)
-                                                <li class="mb-2 d-flex align-items-center justify-content-between">
-                                                    <span class="text-truncate me-2 text-muted">{{ $document['name'] ?? 'Document '.($index + 1) }}</span>
-                                                    @if(isset($document['url']))
-                                                        <a href="{{ $document['url'] }}" target="_blank" class="btn btn-sm btn-light py-0 px-2" style="font-size: 11px;">View</a>
-                                                    @endif
-                                                </li>
+                                                    <li class="mb-2 d-flex align-items-center justify-content-between">
+                                                        <span class="text-truncate me-2 text-muted">{{ $document['name'] ?? 'Document '.($index + 1) }}</span>
+                                                        <div class="ms-auto d-flex gap-2">
+                                                            @if(isset($document['url']))
+                                                                <a href="{{ $document['url'] }}" target="_blank" class="btn btn-sm btn-light py-0 px-2" style="font-size: 11px;">View</a>
+                                                            @endif
+                                                            <button type="button" class="btn btn-sm btn-outline-danger btn-delete-doc py-0 px-2" style="font-size: 11px;" data-url="{{ route('superadmin.employees.documents.destroy', [$employee, $index]) }}" data-csrf="{{ csrf_token() }}">Delete</button>
+                                                        </div>
+                                                    </li>
                                             @endforeach
                                         </ul>
                                     </div>
@@ -470,7 +474,7 @@
                             <div class="col-md-6">
                                 <label class="form-label">Resume / CV</label>
                                 <input type="file" name="resume" class="form-control">
-                                <small class="text-muted">PDF or DOC up to 5MB.</small>
+                                <small class="text-muted">PDF or DOC up to 4MB.</small>
                                 @error('resume')<small class="text-danger d-block">{{ $message }}</small>@enderror
                             </div>
                             <div class="col-12">
@@ -479,7 +483,7 @@
                                     <span class="badge bg-light text-dark" id="other-documents-count">{{ $otherDocumentsCount }} uploaded</span>
                                 </label>
                                 <input type="file" name="other_documents[]" class="form-control" multiple data-count-target="#other-documents-count" data-existing-count="{{ $otherDocumentsCount }}">
-                                <small class="text-muted">Upload PDF, DOC, DOCX, JPG, or PNG files up to 5MB each.</small>
+                                <small class="text-muted">Upload PDF, DOC, DOCX, JPG, or PNG files up to 25MB each.</small>
                                 @php $otherDocErrors = collect($errors->get('other_documents.*'))->flatten(); @endphp
                                 @if($otherDocErrors->isNotEmpty())
                                     <small class="text-danger d-block">{{ $otherDocErrors->first() }}</small>
@@ -495,8 +499,9 @@
                                                 <i class="ti ti-paperclip me-2"></i>
                                                 <span class="flex-grow-1 text-truncate">{{ $documentName }}</span>
                                                 @if($documentUrl)
-                                                    <a href="{{ $documentUrl }}" target="_blank" class="btn btn-sm btn-outline-primary">View</a>
+                                                    <a href="{{ $documentUrl }}" target="_blank" class="btn btn-sm btn-outline-primary me-2">View</a>
                                                 @endif
+                                                <button type="button" class="btn btn-sm btn-outline-danger btn-delete-doc" data-url="{{ route('superadmin.employees.documents.destroy', [$employee, $index]) }}" data-csrf="{{ csrf_token() }}">Delete</button>
                                             </li>
                                         @endforeach
                                     </ul>
@@ -552,6 +557,127 @@ document.addEventListener('DOMContentLoaded', function () {
     updateLabel();
 
     otherInput.addEventListener('change', updateLabel);
+
+    // Attach delete handlers for documents shown inside the update form (uses fetch to avoid nested forms)
+    var deleteUrl = null;
+    var deleteToken = null;
+    var deleteBtnRef = null;
+
+    // show modal when delete clicked
+        var modalElem = document.createElement('div');
+        modalElem.innerHTML = `
+                <div class="modal fade" id="deleteDocumentModal" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Confirm Delete</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body">
+                                <p>Are you sure you want to delete this document?</p>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="button" class="btn btn-danger" id="confirmDeleteDocumentBtn">Delete</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+
+    document.body.appendChild(modalElem);
+    var bsModalEl = document.getElementById('deleteDocumentModal');
+    var bsModal = null;
+
+    document.querySelectorAll('.btn-delete-doc').forEach(function (btn) {
+        btn.addEventListener('click', function (e) {
+            e.preventDefault();
+            deleteUrl = btn.getAttribute('data-url');
+            deleteToken = btn.getAttribute('data-csrf');
+            deleteBtnRef = btn;
+
+            if (!bsModal) {
+                bsModal = new bootstrap.Modal(bsModalEl);
+            }
+
+            bsModal.show();
+        });
+    });
+
+    // confirm deletion from modal
+    document.addEventListener('click', function (e) {
+        if (e.target && e.target.id === 'confirmDeleteDocumentBtn') {
+            if (!deleteUrl) {
+                return;
+            }
+
+            fetch(deleteUrl, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': deleteToken,
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'Accept': 'application/json'
+                }
+            }).then(function (res) {
+                return res.json().then(function (data) {
+                    if (!res.ok) {
+                        throw new Error(data.message || 'Delete failed');
+                    }
+
+                    // hide modal
+                    if (bsModal) {
+                        bsModal.hide();
+                    }
+
+                    // insert bootstrap alert into ajax-alert-container
+                    try {
+                        var container = document.getElementById('ajax-alert-container');
+                        if (container) {
+                            var alertDiv = document.createElement('div');
+                            alertDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+                            alertDiv.role = 'alert';
+                            alertDiv.innerHTML = (data.message || 'Document removed successfully.') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                            container.appendChild(alertDiv);
+                        }
+                    } catch (e) {
+                        // ignore
+                    }
+
+                    // remove the list item
+                    if (deleteBtnRef) {
+                        var li = deleteBtnRef.closest('li');
+                        if (li) li.parentNode.removeChild(li);
+                    }
+
+                    // update badge count
+                    try {
+                        var badge = document.querySelector('#other-documents-count');
+                        if (badge) {
+                            // badge text may be like '1 uploaded' or '1 files uploaded' etc. Try parse leading number
+                            var match = badge.textContent.trim().match(/^(\d+)/);
+                            var current = match ? parseInt(match[1], 10) : 0;
+                            var newCount = Math.max(0, current - 1);
+                            badge.textContent = newCount + ' uploaded';
+                        }
+                    } catch (e) {}
+
+                    // reset temp vars
+                    deleteUrl = null; deleteToken = null; deleteBtnRef = null;
+                });
+            }).catch(function (err) {
+                if (bsModal) bsModal.hide();
+                var container = document.getElementById('ajax-alert-container');
+                if (container) {
+                    var alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
+                    alertDiv.role = 'alert';
+                    alertDiv.innerHTML = (err && err.message ? err.message : 'Unable to delete document.') + '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                    container.appendChild(alertDiv);
+                } else {
+                    alert('Unable to delete document.');
+                }
+            });
+        }
+    });
 });
 </script>
 @endpush

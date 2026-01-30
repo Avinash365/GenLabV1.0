@@ -45,7 +45,7 @@ class BookingItem extends Model
 
 
     protected $casts = [
-        'job_order_date' => 'date',
+        // keep job_order_date as raw DB date string to avoid timezone shifts on save
         'lab_expected_date' => 'date',
         'amount' => 'decimal:2',
         'received_at' => 'datetime',

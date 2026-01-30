@@ -62,7 +62,7 @@
                     $marketingBookingActive = Request::routeIs('superadmin.bookings.bookingByLetter.marketing') || 
                                               Request::routeIs('superadmin.showbooking.marketing.*');
                     
-                    $marketingReportsActive = Request::routeIs('superadmin.reporting.*');
+                    $marketingReportsActive = Request::routeIs('superadmin.reporting.*') && !Request::routeIs('superadmin.reporting.dispatched');
                 @endphp
                 <ul>
                     <li class="submenu-open">
@@ -140,13 +140,13 @@
 
                             <li>
                                 <a href="{{ route('superadmin.personal.expenses.index') }}" class="{{ Request::routeIs('superadmin.personal.expenses.*') ? 'active' : '' }}">
-                                    <i class="ti ti-target fs-16 me-2"></i><span>Expense</span>
+                                    <i data-feather="dollar-sign" class="feather-16 me-2"></i><span>Expense</span>
                                 </a>
                             </li>
 
                             <li>
                                 <a href="{{ route('superadmin.marketing.quotations.index') }}" class="{{ Request::routeIs('superadmin.marketing.quotations.*') ? 'active' : '' }}">
-                                    <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
+                                    <i data-feather="file" class="feather-16 me-2"></i><span>Quotation</span>
                                 </a>
                             </li>
                             
@@ -165,7 +165,13 @@
 
                             <li>
                                 <a href="{{ route('superadmin.reporting.marketing.holdcancel.index') }}" class="{{ Request::routeIs('superadmin.reporting.marketing.holdcancel.index') ? 'active' : '' }}">
-                                    <i class="ti ti-target fs-16 me-2"></i><span>Hold & Canceled</span>
+                                    <i data-feather="pause" class="feather-16 me-2"></i><span>Hold & Canceled</span>
+                                </a>
+                            </li>
+
+                            <li>
+                                <a href="{{ route('superadmin.reporting.dispatched', $reportParams) }}" class="{{ Request::routeIs('superadmin.reporting.dispatched') ? 'active' : '' }}">
+                                    <i class="ti ti-truck fs-16 me-2"></i><span>Dispatched Reports</span>
                                 </a>
                             </li>
 
@@ -191,7 +197,8 @@
                                        Request::routeIs('superadmin.issue.*');
 
                     // Reporting
-                    $reportingActive = Request::routeIs('superadmin.reporting.*');
+                    // Consider reporting active for most reporting routes but exclude the dispatched-only page
+                    $reportingActive = Request::routeIs('superadmin.reporting.*') && !Request::routeIs('superadmin.reporting.dispatched');
 
                     // HR (already partially defined as $hrMenuOpen below, but let's consolidate)
                     $hrActive = Request::routeIs('superadmin.employees.*') || 

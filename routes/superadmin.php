@@ -208,6 +208,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::delete('/bookingByLetter/{bookingItem}', [ShowBookingByLetterController::class, 'destroy'])->name('bookingByLetter.destroy');
             Route::get('/bookingByLetter/export/pdf', [ShowBookingByLetterController::class, 'exportPdf'])->name('bookingByLetter.exportPdf');
             Route::get('/bookingByLetter/export/excel', [ShowBookingByLetterController::class, 'exportExcel'])->name('bookingByLetter.exportExcel');
+            Route::post('/bookingByLetter/export/queue', [ShowBookingByLetterController::class, 'queueExport'])->name('bookingByLetter.queueExport');
+            Route::get('/bookingByLetter/export/status/{token}', [ShowBookingByLetterController::class, 'exportStatus'])->name('bookingByLetter.exportStatus');
+            Route::get('/bookingByLetter/export/download/{token}', [ShowBookingByLetterController::class, 'downloadExport'])->name('bookingByLetter.downloadExport');
 
             Route::get('/superadmin/bookings/autocomplete', [BookingController::class, 'getAutocomplete'])->name('autocomplete');
 
@@ -250,6 +253,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::resource('importantLetter', ImportantLetterController::class);
     Route::resource('documents', DocumentController::class);
     Route::resource('employees', EmployeeController::class);
+    Route::delete('employees/{employee}/documents/{index}', [EmployeeController::class, 'destroyDocument'])->name('employees.documents.destroy')->middleware('permission:employees.edit');
     Route::resource('calibrations', CalibrationController::class);
     Route::resource('iscodes', ISCodeController::class);
 
@@ -400,6 +404,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('cash-letter/export/excel', [WithoutBillTransactionController::class, 'exportExcel'])->name('cashLetterTransactions.exportExcel');
         Route::patch('/without-bill-payments/{id}/settle', [WithoutBillTransactionController::class, 'settle'])->name('cashLetterPaymet.settle');
 
+
+        // Exports for Account Bookings (Letters)
+        Route::get('accountBookingsLetters/export/pdf', [AccountsLetterController::class, 'exportPdf'])->name('accountBookingsLetters.exportPdf');
+        Route::get('accountBookingsLetters/export/excel', [AccountsLetterController::class, 'exportExcel'])->name('accountBookingsLetters.exportExcel');
 
         Route::resource('accountBookingsLetters', AccountsLetterController::class);
         Route::get('accounts/payroll', [PayrollReviewController::class, 'index'])->name('accounts.payroll.index');
@@ -906,6 +914,12 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
         Route::get('/pendings/export-excel', [ReportingController::class, 'pendingsExportExcel'])->name('pendings.exportExcel');
         Route::get('/dispatch', [ReportingController::class, 'dispatch'])->name('dispatch');
+        // Dispatched-only listing and quick exports
+        Route::get('/dispatched', [ReportingController::class, 'dispatched'])->name('dispatched');
+        Route::get('/dispatched/export/pdf', [ReportingController::class, 'dispatchedExportPdf'])->name('dispatched.export.pdf');
+        Route::get('/dispatched/export/excel', [ReportingController::class, 'dispatchedExportExcel'])->name('dispatched.export.excel');
+        Route::post('/handover/{item}', [ReportingController::class, 'handoverOne'])->name('handoverOne');
+        Route::get('/handover/{item}/history', [ReportingController::class, 'handoverHistory'])->name('handover.history');
         Route::post('/dispatch/{item}', [ReportingController::class, 'dispatchOne'])->name('dispatchOne');
         Route::post('/dispatch-bulk', [ReportingController::class, 'dispatchBulk'])->name('dispatchBulk');
         Route::post('/receive/{item}', [ReportingController::class, 'receiveOne'])->name('receive');

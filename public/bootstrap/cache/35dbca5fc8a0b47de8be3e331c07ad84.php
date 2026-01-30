@@ -1,6 +1,22 @@
-
-
 <?php $__env->startSection('content'); ?>
+
+<?php if($errors->any()): ?>
+    <div class="alert alert-danger">
+        <ul class="mb-0">
+            <?php $__currentLoopData = $errors->all(); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $error): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <li><?php echo e($error); ?></li>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+        </ul>
+    </div>
+<?php endif; ?>
+
+
+<?php 
+     $user = Auth::guard('admin')->user() ?? Auth::guard('web')->user(); 
+?>
+
+
+
 <div class="container">
     <div class="page-header">
         <div class="add-item d-flex ms-1 mt-4">
@@ -10,8 +26,12 @@
         </div>
         
         <ul class="table-top-head list-inline d-flex gap-3" >
-            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVehicleModal">Add Vehicle</button>
 
+            <?php if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.create'))): ?>
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addVehicleModal">Add Vehicle</button>
+            <?php endif; ?>
+
+            <?php if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.view'))): ?>
             <li class="list-inline-item">
                 <a href="<?php echo e(route('superadmin.vehicles.export.pdf', request()->query())); ?>" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
@@ -22,6 +42,7 @@
                     </svg>
                 </a>
             </li>
+            <?php endif; ?>
             <li style="margin-right:22px;"><a href="<?php echo e(route('superadmin.vehicles.index', request()->query())); ?>" data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh" ></i></a></li>
         </ul>
     </div>
@@ -147,12 +168,17 @@
                     <td><?php echo e($v->handed_over_person); ?></td>
                     <td>
                         <div class="d-flex gap-2">
+                                <?php if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.edit'))): ?>
                                 <button class="btn btn-sm btn-primary add-service-btn" data-id="<?php echo e($v->id); ?>" data-name="<?php echo e($v->name); ?>">Add Service</button>
-                                <form id="vehicle-delete-form-<?php echo e($v->id); ?>" method="POST" action="<?php echo e(route('superadmin.vehicles.destroy', $v->id)); ?>" class="vehicle-delete-form" data-name="<?php echo e($v->name); ?>">
-                                    <?php echo csrf_field(); ?>
-                                    <?php echo method_field('DELETE'); ?>
-                                </form>
-                                <button type="button" class="btn btn-sm btn-danger vehicle-delete-btn" data-form-id="vehicle-delete-form-<?php echo e($v->id); ?>" data-name="<?php echo e($v->name); ?>">Delete</button>
+                                <?php endif; ?>
+
+                                <?php if($user && ($user instanceof Admin || $user->hasPermission('vehicle_registration.delete'))): ?>
+                                    <form id="vehicle-delete-form-<?php echo e($v->id); ?>" method="POST" action="<?php echo e(route('superadmin.vehicles.destroy', $v->id)); ?>" class="vehicle-delete-form" data-name="<?php echo e($v->name); ?>">
+                                        <?php echo csrf_field(); ?>
+                                        <?php echo method_field('DELETE'); ?>
+                                    </form>
+                                    <button type="button" class="btn btn-sm btn-danger vehicle-delete-btn" data-form-id="vehicle-delete-form-<?php echo e($v->id); ?>" data-name="<?php echo e($v->name); ?>">Delete</button>
+                                <?php endif; ?>
                         </div>
                     </td>
                 </tr>
