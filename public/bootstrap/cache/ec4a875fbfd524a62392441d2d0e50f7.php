@@ -34,12 +34,12 @@
                                 <?php $__currentLoopData = request()->except(['perPage','page']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($val); ?>">
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
+                                <!-- <label for="perPageSelect" class="me-1 mb-0 small">Rows per page:</label>
                                 <select name="perPage" id="perPageSelect" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
                                     <?php $__currentLoopData = [25,50,100, 250]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                         <option value="<?php echo e($size); ?>" <?php echo e(request('perPage',25)==$size ? 'selected' : ''); ?>><?php echo e($size); ?></option>
                                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                                </select>
+                                </select> -->
                             </form>
                             <!-- <div class="mb-0">
                                 <?php echo e($users->appends(request()->all())->links('pagination::bootstrap-5')); ?>
@@ -280,14 +280,42 @@
                         </div>
                     </div>
                 </div>
+
+    <div class="card-footer d-flex flex-wrap justify-content-between align-items-center gap-2">
+
+        
+        <form method="GET" action="<?php echo e(route('superadmin.users.index')); ?>" class="d-flex align-items-center gap-2 mb-0">
+            <?php $__currentLoopData = request()->except(['perPage','page']); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $val): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($val); ?>">
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+            <label class="small mb-0">Rows per page:</label>
+
+            <select name="perPage"
+                    class="form-select form-select-sm w-auto"
+                    onchange="this.form.submit()">
+                <?php $__currentLoopData = [5,10,25,50,100,250]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                    <option value="<?php echo e($size); ?>"
+                        <?php echo e(request('perPage',25) == $size ? 'selected' : ''); ?>>
+                        <?php echo e($size); ?>
+
+                    </option>
+                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+            </select>
+        </form>
+
+        
+        <div>
+            <?php echo e($users->appends(request()->all())->links('pagination::bootstrap-5')); ?>
+
+        </div>
+
+    </div>
+
             </div>
         </div>
     </div>
 </div> 
-
-
-
-<?php $__env->stopSection(); ?>
 
 <?php $__env->startPush('scripts'); ?>
 <script>
@@ -325,6 +353,90 @@
     searchInput.addEventListener('input', applyFilter);
 })();
 </script>
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const actions = ['view','create','edit','delete'];
+
+    /* ===============================
+     | MENU TOGGLE
+     |===============================*/
+    document.querySelectorAll('.menu-row').forEach(row => {
+        row.addEventListener('click', function () {
+            const menu = this.dataset.menu;
+
+            document
+                .querySelectorAll(`.submenu-row[data-parent="${menu}"]`)
+                .forEach(r => r.classList.toggle('d-none'));
+        });
+    });
+
+    /* ===============================
+     | HELPERS (VISIBLE ROWS ONLY)
+     |===============================*/
+    function visibleSubmenuRows() {
+        return Array.from(
+            document.querySelectorAll('.submenu-row:not(.d-none)')
+        );
+    }
+
+    function visiblePermissionCheckboxes() {
+        return visibleSubmenuRows()
+            .flatMap(row => Array.from(row.querySelectorAll('input[name="permissions[]"]')));
+    }
+
+    function visibleActionCheckboxes(action) {
+        return visibleSubmenuRows()
+            .flatMap(row => Array.from(row.querySelectorAll('input.' + action)));
+    }
+
+    /* ===============================
+     | GLOBAL ALL (VISIBLE ONLY)
+     |===============================*/
+    document.getElementById('select_all_global_btn')
+        .addEventListener('click', function () {
+
+            const boxes = visiblePermissionCheckboxes();
+            if (boxes.length === 0) return;
+
+            const allChecked = boxes.every(cb => cb.checked);
+            boxes.forEach(cb => cb.checked = !allChecked);
+        });
+
+    /* ===============================
+     | COLUMN BUTTONS (VISIBLE ONLY)
+     |===============================*/
+    document.querySelectorAll('.select_col_btn').forEach(btn => {
+        btn.addEventListener('click', function () {
+
+            const action = this.dataset.col;
+            const boxes = visibleActionCheckboxes(action);
+            if (boxes.length === 0) return;
+
+            const allChecked = boxes.every(cb => cb.checked);
+            boxes.forEach(cb => cb.checked = !allChecked);
+        });
+    });
+
+    /* ===============================
+     | ROW SELECT (UNCHANGED)
+     |===============================*/
+    document.querySelectorAll('.select_row').forEach(row => {
+        row.addEventListener('change', function () {
+            const module = this.dataset.row;
+            document
+                .querySelectorAll('.checkbox_' + module)
+                .forEach(cb => cb.checked = this.checked);
+        });
+    });
+
+});
+</script>
 <?php $__env->stopPush(); ?>
+
+<?php $__env->stopSection(); ?>
+
+
 
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/users/index.blade.php ENDPATH**/ ?>
