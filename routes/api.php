@@ -107,6 +107,16 @@ Route::middleware(['multi_jwt:api'])->prefix('marketing-person')->group(function
     // Reports by Job Order (mobile API) - mirrors view-by-job-order.blade.php
     Route::get('{user_code}/reports/by-job-order', [MarketingPersonInfo::class, 'viewByJobOrderApi'])->name('api.marketing.reports.by-job-order');
 
+    // Dispatched reports (mobile): items/bookings that were dispatched
+    Route::get('{user_code}/reports/dispatched', [MarketingPersonInfo::class, 'dispatchedReportsApi'])->name('api.marketing.reports.dispatched');
+
+    // Client Hand Over (mobile): items that have been handed over (submitted_to present)
+    Route::get('{user_code}/reports/hand-over', [MarketingPersonInfo::class, 'handOverApi'])->name('api.marketing.reports.hand-over');
+
+    // Bulk actions (mobile): mark dispatched and hand-over
+    Route::post('{user_code}/reports/dispatched', [MarketingPersonInfo::class, 'dispatchedBulkApi'])->name('api.marketing.reports.dispatched.bulk');
+    Route::post('{user_code}/reports/hand-over', [MarketingPersonInfo::class, 'handOverBulkApi'])->name('api.marketing.reports.hand-over.bulk');
+
     // Pending reports (mobile) - mirrors reporting/pendings.blade.php
     Route::get('{user_code}/reports/pendings', [MarketingPersonInfo::class, 'pendingsApi'])->name('api.marketing.reports.pendings');
 

@@ -1541,4 +1541,243 @@ class MarketingPersonInfo extends Controller
         ], 200);
     }
 
+    /**
+     * Mobile API: Dispatched reports for a marketing person
+     * GET /api/marketing-person/{user_code}/reports/dispatched
+     */
+    public function dispatchedReportsApi(Request $request, $user_code)
+    {
+        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+
+        $perPage = (int) $request->get('perPage', 25);
+        $search = $request->get('search');
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        $query = \App\Models\BookingItem::with('booking')
+            ->whereNotNull('dispatched_at')
+            ->whereHas('booking', function($q) use ($marketingPerson) {
+                $q->where('marketing_id', $marketingPerson->user_code);
+            });
+
+        if ($month) { $query->whereMonth('dispatched_at', $month); }
+        if ($year) { $query->whereYear('dispatched_at', $year); }
+
+        if ($search) {
+            $s = $search;
+            $query->where(function($q) use ($s) {
+                $q->where('job_order_no', 'like', "%{$s}%")
+                  ->orWhere('sample_description', 'like', "%{$s}%")
+                  ->orWhereHas('booking', function($qb) use ($s) { $qb->where('reference_no', 'like', "%{$s}%")->orWhere('client_name','like', "%{$s}%"); });
+            });
+        }
+
+        $items = $query->latest('dispatched_at')->paginate($perPage);
+
+        // Group items by booking and present compact payload
+        $grouped = collect($items->items())->groupBy(function($it){ return $it->new_booking_id ?? ($it->booking?->id ?? null); })->filter();
+
+        $bookings = $grouped->map(function($group){
+            $first = $group->first();
+            $booking = $first->booking ?? null;
+            $b = [
+                'id' => $booking?->id ?? ($first->new_booking_id ?? null),
+                'client_name' => $booking?->client_name ?? null,
+                'reference_no' => $booking?->reference_no ?? null,
+                'items_count' => count($group),
+                'items' => collect($group)->map(function($it){
+                    $dispatchedAt = null;
+                    if ($it->dispatched_at) {
+                        try {
+                            $dispatchedAt = \Carbon\Carbon::parse($it->dispatched_at)->toDateTimeString();
+                        } catch (\Exception $e) {
+                            $dispatchedAt = null;
+                        }
+                    }
+                    return [
+                        'id' => $it->id,
+                        'job_order_no' => $it->job_order_no,
+                        'sample_description' => $it->sample_description,
+                        'dispatched_at' => $dispatchedAt,
+                        'dispatched_by_name' => $it->dispatched_by_name ?? null,
+                    ];
+                })->values(),
+            ];
+            return $b;
+        })->values();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Dispatched reports fetched',
+            'data' => [
+                'bookings' => $bookings,
+                'meta' => [
+                    'total' => $items->total(),
+                    'per_page' => $items->perPage(),
+                    'current_page' => $items->currentPage(),
+                    'last_page' => $items->lastPage(),
+                ],
+            ],
+        ], 200);
+    }
+
+    /**
+     * Mobile API: Client Hand Over (items submitted to client/person)
+     * GET /api/marketing-person/{user_code}/reports/hand-over
+     */
+    public function handOverApi(Request $request, $user_code)
+    {
+        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+
+        $perPage = (int) $request->get('perPage', 25);
+        $search = $request->get('search');
+        $month = $request->get('month');
+        $year = $request->get('year');
+
+        $query = \App\Models\BookingItem::with('booking')
+            ->whereNotNull('submitted_to')
+            ->whereHas('booking', function($q) use ($marketingPerson) {
+                $q->where('marketing_id', $marketingPerson->user_code);
+            });
+
+        if ($month) { $query->whereMonth('updated_at', $month); }
+        if ($year) { $query->whereYear('updated_at', $year); }
+
+        if ($search) {
+            $s = $search;
+            $query->where(function($q) use ($s) {
+                $q->where('job_order_no', 'like', "%{$s}%")
+                  ->orWhere('sample_description', 'like', "%{$s}%")
+                  ->orWhere('submitted_to', 'like', "%{$s}%")
+                  ->orWhereHas('booking', function($qb) use ($s) { $qb->where('reference_no', 'like', "%{$s}%")->orWhere('client_name','like', "%{$s}%"); });
+            });
+        }
+
+        $items = $query->latest('updated_at')->paginate($perPage);
+
+        $grouped = collect($items->items())->groupBy(function($it){ return $it->new_booking_id ?? ($it->booking?->id ?? null); })->filter();
+
+        $bookings = $grouped->map(function($group){
+            $first = $group->first();
+            $booking = $first->booking ?? null;
+            return [
+                'id' => $booking?->id ?? ($first->new_booking_id ?? null),
+                'client_name' => $booking?->client_name ?? null,
+                'reference_no' => $booking?->reference_no ?? null,
+                'items_count' => count($group),
+                'items' => collect($group)->map(function($it){
+                    $submittedAt = null;
+                    if ($it->updated_at) {
+                        try {
+                            $submittedAt = \Carbon\Carbon::parse($it->updated_at)->toDateTimeString();
+                        } catch (\Exception $e) {
+                            $submittedAt = null;
+                        }
+                    }
+                    return [
+                        'id' => $it->id,
+                        'job_order_no' => $it->job_order_no,
+                        'sample_description' => $it->sample_description,
+                        'submitted_to' => $it->submitted_to,
+                        'submitted_at' => $submittedAt,
+                    ];
+                })->values(),
+            ];
+        })->values();
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Handed over items fetched',
+            'data' => [
+                'bookings' => $bookings,
+                'meta' => [
+                    'total' => $items->total(),
+                    'per_page' => $items->perPage(),
+                    'current_page' => $items->currentPage(),
+                    'last_page' => $items->lastPage(),
+                ],
+            ],
+        ], 200);
+    }
+
+    /**
+     * POST bulk: mark booking items as dispatched
+     * POST /api/marketing-person/{user_code}/reports/dispatched
+     * Body: { ids: [1,2,3], meta: { dispatched_by_name?: string } }
+     */
+    public function dispatchedBulkApi(Request $request, $user_code)
+    {
+        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+            'meta' => 'nullable|array',
+        ]);
+
+        $ids = $validated['ids'];
+        $authUser = $request->user();
+
+        if ($authUser && is_string($authUser->role ?? null) && stripos($authUser->role, 'market') !== false) {
+            if (($authUser->user_code ?? null) !== $marketingPerson->user_code) {
+                return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+            }
+        }
+
+        $byName = $request->input('meta.dispatched_by_name') ?? ($authUser->name ?? $authUser->person_name ?? null);
+
+        $updated = \App\Models\BookingItem::whereIn('id', $ids)
+            ->whereHas('booking', function($q) use ($marketingPerson){ $q->where('marketing_id', $marketingPerson->user_code); })
+            ->update([
+                'dispatched_at' => now(),
+                'dispatched_by_id' => $authUser->id ?? null,
+                'dispatched_by_name' => $byName,
+            ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Marked dispatched',
+            'data' => [ 'updated' => $updated, 'ids' => $ids ],
+        ], 200);
+    }
+
+    /**
+     * POST bulk: mark booking items as handed over (submitted_to)
+     * POST /api/marketing-person/{user_code}/reports/hand-over
+     * Body: { ids: [1,2], meta: { submitted_to: 'Client Name' } }
+     */
+    public function handOverBulkApi(Request $request, $user_code)
+    {
+        $marketingPerson = User::where('user_code', $user_code)->firstOrFail();
+
+        $validated = $request->validate([
+            'ids' => 'required|array|min:1',
+            'ids.*' => 'integer',
+            'meta.submitted_to' => 'required|string|max:255',
+        ]);
+
+        $ids = $validated['ids'];
+        $submittedTo = $validated['meta']['submitted_to'];
+        $authUser = $request->user();
+
+        if ($authUser && is_string($authUser->role ?? null) && stripos($authUser->role, 'market') !== false) {
+            if (($authUser->user_code ?? null) !== $marketingPerson->user_code) {
+                return response()->json(['status' => false, 'message' => 'Forbidden'], 403);
+            }
+        }
+
+        $updated = \App\Models\BookingItem::whereIn('id', $ids)
+            ->whereHas('booking', function($q) use ($marketingPerson){ $q->where('marketing_id', $marketingPerson->user_code); })
+            ->update([
+                'submitted_to' => $submittedTo,
+                'updated_at' => now(),
+            ]);
+
+        return response()->json([
+            'status' => true,
+            'message' => 'Marked handed over',
+            'data' => [ 'updated' => $updated, 'ids' => $ids, 'submitted_to' => $submittedTo ],
+        ], 200);
+    }
+
 }
