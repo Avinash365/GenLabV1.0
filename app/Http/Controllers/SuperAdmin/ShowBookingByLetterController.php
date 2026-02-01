@@ -24,7 +24,8 @@ class ShowBookingByLetterController extends Controller
     public function __construct(GetUserActiveDepartment $departmentService)
     {
         $this->departmentService = $departmentService;
-
+        $this->middleware('permission:booking.delete')->only('destroy');
+        // $this->middleware('permission:booking.edit')->only('edit');
     }
 
     public function index(Request $request)

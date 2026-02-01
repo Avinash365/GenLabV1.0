@@ -29,7 +29,7 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             
-        @if($user && ($user instanceof Admin || ($user->hasPermission('expense_personal.create'))))
+        @if($user && ($user instanceof Admin || ($user->hasPermission('personal_expense.create'))))
             @if(!Request::routeIs('superadmin.marketing.expenses.approved'))
                 <li class="list-inline-item">
                     <button id="btnUploadExpense" class="btn btn-sm btn-primary">Upload Expense</button>

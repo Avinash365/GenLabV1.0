@@ -62,7 +62,9 @@
                     $marketingBookingActive = Request::routeIs('superadmin.bookings.bookingByLetter.marketing') || 
                                               Request::routeIs('superadmin.showbooking.marketing.*');
                     
-                    $marketingReportsActive = Request::routeIs('superadmin.reporting.*') && !Request::routeIs('superadmin.reporting.dispatched');
+                    $marketingReportsActive = Request::routeIs('superadmin.reporting.*') 
+                        && !Request::routeIs('superadmin.reporting.dispatched*') 
+                        && !Request::routeIs('superadmin.reporting.dispatch*');
                 ?>
                 <ul>
                     <li class="submenu-open">
@@ -140,13 +142,13 @@
 
                             <li>
                                 <a href="<?php echo e(route('superadmin.personal.expenses.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">
-                                    <i data-feather="dollar-sign" class="feather-16 me-2"></i><span>Expense</span>
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Expense</span>
                                 </a>
                             </li>
 
                             <li>
                                 <a href="<?php echo e(route('superadmin.marketing.quotations.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.quotations.*') ? 'active' : ''); ?>">
-                                    <i data-feather="file" class="feather-16 me-2"></i><span>Quotation</span>
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Quotation</span>
                                 </a>
                             </li>
                             
@@ -165,13 +167,18 @@
 
                             <li>
                                 <a href="<?php echo e(route('superadmin.reporting.marketing.holdcancel.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.marketing.holdcancel.index') ? 'active' : ''); ?>">
-                                    <i data-feather="pause" class="feather-16 me-2"></i><span>Hold & Canceled</span>
+                                    <i class="ti ti-target fs-16 me-2"></i><span>Hold & Canceled</span>
                                 </a>
                             </li>
 
                             <li>
-                                <a href="<?php echo e(route('superadmin.reporting.dispatched', $reportParams)); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatched') ? 'active' : ''); ?>">
+                                <a href="<?php echo e(route('superadmin.reporting.dispatched', $reportParams ?? [])); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatched*') ? 'active' : ''); ?>">
                                     <i class="ti ti-truck fs-16 me-2"></i><span>Dispatched Reports</span>
+                                </a>
+                            </li>
+                            <li>
+                                <a href="<?php echo e(route('superadmin.reporting.dispatched', array_merge($reportParams ?? [], ['hand_over' => 1]))); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatched*') && request('hand_over') ? 'active' : ''); ?>">
+                                    <i class="ti ti-truck fs-16 me-2"></i><span>Client Hand Over</span>
                                 </a>
                             </li>
 
@@ -197,8 +204,9 @@
                                        Request::routeIs('superadmin.issue.*');
 
                     // Reporting
-                    // Consider reporting active for most reporting routes but exclude the dispatched-only page
-                    $reportingActive = Request::routeIs('superadmin.reporting.*') && !Request::routeIs('superadmin.reporting.dispatched');
+                    $reportingActive = Request::routeIs('superadmin.reporting.*') 
+                        && !Request::routeIs('superadmin.reporting.dispatched*') 
+                        && !Request::routeIs('superadmin.reporting.dispatch*');
 
                     // HR (already partially defined as $hrMenuOpen below, but let's consolidate)
                     $hrActive = Request::routeIs('superadmin.employees.*') || 
@@ -423,9 +431,9 @@
                             $user->hasPermission('payroll.view') || 
                             $showLeaveMenu || 
                             $user->hasPermission('approve_leave.view') || 
-                            $user->hasPermission('attendance') || 
+                            $user->hasPermission('attendance.view') || 
                             $user->hasPermission('holiday.view') || 
-                            $user->hasPermission('attendance')
+                            $user->hasPermission('attendance.view')
                         
                         )): ?>
                         <li class="submenu <?php echo e($hrActive ? 'submenu-open' : ''); ?>">
@@ -463,7 +471,7 @@
                                 </li>
                                 <?php endif; ?>
 
-                                <?php if($user && ($user instanceof Admin || ($user->hasPermission('attendance')))): ?>
+                                <?php if($user && ($user instanceof Admin || ($user->hasPermission('attendance.view')))): ?>
                                 <li>
                                     <a href="<?php echo e(route('superadmin.hr.attendance.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.hr.attendance.*') ? 'active' : ''); ?>">
                                         Attendance
@@ -715,17 +723,17 @@
                         <?php endif; ?>
 
                         <!-- Other single links -->
-                        <!-- <li>
-                            <a href="<?php echo e(route('superadmin.reporting.dispatch')); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatch') ? 'active' : ''); ?>">
+                        <li>
+                            <a href="<?php echo e(route('superadmin.reporting.dispatch', $reportParams ?? [])); ?>" class="<?php echo e(Request::routeIs('superadmin.reporting.dispatch*') ? 'active' : ''); ?>">
                                 <i class="ti ti-truck fs-16 me-2"></i><span>Report Dispatch</span>
                             </a>
-                        </li> -->
+                        </li>
 
-                        <?php if($user && ($user instanceof Admin || $user->hasPermission('expense_personal.view') 
-                                    || $user->hasPermission('expense_marketing.view') || 
-                                    $user->hasPermission('expense_office.view') || 
-                                    $user->hasPermission('approve_expense') || 
-                                    $user->hasPermission('reject_expense')
+                        <?php if($user && ($user instanceof Admin || $user->hasPermission('reject_expense.view') 
+                                    || $user->hasPermission('personal_expense.view') || 
+                                    $user->hasPermission('marketing_expense.view') || 
+                                    $user->hasPermission('office_expense') || 
+                                    $user->hasPermission('approve_expense')
                 
                         )): ?>
                         <li class="submenu <?php echo e($expensesActive ? 'submenu-open' : ''); ?>">
@@ -735,15 +743,15 @@
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul style="<?php echo e($expensesActive ? 'display: block;' : 'display: none;'); ?>">
-                                 <?php if($user && ($user instanceof Admin || $user->hasPermission('expense_personal.view'))): ?>
+                                 <?php if($user && ($user instanceof Admin || $user->hasPermission('personal_expense.view'))): ?>
                                 <li>
                                     <a href="<?php echo e(route('superadmin.personal.expenses.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.personal.expenses.*') ? 'active' : ''); ?>">Personal Expenses</a>
                                 </li>
                                 <?php endif; ?>
-                                 <?php if($user && ($user instanceof Admin || $user->hasPermission('expense_marketing.view'))): ?>
+                                 <?php if($user && ($user instanceof Admin || $user->hasPermission('marketing_expense.view'))): ?>
                                 <li><a href="<?php echo e(route('superadmin.marketing.expenses.view')); ?>" class="<?php echo e(Request::routeIs('superadmin.marketing.expenses.view') ? 'active' : ''); ?>">Marketing Expenses</a></li>
                                 <?php endif; ?>
-                                 <?php if($user && ($user instanceof Admin || $user->hasPermission('expense_office.view'))): ?>
+                                 <?php if($user && ($user instanceof Admin || $user->hasPermission('office_expense.view'))): ?>
                                 <li><a href="<?php echo e(route('superadmin.office.expenses.view')); ?>" class="<?php echo e(Request::routeIs('superadmin.office.expenses.view') ? 'active' : ''); ?>">Office Expenses</a></li>
                                 <?php endif; ?>  
                                  <?php if($user && ($user instanceof Admin || $user->hasPermission('approve_expense.view'))): ?> 
@@ -812,8 +820,8 @@
 
                         <!--settings-->
                         <?php if($user && ($user instanceof Admin 
-                                || $user->hasPermission('web-settings.view') 
-                                || $user->hasPermission('bank-details.view') 
+                                || $user->hasPermission('web_setting.view') 
+                                || $user->hasPermission('bank_detail.view') 
                                 || $user->hasPermission('department.view') 
                                 || $user->hasPermission('department.edit') 
                                 || $user->hasPermission('department.create'))): ?>
@@ -826,7 +834,7 @@
                                     </a>                              
                                     <ul style="<?php echo e($settingsActive ? 'display: block;' : 'display: none;'); ?>">
                                         
-                                        <?php if($user instanceof \App\Models\Admin || $user->hasPermission('web-settings.view')): ?>
+                                        <?php if($user instanceof \App\Models\Admin || $user->hasPermission('web_setting.view')): ?>
                                             <li>
                                                 <a href="<?php echo e(route('superadmin.websettings.edit')); ?>" 
                                                 class="<?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>">
@@ -836,7 +844,7 @@
                                         <?php endif; ?>  
 
                                         
-                                        <?php if($user instanceof \App\Models\Admin || $user->hasPermission('bank-details.view')): ?>
+                                        <?php if($user instanceof \App\Models\Admin || $user->hasPermission('bank_detail.view')): ?>
                                             <li>
                                                 <a href="<?php echo e(route('superadmin.payment-settings.index')); ?>" 
                                                 class="<?php echo e(Request::routeIs('superadmin.payment-settings.*') ? 'active' : ''); ?>">

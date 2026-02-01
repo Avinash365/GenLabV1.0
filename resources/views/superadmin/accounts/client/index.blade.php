@@ -11,7 +11,7 @@
 
 {{-- Create Client Button --}}
 
-@if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.create'))))
+@if($user && ($user instanceof Admin || ($user->hasPermission('client.create'))))
     <div class="d-flex justify-content-end mt-3 me-3">
         <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createClientModal">
             <i class="bi bi-plus-lg"></i> Add Client
@@ -71,7 +71,7 @@
                         </td>
                         <td>
                            
-                            @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
+                            @if($user && ($user instanceof Admin || ($user->hasPermission('client.edit'))))
                                 <button class="btn btn-sm btn-primary"
                                         data-bs-toggle="modal"
                                         data-bs-target="#editClientModal{{ $client->id }}">
@@ -80,7 +80,7 @@
                             @endif
 
                         
-                              @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
+                              @if($user && ($user instanceof Admin || ($user->hasPermission('client.delete'))))
                                 <button class="btn btn-sm btn-danger"
                                         data-bs-toggle="modal"
                                         data-bs-target="#deleteClientModal{{ $client->id }}">
@@ -92,7 +92,7 @@
                     </tr>
 
 
-                    @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
+                    @if($user && ($user instanceof Admin || ($user->hasPermission('client.edit'))))
                     {{-- Edit Client Modal --}}
                     <div class="modal fade" id="editClientModal{{ $client->id }}" tabindex="-1">
                         <div class="modal-dialog">
@@ -149,7 +149,7 @@
                     @endif
 
 
-                    @if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.edit'))))
+                    @if($user && ($user instanceof Admin || ($user->hasPermission('client.delete'))))
                     {{-- Delete Client Modal --}}
                     <div class="modal fade" id="deleteClientModal{{ $client->id }}" tabindex="-1">
                         <div class="modal-dialog modal-dialog-centered">

@@ -956,7 +956,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
     // bank details
     Route::resource('payment-settings', PaymentSettingController::class)
-        ->middleware('permission:bank-details.view')->only(['index', 'store', 'update']);
+        ->middleware('permission:bank_detail.view')->only(['index', 'store', 'update']);
 });
 
 

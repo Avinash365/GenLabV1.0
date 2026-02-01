@@ -430,9 +430,9 @@
                             $user->hasPermission('payroll.view') || 
                             $showLeaveMenu || 
                             $user->hasPermission('approve_leave.view') || 
-                            $user->hasPermission('attendance') || 
+                            $user->hasPermission('attendance.view') || 
                             $user->hasPermission('holiday.view') || 
-                            $user->hasPermission('attendance')
+                            $user->hasPermission('attendance.view')
                         
                         ))
                         <li class="submenu {{ $hrActive ? 'submenu-open' : '' }}">
@@ -470,7 +470,7 @@
                                 </li>
                                 @endif
 
-                                @if($user && ($user instanceof Admin || ($user->hasPermission('attendance'))))
+                                @if($user && ($user instanceof Admin || ($user->hasPermission('attendance.view'))))
                                 <li>
                                     <a href="{{ route('superadmin.hr.attendance.index') }}" class="{{ Request::routeIs('superadmin.hr.attendance.*') ? 'active' : '' }}">
                                         Attendance
@@ -728,11 +728,11 @@
                             </a>
                         </li>
 
-                        @if($user && ($user instanceof Admin || $user->hasPermission('expense_personal.view') 
-                                    || $user->hasPermission('expense_marketing.view') || 
-                                    $user->hasPermission('expense_office.view') || 
-                                    $user->hasPermission('approve_expense') || 
-                                    $user->hasPermission('reject_expense')
+                        @if($user && ($user instanceof Admin || $user->hasPermission('reject_expense.view') 
+                                    || $user->hasPermission('personal_expense.view') || 
+                                    $user->hasPermission('marketing_expense.view') || 
+                                    $user->hasPermission('office_expense') || 
+                                    $user->hasPermission('approve_expense')
                 
                         ))
                         <li class="submenu {{ $expensesActive ? 'submenu-open' : '' }}">
@@ -742,15 +742,15 @@
                                 <span class="menu-arrow"></span>
                             </a>
                             <ul style="{{ $expensesActive ? 'display: block;' : 'display: none;' }}">
-                                 @if($user && ($user instanceof Admin || $user->hasPermission('expense_personal.view')))
+                                 @if($user && ($user instanceof Admin || $user->hasPermission('personal_expense.view')))
                                 <li>
                                     <a href="{{ route('superadmin.personal.expenses.index') }}" class="{{ Request::routeIs('superadmin.personal.expenses.*') ? 'active' : '' }}">Personal Expenses</a>
                                 </li>
                                 @endif
-                                 @if($user && ($user instanceof Admin || $user->hasPermission('expense_marketing.view')))
+                                 @if($user && ($user instanceof Admin || $user->hasPermission('marketing_expense.view')))
                                 <li><a href="{{ route('superadmin.marketing.expenses.view') }}" class="{{ Request::routeIs('superadmin.marketing.expenses.view') ? 'active' : '' }}">Marketing Expenses</a></li>
                                 @endif
-                                 @if($user && ($user instanceof Admin || $user->hasPermission('expense_office.view')))
+                                 @if($user && ($user instanceof Admin || $user->hasPermission('office_expense.view')))
                                 <li><a href="{{ route('superadmin.office.expenses.view') }}" class="{{ Request::routeIs('superadmin.office.expenses.view') ? 'active' : '' }}">Office Expenses</a></li>
                                 @endif  
                                  @if($user && ($user instanceof Admin || $user->hasPermission('approve_expense.view'))) 
@@ -819,8 +819,8 @@
 
                         <!--settings-->
                         @if($user && ($user instanceof Admin 
-                                || $user->hasPermission('web-settings.view') 
-                                || $user->hasPermission('bank-details.view') 
+                                || $user->hasPermission('web_setting.view') 
+                                || $user->hasPermission('bank_detail.view') 
                                 || $user->hasPermission('department.view') 
                                 || $user->hasPermission('department.edit') 
                                 || $user->hasPermission('department.create')))
@@ -833,7 +833,7 @@
                                     </a>                              
                                     <ul style="{{ $settingsActive ? 'display: block;' : 'display: none;' }}">
                                         {{--  Web Settings --}}
-                                        @if($user instanceof \App\Models\Admin || $user->hasPermission('web-settings.view'))
+                                        @if($user instanceof \App\Models\Admin || $user->hasPermission('web_setting.view'))
                                             <li>
                                                 <a href="{{ route('superadmin.websettings.edit') }}" 
                                                 class="{{ Request::routeIs('superadmin.websettings.*') ? 'active' : '' }}">
@@ -843,7 +843,7 @@
                                         @endif  
 
                                         {{--  Bank Details --}}
-                                        @if($user instanceof \App\Models\Admin || $user->hasPermission('bank-details.view'))
+                                        @if($user instanceof \App\Models\Admin || $user->hasPermission('bank_detail.view'))
                                             <li>
                                                 <a href="{{ route('superadmin.payment-settings.index') }}" 
                                                 class="{{ Request::routeIs('superadmin.payment-settings.*') ? 'active' : '' }}">
