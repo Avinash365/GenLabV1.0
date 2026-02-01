@@ -16,6 +16,15 @@
     $isGroupedPersonal = (($expense->section ?? null) === 'personal') && !empty($groupIds);
 @endphp
 <tr data-amount="{{ $expense->amount }}" data-approved="{{ $rawApproved }}" data-due="{{ $rawDue }}" data-id="{{ $expense->id }}" @if($groupAttr) data-group="{{ $groupAttr }}" @endif>
+    @if($isApprovalPage)
+        <td>
+            @if(($expense->status ?? '') === 'pending')
+                <input type="checkbox" class="bulk-select" value="{{ $expense->id }}" data-group="{{ $groupAttr }}" title="Select expense">
+            @else
+                &nbsp;
+            @endif
+        </td>
+    @endif
     <td>{{ $serial ?? '—' }}</td>
     @php
         $personLabel = $expense->marketingPerson->name ?? ($expense->person_name ?: 'N/A');

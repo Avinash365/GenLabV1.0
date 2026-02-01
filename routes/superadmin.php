@@ -123,6 +123,7 @@ Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('supera
         Route::get('/persons', [MarketingExpenseController::class, 'persons'])->name('persons');
         Route::patch('/expenses/{expense}/approve', [MarketingExpenseController::class, 'approve'])->name('expenses.approve');
         Route::patch('/expenses/{expense}/reject', [MarketingExpenseController::class, 'reject'])->name('expenses.reject');
+        Route::post('/expenses/bulk-approve', [MarketingExpenseController::class, 'bulkApprove'])->name('expenses.bulk_approve');
     });
 
     // Office Expenses (view only for now)

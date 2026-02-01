@@ -304,7 +304,6 @@
             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
 
             <label class="small mb-0">Rows per page:</label>
-
             <select name="perPage"
                     class="form-select form-select-sm w-auto"
                     onchange="this.form.submit()">

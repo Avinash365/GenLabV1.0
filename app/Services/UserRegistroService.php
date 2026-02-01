@@ -17,8 +17,8 @@ class UserRegistroService
     
     
     public function index(){ 
-        $perPage = (int) request('perPage', 5);
-        if (!in_array($perPage, [10,25, 50, 100])) $perPage = 5;
+        $perPage = (int) request('perPage', 10);
+        if (!in_array($perPage, [5,10,25,50,100,250])) $perPage = 10;
         // Admin listing should include inactive users so superadmins can manage them.
         $users = User::with(['role.permissions'])->withoutGlobalScope('active')->paginate($perPage)->withQueryString();
         $roles = Role::all();

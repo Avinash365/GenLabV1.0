@@ -1501,6 +1501,54 @@ class MarketingExpenseController extends Controller
         ]);
     }
 
+    /**
+     * Bulk approve multiple expenses by IDs (fully approve each selected expense).
+     */
+    public function bulkApprove(Request $request)
+    {
+        $ids = collect($request->input('ids', []))
+            ->filter(fn($id) => $id !== null && $id !== '')
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if($ids->isEmpty()){
+            return response()->json(['success' => false, 'message' => 'No expense IDs provided.'], 422);
+        }
+
+        $expenses = MarketingExpense::whereIn('id', $ids->all())->get();
+        if($expenses->isEmpty()){
+            return response()->json(['success' => false, 'message' => 'No expenses found for the provided IDs.'], 404);
+        }
+
+        $approverId = optional(auth('admin')->user())->id ?? optional(auth('web')->user())->id;
+
+        DB::beginTransaction();
+        try {
+            foreach($expenses as $expense){
+                if(($expense->status ?? '') === 'approved'){
+                    continue;
+                }
+                $expense->approved_amount = (float) $expense->amount;
+                $expense->status = 'approved';
+                $expense->approved_by = $approverId;
+                $expense->approved_at = now();
+                // Preserve any existing approval_note unless one provided in request
+                if($note = $request->input('approval_note')){
+                    $expense->approval_note = $note;
+                }
+                $expense->save();
+            }
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Selected expenses approved.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Bulk approve failed: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Bulk approve failed.'], 500);
+        }
+    }
+
     public function reject(Request $request, MarketingExpense $expense)
     {
         $groupIds = collect($request->input('group_ids', []))

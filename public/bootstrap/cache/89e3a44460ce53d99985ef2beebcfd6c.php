@@ -284,7 +284,8 @@
                                        aria-label="Edit booking">
                                         <i data-feather="edit" class="feather-edit"></i>
                                     </a>
-
+                                
+                                    
                                     <button type="button" class="action-icon border rounded d-flex align-items-center p-2 btn-delete"
                                             data-bs-toggle="modal" data-bs-target="#deleteModal-<?php echo e($item->id); ?>"
                                             aria-label="Delete item">
