@@ -52,6 +52,15 @@
             </tr>
             @endforeach
         </tbody>
+        <tfoot>
+            @php
+                $totalSum = collect($readings)->sum(function($it){ return is_numeric($it->total_reading) ? $it->total_reading : 0; });
+            @endphp
+            <tr>
+                <td colspan="6" style="text-align:right; font-weight:700;">Grand Total</td>
+                <td style="font-weight:700;">{{ number_format($totalSum, 2) }}</td>
+            </tr>
+        </tfoot>
     </table>
 </body>
 </html>
