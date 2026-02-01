@@ -11,6 +11,12 @@ use Illuminate\Support\Facades\Log;
 
 class HoldCancelController extends Controller
 {
+
+    public function __construct(){
+        $this->middleware('permission:report_hold.view')->only('index'); 
+        $this->middleware('permission:report_hold.edit')->only('hold', 'unhold', 'cancel', 'holdAll', 'cancelAll'); 
+    }
+
     public function index(Request $request)
     {
         $job = trim((string) $request->query('job', ''));

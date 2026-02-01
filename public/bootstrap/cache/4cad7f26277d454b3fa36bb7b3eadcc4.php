@@ -51,7 +51,7 @@
                         </td>
                         <td>
                             <span class="badge 
-                                <?php echo e($letter->status == 'draft' ? 'bg-warning text-dark' : ($letter->status == 'sent' ? 'bg-success' : 'bg-danger')); ?>">
+                                <?php echo e($letter->status == 'draft' ? 'bg-warning text-dark' : ($letter->status == 'send' ? 'bg-success' : 'bg-danger')); ?>">
                                 <?php echo e(ucfirst($letter->status)); ?>
 
                             </span>

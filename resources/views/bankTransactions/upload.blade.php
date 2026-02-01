@@ -90,7 +90,7 @@
                 <select name="bank_id" class="form-select form-select-lg" required>
                     <option value="">-- Select Bank --</option>
 
-                    <option value="1">State Bank of India (SBI)</option>
+                    <!-- <option value="1">State Bank of India (SBI)</option>
                     <option value="2">HDFC Bank</option>
                     <option value="3">ICICI Bank</option>
                     <option value="4">Axis Bank</option>
@@ -109,7 +109,13 @@
                     <option value="17">IDBI Bank</option>
                     <option value="18">Federal Bank</option>
                     <option value="19">South Indian Bank</option>
-                    <option value="20">RBL Bank</option>
+                    <option value="20">RBL Bank</option> -->
+
+                    @foreach($accounts as $account)
+                        <option value="{{ $account->id }}">
+                            {{ $account->bank_name }} [{{ $account->account_no }}]
+                        </option>
+                    @endforeach
                 </select>
             </div>
 
@@ -183,7 +189,13 @@
                 <select name="bank_id" class="form-select filter-select" >
                     <option value="">-- Select Bank --</option>
 
-                    <option value="1">State Bank of India (SBI)</option>
+                    @foreach($accounts as $account)
+                        <option value="{{ $account->id }}">
+                            {{ $account->bank_name }} [{{ $account->account_no }}]
+                        </option>
+                    @endforeach
+
+                    <!-- <option value="1">State Bank of India (SBI)</option>
                     <option value="2">HDFC Bank</option>
                     <option value="3">ICICI Bank</option>
                     <option value="4">Axis Bank</option>
@@ -202,7 +214,7 @@
                     <option value="17">IDBI Bank</option>
                     <option value="18">Federal Bank</option>
                     <option value="19">South Indian Bank</option>
-                    <option value="20">RBL Bank</option>
+                    <option value="20">RBL Bank</option> -->
                 </select>
             </div>
 

@@ -90,7 +90,7 @@
                 <select name="bank_id" class="form-select form-select-lg" required>
                     <option value="">-- Select Bank --</option>
 
-                    <option value="1">State Bank of India (SBI)</option>
+                    <!-- <option value="1">State Bank of India (SBI)</option>
                     <option value="2">HDFC Bank</option>
                     <option value="3">ICICI Bank</option>
                     <option value="4">Axis Bank</option>
@@ -109,7 +109,13 @@
                     <option value="17">IDBI Bank</option>
                     <option value="18">Federal Bank</option>
                     <option value="19">South Indian Bank</option>
-                    <option value="20">RBL Bank</option>
+                    <option value="20">RBL Bank</option> -->
+
+                    <?php $__currentLoopData = $accounts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $account): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($account->id); ?>">
+                            <?php echo e($account->bank_name); ?> [<?php echo e($account->account_no); ?>]
+                        </option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                 </select>
             </div>
 
@@ -183,7 +189,13 @@
                 <select name="bank_id" class="form-select filter-select" >
                     <option value="">-- Select Bank --</option>
 
-                    <option value="1">State Bank of India (SBI)</option>
+                    <?php $__currentLoopData = $accounts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $account): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                        <option value="<?php echo e($account->id); ?>">
+                            <?php echo e($account->bank_name); ?> [<?php echo e($account->account_no); ?>]
+                        </option>
+                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+
+                    <!-- <option value="1">State Bank of India (SBI)</option>
                     <option value="2">HDFC Bank</option>
                     <option value="3">ICICI Bank</option>
                     <option value="4">Axis Bank</option>
@@ -202,7 +214,7 @@
                     <option value="17">IDBI Bank</option>
                     <option value="18">Federal Bank</option>
                     <option value="19">South Indian Bank</option>
-                    <option value="20">RBL Bank</option>
+                    <option value="20">RBL Bank</option> -->
                 </select>
             </div>
 

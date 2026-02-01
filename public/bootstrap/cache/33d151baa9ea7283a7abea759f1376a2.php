@@ -231,6 +231,17 @@ unset($__errorArgs, $__bag); ?>
                     </div>
                 </div>
 
+                <!-- Footer branding settings -->
+                <div class="row">
+                    <div class="col-md-12">
+                        <div class="mb-3">
+                            <label class="form-label">Footer Copyright</label>
+                            <input type="text" name="footer_copyright" value="<?php echo e(old('footer_copyright', optional($setting)->footer_copyright)); ?>" class="form-control" placeholder="<?php echo e(date('Y')); ?> &amp;copy; Company Name. All Right Reserved">
+                            <small class="text-muted d-block mt-1">Shown in the footer; may include year and company name.</small>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="text-end">
                     <button type="button" id="reset_btn" class="btn btn-outline-secondary me-2">Reset</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>

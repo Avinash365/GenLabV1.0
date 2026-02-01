@@ -61,7 +61,6 @@ class ISCodeController extends Controller
                 );
             }
 
-
             ISCode::create($data);
 
             return redirect()->back()->with('success', 'IS Code created successfully');

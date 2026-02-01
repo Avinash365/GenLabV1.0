@@ -6,11 +6,13 @@ use Illuminate\Http\Request;
 use App\Imports\BankStatementImport;
 use Maatwebsite\Excel\Facades\Excel;
 use Illuminate\Database\QueryException;
-use App\Models\BankTransaction;
+use App\Models\{BankTransaction,UserBankAccount};
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
 use App\Exports\BankTransactionsExport;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
+
 
 use App\Models\{Client, User, NewBooking, Invoice}; 
 
@@ -33,6 +35,11 @@ class BankTransactionController extends Controller
         // Start query
         $query = BankTransaction::query();
 
+
+        
+
+        
+
         // Include trashed if filtering softdeleted
         if ($request->filled('status') && $request->status == 'softdeleted') {
             $query->onlyTrashed();
@@ -50,6 +57,8 @@ class BankTransactionController extends Controller
                 ->orWhere('chq_ref_no', 'like', "%{$search}%")
                 ->orWhere('tran_id', 'like', "%{$search}%");
             });
+
+           
 
             // If search looks like a date, also try matching the txn date
             try {
@@ -89,6 +98,8 @@ class BankTransactionController extends Controller
             $query->whereDate('deleted_at', $request->deleted_date);
         }
 
+        
+
         return $query->orderBy('date', 'desc');
     }
 
@@ -109,7 +120,12 @@ class BankTransactionController extends Controller
         // Get paginated results
         $transactions = $query->paginate(10)->withQueryString();
 
-        return view('bankTransactions.upload', compact('transactions', 'years', 'marketingPersons'));
+         $creatorId = Auth::guard('admin')->id() ?? Auth::id();
+         $accounts = UserBankAccount::where('created_by', $creatorId)
+                    ->latest()
+                    ->get();
+
+        return view('bankTransactions.upload', compact('transactions','accounts', 'years', 'marketingPersons'));
     }
 
     public function exportPdf(Request $request)

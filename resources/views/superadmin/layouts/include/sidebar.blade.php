@@ -630,6 +630,11 @@
                                             Bank Transactions
                                         </a>
                                     </li>
+                                     <li>
+                                        <a href="{{ route('bankAccounts.manage') }}" class="{{ Request::routeIs('superadmin.bankAccounts.manage') ? 'active' : '' }}">
+                                            Bank Details
+                                        </a>
+                                    </li>
                                 @endif
 
                                 @if($user && ($user instanceof Admin || ($user->hasPermission('employee_salary.view'))))

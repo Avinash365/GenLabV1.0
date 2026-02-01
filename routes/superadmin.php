@@ -9,6 +9,7 @@ use App\Http\Controllers\CalibrationController;
 use App\Http\Controllers\ISCodeController;
 use App\Http\Controllers\OtpAuthController;   
 use App\Http\Controllers\JobOrderController;
+use App\Http\Controllers\UserBankAccountController; 
 
 use App\Http\Controllers\SuperAdmin\DashboardController;
 use App\Http\Controllers\SuperAdmin\LoginController;
@@ -909,7 +910,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
 
     // Reporting
-    Route::prefix('reporting')->middleware('permission:reporting.edit')->name('reporting.')->group(function () {
+    Route::prefix('reporting')->name('reporting.')->group(function () {
         Route::get('/received', [ReportingController::class, 'received'])->name('received');
         Route::get('/pendings', [ReportingController::class, 'pendings'])->name('pendings');
         Route::get('/pendings/export-pdf', [ReportingController::class, 'pendingsExportPdf'])->name('pendings.exportPdf');
@@ -1068,5 +1069,15 @@ Route::middleware(['multi_auth:web,admin'])->group(function () {
             'job-order.items',
             ['jobOrderNumber' => $request->jobOrderNumber]
         );
-    })->name('job-order.search');
+    })->name('job-order.search'); 
+
+
+    Route::get('/bank-accounts/manage',[UserBankAccountController::class,'manage'])->name('bankAccounts.manage');
+
+    Route::post('/bank-accounts/store',[UserBankAccountController::class,'store'])->name('bankAccounts.store');
+
+    Route::put('/bank-accounts/update/{id}',[UserBankAccountController::class,'update'])->name('bankAccounts.update');
+
+    Route::delete('/bank-accounts/delete/{id}',[UserBankAccountController::class,'destroy'])->name('bankAccounts.destroy');
+
 });

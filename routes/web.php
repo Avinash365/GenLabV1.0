@@ -68,7 +68,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
 
 // Reporting (protected)
 Route::middleware(['web', 'multi_auth:web,admin'])
-    ->middleware('permission:reporting.edit')->prefix('superadmin/reporting')->name('superadmin.reporting.')->group(function () {
+    ->prefix('superadmin/reporting')->name('superadmin.reporting.')->group(function () {
     Route::get('/letters', [ReportingLettersController::class, 'index'])->name('letters.index');
     Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');
     Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
