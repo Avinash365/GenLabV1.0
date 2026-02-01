@@ -77,42 +77,50 @@
                                                         <i class="fa fa-edit"></i> Edit Permissions
                                                     </a>
 
-                                                    <!-- Trigger Delete Modal -->
-                                                    <button type="button" class="btn btn-danger btn-sm mb-1"
+                                                    <!-- Trigger Activate/Deactivate Modal -->
+                                                    <?php
+                                                        $active = $role->is_active ?? $role->active ?? ($role->status ?? true);
+                                                    ?>
+                                                    <button type="button" class="btn <?php echo e($active ? 'btn-warning' : 'btn-success'); ?> btn-sm mb-1"
                                                         data-bs-toggle="modal"
-                                                        data-bs-target="#deleteModal-<?php echo e($role->id); ?>">
-                                                        <i class="fa fa-trash"></i> Delete
+                                                        data-bs-target="#toggleModal-<?php echo e($role->id); ?>">
+                                                        <i class="fa <?php echo e($active ? 'fa-ban' : 'fa-check'); ?>"></i>
+                                                        <?php echo e($active ? 'Deactivate' : 'Activate'); ?>
+
                                                     </button>
 
-                                                    <!-- Delete Confirmation Modal -->
-                                                    <div class="modal fade" id="deleteModal-<?php echo e($role->id); ?>" tabindex="-1"
-                                                        aria-labelledby="deleteModalLabel-<?php echo e($role->id); ?>"
+                                                    <!-- Activate/Deactivate Confirmation Modal -->
+                                                    <div class="modal fade" id="toggleModal-<?php echo e($role->id); ?>" tabindex="-1"
+                                                        aria-labelledby="toggleModalLabel-<?php echo e($role->id); ?>"
                                                         aria-hidden="true">
                                                         <div class="modal-dialog modal-dialog-centered">
                                                             <div class="modal-content">
-                                                                <div class="modal-header bg-danger text-white">
-                                                                    <h5 class="modal-title" id="deleteModalLabel-<?php echo e($role->id); ?>">
-                                                                        Confirm Delete
+                                                                <div class="modal-header <?php echo e($active ? 'bg-warning' : 'bg-success'); ?> text-white">
+                                                                    <h5 class="modal-title" id="toggleModalLabel-<?php echo e($role->id); ?>">
+                                                                        Confirm <?php echo e($active ? 'Deactivation' : 'Activation'); ?>
+
                                                                     </h5>
                                                                     <button type="button" class="btn-close"
                                                                         data-bs-dismiss="modal"
                                                                         aria-label="Close"></button>
                                                                 </div>
                                                                 <div class="modal-body">
-                                                                    Are you sure you want to delete
+                                                                    Are you sure you want to <?php echo e($active ? 'deactivate' : 'activate'); ?>
+
                                                                     <strong><?php echo e(ucfirst(str_replace('_', ' ', $role->role_name))); ?></strong>?
                                                                     <br>
-                                                                    <small class="text-muted">This action cannot be undone.</small>
+                                                                    <small class="text-muted">This action can be reverted later.</small>
                                                                 </div>
                                                                 <div class="modal-footer">
                                                                     <button type="button" class="btn btn-secondary"
                                                                         data-bs-dismiss="modal">Cancel</button>
-                                                                    <form action="<?php echo e(route('superadmin.roles.destroy', $role->id)); ?>"
+                                                                    <form action="<?php echo e(route('superadmin.roles.toggle', $role->id)); ?>"
                                                                         method="POST" class="d-inline">
                                                                         <?php echo csrf_field(); ?>
-                                                                        <?php echo method_field('DELETE'); ?>
-                                                                        <button type="submit" class="btn btn-danger">
-                                                                            Yes, Delete
+                                                                        <?php echo method_field('PATCH'); ?>
+                                                                        <button type="submit" class="btn <?php echo e($active ? 'btn-warning' : 'btn-success'); ?>">
+                                                                            Yes, <?php echo e($active ? 'Deactivate' : 'Activate'); ?>
+
                                                                         </button>
                                                                     </form>
                                                                 </div>

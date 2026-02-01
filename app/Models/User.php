@@ -8,6 +8,8 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 
 use Tymon\JWTAuth\Contracts\JWTSubject;
 
@@ -15,6 +17,26 @@ use Tymon\JWTAuth\Contracts\JWTSubject;
 class User extends Authenticatable implements JWTSubject
 {
     use HasApiTokens, HasFactory, Notifiable, SoftDeletes;
+
+    /**
+     * Apply global scope to only include active users when `is_active` column exists.
+     */
+    protected static function booted(): void
+    {
+        static::addGlobalScope('active', function (Builder $builder) {
+            if (Schema::hasColumn((new self())->getTable(), 'is_active')) {
+                $builder->where('is_active', true);
+            }
+        });
+    }
+
+    /**
+     * Include inactive users by removing the global `active` scope.
+     */
+    public function scopeWithInactive(Builder $query)
+    {
+        return $query->withoutGlobalScope('active');
+    }
 
     /** 
      * The attributes that are mass assignable.
@@ -28,6 +50,7 @@ class User extends Authenticatable implements JWTSubject
         'role_id',
         'created_by',
         'updated_by',
+        'is_active',
     ];
 
     /**
@@ -47,6 +70,7 @@ class User extends Authenticatable implements JWTSubject
      */
     protected $casts = [
         'user_verified_at' => 'datetime',
+        'is_active' => 'boolean',
     ];
 
     /**

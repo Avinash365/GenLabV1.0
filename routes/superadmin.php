@@ -104,7 +104,7 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
 
 
-Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('superadmin')->name('superadmin.')->group(function () {
 
     // Marketing Expenses
     Route::prefix('marketing')->name('marketing.')->group(function () {
@@ -177,6 +177,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::put('{user}', [UserController::class, 'update'])->name('update');
             Route::put('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('updatePermissions');
+
+            // Toggle active status (activate / deactivate)
+            Route::put('{user}/toggle', [UserController::class, 'toggleStatus'])->name('toggleStatus');
 
             Route::delete('{user}', [UserController::class, 'destroy'])->name('destroy');
             Route::post('{id}/send-notification', [UserController::class, 'sendNotification'])->name('sendNotification');

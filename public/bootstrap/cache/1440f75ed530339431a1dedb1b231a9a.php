@@ -631,6 +631,11 @@
                                             Bank Transactions
                                         </a>
                                     </li>
+                                     <li>
+                                        <a href="<?php echo e(route('bankAccounts.manage')); ?>" class="<?php echo e(Request::routeIs('superadmin.bankAccounts.manage') ? 'active' : ''); ?>">
+                                            Bank Details
+                                        </a>
+                                    </li>
                                 <?php endif; ?>
 
                                 <?php if($user && ($user instanceof Admin || ($user->hasPermission('employee_salary.view')))): ?>

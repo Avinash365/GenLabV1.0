@@ -85,9 +85,22 @@
                                                 </button>
 
                                                 
-                                                <button type="button" class="btn btn-danger btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#deleteUserModal<?php echo e($user->id); ?>">
-                                                    <i class="fa fa-trash"></i> Delete
-                                                </button>  
+                                                <?php
+                                                    $isActive = null;
+                                                    if (isset($user->is_active)) {
+                                                        $isActive = $user->is_active;
+                                                    } elseif (isset($user->active)) {
+                                                        $isActive = $user->active;
+                                                    } elseif (isset($user->status)) {
+                                                        $isActive = ($user->status === 'active');
+                                                    } else {
+                                                        $isActive = true; // default if unknown
+                                                    }
+                                                ?>
+                                                <button type="button" class="btn btn-<?php echo e($isActive ? 'danger' : 'success'); ?> btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#toggleUserModal<?php echo e($user->id); ?>">
+                                                    <i class="fa fa-<?php echo e($isActive ? 'ban' : 'check'); ?>"></i> <?php echo e($isActive ? 'Deactivate' : 'Activate'); ?>
+
+                                                </button>
 
                                                 <!-- Send Notification Button -->
                                                     <button type="button" class="btn btn-info btn-sm mb-1"
@@ -147,27 +160,27 @@
                                                 </div>
 
                                                 
-                                                <div class="modal fade" id="deleteUserModal<?php echo e($user->id); ?>" tabindex="-1" aria-labelledby="deleteUserLabel<?php echo e($user->id); ?>" aria-hidden="true">
+                                                <div class="modal fade" id="toggleUserModal<?php echo e($user->id); ?>" tabindex="-1" aria-labelledby="toggleUserLabel<?php echo e($user->id); ?>" aria-hidden="true">
                                                     <div class="modal-dialog">
                                                         <div class="modal-content">
                                                             <div class="modal-header">
-                                                                <h5 class="modal-title" id="deleteUserLabel<?php echo e($user->id); ?>">Delete User</h5>
+                                                                <h5 class="modal-title" id="toggleUserLabel<?php echo e($user->id); ?>"><?php echo e($isActive ? 'Deactivate' : 'Activate'); ?> User</h5>
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                             </div>
                                                             <div class="modal-body">
-                                                                Are you sure you want to delete <strong><?php echo e($user->name); ?></strong>?
+                                                                Are you sure you want to <strong><?php echo e($isActive ? 'deactivate' : 'activate'); ?></strong> <strong><?php echo e($user->name); ?></strong>?
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                                <form action="<?php echo e(route('superadmin.users.destroy', $user->id)); ?>" method="POST" style="display:inline;">
+                                                                <form action="<?php echo e(route('superadmin.users.toggleStatus', $user->id)); ?>" method="POST" style="display:inline;">
                                                                     <?php echo csrf_field(); ?>
-                                                                    <?php echo method_field('DELETE'); ?>
-                                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                                    <?php echo method_field('PUT'); ?>
+                                                                    <button type="submit" class="btn btn-<?php echo e($isActive ? 'danger' : 'success'); ?>"><?php echo e($isActive ? 'Deactivate' : 'Activate'); ?></button>
                                                                 </form>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div> 
+                                                </div>
                                                  <div class="modal fade" id="permissionsModal<?php echo e($user->id); ?>" tabindex="-1" aria-labelledby="permissionsModalLabel<?php echo e($user->id); ?>" aria-hidden="true">
                                                         <div class="modal-dialog modal-lg modal-dialog-centered">
                                                             <div class="modal-content">
