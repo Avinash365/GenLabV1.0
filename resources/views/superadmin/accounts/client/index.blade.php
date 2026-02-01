@@ -90,8 +90,6 @@
                            
                         </td>
                     </tr>
-
-
                     @if($user && ($user instanceof Admin || ($user->hasPermission('client.edit'))))
                     {{-- Edit Client Modal --}}
                     <div class="modal fade" id="editClientModal{{ $client->id }}" tabindex="-1">
@@ -148,7 +146,6 @@
                     </div>
                     @endif
 
-
                     @if($user && ($user instanceof Admin || ($user->hasPermission('client.delete'))))
                     {{-- Delete Client Modal --}}
                     <div class="modal fade" id="deleteClientModal{{ $client->id }}" tabindex="-1">
@@ -177,7 +174,6 @@
                         </div>
                     </div>
                     @endif
-
                 @empty
                     <tr>
                         <td colspan="7" class="text-center">No clients found.</td>

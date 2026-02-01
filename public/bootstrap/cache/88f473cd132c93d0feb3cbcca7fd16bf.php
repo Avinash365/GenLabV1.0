@@ -38,7 +38,7 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="mb-1 text-primary fw-bold">Bank Transactions</h2>
-                <p class="text-muted mb-0">Upload and manage ICICI bank statements</p>
+                <p class="text-muted mb-0">Upload bank statements</p>
             </div>
             <div class="d-flex gap-2">
                 <a href="<?php echo e(route('superadmin.bank.export.pdf', request()->query())); ?>" class="btn btn-outline-danger no-loader" title="Export PDF">
@@ -77,8 +77,8 @@
                     </form>
                 </div> -->
                 <div class="card-body">
-    <form action="<?php echo e(route('superadmin.bank.upload')); ?>" method="POST" enctype="multipart/form-data">
-        <?php echo csrf_field(); ?>
+                <form action="<?php echo e(route('superadmin.bank.upload')); ?>" method="POST" enctype="multipart/form-data">
+                    <?php echo csrf_field(); ?>
 
         <div class="row align-items-center g-3">
 
@@ -172,6 +172,17 @@
                             </select>
                         </div>
 
+                          <div class="col-md-2">
+                            <label for="month" class="form-label fw-semibold">Month</label>
+                            <select name="month" class="form-select filter-select">
+                                <option value="">All Months</option>
+                                <?php $__currentLoopData = range(1, 12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                    <option value="<?php echo e($m); ?>" <?php echo e(request('month') == $m ? 'selected' : ''); ?>>
+                                        <?php echo e(date('F', mktime(0, 0, 0, $m, 1))); ?></option>
+                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                            </select>
+                        </div>
+
                         <div class="col-md-2">
                             <label for="year" class="form-label fw-semibold">Year</label>
                             <select name="year" class="form-select filter-select">
@@ -182,52 +193,24 @@
                                 <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                             </select>
                         </div>
-                        <div class="col-md-2">
+                        
+
+            
+            <div class="col-md-2">
                 <label class="form-label text-muted small text-uppercase fw-bold">
                     Select Bank
                 </label>
-                <select name="bank_id" class="form-select filter-select" >
-                    <option value="">-- Select Bank --</option>
+                <select name="bank_id" class="form-select filter-select">
+    <option value="">-- Select Bank --</option>
 
-                    <?php $__currentLoopData = $accounts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $account): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <option value="<?php echo e($account->id); ?>">
-                            <?php echo e($account->bank_name); ?> [<?php echo e($account->account_no); ?>]
-                        </option>
-                    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-
-                    <!-- <option value="1">State Bank of India (SBI)</option>
-                    <option value="2">HDFC Bank</option>
-                    <option value="3">ICICI Bank</option>
-                    <option value="4">Axis Bank</option>
-                    <option value="5">Punjab National Bank (PNB)</option>
-                    <option value="6">Bank of Baroda</option>
-                    <option value="7">Canara Bank</option>
-                    <option value="8">Union Bank of India</option>
-                    <option value="9">Kotak Mahindra Bank</option>
-                    <option value="10">IndusInd Bank</option>
-                    <option value="11">Yes Bank</option>
-                    <option value="12">IDFC First Bank</option>
-                    <option value="13">Indian Bank</option>
-                    <option value="14">Central Bank of India</option>
-                    <option value="15">UCO Bank</option>
-                    <option value="16">Bank of India</option>
-                    <option value="17">IDBI Bank</option>
-                    <option value="18">Federal Bank</option>
-                    <option value="19">South Indian Bank</option>
-                    <option value="20">RBL Bank</option> -->
-                </select>
+    <?php $__currentLoopData = $accounts; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $account): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+        <option value="<?php echo e($account->id); ?>"
+            <?php echo e(request('bank_id') == $account->id ? 'selected' : ''); ?>>
+            <?php echo e($account->bank_name); ?> [<?php echo e($account->account_no); ?>]
+        </option>
+    <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+</select>
             </div>
-
-                        <div class="col-md-2">
-                            <label for="month" class="form-label fw-semibold">Month</label>
-                            <select name="month" class="form-select filter-select">
-                                <option value="">All Months</option>
-                                <?php $__currentLoopData = range(1, 12); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $m): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                                    <option value="<?php echo e($m); ?>" <?php echo e(request('month') == $m ? 'selected' : ''); ?>>
-                                        <?php echo e(date('F', mktime(0, 0, 0, $m, 1))); ?></option>
-                                <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
-                            </select>
-                        </div>
 
                         <div class="col-md-2 d-flex gap-2 align-items-end">
                             <button type="submit" class="btn btn-primary w-100"><i class="fa fa-check me-1"></i>Apply</button>
@@ -348,11 +331,34 @@
                 </div>
 
                 <!-- Pagination -->
-                <div class="d-flex justify-content-end p-3 border-top">
+                <!-- <div class="d-flex justify-content-end p-3 border-top">
+                    <?php echo e($transactions->links('pagination::bootstrap-5')); ?>
+
+                </div> -->
+            
+            
+                <div class="d-flex justify-content-between align-items-center p-3 border-top">
+                    <!-- Per Page Selector -->
+                    <form method="GET" id="perPageForm">
+                        <?php $__currentLoopData = request()->except('perPage', 'page'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $key => $value): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                            <input type="hidden" name="<?php echo e($key); ?>" value="<?php echo e($value); ?>">
+                        <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        <label class="me-2 fw-semibold">Rows per page:</label>
+                        <select name="perPage" class="form-select d-inline-block w-auto"
+                                onchange="document.getElementById('perPageForm').submit()">
+                            <?php $__currentLoopData = [25, 50, 100, 500]; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $size): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <option value="<?php echo e($size); ?>" <?php echo e(request('perPage', 25) == $size ? 'selected' : ''); ?>>
+                                    <?php echo e($size); ?>
+
+                                </option>
+                            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
+                        </select>
+                    </form>
+                    <!-- Pagination -->
                     <?php echo e($transactions->links('pagination::bootstrap-5')); ?>
 
                 </div>
-            </div>
+            </div>  
         </div>
 
     </div>
