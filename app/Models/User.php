@@ -162,4 +162,6 @@ class User extends Authenticatable implements JWTSubject
         return $this->hasMany(MarketingPersonDeviceToken::class, 'marketing_person_id');
     }
 
+    
+
 }

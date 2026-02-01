@@ -16,6 +16,8 @@ use App\Models\ReportEditorFile;
 use Illuminate\Support\Facades\Storage;
 
 
+
+
 class ReportingController extends Controller
 {
     /**
@@ -121,6 +123,7 @@ class ReportingController extends Controller
             ->pluck('id')
             ->all();
 
+        
         $bookings = (clone $baseQuery)
             ->whereIn('id', $withLettersIds)
             ->latest('id')
