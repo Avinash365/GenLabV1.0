@@ -180,6 +180,30 @@
     </div>
     @endif
 
+    @php
+        // If the sidebar/link requested only dispatched items, filter the passed $items here
+        if (request('status') === 'dispatched' && isset($items)) {
+            // If paginator, operate on its collection
+            if (method_exists($items, 'getCollection')) {
+                $filtered = $items->getCollection()->filter(function($it) {
+                    $s = strtolower(trim($it->status ?? ($it->dispatched_at ? 'dispatched' : '')));
+                    return $s === 'dispatched';
+                });
+                $items->setCollection($filtered->values());
+            } elseif ($items instanceof \Illuminate\Support\Collection) {
+                $items = $items->filter(function($it) {
+                    $s = strtolower(trim($it->status ?? ($it->dispatched_at ? 'dispatched' : '')));
+                    return $s === 'dispatched';
+                })->values();
+            } else {
+                $items = collect($items)->filter(function($it) {
+                    $s = strtolower(trim($it->status ?? ($it->dispatched_at ? 'dispatched' : '')));
+                    return $s === 'dispatched';
+                })->values();
+            }
+        }
+    @endphp
+
     <div class="card">
         <div class="card-body">
             <div class="d-flex justify-content-end mb-2">

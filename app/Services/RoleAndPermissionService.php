@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Role;
 use App\Models\Permission;
+use App\Models\RoleName;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
@@ -27,9 +28,49 @@ class RoleAndPermissionService
     {
         $permissions = Permission::all();
 
+        // Pass existing simple role names (separate table) so the view can show them dynamically
+        $roleNames = RoleName::all();
+
         return view('superadmin.roles.create', [
             'permissions' => $permissions,
+            'roleNames' => $roleNames,
         ]);
+    }
+
+    /**
+     * Quick create a role (AJAX) used by the create role modal/dropdown.
+     */
+    public function quickStore(Request $request)
+    {
+        $validated = $request->validate([
+            'role_name' => 'required|string|max:255|unique:role_names,name',
+        ]);
+
+        try {
+            $roleName = RoleName::create([
+                'name'       => $validated['role_name'],
+                'created_by' => auth('admin')->id(),
+            ]);
+
+            return response()->json([
+                'success' => true,
+                'role' => [
+                    'id' => $roleName->id,
+                    'name' => $roleName->name,
+                ],
+            ]);
+
+        } catch (\Exception $e) {
+            Log::error('Quick role-name creation failed', [
+                'error' => $e->getMessage(),
+                'request' => $request->all(),
+            ]);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'Something went wrong while creating the role name.'
+            ], 500);
+        }
     }
 
     /**

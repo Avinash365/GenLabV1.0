@@ -80,11 +80,11 @@ class MarketingPersonStatsService
                 DB::raw('COALESCE(SUM(invoices.total_amount),0) as total_amount'),
                 DB::raw('COALESCE(SUM(invoices.gst_amount),0) as total_gst'),
 
-                // Unpaid / Outstanding: include fully unpaid and partial invoices and compute remaining due
-                DB::raw("COALESCE(SUM(CASE WHEN invoices.status IN (0,3) THEN (invoices.total_amount - COALESCE(it.total_received,0)) ELSE 0 END),0) as total_unpaid_amount"),
-                DB::raw("SUM(CASE WHEN invoices.status IN (0,3) THEN 1 ELSE 0 END) as unpaid_invoice_count"),
-                DB::raw("COALESCE(SUM(CASE WHEN invoices.status IN (0,3) THEN COALESCE(it.total_received,0) ELSE 0 END),0) as unpaid_received_amount"),
-                DB::raw("COALESCE(SUM(CASE WHEN invoices.status IN (0,3) THEN COALESCE(tds.total_after_tds,0) ELSE 0 END),0) as unpaid_amount_after_tds"),
+                // Unpaid: only invoices with status = 0 (fully unpaid)
+                DB::raw("COALESCE(SUM(CASE WHEN invoices.status = 0 THEN invoices.total_amount ELSE 0 END),0) as total_unpaid_amount"),
+                DB::raw("SUM(CASE WHEN invoices.status = 0 THEN 1 ELSE 0 END) as unpaid_invoice_count"),
+                DB::raw("COALESCE(SUM(CASE WHEN invoices.status = 0 THEN COALESCE(it.total_received,0) ELSE 0 END),0) as unpaid_received_amount"),
+                DB::raw("COALESCE(SUM(CASE WHEN invoices.status = 0 THEN COALESCE(tds.total_after_tds,0) ELSE 0 END),0) as unpaid_amount_after_tds"),
 
                 // Paid
                 DB::raw("COALESCE(SUM(CASE WHEN invoices.status = 1 THEN invoices.total_amount ELSE 0 END),0) as total_paid_amount"),

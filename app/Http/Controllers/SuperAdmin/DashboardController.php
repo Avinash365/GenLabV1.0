@@ -380,6 +380,53 @@ class DashboardController extends Controller
     }
 
     /**
+     * Return department-specific dashboard payload for AJAX requests.
+     * Renders the metrics/charts/quick-links partials server-side and returns
+     * them as HTML so the client can replace placeholders without re-running
+     * expensive computations on the initial page render.
+     */
+    public function payload(Request $request)
+    {
+        $user = Auth::guard('web')->user() ?? Auth::guard('admin')->user();
+
+        if (!$user) {
+            return response()->json(['error' => 'Unauthorized'], 403);
+        }
+
+        $primaryDepartmentName = optional($user->employee)->department;
+        $role = $user->role;
+
+        $identifier = $primaryDepartmentName
+            ?? ($role?->slug)
+            ?? ($role?->role_name);
+
+        $departmentSlug = $this->normalizeDepartmentSlug($identifier);
+        $departmentModel = $primaryDepartmentName
+            ? Department::where('name', $primaryDepartmentName)->first()
+            : null;
+
+        $payload = $this->buildDepartmentPayload($departmentSlug, $user, $departmentModel);
+
+        $metricsHtml = view('superadmin.departments.partials.metrics', ['metrics' => $payload['metrics'] ?? []])->render();
+        $chartsHtml = view('superadmin.departments.partials.charts', ['charts' => $payload['charts'] ?? []])->render();
+        $quickLinksHtml = view('superadmin.departments.partials.quick-links', ['quickLinks' => $payload['quick_links'] ?? []])->render();
+
+        $metricLookup = collect($payload['metrics'] ?? [])->pluck('value', 'label');
+
+        return response()->json([
+            'metrics_html' => $metricsHtml,
+            'charts_html' => $chartsHtml,
+            'quick_links_html' => $quickLinksHtml,
+            'followups' => [
+                'bookings_created_today' => $metricLookup->get('Bookings Created Today', 0),
+                'on_hold' => $metricLookup->get('On Hold', 0),
+                'awaiting_invoice' => $metricLookup->get('Awaiting Invoice', 0),
+                'insight' => $payload['insights']['message'] ?? null,
+            ],
+        ]);
+    }
+
+    /**
      * Return booking counts per day for the last N days (default 30)
      */
     public function bookingTrendChart(Request $request)

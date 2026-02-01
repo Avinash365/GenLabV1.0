@@ -146,6 +146,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
     // Dashboard
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.index');
+    Route::get('dashboard/payload', [DashboardController::class, 'payload'])->name('dashboard.payload');
     Route::get('dashboard/invoice-payment-chart', [DashboardController::class, 'invoicePaymentChart'])
         ->name('dashboard.invoicePaymentChart');    Route::get('dashboard/accounts-invoices-chart', [DashboardController::class, 'accountsInvoicesChart'])
         ->name('dashboard.accounts-invoices-chart');

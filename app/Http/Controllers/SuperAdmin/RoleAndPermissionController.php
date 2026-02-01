@@ -52,4 +52,12 @@ class RoleAndPermissionController extends Controller
         return $this->service->show($role);
     }
 
+    /**
+     * Quick AJAX store for roles (used by create view to add new role on the fly).
+     */
+    public function quickStore(Request $request)
+    {
+        return $this->service->quickStore($request);
+    }
+
 }
