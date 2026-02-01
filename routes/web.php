@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\User\UserLoginController;
 use App\Http\Controllers\SuperAdmin\DashboardController;
+use App\Http\Controllers\SuperAdmin\RoleAndPermissionController;
 use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\SuperAdmin\ProductController;
 use App\Http\Controllers\SuperAdmin\ProductViewController;
@@ -58,6 +59,9 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit')->middleware('permission:web-settings.edit');
     Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web-settings.edit');
     Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web-settings.edit');
+
+    // Quick AJAX role creation used on role create page
+    Route::post('/roles/quick', [RoleAndPermissionController::class, 'quickStore'])->name('roles.quickstore');
 
 });
 
