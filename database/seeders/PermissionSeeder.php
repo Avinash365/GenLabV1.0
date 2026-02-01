@@ -79,7 +79,7 @@ class PermissionSeeder extends Seeder
             'expenses' => [
                 'personal_expense',
                 'marketing_expense',
-                'expense_office',
+                'office_expense',
                 'approve_expense',
                 'reject_expense',
             ],
@@ -122,12 +122,10 @@ class PermissionSeeder extends Seeder
         |--------------------------------------------------------------------------
         */
         $customActions = [
-            'attendance'          => ['view'],
             'report_received'     => ['view'],
             'audit_trail'         => ['view'],
-            'approve_leave'       => ['approve'],
-            'approve_expense'     => ['approve'],
-            'reject_expense'      => ['reject'],
+            'approve_expense'     => ['view'],
+            'reject_expense'      => ['view'],
         ];
 
         /*

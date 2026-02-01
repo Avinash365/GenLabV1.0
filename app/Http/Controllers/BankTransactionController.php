@@ -36,10 +36,7 @@ class BankTransactionController extends Controller
         $query = BankTransaction::query();
 
 
-        
-
-        
-
+    
         // Include trashed if filtering softdeleted
         if ($request->filled('status') && $request->status == 'softdeleted') {
             $query->onlyTrashed();
@@ -117,10 +114,15 @@ class BankTransactionController extends Controller
         $years = range($currentYear - 10, $currentYear + 10);
         $years = array_reverse($years); // optional: show latest year first
                   
-        // Get paginated results
-        $transactions = $query->paginate(10)->withQueryString();
+        $perPage = (int) $request->get('perPage', 25);
+        if (!in_array($perPage, [25, 50, 100, 500])) {
+            $perPage = 25;
+        }
+
+        $transactions = $query->paginate($perPage)->withQueryString();
 
          $creatorId = Auth::guard('admin')->id() ?? Auth::id();
+         
          $accounts = UserBankAccount::where('created_by', $creatorId)
                     ->latest()
                     ->get();

@@ -296,11 +296,13 @@
                                     </a>
 
                                     <!-- Delete Button -->
-                                    <button type="button" class="border rounded d-flex align-items-center p-2 btn-delete"
-                                            data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $booking->id }}"
-                                            aria-label="Delete booking">
-                                        <i data-feather="trash-2" class="feather-trash-2"></i>
-                                    </button>
+                                    @can('booking.delete', $booking)
+                                        <button type="button" class="border rounded d-flex align-items-center p-2 btn-delete"
+                                                data-bs-toggle="modal" data-bs-target="#deleteModal-{{ $booking->id }}"
+                                                aria-label="Delete booking">
+                                            <i data-feather="trash-2" class="feather-trash-2"></i>
+                                        </button>
+                                    @endcan
 
                                     <!-- Delete Modal -->
                                     <div class="modal fade" id="deleteModal-{{ $booking->id }}" tabindex="-1" aria-hidden="true">
@@ -311,6 +313,7 @@
                                                         <i class="ti ti-trash"></i>
                                                     </div>
                                                     <h5 class="mb-3">Are you sure you want to delete this booking?</h5>
+                                                    
                                                     <div class="d-flex justify-content-center gap-2">
                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
                                                         <form action="{{ route('superadmin.bookings.destroy', $booking->id) }}" method="POST">
@@ -319,6 +322,7 @@
                                                             <button type="submit" class="btn btn-danger">Delete</button>
                                                         </form>
                                                     </div>
+
                                                 </div>
                                             </div>
                                         </div>

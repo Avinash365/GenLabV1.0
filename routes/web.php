@@ -56,9 +56,9 @@ Route::get('superadmin/viewproduct/excel/{category?}', [ProductViewController::c
 // Web Settings (protected)
 Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
     // Web Settings
-    Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit')->middleware('permission:web-settings.edit');
-    Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web-settings.edit');
-    Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web-settings.edit');
+    Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit')->middleware('permission:web_setting.edit');
+    Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web_setting.edit');
+    Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web_setting.edit');
 
     // Quick AJAX role creation used on role create page
     Route::post('/roles/quick', [RoleAndPermissionController::class, 'quickStore'])->name('roles.quickstore');
@@ -124,7 +124,7 @@ Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadm
 Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function(){
     Route::get('/accounts/cleared-expenses', [MarketingExpenseController::class, 'clearedExpenses'])
         ->name('accounts.cleared_expenses')
-        ->middleware('permission:account.view');
+        ->middleware('permission:cleared_expense.view');
 });
 
  

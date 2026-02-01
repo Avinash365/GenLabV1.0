@@ -24,7 +24,8 @@ class ShowBookingByLetterController extends Controller
     public function __construct(GetUserActiveDepartment $departmentService)
     {
         $this->departmentService = $departmentService;
-
+        $this->middleware('permission:booking.delete')->only('destroy');
+        // $this->middleware('permission:booking.edit')->only('edit');
     }
 
     public function index(Request $request)
@@ -46,6 +47,18 @@ class ShowBookingByLetterController extends Controller
             ->orderBy('user_code')
             ->get();
 
+            $perPage = (int) $request->get('perPage', 25);
+            $allowedPerPage = [25, 50, 100, 500];
+
+            if (!in_array($perPage, $allowedPerPage)) {
+                $perPage = 25;
+            }
+
+            $items = $query
+                ->latest()
+                ->paginate($perPage)
+                ->withQueryString();
+            
         // Get results (paginated)
         $perPage = (int) $request->get('perPage', 25);
         if (!in_array($perPage, [25, 50, 100,500])) { $perPage = 25; }
@@ -93,7 +106,7 @@ class ShowBookingByLetterController extends Controller
         $bookingItem->delete();
 
         return redirect()->back()
-                        ->with('success', 'Booking item deleted successfully.');
+                    ->with('success', 'Booking item deleted successfully.');
     }
 
     protected function buildQuery(Request $request)

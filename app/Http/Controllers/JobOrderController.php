@@ -27,7 +27,14 @@ class JobOrderController extends Controller
         $items = BookingItem::where('new_booking_id', $bookingId)->paginate($perPage);
 
         // 3 Get paginated invoices related to this booking
-        $invoices = Invoice::where('new_booking_id', $bookingId)
+        // $invoices = Invoice::where('new_booking_id', $bookingId)
+        //     ->with(['client', 'marketingPerson', 'transactions', 'tdsTransaction'])
+        //     ->paginate($perPage);
+
+        $invoices = Invoice::where(function ($query) use ($bookingId) {
+                $query->where('new_booking_id', $bookingId)
+                    ->orWhereRaw('FIND_IN_SET(?, invoice_booking_ids)', [$bookingId]);
+            })
             ->with(['client', 'marketingPerson', 'transactions', 'tdsTransaction'])
             ->paginate($perPage);
 

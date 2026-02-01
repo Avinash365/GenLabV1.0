@@ -959,7 +959,7 @@ Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('supera
 
     // bank details
     Route::resource('payment-settings', PaymentSettingController::class)
-        ->middleware('permission:bank-details.view')->only(['index', 'store', 'update']);
+        ->middleware('permission:bank_detail.view')->only(['index', 'store', 'update']);
 });
 
 

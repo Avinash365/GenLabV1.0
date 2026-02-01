@@ -37,14 +37,28 @@
                     <h4>All Letters</h4>
                     <h6>Assign Client</h6>
                 </div>
-
+            </div>
+            <ul class="table-top-head list-inline d-flex gap-2 ms-auto me-3 align-items-center">
                 <?php if($user && ($user instanceof Admin || ($user->hasPermission('client_assigned.create')))): ?>
                     <!-- 🔹 Register Client Button (opens popup) -->
-                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerClientModal">
-                        + Register Client
-                    </button>
+                    <li class="list-inline-item">
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#registerClientModal">
+                            + Register Client
+                        </button>
+                    </li>
                 <?php endif; ?>
-            </div>
+            <li class="list-inline-item">
+                <a href="<?php echo e(route('superadmin.accountBookingsLetters.exportPdf')); ?><?php echo e($query ? ('?'.$query) : ''); ?>" class="no-loader" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+            </li>
+            <li class="list-inline-item">
+                <a href="<?php echo e(route('superadmin.accountBookingsLetters.exportExcel')); ?><?php echo e($query ? ('?'.$query) : ''); ?>" class="no-loader" data-bs-toggle="tooltip" title="Excel">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
+                        <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
+                    </svg>
+                </a>
+            </li>
+            <li><a data-bs-toggle="tooltip" title="Refresh"><i class="ti ti-refresh"></i></a></li>
+         </ul>
         </div>
        
         <div class="card">
