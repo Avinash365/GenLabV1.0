@@ -162,6 +162,8 @@ Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('supera
             Route::post('/', [RoleAndPermissionController::class, 'store'])->name('store');
             Route::get('{role}/edit', [RoleAndPermissionController::class, 'edit'])->name('edit');
             Route::put('{role}', [RoleAndPermissionController::class, 'update'])->name('update');
+            Route::put('bulk/toggle-login-restriction', [RoleAndPermissionController::class, 'bulkToggleLoginRestriction'])->name('bulk-toggle-login-restriction');
+            Route::put('{role}/toggle-login-restriction', [RoleAndPermissionController::class, 'toggleLoginRestriction'])->name('toggle-login-restriction');
             Route::delete('{role}', [RoleAndPermissionController::class, 'destroy'])->name('destroy');
             Route::get('{role}', [RoleAndPermissionController::class, 'show'])->name('show');
         });

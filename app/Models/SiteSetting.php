@@ -18,5 +18,7 @@ class SiteSetting extends Model
         'project_title',
         'footer_credit',
         'footer_copyright',
+        'restriction_start_time',
+        'restriction_end_time',
     ];
 }
