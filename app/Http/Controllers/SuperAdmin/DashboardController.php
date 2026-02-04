@@ -71,7 +71,7 @@ class DashboardController extends Controller
             return \App\Models\PurchaseBill::sum('gst_amount');
         });
 
-        $totalGst = $salesGst + $purchaseGst;
+        $totalGst = $salesGst - $purchaseGst;
 
         if ($req->query('post_login')) {
             $minimal = [

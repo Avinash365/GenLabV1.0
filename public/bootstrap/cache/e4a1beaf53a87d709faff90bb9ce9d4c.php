@@ -186,7 +186,7 @@
                 <?php
                     $inAccountQs = array_merge(request()->query(), ['approved_section' => $approvedSection]);
                 ?>
-                <a href="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>" class="btn btn-sm btn-primary me-2 js-in-account" data-url="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>">Send To Account</a>
+                <a href="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>" class="btn btn-sm btn-primary me-2 js-in-account" data-url="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>" data-marketing-person="<?php echo e(request('marketing_person_code')); ?>">Send To Account</a>
                 <a href="<?php echo e(route('superadmin.marketing.expenses.approved', array_merge(request()->query(), ['approved_section' => $approvedSection]))); ?>" class="btn btn-sm btn-outline-secondary js-approved-refresh" data-url="<?php echo e(route('superadmin.marketing.expenses.approved', array_merge(request()->query(), ['approved_section' => $approvedSection]))); ?>">Refresh</a>
             </div>
         </div>
@@ -370,6 +370,13 @@
         document.querySelectorAll('.js-in-account').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                // Ensure a marketing person filter is selected before sending
+                const marketingPerson = btn.dataset.marketingPerson || (new URLSearchParams(window.location.search)).get('marketing_person_code');
+                if(!marketingPerson){
+                    Swal.fire({icon:'warning', title: 'Select filter', text: 'Please select a marketing person filter before sending to account.'});
+                    return;
+                }
+
                 const url = btn.dataset.url || btn.href;
                 Swal.fire({
                     title: 'Sending to Cleared Expenses',

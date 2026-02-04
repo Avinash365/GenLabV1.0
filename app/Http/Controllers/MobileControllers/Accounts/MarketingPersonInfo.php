@@ -754,7 +754,7 @@ class MarketingPersonInfo extends Controller
             return [
                 'id' => $item->id,
                 'job_order_no' => $item->job_order_no,
-                'job_order_date' => $item->job_order_date ? $item->job_order_date->toDateString() : ($booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->toDateString() : null),
+                'job_order_date' => $item->job_order_date ? \Carbon\Carbon::parse($item->job_order_date)->toDateString() : ($booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->toDateString() : null),
                 'reference_no' => $booking->reference_no ?? null,
                 'client_name' => $booking->client_name ?? null,
                 'sample_quality' => $item->sample_quality,
