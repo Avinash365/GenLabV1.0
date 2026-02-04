@@ -62,26 +62,26 @@
                 <div class="d-flex flex-column gap-3 h-100">
                     <div class="card">
                         <div class="card-header d-flex align-items-center justify-content-between">
-                            <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> Overall Information</h6>
+                            <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> GST Overview</h6>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Suppliers</div>
-                                        <div class="fw-bold" id="statSuppliers">6987</div>
+                                        <div class="text-muted">Sales</div>
+                                        <div class="fw-bold" id="statSales">{{ number_format($salesGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Customer</div>
-                                        <div class="fw-bold" id="statCustomers">4896</div>
+                                        <div class="text-muted">Purchase</div>
+                                        <div class="fw-bold" id="statPurchase">{{ number_format($purchaseGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Orders</div>
-                                        <div class="fw-bold" id="statOrders">487</div>
+                                        <div class="text-muted">Total</div>
+                                        <div class="fw-bold" id="statTotal">{{ number_format($totalGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                             </div>

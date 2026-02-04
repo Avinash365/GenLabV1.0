@@ -42,7 +42,7 @@
 
             {{-- ROW 1 --}}
             <div class="row">
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Description</label>
                     <input
                         type="text"
@@ -53,7 +53,7 @@
                     >
                 </div>
 
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Party</label>
                     <input
                         type="text"
@@ -64,7 +64,7 @@
                     >
                 </div>
 
-                <div class="col-md-4 mb-3">
+                <div class="col-md-3 mb-3">
                     <label class="form-label">Amount</label>
                     <input
                         type="number"
@@ -73,6 +73,17 @@
                         class="form-control"
                         placeholder="Amount"
                         required
+                    >
+                </div>
+
+                <div class="col-md-3 mb-3">
+                    <label class="form-label">GST Amount</label>
+                    <input
+                        type="number"
+                        step="0.01"
+                        name="gst_amount"
+                        class="form-control"
+                        placeholder="GST Amount"
                     >
                 </div>
             </div>

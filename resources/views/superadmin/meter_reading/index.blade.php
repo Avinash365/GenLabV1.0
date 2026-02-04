@@ -67,7 +67,7 @@
             } else {
                 $roleName = '';
             }
-            $isAdmin = $roleName ? stripos($roleName, 'admin') !== false : false;
+            $isAdmin = $roleName ? stripos($roleName, 'marketing') === false : false;
         }
     @endphp
  

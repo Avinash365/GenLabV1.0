@@ -50,22 +50,29 @@
                 </div>
             </div>
 
-            @push('scripts')
-                <script>
-                    document.addEventListener('DOMContentLoaded', function () {
+            <script>
+                (function() {
+                    var init = function() {
                         const ctx = document.getElementById(@json($chartId));
                         if (!ctx) return;
+                        if (ctx.chart) ctx.chart.destroy(); // Destroy existing chart if any
                         const chartConfig = {
                             type: @json($chartType),
                             data: @json($data),
                             options: @json($options),
                         };
                         if (window.Chart) {
-                            new Chart(ctx, chartConfig);
+                            ctx.chart = new Chart(ctx, chartConfig);
                         }
-                    });
-                </script>
-            @endpush
+                    };
+
+                    if (document.readyState !== 'loading') {
+                        init();
+                    } else {
+                        document.addEventListener('DOMContentLoaded', init);
+                    }
+                })();
+            </script>
         @endforeach
     </div>
 @endif

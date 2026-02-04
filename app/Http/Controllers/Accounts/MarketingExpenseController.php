@@ -598,7 +598,7 @@ class MarketingExpenseController extends Controller
             });
         }
 
-        $expenses = $query->orderByDesc('created_at')->get();
+        $expenses = $query->orderBy('created_at', 'asc')->get();
 
         // If there are no approved (and not already cleared) expenses matching the filters,
         // return a JSON error for AJAX requests so the frontend won't try to download or
