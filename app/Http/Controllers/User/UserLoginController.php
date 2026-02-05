@@ -33,11 +33,12 @@ class UserLoginController extends Controller
     public function index(Request $request){
         if ($request->has('JOB_CARD_NO')) {
             $jobOrderNumber = $request->input('JOB_CARD_NO');
-            $exists = BookingItem::where('job_order_no', strtoupper($jobOrderNumber))->exists();
+            $item = BookingItem::with('booking')->where('job_order_no', strtoupper($jobOrderNumber))->first();
             
             return view('public.verify_job_order', [
-               'verified' => $exists,
-               'job_order_no' => $jobOrderNumber
+               'verified' => (bool) $item,
+               'job_order_no' => $jobOrderNumber,
+               'item' => $item
            ]);
        }
         return view('user.login'); 
