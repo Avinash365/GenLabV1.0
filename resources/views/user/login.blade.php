@@ -16,12 +16,11 @@
                             </a>
                             <div class="login-userheading">
                                 <h3>Sign In</h3>
-                                
                             </div>
                             @if ($errors->any())
-                                <div class="alert alert-danger">
-                                    {{ $errors->first() }}
-                                </div>
+                            <div class="alert alert-danger">
+                                {{ $errors->first() }}
+                            </div>
                             @endif
                             <div class="mb-3">
                                 <label class="form-label">User code</label>
@@ -40,16 +39,16 @@
                                 </div>
                             </div>
                             <div class="form-login authentication-check">
-                                <div class="row">
-                                    <div class="col-6">
-                                        <div class="custom-control custom-checkbox">
-                                            <label class="checkboxs ps-4 mb-0 pb-0 line-height-1">
-                                                <input type="checkbox" name="remember">
-                                                <span class="checkmarks"></span>Remember me
-                                            </label>
-                                        </div>
+                                <div class="row align-items-center justify-content-between">
+                                    <div class="col-auto">
+                                        <label class="checkboxs ps-4 mb-0 pb-0 line-height-1">
+                                            <input type="checkbox" name="remember">
+                                            <span class="checkmarks"></span>Remember me
+                                        </label>
                                     </div>
-                                   
+                                    <div class="col-auto">
+                                        <a href="{{ route('superadmin.login') }}" class="d-inline-block align-middle text-nowrap">Admin Login</a>
+                                    </div>
                                 </div>
                             </div>
                             <div class="form-login">

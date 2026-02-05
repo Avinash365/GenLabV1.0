@@ -216,6 +216,10 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
     Route::get('/bookings/cards/client/{booking}/{item?}', [\App\Http\Controllers\SuperAdmin\ShowBookingController::class, 'clientCard'])->name('bookings.cards.client');
 });
 
+// Public Job Order Verification
+Route::get('/{job_order_no}', [\App\Http\Controllers\JobOrderController::class, 'verify']);
+
+
 
 
 

@@ -2787,4 +2787,37 @@ class DashboardController extends Controller
             'overdue' => $overdue,
         ]);
     }
+
+    public function gstOverview(Request $request)
+    {
+        $daysParam = $request->query('days', '30'); 
+        
+        $cacheKey = 'dashboard:gst:' . $daysParam;
+        
+        $data = Cache::remember($cacheKey, 300, function() use ($daysParam) {
+            $querySales = \App\Models\Invoice::query();
+            $queryPurchase = \App\Models\PurchaseBill::query();
+
+            // purchase_date, invoice_date
+            if (strtoupper($daysParam) !== 'ALL') {
+                $days = (int)$daysParam;
+                $startDate = Carbon::now()->subDays($days)->startOfDay();
+                
+                $querySales->where('invoice_date', '>=', $startDate);
+                $queryPurchase->where('purchase_date', '>=', $startDate);
+            }
+
+            $salesGst = (float) $querySales->sum('gst_amount');
+            $purchaseGst = (float) $queryPurchase->sum('gst_amount');
+            $totalGst = $salesGst - $purchaseGst;
+            
+            return [
+                'salesGst' => $salesGst,
+                'purchaseGst' => $purchaseGst,
+                'totalGst' => $totalGst,
+            ];
+        });
+
+        return response()->json($data);
+    }
 }

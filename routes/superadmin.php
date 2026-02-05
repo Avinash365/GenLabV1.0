@@ -150,7 +150,10 @@ Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('supera
     Route::get('dashboard/payload', [DashboardController::class, 'payload'])->name('dashboard.payload');
     Route::get('dashboard/invoice-payment-chart', [DashboardController::class, 'invoicePaymentChart'])
         ->name('dashboard.invoicePaymentChart');    Route::get('dashboard/accounts-invoices-chart', [DashboardController::class, 'accountsInvoicesChart'])
-        ->name('dashboard.accounts-invoices-chart');
+        ->name('dashboard.accountsInvoicesChart');
+
+    Route::get('dashboard/gst-overview', [DashboardController::class, 'gstOverview'])->name('dashboard.gstOverview');
+
     
     
     // Role & Permission Management
