@@ -347,7 +347,7 @@
                                             </td>
                                             <td>{{ $item->job_order_no }}</td>
                                             <td>{{ $booking->sac_code ?? '998346' }}</td>
-                                            <td contenteditable="true" class="editable qty ">
+                                            <td contenteditable="true" class="editable text-center qty ">
                                                 {{ $item->qty ?? 1 }}
                                             </td>
                                             <td contenteditable="true" class="editable rate text-right">
@@ -1092,9 +1092,9 @@
                     <td contenteditable="true" class="editable description"></td>
                     <td contenteditable="true">10101</td>
                     <td contenteditable="true"></td>
-                    <td contenteditable="true" class="editable qty">1</td>
-                    <td contenteditable="true" class="editable rate">0.00</td>
-                    <td class="amount">0.00</td>
+                    <td contenteditable="true" class="editable qty text-center">1</td>
+                    <td contenteditable="true" class="editable rate text-right">0.00</td>
+                    <td class="amount text-right">0.00</td>
                 `;
 
             return row;

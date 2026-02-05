@@ -360,6 +360,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         // AJAX routes
         Route::get('client/{id}/bookings', [ClientLedgerController::class, 'fetchBookings'])->name('client.bookings');
         Route::get('client/{id}/without-bill', [ClientLedgerController::class, 'fetchWithoutBillBookings'])->name('client.withoutBill');
+        Route::get('client/{id}/all-transaction', [ClientLedgerController::class, 'fetchAllBankTransaction'])->name('client.bankTransaction');
+
         Route::get('client/{id}/invoices', [ClientLedgerController::class, 'fetchInvoices'])->name('client.invoices');
 
         Route::get('client/{id}/transactions', [ClientLedgerController::class, 'fetchInvoicesTransactions'])->name('client.transactions');

@@ -69,7 +69,7 @@
             }
             $isAdmin = $roleName ? stripos($roleName, 'admin') !== false : false;
         }
-    @endphp
+    @endphp 
  
     <!-- Upload Modal -->
     <div class="modal fade" id="uploadReadingModal" tabindex="-1" aria-hidden="true">

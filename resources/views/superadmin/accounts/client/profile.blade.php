@@ -341,6 +341,15 @@
                         'type' => 'without_bill',
                         'route' => route('superadmin.client.withoutBill', $client->id) . "?transaction_status=3&with_payment=1" . $filterParams
                     ],
+                    // [
+                    //     'id' => 'BankTransaction',
+                    //     'title' => 'Bank Transactions',
+                    //     'count' => '',
+                    //     'amount' => 'All Bank Uploaded',
+                    //     'class' => 'success',
+                    //     'type' => 'bill',
+                    //     'route' => route('superadmin.client.bankTransaction', $client->id) . $filterParams
+                    // ],
                 ];
             @endphp
 

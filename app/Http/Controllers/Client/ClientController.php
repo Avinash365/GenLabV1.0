@@ -9,10 +9,11 @@ use Illuminate\Http\Request;
 
 class ClientController extends Controller
 {
-    public function __construct(){
-           $this->middleware('permission:client.view')->only(['index']);
-           $this->middleware('permission:client.create')->only(['store']);
-           $this->middleware('permission:client.delete')->only(['destroy']);
+    public function __construct()
+    {
+        $this->middleware('permission:client.view')->only(['index']);
+        $this->middleware('permission:client.create')->only(['store']);
+        $this->middleware('permission:client.delete')->only(['destroy']);
     }
 
     public function index(Request $request)
@@ -40,7 +41,6 @@ class ClientController extends Controller
         }
     }
 
-
     public function store(Request $request)
     {
         $request->validate([
@@ -50,7 +50,6 @@ class ClientController extends Controller
             'gstin' => 'nullable|string|max:30',
             'address' => 'nullable|string',
         ]);
-
         try {
             Client::create($request->all());
             return back()->with('success', 'Client registered successfully!');
@@ -154,7 +153,6 @@ class ClientController extends Controller
     }
 
 
-
     public function unassignBooking($bookingId)
     {
         try {
@@ -166,6 +164,60 @@ class ClientController extends Controller
             return back()->with('success', 'Client unassigned successfully!');
         } catch (\Exception $e) {
             return back()->withErrors(['error' => $e->getMessage()]);
+        }
+    }
+
+
+    public function fetchAllBankTransaction(Request $request, $id)
+    {
+        try {
+            $client = Client::findOrFail($id);
+
+            $query = BankTransaction::whereHas('clients', function ($q) use ($id) {
+                $q->where('client_id', $id);
+            });
+
+            // Optional filters
+            if ($request->filled('year')) {
+                $query->whereYear('date', $request->year);
+            }
+
+            if ($request->filled('month')) {
+                $query->whereMonth('date', $request->month);
+            }
+
+            if ($request->filled('bank_id')) {
+                $query->where('bank_id', $request->bank_id);
+            }
+
+            // Debit / Credit filter
+            if ($request->filled('type')) {
+                if ($request->type === 'deposit') {
+                    $query->whereNotNull('deposit')->where('deposit', '>', 0);
+                } elseif ($request->type === 'withdrawal') {
+                    $query->whereNotNull('withdrawal')->where('withdrawal', '>', 0);
+                }
+            }
+
+            $transactions = $query
+                ->orderBy('date', 'desc')
+                ->paginate(10);
+
+            return view(
+                'superadmin.accounts.client.partials_bank_transactions',
+                compact('transactions', 'client')
+            )->render();
+
+        } catch (\Exception $e) {
+            Log::error('Client Bank Transaction Error', [
+                'message' => $e->getMessage(),
+                'client_id' => $id
+            ]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Unable to load bank transactions'
+            ], 500);
         }
     }
 

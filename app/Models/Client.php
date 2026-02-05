@@ -23,4 +23,13 @@ class Client extends Model
         return $this->hasManyThrough(Invoice::class, NewBooking::class, 'client_id', 'new_booking_id', 'id', 'id');
     } 
     
+    public function bankTransactions()
+    {
+        return $this->belongsToMany(
+            \App\Models\BankTransaction::class,
+            'bank_transaction_client',
+            'client_id',
+            'bank_transaction_id'
+        );
+    }
 }

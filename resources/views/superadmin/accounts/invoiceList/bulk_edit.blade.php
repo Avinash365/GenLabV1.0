@@ -811,9 +811,9 @@
                     <td contenteditable="true" class="editable description"></td>
                     <td contenteditable="true">10101</td>
                     <td contenteditable="true"></td>
-                    <td contenteditable="true" class="editable qty">1</td>
-                    <td contenteditable="true" class="editable rate">0.00</td>
-                    <td class="amount">0.00</td>
+                    <td contenteditable="true" class="editable qty text-center">1</td>
+                    <td contenteditable="true" class="editable rate text-right">0.00</td>
+                    <td class="amount text-right">0.00</td>
                 `;
 
             return row;

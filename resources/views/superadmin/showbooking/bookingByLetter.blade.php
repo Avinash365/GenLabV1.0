@@ -94,7 +94,6 @@
 
     <div class="card">
 
-
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
 
             <!-- Search Form -->
@@ -187,7 +186,6 @@
                 @endif
             </div>
         </div>
-
 
         <div class="card-body p-0">
             <div class="search-set px-4 py-2">

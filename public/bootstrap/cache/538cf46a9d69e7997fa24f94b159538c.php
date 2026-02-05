@@ -165,6 +165,36 @@
         .text-centre{
             text-align: center !important;
         }
+
+@media print {
+
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        page-break-inside: auto;
+    }
+
+    thead {
+        display: table-header-group; /* repeat header on every page */
+    }
+
+    tbody {
+        display: table-row-group;
+    }
+
+    tr {
+        page-break-inside: avoid; /* don't split rows */
+        page-break-after: auto;
+    }
+
+    th,
+    td {
+        white-space: normal !important;
+        word-break: break-word !important;
+        vertical-align: top;
+    }
+}
+
     </style>
 </head>
 <body>

@@ -21,7 +21,6 @@
         <div class="alert alert-success"><?php echo e(session('success')); ?></div>
     <?php endif; ?>
 
-
     
     <style>
         /* ================= A4 PAGE ================= */
@@ -553,7 +552,6 @@
                         </label>
                     </div>
                     
-
                     <hr>
 
 

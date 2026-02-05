@@ -23,7 +23,6 @@
         <div class="alert alert-success">{{ session('success') }}</div>
     @endif
 
-
     {{-- ===================== INVOICE STYLES ===================== --}}
     <style>
         /* ================= A4 PAGE ================= */
@@ -334,7 +333,7 @@
                                         <td contenteditable="true" class="editable description"></td>
                                         <td></td>
                                         <td></td>
-                                        <td contenteditable="true" class="editable qty">1</td>
+                                        <td contenteditable="true" class="editable text-center qty">1</td>
                                         <td contenteditable="true" class="editable rate text-right">0.00</td>
                                         <td class="amount text-right" contenteditable="true">0.00</td>
                                     </tr>
@@ -540,7 +539,6 @@
                         </label>
                     </div>
                     
-
                     <hr>
 
 {{-- ================= GST SETTINGS ================= --}}
