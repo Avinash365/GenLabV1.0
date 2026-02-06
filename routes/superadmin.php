@@ -1089,4 +1089,15 @@ Route::middleware(['multi_auth:web,admin'])->group(function () {
 
     Route::delete('/bank-accounts/delete/{id}',[UserBankAccountController::class,'destroy'])->name('bankAccounts.destroy');
 
+    /* Zoom Meetings Routes */
+    Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('superadmin')->name('superadmin.')->group(function () {
+        Route::group(['prefix' => 'zoom-meetings', 'as' => 'zoom-meetings.'], function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'store'])->name('store');
+            Route::get('/{id}/join', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'join'])->name('join');
+            Route::delete('/{id}', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'destroy'])->name('destroy');
+        });
+    });
+
 });

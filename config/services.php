@@ -31,6 +31,15 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ], 
 
+    'zoom' => [
+        'account_id' => env('ZOOM_ACCOUNT_ID'),
+        'client_id' => env('ZOOM_CLIENT_ID'), // Used for Server-to-Server OAuth (API calls)
+        'client_secret' => env('ZOOM_CLIENT_SECRET'),
+        // Separate credentials for Meeting SDK (client view)
+        'sdk_client_id' => env('ZOOM_SDK_CLIENT_ID', env('ZOOM_CLIENT_ID')), 
+        'sdk_client_secret' => env('ZOOM_SDK_CLIENT_SECRET', env('ZOOM_CLIENT_SECRET')),
+    ],
+
     'paytm-wallet' => [
             'env' => env('PAYTM_ENVIRONMENT'), // values : (local | production)
             'merchant_id' => env('PAYTM_MERCHANT_ID'),

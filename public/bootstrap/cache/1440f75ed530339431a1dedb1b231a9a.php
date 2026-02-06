@@ -273,6 +273,14 @@
                             </a>
                         </li>
 
+                        <!-- Zoom Meetings -->
+                        <li>
+                            <a href="<?php echo e(route('superadmin.zoom-meetings.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : ''); ?>">
+                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
+                            </a>
+                        </li>
+
+
                         <!-- All Booking --> 
 
                     <?php if($user && ($user instanceof Admin || $user->hasPermission('booking.view'))): ?>
@@ -412,8 +420,6 @@
                             </a>
                         </li> 
                         <?php endif; ?>
-    
-                        
 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('lab-analysts.view'))): ?>
                             <li>
@@ -517,7 +523,7 @@
                                         </a>
                                     </li>
                                     <?php endif; ?>
-     <!-- #region -->               
+                                    <!-- #region -->               
 
                                     <?php if($user && ($user instanceof Admin || $user->hasPermission('amount_approved.view'))): ?>   
                                     <?php if(Route::has('superadmin.accounts.approved_amounts')): ?>
