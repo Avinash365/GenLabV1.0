@@ -1095,6 +1095,7 @@ Route::middleware(['multi_auth:web,admin'])->group(function () {
             Route::get('/', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'index'])->name('index');
             Route::get('/create', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'create'])->name('create');
             Route::post('/', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'store'])->name('store');
+            Route::get('/{id}/sync-recording', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'syncRecording'])->name('syncRecording');
             Route::get('/{id}/join', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'join'])->name('join');
             Route::delete('/{id}', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'destroy'])->name('destroy');
         });

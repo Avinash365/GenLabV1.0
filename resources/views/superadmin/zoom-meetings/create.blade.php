@@ -36,10 +36,6 @@
                         <label for="start_time" class="form-label">Start Time</label>
                         <input type="datetime-local" class="form-control" id="start_time" name="start_time" required>
                     </div>
-                    <div class="col-md-6 mb-3">
-                        <label for="duration" class="form-label">Duration (minutes)</label>
-                        <input type="number" class="form-control" id="duration" name="duration" value="30" required>
-                    </div>
                 </div>
 
                 <hr>

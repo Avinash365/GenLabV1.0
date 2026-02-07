@@ -38,4 +38,9 @@ class ZoomMeeting extends Model
                     ->withPivot('joined_at')
                     ->withTimestamps();
     }
+
+    public function meetingAttendees()
+    {
+        return $this->hasMany(ZoomMeetingAttendee::class, 'zoom_meeting_id');
+    }
 }
