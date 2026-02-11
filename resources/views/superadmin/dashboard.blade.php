@@ -62,29 +62,61 @@
                 <div class="d-flex flex-column gap-3 h-100">
                     <div class="card">
                         <div class="card-header d-flex align-items-center justify-content-between">
-                            <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> Overall Information</h6>
+                            <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> GST Overview</h6>
+                            <div class="gst-range-toggle btn-group" role="group" aria-label="GST Range">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="30">1M</button>
+                                <!-- <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="90">3M</button> -->
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="180">6M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="365">1Y</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-gst-days="all">All</button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Suppliers</div>
-                                        <div class="fw-bold" id="statSuppliers">6987</div>
+                                        <div class="text-muted">Sales</div>
+                                        <div class="fw-bold" id="statSales">{{ number_format($salesGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Customer</div>
-                                        <div class="fw-bold" id="statCustomers">4896</div>
+                                        <div class="text-muted">Purchase</div>
+                                        <div class="fw-bold" id="statPurchase">{{ number_format($purchaseGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Orders</div>
-                                        <div class="fw-bold" id="statOrders">487</div>
+                                        <div class="text-muted">Total</div>
+                                        <div class="fw-bold" id="statTotal">{{ number_format($totalGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                             </div>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const buttons = document.querySelectorAll('.gst-range-toggle [data-gst-days]');
+                                    buttons.forEach(btn => {
+                                        btn.addEventListener('click', async function() {
+                                            // Update active state
+                                            buttons.forEach(b => b.classList.remove('active'));
+                                            this.classList.add('active');
+
+                                            const days = this.getAttribute('data-gst-days');
+                                            try {
+                                                const response = await fetch(`/superadmin/dashboard/gst-overview?days=${days}`);
+                                                if (response.ok) {
+                                                    const data = await response.json();
+                                                    document.getElementById('statSales').innerText = Number(data.salesGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                    document.getElementById('statPurchase').innerText = Number(data.purchaseGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                    document.getElementById('statTotal').innerText = Number(data.totalGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                }
+                                            } catch (error) {
+                                                console.error('Error fetching GST overview:', error);
+                                            }
+                                        });
+                                    });
+                                });
+                            </script>
                         </div>
                     </div>
 

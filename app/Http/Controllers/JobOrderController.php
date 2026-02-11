@@ -41,4 +41,15 @@ class JobOrderController extends Controller
         return view ('superadmin.jobOrderInfo.index', compact('invoices','items'));
 
     }
+
+    public function verify(string $jobOrderNumber)
+    {
+        // Check if job order exists in database
+        $exists = BookingItem::where('job_order_no', strtoupper($jobOrderNumber))->exists();
+        
+        return view('public.verify_job_order', [
+            'verified' => $exists,
+            'job_order_no' => $jobOrderNumber
+        ]);
+    }
 }

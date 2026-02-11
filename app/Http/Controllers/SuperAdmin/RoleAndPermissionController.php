@@ -60,4 +60,14 @@ class RoleAndPermissionController extends Controller
         return $this->service->quickStore($request);
     }
 
+    public function toggleLoginRestriction(Role $role)
+    {
+        return $this->service->toggleLoginRestriction($role);
+    }
+
+    public function bulkToggleLoginRestriction(Request $request)
+    {
+        return $this->service->bulkToggleLoginRestriction($request);
+    }
+
 }

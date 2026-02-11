@@ -9,6 +9,7 @@ use App\Models\Department;
 use App\Models\Document;
 use App\Models\Employee;
 use App\Models\Invoice;
+use App\Models\PurchaseBill;
 use App\Models\InvoiceTransaction;
 use App\Models\MarketingExpense;
 use App\Models\NewBooking;
@@ -60,8 +61,23 @@ class DashboardController extends Controller
                 Log::info('dashboard_query', ['sql' => $query->sql, 'bindings' => $query->bindings, 'time' => $query->time]);
             });
         }
+
+        // GST Overview Data
+        $salesGst = Cache::remember('dashboard:sales_gst', 300, function() {
+            return \App\Models\Invoice::sum('gst_amount');
+        });
+
+        $purchaseGst = Cache::remember('dashboard:purchase_gst', 300, function() {
+            return \App\Models\PurchaseBill::sum('gst_amount');
+        });
+
+        $totalGst = $salesGst - $purchaseGst;
+
         if ($req->query('post_login')) {
             $minimal = [
+                'salesGst' => $salesGst,
+                'purchaseGst' => $purchaseGst,
+                'totalGst' => $totalGst,
                 'departments' => $activeDepartments,
                 // Prefer cached snapshots so small important widgets render immediately after login.
                 'analystWorkloadAll' => Cache::get('dashboard:analyst:all', []),
@@ -169,6 +185,9 @@ class DashboardController extends Controller
 
         if (\Auth::guard('admin')->check()) {
             return view('superadmin.dashboard', [
+                'salesGst' => $salesGst,
+                'purchaseGst' => $purchaseGst,
+                'totalGst' => $totalGst,
                 'departments' => $activeDepartments,
                 'analystWorkloadAll' => $analystWorkloadAll,
                 'analystWorkload30' => $analystWorkload30,
@@ -208,9 +227,15 @@ class DashboardController extends Controller
             ?? ($role?->role_name ?? $identifier);
 
         $payloadCacheKey = "dashboard:payload:" . ($departmentSlug ?? 'default') . ":user:" . $user->id;
-        $payload = Cache::remember($payloadCacheKey, 600, function () use ($departmentSlug, $user, $departmentModel) {
-            return $this->buildDepartmentPayload($departmentSlug, $user, $departmentModel);
-        });
+
+        // Optimize for accountant: return empty payload initially and load via AJAX
+        if ($departmentSlug === 'accountant') {
+            $payload = [];
+        } else {
+            $payload = Cache::remember($payloadCacheKey, 600, function () use ($departmentSlug, $user, $departmentModel) {
+                return $this->buildDepartmentPayload($departmentSlug, $user, $departmentModel);
+            });
+        }
 
         $candidateViews = array_filter([
             $departmentSlug ? "superadmin.departments.{$departmentSlug}.dashboard" : null,
@@ -414,6 +439,7 @@ class DashboardController extends Controller
         $metricLookup = collect($payload['metrics'] ?? [])->pluck('value', 'label');
 
         return response()->json([
+            'metric_lookup' => $metricLookup,
             'metrics_html' => $metricsHtml,
             'charts_html' => $chartsHtml,
             'quick_links_html' => $quickLinksHtml,
@@ -2760,5 +2786,38 @@ class DashboardController extends Controller
             'cancel' => $cancel,
             'overdue' => $overdue,
         ]);
+    }
+
+    public function gstOverview(Request $request)
+    {
+        $daysParam = $request->query('days', '30'); 
+        
+        $cacheKey = 'dashboard:gst:' . $daysParam;
+        
+        $data = Cache::remember($cacheKey, 300, function() use ($daysParam) {
+            $querySales = \App\Models\Invoice::query();
+            $queryPurchase = \App\Models\PurchaseBill::query();
+
+            // purchase_date, invoice_date
+            if (strtoupper($daysParam) !== 'ALL') {
+                $days = (int)$daysParam;
+                $startDate = Carbon::now()->subDays($days)->startOfDay();
+                
+                $querySales->where('invoice_date', '>=', $startDate);
+                $queryPurchase->where('purchase_date', '>=', $startDate);
+            }
+
+            $salesGst = (float) $querySales->sum('gst_amount');
+            $purchaseGst = (float) $queryPurchase->sum('gst_amount');
+            $totalGst = $salesGst - $purchaseGst;
+            
+            return [
+                'salesGst' => $salesGst,
+                'purchaseGst' => $purchaseGst,
+                'totalGst' => $totalGst,
+            ];
+        });
+
+        return response()->json($data);
     }
 }

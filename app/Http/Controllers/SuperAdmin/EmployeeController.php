@@ -33,7 +33,11 @@ class EmployeeController extends Controller
     }
     public function index(Request $request): View
     {
-        $query = Employee::query()->orderBy('first_name');
+        // Eager-load linked user without the `active` global scope so employee views
+        // can reflect the user's `is_active` state even when the user is deactivated.
+        $query = Employee::with(['user' => function ($q) {
+            $q->withoutGlobalScope('active');
+        }])->orderBy('first_name');
 
         $search = $request->string('search')->trim()->value();
 
@@ -241,7 +245,7 @@ class EmployeeController extends Controller
         }
 
         return view('superadmin.employees.show', [
-            'employee' => $employee->load(['manager', 'user']),
+            'employee' => $employee->load(['manager', 'user' => function ($q) { $q->withoutGlobalScope('active'); }]),
             'managers' => Employee::query()->where('id', '!=', $employee->id)->orderBy('first_name')->get(['id', 'first_name', 'last_name']),
             'attendanceRecords' => $attendanceRecords,
             'attendanceBreakdown' => $attendanceBreakdown,

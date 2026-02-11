@@ -83,10 +83,22 @@
                                                     <i class="fa fa-edit"></i> Edit
                                                 </button>
 
-                                                {{-- Delete Button --}}
-                                                <button type="button" class="btn btn-danger btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#deleteUserModal{{ $user->id }}">
-                                                    <i class="fa fa-trash"></i> Delete
-                                                </button>  
+                                                {{-- Activate / Deactivate Button --}}
+                                                @php
+                                                    $isActive = null;
+                                                    if (isset($user->is_active)) {
+                                                        $isActive = $user->is_active;
+                                                    } elseif (isset($user->active)) {
+                                                        $isActive = $user->active;
+                                                    } elseif (isset($user->status)) {
+                                                        $isActive = ($user->status === 'active');
+                                                    } else {
+                                                        $isActive = true; // default if unknown
+                                                    }
+                                                @endphp
+                                                <button type="button" class="btn btn-{{ $isActive ? 'danger' : 'success' }} btn-sm mb-1" data-bs-toggle="modal" data-bs-target="#toggleUserModal{{ $user->id }}">
+                                                    <i class="fa fa-{{ $isActive ? 'ban' : 'check' }}"></i> {{ $isActive ? 'Deactivate' : 'Activate' }}
+                                                </button>
 
                                                 <!-- Send Notification Button -->
                                                     <button type="button" class="btn btn-info btn-sm mb-1"
@@ -144,28 +156,28 @@
                                                     </div>
                                                 </div>
 
-                                                {{-- Delete Modal --}}
-                                                <div class="modal fade" id="deleteUserModal{{ $user->id }}" tabindex="-1" aria-labelledby="deleteUserLabel{{ $user->id }}" aria-hidden="true">
+                                                {{-- Activate / Deactivate Modal --}}
+                                                <div class="modal fade" id="toggleUserModal{{ $user->id }}" tabindex="-1" aria-labelledby="toggleUserLabel{{ $user->id }}" aria-hidden="true">
                                                     <div class="modal-dialog">
                                                         <div class="modal-content">
                                                             <div class="modal-header">
-                                                                <h5 class="modal-title" id="deleteUserLabel{{ $user->id }}">Delete User</h5>
+                                                                <h5 class="modal-title" id="toggleUserLabel{{ $user->id }}">{{ $isActive ? 'Deactivate' : 'Activate' }} User</h5>
                                                                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                                                             </div>
                                                             <div class="modal-body">
-                                                                Are you sure you want to delete <strong>{{ $user->name }}</strong>?
+                                                                Are you sure you want to <strong>{{ $isActive ? 'deactivate' : 'activate' }}</strong> <strong>{{ $user->name }}</strong>?
                                                             </div>
                                                             <div class="modal-footer">
                                                                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                                                                <form action="{{ route('superadmin.users.destroy', $user->id) }}" method="POST" style="display:inline;">
+                                                                <form action="{{ route('superadmin.users.toggleStatus', $user->id) }}" method="POST" style="display:inline;">
                                                                     @csrf
-                                                                    @method('DELETE')
-                                                                    <button type="submit" class="btn btn-danger">Delete</button>
+                                                                    @method('PUT')
+                                                                    <button type="submit" class="btn btn-{{ $isActive ? 'danger' : 'success' }}">{{ $isActive ? 'Deactivate' : 'Activate' }}</button>
                                                                 </form>
                                                             </div>
                                                         </div>
                                                     </div>
-                                                </div> 
+                                                </div>
                                                  <div class="modal fade" id="permissionsModal{{ $user->id }}" tabindex="-1" aria-labelledby="permissionsModalLabel{{ $user->id }}" aria-hidden="true">
                                                         <div class="modal-dialog modal-lg modal-dialog-centered">
                                                             <div class="modal-content">
@@ -271,7 +283,6 @@
             @endforeach
 
             <label class="small mb-0">Rows per page:</label>
-
             <select name="perPage"
                     class="form-select form-select-sm w-auto"
                     onchange="this.form.submit()">

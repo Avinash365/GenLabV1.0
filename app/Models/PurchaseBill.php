@@ -18,6 +18,7 @@ class PurchaseBill extends Model
         'description',
         'party',
         'amount',
+        'gst_amount',
         'purchased_by',
         'bill_upload',
         'gst_type',

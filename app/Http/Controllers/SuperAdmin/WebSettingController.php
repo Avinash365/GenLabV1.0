@@ -31,6 +31,8 @@ class WebSettingController extends Controller
             'company_address' => 'nullable|string',
             'project_title' => 'nullable|string|max:255',
             'footer_copyright' => 'nullable|string',
+            'restriction_start_time' => 'nullable|date_format:H:i',
+            'restriction_end_time' => 'nullable|date_format:H:i',
         ]);
 
         $setting = SiteSetting::first();
@@ -59,6 +61,9 @@ class WebSettingController extends Controller
         $setting->project_title = $data['project_title'] ?? $setting->project_title;
         // Footer branding fields (footer_credit is now static)
         $setting->footer_copyright = $data['footer_copyright'] ?? $setting->footer_copyright;
+
+        $setting->restriction_start_time = $data['restriction_start_time'] ?? $setting->restriction_start_time;
+        $setting->restriction_end_time = $data['restriction_end_time'] ?? $setting->restriction_end_time;
 
         $setting->save();
 

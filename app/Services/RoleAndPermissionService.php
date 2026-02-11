@@ -5,9 +5,11 @@ namespace App\Services;
 use App\Models\Role;
 use App\Models\Permission;
 use App\Models\RoleName;
+use App\Models\SiteSetting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Carbon\Carbon;
 
 
 class RoleAndPermissionService
@@ -18,7 +20,12 @@ class RoleAndPermissionService
     public function index()
     {
         $roles = Role::with('permissions')->get();
-        return view('superadmin.roles.index', compact('roles'));
+        $setting = SiteSetting::first();
+        
+        $startTime = $setting && $setting->restriction_start_time ? Carbon::parse($setting->restriction_start_time)->format('g:i A') : '6:00 PM';
+        $endTime = $setting && $setting->restriction_end_time ? Carbon::parse($setting->restriction_end_time)->format('g:i A') : '8:00 AM';
+
+        return view('superadmin.roles.index', compact('roles', 'startTime', 'endTime'));
     }
 
     /**
@@ -202,5 +209,31 @@ class RoleAndPermissionService
             'role'        => $role,
             'permissions' => $role->permissions,
         ]);
+    }
+
+    public function toggleLoginRestriction(Role $role)
+    {
+        $role->update([
+            'restrict_login_after_6pm' => !$role->restrict_login_after_6pm
+        ]);
+
+        return redirect()->back()->with('success', 'Login restriction updated successfully.');
+    }
+
+    public function bulkToggleLoginRestriction(Request $request)
+    {
+        $validated = $request->validate([
+            'role_ids' => 'required|array',
+            'role_ids.*' => 'exists:roles,id',
+            'action' => 'required|in:enable,disable',
+        ]);
+
+        $shouldRestrict = $validated['action'] === 'enable';
+
+        Role::whereIn('id', $validated['role_ids'])->update([
+            'restrict_login_after_6pm' => $shouldRestrict
+        ]);
+
+        return redirect()->back()->with('success', 'Bulk login restriction updated successfully.');
     }
 }

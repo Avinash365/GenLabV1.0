@@ -108,8 +108,17 @@
                         </ul>
 
                         <div class="mt-auto d-flex justify-content-between align-items-center">
-                            <span class="badge rounded-pill bg-{{ $employee->employment_status === 'active' ? 'success' : ($employee->employment_status === 'probation' ? 'warning' : 'secondary') }} bg-opacity-10 text-{{ $employee->employment_status === 'active' ? 'success' : ($employee->employment_status === 'probation' ? 'warning' : 'muted') }} text-capitalize">
-                                {{ $employee->employment_status }}
+                            @php
+                                $displayStatus = $employee->employment_status;
+                                // If linked user exists and is inactive, reflect that as inactive here as well
+                                if ($employee->user && isset($employee->user->is_active) && $employee->user->is_active === false) {
+                                    $displayStatus = 'inactive';
+                                }
+                                $badgeColor = $displayStatus === 'active' ? 'success' : ($displayStatus === 'probation' ? 'warning' : 'danger');
+                                $textColor = $displayStatus === 'active' ? 'success' : ($displayStatus === 'probation' ? 'warning' : 'muted');
+                            @endphp
+                            <span class="badge rounded-pill bg-{{ $badgeColor }} bg-opacity-10 text-{{ $textColor }} text-capitalize">
+                                {{ $displayStatus }}
                             </span>
                             @if($user && ($user instanceof Admin || $user->hasPermission('employee.edit')))
                                 <a href="{{ route('superadmin.employees.show', $employee) }}" class="btn btn-sm btn-outline-primary">

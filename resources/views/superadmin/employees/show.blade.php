@@ -84,7 +84,13 @@
                             </dd>
 
                             <dt class="col-5 text-muted">Status</dt>
-                            <dd class="col-7 text-capitalize">{{ $employee->employment_status }}</dd>
+                            @php
+                                $displayStatus = $employee->employment_status;
+                                if ($employee->user && isset($employee->user->is_active) && $employee->user->is_active === false) {
+                                    $displayStatus = 'inactive';
+                                }
+                            @endphp
+                            <dd class="col-7 text-capitalize">{{ $displayStatus }}</dd>
 
                             <dt class="col-5 text-muted">Date of Birth</dt>
                             <dd class="col-7">{{ $employee->dob?->format('d M Y') ?? '—' }}</dd>

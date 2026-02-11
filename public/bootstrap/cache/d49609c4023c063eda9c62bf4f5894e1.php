@@ -16,6 +16,15 @@
     $isGroupedPersonal = (($expense->section ?? null) === 'personal') && !empty($groupIds);
 ?>
 <tr data-amount="<?php echo e($expense->amount); ?>" data-approved="<?php echo e($rawApproved); ?>" data-due="<?php echo e($rawDue); ?>" data-id="<?php echo e($expense->id); ?>" <?php if($groupAttr): ?> data-group="<?php echo e($groupAttr); ?>" <?php endif; ?>>
+    <?php if($isApprovalPage): ?>
+        <td>
+            <?php if(($expense->status ?? '') === 'pending'): ?>
+                <input type="checkbox" class="bulk-select" value="<?php echo e($expense->id); ?>" data-group="<?php echo e($groupAttr); ?>" title="Select expense">
+            <?php else: ?>
+                &nbsp;
+            <?php endif; ?>
+        </td>
+    <?php endif; ?>
     <td><?php echo e($serial ?? '—'); ?></td>
     <?php
         $personLabel = $expense->marketingPerson->name ?? ($expense->person_name ?: 'N/A');

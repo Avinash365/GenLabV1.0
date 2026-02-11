@@ -17,6 +17,16 @@ class Role extends Model
         'slug',
         'created_by',
         'updated_by',
+        'restrict_login_after_6pm',
+    ];
+
+    /**
+     * The attributes that should be cast.
+     *
+     * @var array
+     */
+    protected $casts = [
+        'restrict_login_after_6pm' => 'boolean',
     ];
 
 

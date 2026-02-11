@@ -108,10 +108,15 @@
 
     <div class="card-body p-0">
         <div class="table-responsive">
+            <div class="p-2 d-flex align-items-center gap-2 justify-content-end">
+                <small class="text-muted">Select pending rows and click to approve in bulk.</small>
+                <button id="bulkApproveBtn" class="btn btn-sm btn-success">Approve Selected</button>
+            </div>
             <table class="table table-hover align-middle mb-0" id="expensesTable">
                 <thead class="table-light">
                     <tr>
-                        <th>#</th>
+                        <th style="width:38px;"><input type="checkbox" id="selectAll" title="Select all"></th>
+                        <th>S.N.</th>
                         <th><?php echo e(($section ?? 'marketing') === 'personal' ? 'Summary' : 'Person'); ?></th>
                         <th>Description</th>
                         <th>Total Expenses</th>
@@ -126,13 +131,13 @@
                         <?php echo $__env->make('superadmin.marketing.expenses._row', ['expense' => $expense, 'isApprovalPage' => true, 'showDescription' => true, 'serial' => $expenses->firstItem() + $index], array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?>
                     <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
                         <tr>
-                            <td colspan="8" class="text-center">No records found.</td>
+                            <td colspan="9" class="text-center">No records found.</td>
                         </tr>
                     <?php endif; ?>
                 </tbody>
                 <tfoot class="table-light fw-bold">
                     <tr>
-                        <td colspan="3" class="text-end">Grand Total:</td>
+                        <td colspan="4" class="text-end">Grand Total:</td>
                         <td id="totalExp"><?php echo e(number_format($totals['total_expenses'], 2)); ?></td>
                         <td colspan="4"></td>
                     </tr>
@@ -181,7 +186,7 @@
                 <?php
                     $inAccountQs = array_merge(request()->query(), ['approved_section' => $approvedSection]);
                 ?>
-                <a href="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>" class="btn btn-sm btn-primary me-2 js-in-account" data-url="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>">Send To Account</a>
+                <a href="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>" class="btn btn-sm btn-primary me-2 js-in-account" data-url="<?php echo e(route('superadmin.marketing.expenses.in_account', $inAccountQs)); ?>" data-marketing-person="<?php echo e(request('marketing_person_code')); ?>">Send To Account</a>
                 <a href="<?php echo e(route('superadmin.marketing.expenses.approved', array_merge(request()->query(), ['approved_section' => $approvedSection]))); ?>" class="btn btn-sm btn-outline-secondary js-approved-refresh" data-url="<?php echo e(route('superadmin.marketing.expenses.approved', array_merge(request()->query(), ['approved_section' => $approvedSection]))); ?>">Refresh</a>
             </div>
         </div>
@@ -365,6 +370,13 @@
         document.querySelectorAll('.js-in-account').forEach(btn => {
             btn.addEventListener('click', async (e) => {
                 e.preventDefault();
+                // Ensure a marketing person filter is selected before sending
+                const marketingPerson = btn.dataset.marketingPerson || (new URLSearchParams(window.location.search)).get('marketing_person_code');
+                if(!marketingPerson){
+                    Swal.fire({icon:'warning', title: 'Select filter', text: 'Please select a marketing person filter before sending to account.'});
+                    return;
+                }
+
                 const url = btn.dataset.url || btn.href;
                 Swal.fire({
                     title: 'Sending to Cleared Expenses',
@@ -511,6 +523,53 @@
             }
 
             previewModal.style.display = 'flex';
+        });
+    </script>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+    <script>
+        // Select all toggle
+        document.getElementById('selectAll')?.addEventListener('change', function(e){
+            const checked = e.target.checked;
+            document.querySelectorAll('.bulk-select').forEach(cb => cb.checked = checked);
+        });
+
+        // Bulk approve handler
+        document.getElementById('bulkApproveBtn')?.addEventListener('click', async function(e){
+            e.preventDefault();
+            const selected = Array.from(document.querySelectorAll('.bulk-select:checked')).map(cb => cb.value);
+            if(!selected.length){
+                Swal.fire({icon:'info', title: 'No selection', text: 'Please select at least one pending expense.'});
+                return;
+            }
+            const { isConfirmed } = await Swal.fire({
+                title: 'Approve selected expenses?',
+                text: `You are approving ${selected.length} expense(s). Continue?`,
+                showCancelButton: true,
+                confirmButtonText: 'Yes, approve'
+            });
+            if(!isConfirmed) return;
+
+            try {
+                const resp = await fetch('<?php echo e(route('superadmin.marketing.expenses.bulk_approve')); ?>', {
+                    method: 'POST',
+                    headers: {
+                        'X-CSRF-TOKEN': '<?php echo e(csrf_token()); ?>',
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    body: JSON.stringify({ ids: selected })
+                });
+                const data = await resp.json();
+                if(resp.ok && data.success){
+                    Swal.fire({icon:'success', title: 'Approved', text: data.message || 'Selected expenses approved.'}).then(()=>{ location.reload(); });
+                } else {
+                    Swal.fire({icon:'error', title: 'Failed', text: data.message || 'Unable to approve selected expenses.'});
+                }
+            } catch (err){
+                Swal.fire({icon:'error', title: 'Error', text: err.message || 'Network error'});
+            }
         });
     </script>
 <?php $__env->stopPush(); ?>

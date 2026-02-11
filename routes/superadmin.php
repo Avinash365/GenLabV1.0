@@ -104,7 +104,7 @@ Route::prefix('superadmin')->name('superadmin.')->group(function () {
 
 
 
-Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function () {
+Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('superadmin')->name('superadmin.')->group(function () {
 
     // Marketing Expenses
     Route::prefix('marketing')->name('marketing.')->group(function () {
@@ -123,6 +123,7 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
         Route::get('/persons', [MarketingExpenseController::class, 'persons'])->name('persons');
         Route::patch('/expenses/{expense}/approve', [MarketingExpenseController::class, 'approve'])->name('expenses.approve');
         Route::patch('/expenses/{expense}/reject', [MarketingExpenseController::class, 'reject'])->name('expenses.reject');
+        Route::post('/expenses/bulk-approve', [MarketingExpenseController::class, 'bulkApprove'])->name('expenses.bulk_approve');
     });
 
     // Office Expenses (view only for now)
@@ -149,7 +150,10 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
     Route::get('dashboard/payload', [DashboardController::class, 'payload'])->name('dashboard.payload');
     Route::get('dashboard/invoice-payment-chart', [DashboardController::class, 'invoicePaymentChart'])
         ->name('dashboard.invoicePaymentChart');    Route::get('dashboard/accounts-invoices-chart', [DashboardController::class, 'accountsInvoicesChart'])
-        ->name('dashboard.accounts-invoices-chart');
+        ->name('dashboard.accountsInvoicesChart');
+
+    Route::get('dashboard/gst-overview', [DashboardController::class, 'gstOverview'])->name('dashboard.gstOverview');
+
     
     
     // Role & Permission Management
@@ -161,6 +165,8 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
             Route::post('/', [RoleAndPermissionController::class, 'store'])->name('store');
             Route::get('{role}/edit', [RoleAndPermissionController::class, 'edit'])->name('edit');
             Route::put('{role}', [RoleAndPermissionController::class, 'update'])->name('update');
+            Route::put('bulk/toggle-login-restriction', [RoleAndPermissionController::class, 'bulkToggleLoginRestriction'])->name('bulk-toggle-login-restriction');
+            Route::put('{role}/toggle-login-restriction', [RoleAndPermissionController::class, 'toggleLoginRestriction'])->name('toggle-login-restriction');
             Route::delete('{role}', [RoleAndPermissionController::class, 'destroy'])->name('destroy');
             Route::get('{role}', [RoleAndPermissionController::class, 'show'])->name('show');
         });
@@ -177,6 +183,9 @@ Route::middleware(['multi_auth:web,admin'])->prefix('superadmin')->name('superad
 
             Route::put('{user}', [UserController::class, 'update'])->name('update');
             Route::put('users/{user}/permissions', [UserController::class, 'updatePermissions'])->name('updatePermissions');
+
+            // Toggle active status (activate / deactivate)
+            Route::put('{user}/toggle', [UserController::class, 'toggleStatus'])->name('toggleStatus');
 
             Route::delete('{user}', [UserController::class, 'destroy'])->name('destroy');
             Route::post('{id}/send-notification', [UserController::class, 'sendNotification'])->name('sendNotification');
@@ -1081,5 +1090,17 @@ Route::middleware(['multi_auth:web,admin'])->group(function () {
     Route::put('/bank-accounts/update/{id}',[UserBankAccountController::class,'update'])->name('bankAccounts.update');
 
     Route::delete('/bank-accounts/delete/{id}',[UserBankAccountController::class,'destroy'])->name('bankAccounts.destroy');
+
+    /* Zoom Meetings Routes */
+    Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('superadmin')->name('superadmin.')->group(function () {
+        Route::group(['prefix' => 'zoom-meetings', 'as' => 'zoom-meetings.'], function () {
+            Route::get('/', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'index'])->name('index');
+            Route::get('/create', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'create'])->name('create');
+            Route::post('/', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'store'])->name('store');
+            Route::get('/{id}/sync-recording', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'syncRecording'])->name('syncRecording');
+            Route::get('/{id}/join', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'join'])->name('join');
+            Route::delete('/{id}', [\App\Http\Controllers\SuperAdmin\ZoomMeetingController::class, 'destroy'])->name('destroy');
+        });
+    });
 
 });

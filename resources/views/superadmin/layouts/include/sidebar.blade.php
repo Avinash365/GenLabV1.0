@@ -273,6 +273,14 @@
                             </a>
                         </li>
 
+                        <!-- Zoom Meetings -->
+                        <li>
+                            <a href="{{ route('superadmin.zoom-meetings.index') }}" class="{{ Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : '' }}">
+                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
+                            </a>
+                        </li>
+
+
                         <!-- All Booking --> 
 
                     @if($user && ($user instanceof Admin || $user->hasPermission('booking.view')))
@@ -411,8 +419,6 @@
                             </a>
                         </li> 
                         @endif
-    
-                        
 
                         @if($user && ($user instanceof Admin || $user->hasPermission('lab-analysts.view')))
                             <li>
@@ -516,7 +522,7 @@
                                         </a>
                                     </li>
                                     @endif
-     <!-- #region -->               
+                                    <!-- #region -->               
 
                                     @if($user && ($user instanceof Admin || $user->hasPermission('amount_approved.view')))   
                                     @if(Route::has('superadmin.accounts.approved_amounts'))

@@ -598,7 +598,7 @@ class MarketingExpenseController extends Controller
             });
         }
 
-        $expenses = $query->orderByDesc('created_at')->get();
+        $expenses = $query->orderBy('created_at', 'asc')->get();
 
         // If there are no approved (and not already cleared) expenses matching the filters,
         // return a JSON error for AJAX requests so the frontend won't try to download or
@@ -1499,6 +1499,54 @@ class MarketingExpenseController extends Controller
             'due_amount' => 0.0,
             'status' => $expense->status,
         ]);
+    }
+
+    /**
+     * Bulk approve multiple expenses by IDs (fully approve each selected expense).
+     */
+    public function bulkApprove(Request $request)
+    {
+        $ids = collect($request->input('ids', []))
+            ->filter(fn($id) => $id !== null && $id !== '')
+            ->map(fn($id) => (int) $id)
+            ->unique()
+            ->values();
+
+        if($ids->isEmpty()){
+            return response()->json(['success' => false, 'message' => 'No expense IDs provided.'], 422);
+        }
+
+        $expenses = MarketingExpense::whereIn('id', $ids->all())->get();
+        if($expenses->isEmpty()){
+            return response()->json(['success' => false, 'message' => 'No expenses found for the provided IDs.'], 404);
+        }
+
+        $approverId = optional(auth('admin')->user())->id ?? optional(auth('web')->user())->id;
+
+        DB::beginTransaction();
+        try {
+            foreach($expenses as $expense){
+                if(($expense->status ?? '') === 'approved'){
+                    continue;
+                }
+                $expense->approved_amount = (float) $expense->amount;
+                $expense->status = 'approved';
+                $expense->approved_by = $approverId;
+                $expense->approved_at = now();
+                // Preserve any existing approval_note unless one provided in request
+                if($note = $request->input('approval_note')){
+                    $expense->approval_note = $note;
+                }
+                $expense->save();
+            }
+            DB::commit();
+
+            return response()->json(['success' => true, 'message' => 'Selected expenses approved.']);
+        } catch (\Throwable $e) {
+            DB::rollBack();
+            Log::error('Bulk approve failed: '.$e->getMessage());
+            return response()->json(['success' => false, 'message' => 'Bulk approve failed.'], 500);
+        }
     }
 
     public function reject(Request $request, MarketingExpense $expense)

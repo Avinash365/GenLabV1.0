@@ -79,6 +79,29 @@
                             </div>
                 </div>
 
+                <!-- Login Restriction Times -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Login Restriction Start Time</label>
+                            <input type="time" name="restriction_start_time" value="{{ old('restriction_start_time', optional($setting)->restriction_start_time ? \Carbon\Carbon::parse(optional($setting)->restriction_start_time)->format('H:i') : '18:00') }}" class="form-control @error('restriction_start_time') is-invalid @enderror">
+                            @error('restriction_start_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Restriction begins at this time (e.g., 18:00 for 6 PM).</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Login Restriction End Time</label>
+                            <input type="time" name="restriction_end_time" value="{{ old('restriction_end_time', optional($setting)->restriction_end_time ? \Carbon\Carbon::parse(optional($setting)->restriction_end_time)->format('H:i') : '08:00') }}" class="form-control @error('restriction_end_time') is-invalid @enderror">
+                            @error('restriction_end_time')
+                                <div class="invalid-feedback">{{ $message }}</div>
+                            @enderror
+                            <small class="text-muted">Restriction ends at this time (e.g., 08:00 for 8 AM).</small>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="row">
                     <div class="col-md-6">

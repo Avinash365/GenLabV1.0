@@ -8,7 +8,9 @@ use Illuminate\Http\Request;
 use App\Services\SuperAdminLoginService;
 use App\Models\SuperAdmin;
 use App\Enums\Role; 
-
+use App\Models\SiteSetting;
+use Carbon\Carbon;
+use App\Models\BookingItem;
 
 class UserLoginController extends Controller
 {
@@ -28,7 +30,17 @@ class UserLoginController extends Controller
      * @param \Illuminate\Http\Request $request
      * @return \Illuminate\Http\RedirectResponse
      */ 
-    public function index(){
+    public function index(Request $request){
+        if ($request->has('JOB_CARD_NO')) {
+            $jobOrderNumber = $request->input('JOB_CARD_NO');
+            $item = BookingItem::with('booking')->where('job_order_no', strtoupper($jobOrderNumber))->first();
+            
+            return view('public.verify_job_order', [
+               'verified' => (bool) $item,
+               'job_order_no' => $jobOrderNumber,
+               'item' => $item
+           ]);
+       }
         return view('user.login'); 
     }   
     
@@ -42,6 +54,44 @@ class UserLoginController extends Controller
             $credentials = $request->only('user_code', 'password');
 
             if (Auth::attempt($credentials)) {
+                
+                $user = Auth::user();
+
+                // Check for time restriction
+                if ($user->role && $user->role->restrict_login_after_6pm) {
+                    $setting = SiteSetting::first();
+                    $startTime = $setting->restriction_start_time ? Carbon::parse($setting->restriction_start_time) : Carbon::createFromTime(18, 0, 0);
+                    $endTime = $setting->restriction_end_time ? Carbon::parse($setting->restriction_end_time) : Carbon::createFromTime(8, 0, 0);
+                    
+                    $now = now();
+                    $current = Carbon::createFromTime($now->hour, $now->minute, $now->second);
+                    $start = Carbon::createFromTime($startTime->hour, $startTime->minute, $startTime->second);
+                    $end = Carbon::createFromTime($endTime->hour, $endTime->minute, $endTime->second);
+
+                    $isRestricted = false;
+
+                    if ($start->gt($end)) {
+                        // Overnight restriction (e.g. 18:00 to 08:00)
+                        if ($current->gte($start) || $current->lt($end)) {
+                           $isRestricted = true;
+                        }
+                    } else {
+                        // Same day restriction (e.g. 09:00 to 17:00)
+                        if ($current->gte($start) && $current->lt($end)) {
+                            $isRestricted = true;
+                        }
+                    }
+
+                    if ($isRestricted) {
+                        Auth::logout();
+                        $startStr = $start->format('g:i A');
+                        $endStr = $end->format('g:i A');
+                        return back()->withErrors([
+                            'user_code' => "Access denied: Login is restricted for your role between $startStr and $endStr.",
+                        ])->withInput();
+                    }
+                }
+                
                 $request->session()->regenerate();
 
                 return redirect()->route('user.dashboard.index')
