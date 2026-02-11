@@ -168,57 +168,5 @@ class ClientController extends Controller
     }
 
 
-    public function fetchAllBankTransaction(Request $request, $id)
-    {
-        try {
-            $client = Client::findOrFail($id);
-
-            $query = BankTransaction::whereHas('clients', function ($q) use ($id) {
-                $q->where('client_id', $id);
-            });
-
-            // Optional filters
-            if ($request->filled('year')) {
-                $query->whereYear('date', $request->year);
-            }
-
-            if ($request->filled('month')) {
-                $query->whereMonth('date', $request->month);
-            }
-
-            if ($request->filled('bank_id')) {
-                $query->where('bank_id', $request->bank_id);
-            }
-
-            // Debit / Credit filter
-            if ($request->filled('type')) {
-                if ($request->type === 'deposit') {
-                    $query->whereNotNull('deposit')->where('deposit', '>', 0);
-                } elseif ($request->type === 'withdrawal') {
-                    $query->whereNotNull('withdrawal')->where('withdrawal', '>', 0);
-                }
-            }
-
-            $transactions = $query
-                ->orderBy('date', 'desc')
-                ->paginate(10);
-
-            return view(
-                'superadmin.accounts.client.partials_bank_transactions',
-                compact('transactions', 'client')
-            )->render();
-
-        } catch (\Exception $e) {
-            Log::error('Client Bank Transaction Error', [
-                'message' => $e->getMessage(),
-                'client_id' => $id
-            ]);
-
-            return response()->json([
-                'status' => false,
-                'message' => 'Unable to load bank transactions'
-            ], 500);
-        }
-    }
-
+   
 }
