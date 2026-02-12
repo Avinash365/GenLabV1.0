@@ -52,6 +52,9 @@ class InvoiceController extends Controller
     {
         $query = Invoice::with(['relatedBooking.marketingPerson', 'relatedBooking.department', 'relatedBooking.client']);
 
+        // which date field to use for date filters (defaults to invoice_date)
+        $dateField = $request->get('date_field', 'invoice_date');
+
         $authUser = $request->user();
         $isMarketing = false;
         if ($authUser && isset($authUser->role)) {
@@ -122,15 +125,15 @@ class InvoiceController extends Controller
             $query->where('type', $request->type);
         }
 
-        // **Month and Year filter**
+        // **Month and Year filter** - use configurable date field (invoice_date by default)
         if ($request->filled('month') || $request->filled('year')) {
             $month = $request->month;
             $year = $request->year;
 
-            $query->when($month, function ($q, $month) {
-                $q->whereMonth('invoice_date', $month);
-            })->when($year, function ($q, $year) {
-                $q->whereYear('invoice_date', $year);
+            $query->when($month, function ($q, $month) use ($dateField) {
+                $q->whereMonth($dateField, $month);
+            })->when($year, function ($q, $year) use ($dateField) {
+                $q->whereYear($dateField, $year);
             });
         }
 
@@ -148,7 +151,14 @@ class InvoiceController extends Controller
         }
 
         $query = $this->buildQuery($request);
-        $query->orderBy('invoice_no', 'desc');
+
+        // Order by requested date field (default invoice_date) if present, otherwise fallback to invoice_no
+        $dateField = $request->get('date_field', 'invoice_date');
+        if (in_array($dateField, ['invoice_date', 'created_at', 'letter_date'])) {
+            $query->orderBy($dateField, 'desc');
+        } else {
+            $query->orderBy('invoice_no', 'desc');
+        }
 
         $perPage = (int) $request->get('per_page', 5);
         $perPage = in_array($perPage, [2, 10, 25, 50, 100, 500]) ? $perPage : 25;
@@ -189,7 +199,13 @@ class InvoiceController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-        $invoices = $this->buildQuery($request)->orderBy('invoice_no', 'desc')->get();
+        $dateField = $request->get('date_field', 'invoice_date');
+        $qb = $this->buildQuery($request);
+        if (in_array($dateField, ['invoice_date', 'created_at', 'letter_date'])) {
+            $invoices = $qb->orderBy($dateField, 'desc')->get();
+        } else {
+            $invoices = $qb->orderBy('invoice_no', 'desc')->get();
+        }
 
         $pdf = Pdf::loadView('superadmin.accounts.invoiceList.marketing.pdf_export', compact('invoices'))
             ->setPaper('a4', 'landscape');
@@ -201,7 +217,13 @@ class InvoiceController extends Controller
     {
         set_time_limit(300);
         ini_set('memory_limit', '512M');
-        $invoices = $this->buildQuery($request)->orderBy('invoice_no', 'desc')->get();
+        $dateField = $request->get('date_field', 'invoice_date');
+        $qb = $this->buildQuery($request);
+        if (in_array($dateField, ['invoice_date', 'created_at', 'letter_date'])) {
+            $invoices = $qb->orderBy($dateField, 'desc')->get();
+        } else {
+            $invoices = $qb->orderBy('invoice_no', 'desc')->get();
+        }
         $filters = [];
         $qs = $request->except(['_token','page']);
         foreach($qs as $k => $v){

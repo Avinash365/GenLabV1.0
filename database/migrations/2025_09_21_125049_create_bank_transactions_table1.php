@@ -8,24 +8,26 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('bank_transactions', function (Blueprint $table) {
-            $table->id();
-            $table->bigInteger('bank_id');
-            $table->date('date')->nullable();
-            $table->string('tran_id')->nullable();
-            $table->string('transaction_remarks')->nullable();
-            $table->string('chq_ref_no')->nullable();
-            $table->date('value_date')->nullable();
-            $table->decimal('withdrawal', 15, 2)->nullable();
-            $table->decimal('deposit', 15, 2)->nullable();
-            $table->decimal('closing_balance', 15, 2)->nullable();
-            $table->text('note')->nullable();
+        if (!Schema::hasTable('bank_transactions')) {
+            Schema::create('bank_transactions', function (Blueprint $table) {
+                $table->id();
+                $table->bigInteger('bank_id');
+                $table->date('date')->nullable();
+                $table->string('tran_id')->nullable();
+                $table->string('transaction_remarks')->nullable();
+                $table->string('chq_ref_no')->nullable();
+                $table->date('value_date')->nullable();
+                $table->decimal('withdrawal', 15, 2)->nullable();
+                $table->decimal('deposit', 15, 2)->nullable();
+                $table->decimal('closing_balance', 15, 2)->nullable();
+                $table->text('note')->nullable();
 
-            $table->string('marketing_person')->nullable(); // only one per transaction
+                $table->string('marketing_person')->nullable(); // only one per transaction
 
-            $table->timestamps();
-            $table->softDeletes();
-        });
+                $table->timestamps();
+                $table->softDeletes();
+            });
+        }
     }
 
     public function down(): void
