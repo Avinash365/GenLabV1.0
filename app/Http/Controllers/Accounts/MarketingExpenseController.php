@@ -910,7 +910,14 @@ class MarketingExpenseController extends Controller
     public function checkedInApi(Request $request)
     {
         try {
-            $records = ClearedExpense::orderByDesc('created_at')->get();
+            $query = ClearedExpense::orderByDesc('created_at');
+
+            $user = auth('api')->user();
+            if ($user && !empty($user->user_code)) {
+                $query->where('person_code', $user->user_code);
+            }
+
+            $records = $query->get();
         } catch (\Throwable $_) {
             $records = collect();
         }

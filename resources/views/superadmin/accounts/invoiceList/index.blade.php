@@ -70,8 +70,9 @@
                 <input type="hidden" name="type" value="{{ request('type', $type ?? '') }}">
                 <input type="hidden" name="department_id" value="{{ request('department_id', $department_id ?? '')}}">
 
-                 <input type="hidden" name="per_page" id="per_page_hidden"
-                        value="{{ request('per_page', 25) }}">
+                <input type="hidden" name="per_page" id="per_page_hidden"
+                    value="{{ request('per_page', 25) }}">
+                <input type="hidden" name="date_field" value="invoice_date">
                 {{-- LEFT : Search --}}
                 <div class="d-flex align-items-center gap-2">
                     <input type="text" name="search" id="autoSearch" value="{{ request('search') }}" class="form-control"
@@ -212,7 +213,16 @@
                         </tr>
                     </thead>
                     <tbody>
-                        @forelse($invoices as $invoice)
+                        @php
+                            // Ensure invoices are shown with the latest invoice_date first.
+                            if (method_exists($invoices, 'getCollection')) {
+                                $sortedInvoices = $invoices->getCollection()->sortByDesc('invoice_date');
+                            } else {
+                                $sortedInvoices = collect($invoices)->sortByDesc('invoice_date');
+                            }
+                        @endphp
+
+                        @forelse($sortedInvoices as $invoice)
                             <tr 
                                 class = "table-row" 
                                 data-search="{{ 
