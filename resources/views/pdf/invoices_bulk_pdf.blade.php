@@ -38,6 +38,7 @@
         .text-right { text-align: right; }
         .text-left { text-align: left; }
         .text-centre { text-align: center; font-weight: bold; }
+        .text-centre-normal { text-align: center; }
         .text-bottom {text-align: center; font-weight: bold; vertical-align: bottom;}
         .total-row { font-weight: bold; background: #f9f9f9; }
         .bank-table {
@@ -129,9 +130,8 @@
                         {{ $sac_code ?? '' }}
                     @endif
                 </td>
-                
-
-                <td>{{ $item->qty ?? 1 }}</td>
+            
+                <td class="text-centre-normal">{{ $item->qty ?? 1 }}</td>
                 <td>{{ number_format($item->rate ?? 0, 2) }}</td>
                 <td>{{ number_format(($item->qty * $item->rate), 2) }}</td>
             </tr>

@@ -37,6 +37,7 @@
         .text-uppercase{text-transform: uppercase;}
         .text-right { text-align: right; }
         .text-centre { text-align: center; font-weight: bold; }
+        .text-centre-normal { text-align: center; }
         .text-bottom {text-align: center; font-weight: bold; vertical-align: bottom;}
         .total-row { font-weight: bold; background: #f9f9f9; }
         .bank-table {
@@ -117,7 +118,7 @@
             <td class="text-uppercase">{{ $item['description'] ?? '' }}</td>
             <td class="text-uppercase">{{ $item['job_order_no'] ?? '' }}</td>
             <td >{{ $invoiceData['invoice']['sac_code'] ?? '' }}</td>
-            <td>{{ $item['qty'] ?? 1 }}</td>
+            <td class="text-centre-normal">{{ $item['qty'] ?? 1 }}</td>
             <td>{{ number_format($item['rate'] ?? 0,2) }}</td>
             <td>{{ number_format($item['amount'] ?? 0,2) }}</td>
         </tr>

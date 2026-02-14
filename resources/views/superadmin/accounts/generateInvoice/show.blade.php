@@ -179,6 +179,9 @@
             text-align: left !important;
         }
 
+        .text-centre { text-align: center !important;}
+
+
         /* ================= PRINT ================= */
         @media print {
             body * {
