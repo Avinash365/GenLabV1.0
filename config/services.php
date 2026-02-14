@@ -40,6 +40,12 @@ return [
         'sdk_client_secret' => env('ZOOM_SDK_CLIENT_SECRET', env('ZOOM_CLIENT_SECRET')),
     ],
 
+    'whatsapp' => [
+        'token' => env('META_WHATSAPP_TOKEN'),
+        'phone_number_id' => env('META_WHATSAPP_PHONE_ID'),
+        'business_id' => env('META_WHATSAPP_BUSINESS_ID'),
+    ],
+
     'paytm-wallet' => [
             'env' => env('PAYTM_ENVIRONMENT'), // values : (local | production)
             'merchant_id' => env('PAYTM_MERCHANT_ID'),

@@ -10,6 +10,7 @@ use Carbon\Carbon;
 use Throwable;
 use App\Models\BookingItem;
 use App\Models\NewBooking;
+use App\Models\SiteSetting;
 use App\Jobs\SendMarketingNotificationJob; 
 
 // Optional PDF page count support; if library missing we'll skip.
@@ -171,15 +172,30 @@ class ReportingLettersController extends Controller
         $booking = NewBooking::where('reference_no', $request->job)->firstOrFail();
         $marketingUser = $booking->marketingPerson;
 
+        \Illuminate\Support\Facades\Log::info('Upload: resolving marketing person', [
+            'booking_ref' => $request->job,
+            'marketing_user_found' => $marketingUser ? 'yes' : 'no',
+            'marketing_user_id' => $marketingUser->id ?? null
+        ]);
+
         if ($marketingUser) {
 
             // Build clickable file links
             $fileLinks = [];
             foreach ($uploaded as $file) {
-                $fileLinks[] = $file['download_url'];
+                // Use the public route for WhatsApp links so they don't require login
+                $fileLinks[] = route('public.reports.download', [
+                    'job' => $jobKey, 
+                    'filename' => $file['filename']
+                ]);
             }
 
-            $linksText = implode("\n", array_map(fn($url, $index) => ($index+1) . ". " . $url, $fileLinks, array_keys($fileLinks)));
+            // Format links: if multiple, use numbered list. If single, just the URL.
+            if (count($fileLinks) > 1) {
+                $linksText = implode("\n", array_map(fn($url, $index) => ($index+1) . ". " . $url, $fileLinks, array_keys($fileLinks)));
+            } else {
+                $linksText = $fileLinks[0] ?? '';
+            }
 
             $reportCount = count($files);
 
@@ -195,6 +211,54 @@ class ReportingLettersController extends Controller
                     "reference_no"  => $booking->reference_no,
                 ]
             );
+
+            // Send WhatsApp Notification
+            try {
+                $waPhone = $marketingUser->employee->phone_primary ?? null;
+                
+                \Illuminate\Support\Facades\Log::info('WhatsApp: Checking phone', [
+                    'marketing_id' => $marketingUser->id,
+                    'phone' => $waPhone
+                ]);
+
+                if ($waPhone) {
+                    $invoiceLink = 'Not Generated';
+                    if ($booking->generatedInvoice) {
+                        $invoiceLink = route('superadmin.invoices.show', $booking->generatedInvoice->id);
+                    }
+                    
+                    // Template parameters mapping
+                    // {{1}}: Client Name
+                    // {{2}}: Letter No (Reference No)
+                    // {{3}}: View Letter (Files)
+                    // {{4}}: Report Link (Same as letter links for now)
+                    // {{5}}: Invoice Link
+                    // {{6}}: Thanks and Regards (Uploader Name)
+
+                    $waComponents = [
+                        [ 'type' => 'text', 'text' => $booking->client_name ?? 'Valued Client' ],
+                        [ 'type' => 'text', 'text' => $booking->reference_no ?? 'N/A' ],
+                        [ 'type' => 'text', 'text' => $linksText ?: 'No files' ],
+                        [ 'type' => 'text', 'text' => $linksText ?: 'No files' ],
+                        [ 'type' => 'text', 'text' => $invoiceLink ],
+                        [ 'type' => 'text', 'text' => SiteSetting::first()?->company_name ?? 'Genlab' ]
+                    ];
+
+                    // NOTE: Template name is assumed to be 'test_report_ready' in Meta Manager
+                    // Template Body:
+                    // *Test Report Ready* 📄
+                    // ...
+                    // Thanks and Regards {{6}}
+                    
+                    $waService = new \App\Services\WhatsAppService();
+                    // Found 'itl_report_send' in the list (en) which seems to be the production template.
+                    // 'test_report_ready' does not exist in the account.
+                    $waService->sendTemplateMessage($waPhone, 'itl_report_send', $waComponents, 'en');
+                }
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('WhatsApp Notification Failed: ' . $e->getMessage());
+            }
+
         }
         return response()->json([
             'ok' => true,

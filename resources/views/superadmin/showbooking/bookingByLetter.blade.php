@@ -67,8 +67,9 @@
                         'search' => request('search'),
                         'month' => request('month'),
                         'year' => request('year'),
-                        'department' => request('department'),
-                        'marketing' => request('marketing'),
+                            'department' => request('department'),
+                            'marketing' => request('marketing'),
+                            'payment_option' => request('payment_option'),
                         'use_created_at' => request('use_created_at'),
                     ], fn($v) => filled($v));
                     $exportQ = http_build_query($exportParams);
@@ -104,6 +105,7 @@
                     <input type="hidden" name="year" value="{{ request('year') }}">
                     <input type="hidden" name="department" value="{{ request('department') }}">
                     <input type="hidden" name="marketing" value="{{ request('marketing') }}">
+                    <input type="hidden" name="payment_option" value="{{ request('payment_option') }}">
                     <input type="hidden" name="use_created_at" value="{{ request('use_created_at') }}">
                     <input type="text" name="search" value="{{ request('search') }}" id=" " class="form-control" placeholder="Search...">
     
@@ -118,6 +120,7 @@
                     <input type="hidden" name="search" value="{{ request('search') }}">
                     <input type="hidden" name="department" value="{{ request('department') }}">
                     <input type="hidden" name="marketing" value="{{ request('marketing') }}">
+                    <input type="hidden" name="payment_option" value="{{ request('payment_option') }}">
                     <!-- Month Filter -->
                     <select name="month" class="form-control" style="width:auto">
                         <option value="">Select Month</option>
@@ -155,14 +158,14 @@
         <!--  Department filter buttons -->
         <div class="mb-4 mt-4 ms-3">
             <div class="d-flex flex-wrap gap-2 align-items-center">
-                <a href="{{ route('superadmin.bookings.bookingByLetter.index', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
+                <a href="{{ route('superadmin.bookings.bookingByLetter.index', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'payment_option' => request('payment_option'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
                    class="btn btn-sm {{ empty($department) ? 'btn-primary' : 'btn-outline-primary' }}">
                     All
                 </a>
 
                 @if(isset($departments) && $departments->count())
                     @foreach($departments as $dept)
-                        <a href="{{ route('superadmin.bookings.bookingByLetter.index', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
+                        <a href="{{ route('superadmin.bookings.bookingByLetter.index', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'payment_option' => request('payment_option'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v))) }}"
                            class="btn btn-sm {{ !empty($department) && $department->id == $dept->id ? 'btn-primary' : 'btn-outline-primary' }}">
                             {{ $dept->name }}
                         </a>
@@ -176,11 +179,18 @@
                         @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
                         @if(request('department'))<input type="hidden" name="department" value="{{ request('department') }}">@endif
                         @if(request('use_created_at'))<input type="hidden" name="use_created_at" value="{{ request('use_created_at') }}">@endif
+                        @if(request('payment_option'))<input type="hidden" name="payment_option" value="{{ request('payment_option') }}">@endif
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
                             <option value="">Select Marketing Person</option>
                             @foreach($marketingPersons as $mp)
                                 <option value="{{ $mp->user_code }}" {{ request('marketing') == $mp->user_code ? 'selected' : '' }}>{{ $mp->user_code }} - {{ $mp->name }}</option>
                             @endforeach
+                        </select>
+
+                        <select name="payment_option" class="form-select form-select-sm ms-2" onchange="this.form.submit()" style="min-width:160px">
+                            <option value="">Select Billing</option>
+                            <option value="bill" {{ request('payment_option') == 'bill' ? 'selected' : '' }}>Bill</option>
+                            <option value="without_bill" {{ request('payment_option') == 'without_bill' ? 'selected' : '' }}>Without Bill</option>
                         </select>
                     </form>
                 @endif

@@ -3,20 +3,40 @@
 namespace App\Exports;
 
 use Maatwebsite\Excel\Concerns\FromCollection;
-use Maatwebsite\Excel\Concerns\WithHeadings;
 
-class BookingItemsExport implements FromCollection, WithHeadings
+class BookingItemsExport implements FromCollection
 {
     protected $items;
+    protected $filters = [];
 
-    public function __construct($items)
+    public function __construct($items, $filters = [])
     {
         $this->items = $items;
+        $this->filters = $filters;
     }
 
     public function collection()
     {
-        return $this->items->values()->map(function($it, $i) {
+        $rows = [];
+
+        // Add filter header rows
+        if (!empty($this->filters)) {
+            $rows[] = ['Applied Filters:'];
+            $rows[] = ['Search', $this->filters['search'] ?? ''];
+            $rows[] = ['Month', $this->filters['month'] ?? ''];
+            $rows[] = ['Year', $this->filters['year'] ?? ''];
+            $rows[] = ['Department', $this->filters['department'] ?? ''];
+            $rows[] = ['Marketing', $this->filters['marketing'] ?? ''];
+            $rows[] = ['Payment Option', $this->filters['payment_option'] ?? ''];
+            $rows[] = ['Use Created At', !empty($this->filters['use_created_at']) ? 'Yes' : 'No'];
+            $rows[] = []; // blank row before headings
+        }
+
+        // Headings row
+        $rows[] = ['#','Job Order No','Client Name','Sample Description','Sample Quality','Particulars','Expected Date','Amount'];
+
+        // Data rows
+        foreach ($this->items->values() as $i => $it) {
             $expected = '';
             if (!empty($it->lab_expected_date)) {
                 try {
@@ -25,7 +45,8 @@ class BookingItemsExport implements FromCollection, WithHeadings
                     $expected = (string) $it->lab_expected_date;
                 }
             }
-            return [
+
+            $rows[] = [
                 $i + 1,
                 $it->job_order_no,
                 $it->booking->client_name ?? '-',
@@ -35,20 +56,8 @@ class BookingItemsExport implements FromCollection, WithHeadings
                 $expected,
                 $it->amount,
             ];
-        });
-    }
+        }
 
-    public function headings(): array
-    {
-        return [
-            '#',
-            'Job Order No',
-            'Client Name',
-            'Sample Description',
-            'Sample Quality',
-            'Particulars',
-            'Expected Date',
-            'Amount',
-        ];
+        return collect($rows);
     }
 }

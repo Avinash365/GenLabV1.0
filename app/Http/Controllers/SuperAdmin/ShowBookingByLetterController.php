@@ -208,11 +208,11 @@ class ShowBookingByLetterController extends Controller
             $items = $query->get();
         }
 
+        $filters = $request->only(['search','month','year','department','marketing','payment_option','use_created_at']);
+
         $pdf = Pdf::loadView('superadmin.showbooking.bookingByLetter_pdf', [
             'items' => $items,
-            'search' => $request->input('search'),
-            'month' => $request->input('month'),
-            'year' => $request->input('year'),
+            'filters' => $filters,
         ])->setPaper('a4', 'landscape');
 
         return $pdf->stream('booking_items.pdf');
@@ -231,7 +231,8 @@ class ShowBookingByLetterController extends Controller
             $items = $query->get();
         }
 
-        return Excel::download(new BookingItemsExport($items), 'booking_items.xlsx');
+        $filters = $request->only(['search','month','year','department','marketing','payment_option','use_created_at']);
+        return Excel::download(new BookingItemsExport($items, $filters), 'booking_items.xlsx');
     }
 
     /**

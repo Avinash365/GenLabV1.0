@@ -131,6 +131,11 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
 // Chatbot query
 Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 
+// Public Report Download (No Auth)
+Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersController::class, 'show'])
+    ->where('filename', '.*')
+    ->name('public.reports.download');
+
 // Test Pusher route
 Route::get('/pusher-test', function () {
     $dummyMessage = (object)[
@@ -215,6 +220,9 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
 Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('superadmin.')->group(function(){
     Route::get('/bookings/cards/client/{booking}/{item?}', [\App\Http\Controllers\SuperAdmin\ShowBookingController::class, 'clientCard'])->name('bookings.cards.client');
 });
+
+
+
 
 
 
