@@ -428,6 +428,9 @@ class ReportingLettersController extends Controller
 
     public function viewReports(string $job)
     {
+        // Debugging: Log entry
+        \Illuminate\Support\Facades\Log::info("viewReports entered. Job: {$job}");
+
         // 1. Try raw input first
         $candidates = [$job];
 
@@ -458,8 +461,12 @@ class ReportingLettersController extends Controller
              if (empty($key)) continue;
              
              // Check standard path
+             // Log checks
              $checkPath = "public/letters/{$key}";
-             if (Storage::exists($checkPath)) {
+             $exists = Storage::exists($checkPath);
+             \Illuminate\Support\Facades\Log::info("Checking path: {$checkPath} -> " . ($exists ? 'EXISTS' : 'NO'));
+
+             if ($exists) {
                  $targetDir = $checkPath;
                  $foundKey = $key;
                  break;
@@ -505,31 +512,29 @@ class ReportingLettersController extends Controller
         $job = urldecode($job);
 
         // Resolve path candidates
-        // 1. Safe job key from DB lookup (if found)
-        // 2. Sanitized version of the input
-        // 3. Raw input as is (for cases where folder matches URL exactly)
         [$safeJob] = $this->resolveLetterKey($job);
         $candidates = array_values(array_unique(array_filter([$safeJob, $this->sanitizeJob($job), $job])));
 
         // Sanitize filename to prevent traversal
+        $filenameRaw = $filename;
         $filename = basename($filename);
+        
+        \Illuminate\Support\Facades\Log::info("Download Request. Job: {$job}, File: {$filename}", [
+             'candidates' => $candidates
+        ]);
+
         if ($filename === '_meta.json' || str_starts_with($filename, '_')) {
             abort(404);
         }
 
         foreach ($candidates as $key) {
-            // Check direct match
+            // 1. Direct match
             $path = "public/letters/{$key}/{$filename}";
             if (\Storage::exists($path)) {
                 return $this->streamFile($path, $filename);
             }
             
-            // Fallback: Check if the filename needs decoding (e.g., spaces were expected but not decoded)
-            // OR if the folder name needs slight adjustments
-            // Let's try to lookup the file in the directory ignoring the exact filename case/encoding?
-            // No, that's too expensive/risky.
-
-            // Just in case filename was double-encoded properties in URL
+            // 2. Try URL decoding the filename (handling %20 vs space)
             $decodedFilename = urldecode($filename);
             if ($decodedFilename !== $filename) {
                 $pathDecoded = "public/letters/{$key}/{$decodedFilename}";
@@ -537,7 +542,15 @@ class ReportingLettersController extends Controller
                     return $this->streamFile($pathDecoded, $decodedFilename);
                 }
             }
+
+            // 3. Try checking file existence via directory scanning if encoding is tricky?
+            // (Optional: iterate directory if not found yet)
         }
+        
+        \Illuminate\Support\Facades\Log::warning("Download 404. Job: {$job}, File: {$filename}", [
+             'candidates' => $candidates,
+             'tried_paths' => array_map(fn($k) => "public/letters/{$k}/{$filename}", $candidates)
+        ]);
         
         abort(404);
     }

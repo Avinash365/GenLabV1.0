@@ -133,6 +133,7 @@ Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 
 // Public List of Reports (View)
 Route::get('/public/reports/view/{job}', [ReportingLettersController::class, 'viewReports'])
+    ->where('job', '.*')
     ->name('public.reports.index');
 
 // Public Report Download (No Auth)
