@@ -433,7 +433,10 @@ class ReportingLettersController extends Controller
 
         // 1. Try raw input first
         $candidates = [$job];
-
+        
+        // Also add the exact raw input without any modification in case Laravel/Server changed it?
+        // Actually $job is already decoded by Laravel routing usually.
+        
         // 2. Decode and try
         $decoded = urldecode($job);
         if ($decoded !== $job) {
@@ -479,6 +482,9 @@ class ReportingLettersController extends Controller
             \Illuminate\Support\Facades\Log::info("Exact match failed for {$job}. Starting fuzzy search in public/letters.");
             
             $allDirs = Storage::directories('public/letters');
+            // Log ALL directories for deep debugging just once
+            \Illuminate\Support\Facades\Log::info("All directories in public/letters: " . json_encode(array_slice($allDirs, 0, 50))); // limit output
+            
             $candidatesLower = array_map('strtolower', $candidates);
             
             foreach ($allDirs as $dirPath) {
