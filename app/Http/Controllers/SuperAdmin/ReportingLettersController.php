@@ -287,10 +287,11 @@ class ReportingLettersController extends Controller
 
                     // Extract suffix (path) for the buttons
                     $letterSuffix = parse_url($letterUrl, PHP_URL_PATH);
-                    $letterSuffix = ltrim($letterSuffix, '/'); // Remove leading slash if any
+                    // Prepend '../' to escape any potentially misconfigured "folder" segments in the Meta template URL (e.g. {{6}})
+                    $letterSuffix = '../' . ltrim($letterSuffix, '/');
                     
                     $reportSuffix = parse_url($reportUrl, PHP_URL_PATH);
-                    $reportSuffix = ltrim($reportSuffix, '/'); // Remove leading slash if any
+                    $reportSuffix = '../' . ltrim($reportSuffix, '/');
 
                     $waComponents = [
                         // Body
