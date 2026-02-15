@@ -428,24 +428,47 @@ class ReportingLettersController extends Controller
 
     public function viewReports(string $job)
     {
-        $jobRaw = urldecode($job);
-        [$safeJob] = $this->resolveLetterKey($jobRaw);
-        // Find if folder exists
-        $candidates = array_values(array_unique(array_filter([$safeJob, $this->sanitizeJob($jobRaw), $jobRaw])));
-        
+        // 1. Try raw input first
+        $candidates = [$job];
+
+        // 2. Decode and try
+        $decoded = urldecode($job);
+        if ($decoded !== $job) {
+            $candidates[] = $decoded;
+        }
+
+        // 3. Sanitize both raw and decoded
+        $candidates[] = $this->sanitizeJob($job);
+        $candidates[] = $this->sanitizeJob($decoded);
+
+        // 4. Resolve via DB logic (in case folder is named after DB reference but input is different)
+        [$dbJob] = $this->resolveLetterKey($decoded);
+        $candidates[] = $dbJob;
+
+        $candidates = array_values(array_unique(array_filter($candidates)));
+
+        \Illuminate\Support\Facades\Log::info("Viewing Reports. Input: {$job}", [
+            'candidates' => $candidates
+        ]);
+
         $targetDir = null;
         $foundKey = $job;
 
         foreach ($candidates as $key) {
-             if (Storage::exists("public/letters/{$key}")) {
-                 $targetDir = "public/letters/{$key}";
+             if (empty($key)) continue;
+             
+             // Check standard path
+             $checkPath = "public/letters/{$key}";
+             if (Storage::exists($checkPath)) {
+                 $targetDir = $checkPath;
                  $foundKey = $key;
                  break;
              }
         }
 
         if (!$targetDir) {
-             abort(404, 'Reference not found');
+             \Illuminate\Support\Facades\Log::warning("Reports view 404: Directory not found.", ['candidates' => $candidates]);
+             abort(404, 'Reference not found for: ' . $job);
         }
 
         $allFiles = Storage::files($targetDir);
