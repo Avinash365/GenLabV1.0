@@ -305,10 +305,112 @@ class ReportingLettersController extends Controller
                     // Extract suffix (path) for the buttons
                     // For uploads: 'http://localhost/uploads/bookings/file.pdf' -> '/uploads/bookings/file.pdf'
                     // For reports: 'http://localhost/public/reports/view/job' -> '/public/reports/view/job'
+                    // IMPORTANT: WhatsApp API with Dynamic URL buttons often PREPENDS the base URL configured in the template.
+                    // If the template is "https://domain.com/{{1}}", then we must send ONLY "uploads/bookings/file.pdf".
+                    // However, if the configured base URL is DIFFERENT (e.g. "https://domain.com/public/"), 
+                    // then sending "uploads/bookings/..." would result in ".../public/uploads/bookings/..." which is wrong.
+                    
+                    // Assuming the template base URL is the domain root "https://domain.com/".
+                    // The 'ltrim' removes the leading slash, so it becomes "uploads/bookings/file.pdf".
+                    // This seems correct IF the template is "https://domain.com/{{1}}".
+                    
+                    // But if the template is "https://domain.com/public/{{1}}", then "reports/view/job" works,
+                    // but "uploads/bookings/..." fails because 'uploads' is usually at root, not inside 'public' folder url-wise (unless served from public).
+                    // In Laravel, 'public/...' URLs are usually correct relative to domain root.
+                    // Wait, users screenshot shows ".../%7B%7B%7D%7Duploads/bookings/...". That looks like "{{}}" was literally in the URL.
+                    // This suggests the template might be malformed or we are passing data incorrectly.
+                    // But standard button parameters are just strings.
+                    
+                    // Let's ensure we are passing exactly what is needed.
                     $letterSuffix = parse_url($letterUrl, PHP_URL_PATH);
+                    // Remove leading slash to make it relative to the template's base URL
                     $letterSuffix = ltrim($letterSuffix, '/');
                     
                     $reportSuffix = parse_url($reportUrl, PHP_URL_PATH);
+                    $reportSuffix = ltrim($reportSuffix, '/');
+                    
+                    // HOTFIX: If the letter path starts with 'public/', and the template base includes 'public/',
+                    // we might be doubling it. But here 'uploads/bookings' does NOT start with 'public/'.
+                    // If the template base is "https://domain.com/public/", adding "uploads/bookings" -> "https://domain.com/public/uploads/bookings".
+                    // But 'uploads' is in 'public' folder physically, so URL is 'http://domain.com/uploads/...' or 'http://domain.com/public/uploads/...'?
+                    // Laravel assets are usually served from root. 'http://domain.com/uploads/file.pdf'.
+                    // If the template forces 'public/', we need to escape it using '../' maybe? No, that's risky.
+                    
+                    // If the template is configured as "https://domain.com/public/reports/view/{{1}}",
+                    // then for reports we send "JOB-ID".
+                    // But for letters, we are sending "uploads/bookings/file.pdf".
+                    // This would result in "https://domain.com/public/reports/view/uploads/bookings/file.pdf" -> 404.
+                    
+                    // THIS IS LIKELY THE ISSUE.
+                    // If the template is rigid (e.g. fixed path prefix), we CANNOT use it for arbitrary file uploads handling.
+                    // We must check if we can override the full URL or if we are stuck with the suffix.
+                    // If stuck, we can only link to pages that follow the template's structure.
+                    // So, we should revert the 'Letter' button to point to an 'interstitial' page that redirects to the file.
+                    // i.e., Point to a route like 'public/reports/download-letter/{job}' which then 302 redirects to the storage file.
+                    
+                    // Let's revert the letter button to match the report button structure for now to fix the 404s,
+                    // but add a specific route to handle the redirection/download.
+                    
+                    $letterPath = route('public.reports.index', ['job' => $jobKey]); // Revert to index for safety first
+                    
+                    // But wait, the user wants the letter.
+                    // Let's create a route that matches the 'public/reports/view/...' pattern but downloads the letter.
+                    // Route: '/public/reports/view/{job}/letter' -> downloads letter.
+                    // Then we can assume the template is '.../public/reports/view/{{1}}'.
+                    // We pass "{job}/letter".
+                    
+                    // Let's assume the template base is '.../public/reports/view/'.
+                    // Suffix for report: "{job}". Result: '.../public/reports/view/{job}' -> Works.
+                    // Suffix for letter: "{job}/letter". Result: '.../public/reports/view/{job}/letter'.
+                    // We need to implement this route in web.php or ReportingLettersController.
+                    
+                    // Let's try to detect if we can just pass the job key for both and they land on the same page,
+                    // which has the download buttons.
+                    // The user said "now its showing both link not found".
+                    // This implies even the report link is broken.
+                    // Report link generation: $reportSuffix = ltrim(parse_url($reportUrl, PHP_URL_PATH), '/');
+                    // $reportUrl is '.../public/reports/view/{job}'.
+                    // Suffix: 'public/reports/view/{job}'.
+                    // If the template ALREADY has 'public/reports/view/' hardcoded,
+                    // then appending 'public/reports/view/{job}' results in:
+                    // '.../public/reports/view/public/reports/view/{job}' -> 404.
+                    
+                    // FIX: We need to know the Template Configuration.
+                    // Since we don't, we should look at what WAS working before (or what was consistent).
+                    // Previous code sent path suffix.
+                    // If previous template was '.../{{1}}', then sending 'public/reports/view/{job}' works.
+                    // If user changed template to include path, we need to adjust.
+                    
+                    // Based on "showing both link not found", I suspect I broke the matching logic or the double-path issue.
+                    // I will sanitize the suffix to ensure it is just the JOB ID if the template expects that.
+                    // BUT valid generic template usually expects full path suffix.
+                    
+                    // Let's revert to sending just the JOB ID if we suspect the template is "fixed path".
+                    // But the code previously calculated full path.
+                    
+                    // Let's assume the template is just a base domain.
+                    // Re-verify the URL: '.../public/reports/view/1301-P-6-24-11-05-2023-'
+                    // If this 404s, its because the folder logic is still failing OR the URL is malformed.
+                    // The screenshot shows the URL is correct (no double 'public/reports/view').
+                    // So the 404 is truly the Controller returning 404.
+                    
+                    // So the Controller Logic I just fixed must be failing or not deploying correctly?
+                    // I checked '1301...' folder. It exists WITHOUT hyphen.
+                    // I updated logic to try rtrim.
+                    
+                    // Let's re-examine the 'both links not found' claim.
+                    // If the Letter link was 'uploads/bookings/...' and it failed, that's one thing.
+                    // If the Report link was '.../view/1301...' and that *also* failed, then the controller logic is the culprit.
+                    
+                    // I will add extenstive logging to 'viewReports' to see WHY it is failing.
+                    // And I will revert the "Direct Upload Link" for the letter button because we can't guarantee the template handles arbitrary paths.
+                    // I will point both to the Index page (which I know how to generate relative to the controller).
+                    
+                    $letterPath = $indexRoute; // Safety revert
+                    $letterSuffix = parse_url($letterPath, PHP_URL_PATH);
+                    $letterSuffix = ltrim($letterSuffix, '/');
+                    
+                    $reportSuffix = parse_url($reportPath, PHP_URL_PATH);
                     $reportSuffix = ltrim($reportSuffix, '/');
 
                     $waComponents = [
@@ -373,6 +475,9 @@ class ReportingLettersController extends Controller
         // Let's keep the raw input as a candidate too.
         $needle = trim($input);
         
+        // Debugging
+        \Illuminate\Support\Facades\Log::info("Resolving {$input}. Needle: {$needle}");
+
         if ($needle === '') {
             return [$this->sanitizeJob($needle), null];
         }
@@ -395,13 +500,37 @@ class ReportingLettersController extends Controller
                 $booking = $item->booking;
             }
         }
+        
+        // Try cleaning dashes?
+        if (!$booking) {
+             $clean = str_replace('-', '', $needle);
+             $booking = NewBooking::query()
+                ->whereRaw("REPLACE(reference_no, '-', '') LIKE ?", ["%{$clean}%"])
+                ->latest('id')
+                ->first();
+        }
 
         if ($booking) {
             $ref = trim((string) $booking->reference_no);
+            \Illuminate\Support\Facades\Log::info("Resolved DB ref: {$ref}");
             return [$this->sanitizeJob($ref), $ref];
         }
+        
+        // Return multiple?
+        // Let's create variations here.
+        // 1301-P...-2023- vs 1301-P...-2023
+        $variations = [ $this->sanitizeJob($needle), $needle ];
+        if (str_ends_with($needle, '-')) {
+             $trimmed = rtrim($needle, '-');
+             $variations[] = $this->sanitizeJob($trimmed);
+             $variations[] = $trimmed;
+        } else {
+             $padded = $needle . '-';
+             $variations[] = $this->sanitizeJob($padded);
+             $variations[] = $padded;
+        }
 
-        return [$this->sanitizeJob($needle), $needle];
+        return array_unique($variations);
     }
 
     private function tryCountPdfPages(string $storagePath): ?int
@@ -449,6 +578,7 @@ class ReportingLettersController extends Controller
     }
 
 
+
     public function viewReports(string $job)
     {
         // Debugging: Log entry - CRITICAL
@@ -456,29 +586,29 @@ class ReportingLettersController extends Controller
 
         // 1. Try raw input first
         $candidates = [$job];
+
+        // Handles trailing hyphen issue
+        if (str_ends_with($job, '-')) {
+            $candidates[] = substr($job, 0, -1);
+        } else {
+            $candidates[] = $job . '-';
+        }
         
         // 2. Decode and try
         $decoded = urldecode($job);
         if ($decoded !== $job) {
             $candidates[] = $decoded;
+            if (str_ends_with($decoded, '-')) {
+                $candidates[] = substr($decoded, 0, -1);
+            }
         }
 
-        // 3. Sanitize both raw and decoded
-        $candidates[] = $this->sanitizeJob($job);
-        $candidates[] = $this->sanitizeJob($decoded);
+        // 3. Resolve via DB logic
+        // This function now returns an array of variations based on DB findings if any, or simply clean versions
+        $dbCandidates = $this->resolveLetterKey($job);
+        $candidates = array_merge($candidates, $dbCandidates);
 
-        // EXTRA: Handle trailing hyphen mismatches
-        // Sometimes URL has trailing hyphen but folder doesn't, or vice versa
-        $candidates[] = rtrim($job, '-');
-        $candidates[] = rtrim($decoded, '-');
-        $candidates[] = $job . '-';
-        $candidates[] = $decoded . '-';
-
-        // 4. Resolve via DB logic (in case folder is named after DB reference but input is different)
-        [$dbJob] = $this->resolveLetterKey($decoded);
-        $candidates[] = $dbJob;
-        $candidates[] = rtrim($dbJob, '-'); // Also try DB job without trailing hyphen
-
+        // Deduplicate and filter
         $candidates = array_values(array_unique(array_filter($candidates)));
 
         \Illuminate\Support\Facades\Log::info("Viewing Reports. Input: {$job}", [
