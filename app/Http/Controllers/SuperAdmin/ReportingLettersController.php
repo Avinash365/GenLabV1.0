@@ -349,13 +349,16 @@ class ReportingLettersController extends Controller
 
     private function resolveLetterKey(string $input): array
     {
+        // Trim hyphens only from start/end if you want to normalize, 
+        // BUT if folders have trailing hyphens, we must keep them or handle them.
+        // Let's keep the raw input as a candidate too.
         $needle = trim($input);
+        
         if ($needle === '') {
             return [$this->sanitizeJob($needle), null];
         }
-
-        $booking = NewBooking::query()
-            ->where('reference_no', $needle)
+        
+        // ... (DB lookup logic)
             ->orWhere('reference_no', 'like', "%{$needle}%")
             ->latest('id')
             ->first();
@@ -434,9 +437,6 @@ class ReportingLettersController extends Controller
         // 1. Try raw input first
         $candidates = [$job];
         
-        // Also add the exact raw input without any modification in case Laravel/Server changed it?
-        // Actually $job is already decoded by Laravel routing usually.
-        
         // 2. Decode and try
         $decoded = urldecode($job);
         if ($decoded !== $job) {
@@ -447,9 +447,17 @@ class ReportingLettersController extends Controller
         $candidates[] = $this->sanitizeJob($job);
         $candidates[] = $this->sanitizeJob($decoded);
 
+        // EXTRA: Handle trailing hyphen mismatches
+        // Sometimes URL has trailing hyphen but folder doesn't, or vice versa
+        $candidates[] = rtrim($job, '-');
+        $candidates[] = rtrim($decoded, '-');
+        $candidates[] = $job . '-';
+        $candidates[] = $decoded . '-';
+
         // 4. Resolve via DB logic (in case folder is named after DB reference but input is different)
         [$dbJob] = $this->resolveLetterKey($decoded);
         $candidates[] = $dbJob;
+        $candidates[] = rtrim($dbJob, '-'); // Also try DB job without trailing hyphen
 
         $candidates = array_values(array_unique(array_filter($candidates)));
 
@@ -482,16 +490,20 @@ class ReportingLettersController extends Controller
             \Illuminate\Support\Facades\Log::info("Exact match failed for {$job}. Starting fuzzy search in public/letters.");
             
             $allDirs = Storage::directories('public/letters');
-            // Log ALL directories for deep debugging just once
-            \Illuminate\Support\Facades\Log::info("All directories in public/letters: " . json_encode(array_slice($allDirs, 0, 50))); // limit output
             
             $candidatesLower = array_map('strtolower', $candidates);
+            // Also check for stripped hyphen versions
+            $candidatesStripped = array_map(function($c) { return rtrim($c, '-'); }, $candidatesLower);
             
             foreach ($allDirs as $dirPath) {
-                $dirName = basename($dirPath);
-                // Check exact match (case-insensitive) against candidates
-                if (in_array(strtolower($dirName), $candidatesLower)) {
-                    $targetDir = $dirPath;
+                // $dirPath is like 'public/letters/MyJob'
+                // We want just 'MyJob'
+                // Use pathinfo or basename logic carefully
+                $dirName = basename($dirPath); 
+
+                $dirLower = strtolower($dirName);
+                if (in_array($dirLower, $candidatesLower) || in_array($dirLower, $candidatesStripped)) {
+                    $targetDir = $dirPath; // Store full path
                     $foundKey = $dirName;
                     \Illuminate\Support\Facades\Log::info("Fuzzy match found: {$dirPath}");
                     break;
