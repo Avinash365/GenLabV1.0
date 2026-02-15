@@ -133,9 +133,11 @@ Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 
 // FIX: Redirect malformed Meta URL prefixes (e.g. {{6}}public) to clean URL
 Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
+    // If prefix is EXACTLY 'public', we should NOT have matched this route ideally if order was correct,
+    // but generic patterns can be tricky.
     if ($prefix === 'public') {
-         // Pass through to the controller directly if it matches 'public' to avoid infinite redirect loop if logic shifts
-         return app(\App\Http\Controllers\SuperAdmin\ReportingLettersController::class)->viewReports($job);
+         // Ensure we call the controller method properly
+         return app()->call([\App\Http\Controllers\SuperAdmin\ReportingLettersController::class, 'viewReports'], ['job' => $job]);
     }
     return redirect()->route('public.reports.index', ['job' => $job]);
 })->where('prefix', '.+public'); 
@@ -143,7 +145,7 @@ Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
 // FIX: Redirect malformed Meta URL prefixes for downloads
 Route::get('/{prefix}/reports/download/{job}/{filename}', function ($prefix, $job, $filename) {
      if ($prefix === 'public') {
-         return app(\App\Http\Controllers\SuperAdmin\ReportingLettersController::class)->show($job, $filename);
+         return app()->call([\App\Http\Controllers\SuperAdmin\ReportingLettersController::class, 'show'], ['job' => $job, 'filename' => $filename]);
     }
     return redirect()->route('public.reports.download', ['job' => $job, 'filename' => $filename]);
 })->where('prefix', '.+public')->where('filename', '.*');

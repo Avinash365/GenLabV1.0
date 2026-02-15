@@ -473,9 +473,31 @@ class ReportingLettersController extends Controller
              }
         }
 
+        // Fallback: Fuzzy (Case-Insensitive) Search
+        // This handles issues where DB casing differs from URL or Sanitization differences
+        if (!$targetDir) {
+            \Illuminate\Support\Facades\Log::info("Exact match failed for {$job}. Starting fuzzy search in public/letters.");
+            
+            $allDirs = Storage::directories('public/letters');
+            $candidatesLower = array_map('strtolower', $candidates);
+            
+            foreach ($allDirs as $dirPath) {
+                $dirName = basename($dirPath);
+                // Check exact match (case-insensitive) against candidates
+                if (in_array(strtolower($dirName), $candidatesLower)) {
+                    $targetDir = $dirPath;
+                    $foundKey = $dirName;
+                    \Illuminate\Support\Facades\Log::info("Fuzzy match found: {$dirPath}");
+                    break;
+                }
+            }
+        }
+
         if (!$targetDir) {
              \Illuminate\Support\Facades\Log::warning("Reports view 404: Directory not found.", ['candidates' => $candidates]);
-             abort(404, 'Reference not found for: ' . $job);
+             // Return JSON for easier debugging if it fails, or standard 404 page?
+             // Stick to abort so standard error page shows, but maybe with message
+             abort(404);
         }
 
         $allFiles = Storage::files($targetDir);
