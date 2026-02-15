@@ -131,6 +131,10 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
 // Chatbot query
 Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 
+// Public List of Reports (View)
+Route::get('/public/reports/view/{job}', [ReportingLettersController::class, 'viewReports'])
+    ->name('public.reports.index');
+
 // Public Report Download (No Auth)
 Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersController::class, 'show'])
     ->where('filename', '.*')

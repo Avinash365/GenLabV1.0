@@ -33,10 +33,32 @@ class WhatsAppService
             Log::error('WhatsApp credentials are missing in config/services.php');
             return false;
         }
+        
+        $url = "https://graph.facebook.com/v18.0/{$this->phoneNumberId}/messages";
 
-        $url = "https://graph.facebook.com/{$this->apiVersion}/{$this->phoneNumberId}/messages";
+        // Detect if $components is already a list of components (has 'type') or just body params
+        // Check if the first item has 'type' => 'body' or 'button'.
+        // If the array structure is like:
+        // [ ['type' => 'text', 'text' => '...'], ... ]  <-- Old way, wraps in one body component
+        // [ ['type' => 'body', 'parameters' => [...]], ['type' => 'button', ...] ] <-- New way, passes directly
+        
+        $finalComponents = [];
+        
+        if (!empty($components)) {
+            $first = reset($components);
+            // If the first element has 'type' => 'body' or 'type' => 'button', assume the caller constructed the full structure
+            if (isset($first['type']) && in_array($first['type'], ['body', 'header', 'footer', 'button'])) {
+                 $finalComponents = $components;
+            } else {
+                // Formatting as Body Parameters (Old behavior)
+                // The caller passed a simple list of text parameters intended for the body
+                $finalComponents[] = [
+                    'type' => 'body',
+                    'parameters' => $components
+                ];
+            }
+        }
 
-        // Basic payload structure
         $payload = [
             'messaging_product' => 'whatsapp',
             'to' => $to,
@@ -46,12 +68,7 @@ class WhatsAppService
                 'language' => [
                     'code' => $language
                 ],
-                'components' => [
-                    [
-                        'type' => 'body',
-                        'parameters' => $components
-                    ]
-                ]
+                'components' => $finalComponents
             ]
         ];
 

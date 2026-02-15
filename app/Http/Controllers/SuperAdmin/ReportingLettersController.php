@@ -222,38 +222,112 @@ class ReportingLettersController extends Controller
                 ]);
 
                 if ($waPhone) {
-                    $invoiceLink = 'Not Generated';
-                    if ($booking->generatedInvoice) {
-                        $invoiceLink = route('superadmin.invoices.show', $booking->generatedInvoice->id);
-                    }
+                    $invoice = $booking->generatedInvoice;
+                    $invoiceNo = $invoice ? $invoice->invoice_no : 'Not Generated';
                     
+                    // Determine Payment Status
+                    // 0: Unpaid, 1: Paid, 2: Cancelled, 3: Partial, 4: Settled
+                    // Default to 'Pending' if no invoice or status unknown
+                    $paymentStatus = 'Pending';
+                    if ($invoice) {
+                        $paymentStatus = match((int)$invoice->status) {
+                            0 => 'Unpaid',
+                            1 => 'Paid',
+                            2 => 'Cancelled',
+                            3 => 'Partial',
+                            4 => 'Settled',
+                            default => 'Pending'
+                        };
+                    }
+
+                    // Prepare links for Letter Path and Report Path
+                    // Both buttons will point to the document repository index page to ensure 
+                    // the user sees all available documents (Letter + Reports) in one place.
+                    
+                    $indexRoute = route('public.reports.index', ['job' => $jobKey]);
+                    
+                    $letterPath = $indexRoute;
+                    $reportPath = $indexRoute;
+
+
+                    $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
+
                     // Template parameters mapping
+                    // The template 'testing_send_itl' expects 5 body parameters.
                     // {{1}}: Client Name
-                    // {{2}}: Letter No (Reference No)
-                    // {{3}}: View Letter (Files)
-                    // {{4}}: Report Link (Same as letter links for now)
-                    // {{5}}: Invoice Link
-                    // {{6}}: Thanks and Regards (Uploader Name)
+                    // {{2}}: Letter No
+                    // {{3}}: Invoice No
+                    // {{4}}: Payment Status
+                    // {{5}}: Thanks and Regards (Signoff)
+                    
+                    // The links are likely handled by buttons or need to be appended if the template allowed it.
+                    // Since the error says expected 5, we only send 5 body components.
+                    // If we want to send links and they are not in the body, we can't force them in as {{6}} and {{7}}.
+                    // Should we try to append them to {{5}}?
+                    // "GenLab \n\n Links: ..."
+                    
+                    $signoff = $contactName;
+                    
+                    // Template has buttons.
+                    // Based on previous errors and user description:
+                    // Body has 5 variables: Client, Ref, Invoice, Payment, Signoff.
+                    // And "Please use the buttons below to view your documents."
+                    // Error 131008 says "Button at index 0 of type Url requires a parameter".
+                    // This implies the template has a URL button with a variable, e.g. "https://domain.com/{{1}}"
+                    
+                    // We have 2 potential links: Letter and Report.
+                    // If the template has TWO buttons (Letter Path, Report Path):
+                    // We need to pass parameters for them if they are dynamic.
+                    
+                    // Process URLs for Buttons (Dynamic URL Buttons)
+                    // The template likely expects a suffix to append to a base URL.
+                    // We extract the path component of the generated URL.
+                    $letterUrl = ($letterPath !== 'N/A') ? $letterPath : 'https://genlab.com';
+                    $reportUrl = ($reportPath !== 'N/A') ? $reportPath : 'https://genlab.com';
+
+                    // Extract suffix (path) for the buttons
+                    $letterSuffix = parse_url($letterUrl, PHP_URL_PATH);
+                    $letterSuffix = ltrim($letterSuffix, '/'); // Remove leading slash if any
+                    
+                    $reportSuffix = parse_url($reportUrl, PHP_URL_PATH);
+                    $reportSuffix = ltrim($reportSuffix, '/'); // Remove leading slash if any
 
                     $waComponents = [
-                        [ 'type' => 'text', 'text' => $booking->client_name ?? 'Valued Client' ],
-                        [ 'type' => 'text', 'text' => $booking->reference_no ?? 'N/A' ],
-                        [ 'type' => 'text', 'text' => $linksText ?: 'No files' ],
-                        [ 'type' => 'text', 'text' => $linksText ?: 'No files' ],
-                        [ 'type' => 'text', 'text' => $invoiceLink ],
-                        [ 'type' => 'text', 'text' => SiteSetting::first()?->company_name ?? 'Genlab' ]
+                        // Body
+                        [
+                            'type' => 'body',
+                            'parameters' => [
+                                [ 'type' => 'text', 'text' => $booking->client_name ?? 'Valued Client' ],       // {{1}}
+                                [ 'type' => 'text', 'text' => $booking->reference_no ?? 'N/A' ],                // {{2}}
+                                [ 'type' => 'text', 'text' => $invoiceNo ],                                     // {{3}}
+                                [ 'type' => 'text', 'text' => $paymentStatus ],                                 // {{4}}
+                                [ 'type' => 'text', 'text' => $signoff ],                                      // {{5}}
+                            ]
+                        ],
+                        // Button 0 (Letter)
+                        [
+                            'type' => 'button',
+                            'sub_type' => 'url',
+                            'index' => 0,
+                            'parameters' => [
+                                [ 'type' => 'text', 'text' => $letterSuffix ?: 'home' ]
+                            ]
+                        ],
+                         // Button 1 (Report)
+                        [
+                            'type' => 'button',
+                            'sub_type' => 'url',
+                            'index' => 1,
+                            'parameters' => [
+                                [ 'type' => 'text', 'text' => $reportSuffix ?: 'home' ]
+                            ]
+                        ]
                     ];
-
-                    // NOTE: Template name is assumed to be 'test_report_ready' in Meta Manager
-                    // Template Body:
-                    // *Test Report Ready* 📄
-                    // ...
-                    // Thanks and Regards {{6}}
                     
+                    // Instantiate service and send
                     $waService = new \App\Services\WhatsAppService();
-                    // Found 'itl_report_send' in the list (en) which seems to be the production template.
-                    // 'test_report_ready' does not exist in the account.
-                    $waService->sendTemplateMessage($waPhone, 'itl_report_send', $waComponents, 'en');
+                    // Correct order: phone, template, components, language
+                    $waService->sendTemplateMessage($waPhone, 'testing_send_itl', $waComponents, 'en');
                 }
             } catch (\Throwable $e) {
                 \Illuminate\Support\Facades\Log::error('WhatsApp Notification Failed: ' . $e->getMessage());
@@ -351,32 +425,109 @@ class ReportingLettersController extends Controller
         } catch (\Throwable $e) { return $url; }
     }
 
+
+    public function viewReports(string $job)
+    {
+        $jobRaw = urldecode($job);
+        [$safeJob] = $this->resolveLetterKey($jobRaw);
+        // Find if folder exists
+        $candidates = array_values(array_unique(array_filter([$safeJob, $this->sanitizeJob($jobRaw), $jobRaw])));
+        
+        $targetDir = null;
+        $foundKey = $job;
+
+        foreach ($candidates as $key) {
+             if (Storage::exists("public/letters/{$key}")) {
+                 $targetDir = "public/letters/{$key}";
+                 $foundKey = $key;
+                 break;
+             }
+        }
+
+        if (!$targetDir) {
+             abort(404, 'Reference not found');
+        }
+
+        $allFiles = Storage::files($targetDir);
+        $fileList = [];
+
+        foreach ($allFiles as $path) {
+            $name = basename($path);
+            if ($name === '_meta.json' || str_starts_with($name, '_')) continue;
+
+            $size = Storage::size($path);
+            $ts = Storage::lastModified($path);
+            
+            // formatting size
+            $units = ['B', 'KB', 'MB', 'GB'];
+            $power = $size > 0 ? floor(log($size, 1024)) : 0;
+            $formattedSize = number_format($size / pow(1024, $power), 2, '.', '') . ' ' . ($units[$power] ?? 'B');
+
+            $fileList[] = [
+                'filename' => $name,
+                'size' => $formattedSize,
+                'date' => Carbon::createFromTimestamp($ts)->format('Y-m-d H:i')
+            ];
+        }
+
+        return view('public.reports.index', [
+            'job' => $foundKey,
+            'files' => $fileList
+        ]);
+    }
+
     public function show(string $job, string $filename)
     {
-        [$safeJob] = $this->resolveLetterKey($job);
-        $candidates = array_values(array_unique(array_filter([$safeJob, $this->sanitizeJob($job)])));
+        // Decode the job parameter to handle potential URL encoding issues
+        $job = urldecode($job);
 
-        $filename = basename($filename); // prevent traversal
+        // Resolve path candidates
+        // 1. Safe job key from DB lookup (if found)
+        // 2. Sanitized version of the input
+        // 3. Raw input as is (for cases where folder matches URL exactly)
+        [$safeJob] = $this->resolveLetterKey($job);
+        $candidates = array_values(array_unique(array_filter([$safeJob, $this->sanitizeJob($job), $job])));
+
+        // Sanitize filename to prevent traversal
+        $filename = basename($filename);
         if ($filename === '_meta.json' || str_starts_with($filename, '_')) {
             abort(404);
         }
 
         foreach ($candidates as $key) {
+            // Check direct match
             $path = "public/letters/{$key}/{$filename}";
-            if (!\Storage::exists($path)) {
-                continue;
+            if (\Storage::exists($path)) {
+                return $this->streamFile($path, $filename);
             }
-            $mime = \Storage::mimeType($path) ?: 'application/octet-stream';
-            $stream = \Storage::readStream($path);
-            return response()->stream(function() use ($stream) {
-                fpassthru($stream);
-            }, 200, [
-                'Content-Type' => $mime,
-                'Content-Disposition' => 'inline; filename="'.addslashes($filename).'"'
-            ]);
-        }
+            
+            // Fallback: Check if the filename needs decoding (e.g., spaces were expected but not decoded)
+            // OR if the folder name needs slight adjustments
+            // Let's try to lookup the file in the directory ignoring the exact filename case/encoding?
+            // No, that's too expensive/risky.
 
+            // Just in case filename was double-encoded properties in URL
+            $decodedFilename = urldecode($filename);
+            if ($decodedFilename !== $filename) {
+                $pathDecoded = "public/letters/{$key}/{$decodedFilename}";
+                if (\Storage::exists($pathDecoded)) {
+                    return $this->streamFile($pathDecoded, $decodedFilename);
+                }
+            }
+        }
+        
         abort(404);
+    }
+
+    private function streamFile($path, $filename) {
+        $mime = \Storage::mimeType($path) ?: 'application/octet-stream';
+        $stream = \Storage::readStream($path);
+        return response()->stream(function() use ($stream) {
+            fpassthru($stream);
+        }, 200, [
+            'Content-Type' => $mime,
+            'Content-Disposition' => 'inline; filename="'.addslashes($filename).'"'
+        ]);
     }
 
     // Delete a specific letter/file
