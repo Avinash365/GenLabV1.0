@@ -428,8 +428,8 @@ class ReportingLettersController extends Controller
 
     public function viewReports(string $job)
     {
-        // Debugging: Log entry
-        \Illuminate\Support\Facades\Log::info("viewReports entered. Job: {$job}");
+        // Debugging: Log entry - CRITICAL
+        \Illuminate\Support\Facades\Log::emergency("viewReports HIT. Job: {$job}");
 
         // 1. Try raw input first
         $candidates = [$job];

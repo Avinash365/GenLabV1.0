@@ -131,34 +131,27 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
 // Chatbot query
 Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 
-// FIX: Redirect malformed Meta URL prefixes (e.g. {{6}}public) to clean URL
-Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
-    // If prefix is EXACTLY 'public', we should NOT have matched this route ideally if order was correct,
-    // but generic patterns can be tricky.
-    if ($prefix === 'public') {
-         // Ensure we call the controller method properly
-         return app()->call([\App\Http\Controllers\SuperAdmin\ReportingLettersController::class, 'viewReports'], ['job' => $job]);
-    }
-    return redirect()->route('public.reports.index', ['job' => $job]);
-})->where('prefix', '.+public'); 
-
-// FIX: Redirect malformed Meta URL prefixes for downloads
-Route::get('/{prefix}/reports/download/{job}/{filename}', function ($prefix, $job, $filename) {
-     if ($prefix === 'public') {
-         return app()->call([\App\Http\Controllers\SuperAdmin\ReportingLettersController::class, 'show'], ['job' => $job, 'filename' => $filename]);
-    }
-    return redirect()->route('public.reports.download', ['job' => $job, 'filename' => $filename]);
-})->where('prefix', '.+public')->where('filename', '.*');
-
-// Public List of Reports (View)
+// FIX: Explicitly handle the "Clean" URL first to avoid regex confusion
+// Public List of Reports (View) - Explicit Route
 Route::get('/public/reports/view/{job}', [ReportingLettersController::class, 'viewReports'])
     ->where('job', '.*')
     ->name('public.reports.index');
 
-// Public Report Download (No Auth)
+// Public Report Download (No Auth) - Explicit Route
 Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersController::class, 'show'])
     ->where('filename', '.*')
     ->name('public.reports.download');
+
+
+// FIX: Catch-all for Malformed Meta URL prefixes (e.g. {{6}}public)
+// This must come AFTER the specific /public routes to act as a fallback/redirector
+Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
+    return redirect()->route('public.reports.index', ['job' => $job]);
+})->where('prefix', '.*public')->where('job', '.*');
+
+Route::get('/{prefix}/reports/download/{job}/{filename}', function ($prefix, $job, $filename) {
+    return redirect()->route('public.reports.download', ['job' => $job, 'filename' => $filename]);
+})->where('prefix', '.*public')->where('filename', '.*');
 
 // Test Pusher route
 Route::get('/pusher-test', function () {
