@@ -246,7 +246,15 @@ class ReportingLettersController extends Controller
                     
                     $indexRoute = route('public.reports.index', ['job' => $jobKey]);
                     
-                    $letterPath = $indexRoute;
+                    // If the booking has a specific letter upload path, point the Letter button directly to it
+                    // The path is stored in 'upload_letter_path' in uploads/bookings.
+                    // We need to generate a full URL for it.
+                    if (!empty($booking->upload_letter_path)) {
+                        $letterPath = asset($booking->upload_letter_path); // 'uploads/bookings/...' is usually relative to public
+                    } else {
+                        $letterPath = $indexRoute;
+                    }
+                    
                     $reportPath = $indexRoute;
 
 
@@ -282,10 +290,21 @@ class ReportingLettersController extends Controller
                     // Process URLs for Buttons (Dynamic URL Buttons)
                     // The template likely expects a suffix to append to a base URL.
                     // We extract the path component of the generated URL.
+                    
+                    // NOTE: If letterPath is a full URL to an upload, we need to handle it carefully.
+                    // If the button expects a SUFFIX (path), we strip the domain.
+                    // If the button variable is the entire URL, we pass the entire URL.
+                    // Assuming the template is configured as "https://domain.com/{{1}}" for the button,
+                    // we must pass ONLY the path.
+                    // BUT, if letters are in "uploads/bookings/..." and reports are in "public/reports/view/...",
+                    // they share the same domain (APP_URL). So stripping the domain should work for both.
+                    
                     $letterUrl = ($letterPath !== 'N/A') ? $letterPath : 'https://genlab.com';
                     $reportUrl = ($reportPath !== 'N/A') ? $reportPath : 'https://genlab.com';
 
                     // Extract suffix (path) for the buttons
+                    // For uploads: 'http://localhost/uploads/bookings/file.pdf' -> '/uploads/bookings/file.pdf'
+                    // For reports: 'http://localhost/public/reports/view/job' -> '/public/reports/view/job'
                     $letterSuffix = parse_url($letterUrl, PHP_URL_PATH);
                     $letterSuffix = ltrim($letterSuffix, '/');
                     
