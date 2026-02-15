@@ -358,7 +358,8 @@ class ReportingLettersController extends Controller
             return [$this->sanitizeJob($needle), null];
         }
         
-        // ... (DB lookup logic)
+        $booking = NewBooking::query()
+            ->where('reference_no', $needle)
             ->orWhere('reference_no', 'like', "%{$needle}%")
             ->latest('id')
             ->first();
