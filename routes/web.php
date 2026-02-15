@@ -131,6 +131,23 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
 // Chatbot query
 Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 
+// FIX: Redirect malformed Meta URL prefixes (e.g. {{6}}public) to clean URL
+Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
+    if ($prefix === 'public') {
+         // Pass through to the controller directly if it matches 'public' to avoid infinite redirect loop if logic shifts
+         return app(\App\Http\Controllers\SuperAdmin\ReportingLettersController::class)->viewReports($job);
+    }
+    return redirect()->route('public.reports.index', ['job' => $job]);
+})->where('prefix', '.+public'); 
+
+// FIX: Redirect malformed Meta URL prefixes for downloads
+Route::get('/{prefix}/reports/download/{job}/{filename}', function ($prefix, $job, $filename) {
+     if ($prefix === 'public') {
+         return app(\App\Http\Controllers\SuperAdmin\ReportingLettersController::class)->show($job, $filename);
+    }
+    return redirect()->route('public.reports.download', ['job' => $job, 'filename' => $filename]);
+})->where('prefix', '.+public')->where('filename', '.*');
+
 // Public List of Reports (View)
 Route::get('/public/reports/view/{job}', [ReportingLettersController::class, 'viewReports'])
     ->where('job', '.*')
