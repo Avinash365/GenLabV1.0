@@ -14,6 +14,7 @@ use Illuminate\Http\Request;
 use Tymon\JWTAuth\Facades\JWTAuth;
 use App\Http\Controllers\MobileControllers\MeterReadingController;
 use App\Http\Controllers\SuperAdmin\ReportingLettersController;
+use App\Http\Controllers\Api\BookingLetterController;
 
 
 // Static test file endpoint for client testing
@@ -271,3 +272,7 @@ Route::middleware(['multi_jwt:api'])->prefix('meter-reading')->group(function ()
     Route::get('/', [MeterReadingController::class, 'index']);
     Route::post('/upload', [MeterReadingController::class, 'upload']);
 });
+
+
+Route::get('/booking/{id}/letter', [BookingLetterController::class, 'viewLetter']);
+//Route::get('/letters-tree', [BookingLetterController::class, 'getFolderTree']);

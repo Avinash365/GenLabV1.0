@@ -19,6 +19,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\ChatController;
 use App\Http\Controllers\Accounts\ManualInvoicePaymentController; 
  
+use App\Http\Controllers\Api\BookingLetterController; 
 
 
 /*
@@ -238,7 +239,11 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
     Route::get('/bookings/cards/client/{booking}/{item?}', [\App\Http\Controllers\SuperAdmin\ShowBookingController::class, 'clientCard'])->name('bookings.cards.client');
 });
 
-
+Route::get('/letters-tree', [BookingLetterController::class, 'getFolderTree']);
+//Route::get('/letters-explorer', [BookingLetterController::class, 'showLetters']);
+Route::get('/letters-explorer/{path?}', 
+    [BookingLetterController::class, 'showLetters']
+)->where('path', '.*');
 
 
 
