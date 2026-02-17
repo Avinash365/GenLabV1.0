@@ -241,7 +241,7 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
 
 Route::get('/letters-tree', [BookingLetterController::class, 'getFolderTree']);
 //Route::get('/letters-explorer', [BookingLetterController::class, 'showLetters']);
-Route::get('/letters-explorer/{path?}', [BookingLetterController::class, 'showLetters'])->where('path', '.*');
+Route::get('/reports-explorer/{path?}', [BookingLetterController::class, 'showLetters'])->where('path', '.*')->name('public.reports.index');
 
 Route::get('/booking/{id}/letter', [BookingLetterController::class, 'viewLetter'])->name('booking.letter.view');
 

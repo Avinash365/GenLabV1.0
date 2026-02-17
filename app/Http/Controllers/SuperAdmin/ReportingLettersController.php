@@ -406,6 +406,7 @@ class ReportingLettersController extends Controller
                     $reportRoute = route('public.reports.index', [
                         'job' => $jobKey
                     ]);
+                    
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
@@ -426,7 +427,6 @@ class ReportingLettersController extends Controller
                                 [ 'type' => 'text', 'text' => $contactName ],
                             ]
                         ],
-
                         // Letter Button
                         [
                             'type' => 'button',
@@ -435,18 +435,16 @@ class ReportingLettersController extends Controller
                             'parameters' => [
                                 [ 'type' => 'text', 'text' => $letterSuffix ]
                             ]
+                        ],
+                        //Report Button
+                        [
+                            'type' => 'button',
+                            'sub_type' => 'url',
+                            'index' => 1,
+                            'parameters' => [
+                                [ 'type' => 'text', 'text' => $reportSuffix ]
+                            ]
                         ]
-
-                        
-                        // Report Button
-                        // [
-                        //     'type' => 'button',
-                        //     'sub_type' => 'url',
-                        //     'index' => 1,
-                        //     'parameters' => [
-                        //         [ 'type' => 'text', 'text' => $reportSuffix ]
-                        //     ]
-                        // ]
                     ];
 
                     $waService = new \App\Services\WhatsAppService();
