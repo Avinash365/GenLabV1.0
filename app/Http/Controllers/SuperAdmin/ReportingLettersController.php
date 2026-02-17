@@ -331,6 +331,111 @@ class ReportingLettersController extends Controller
     //         'count' => count($files),
     //     ]);
     // }
+    public function notify(Request $request)
+    {
+        $validated = $request->validate([
+            'job' => ['required', 'string', 'max:255'],
+        ]);
+
+        [$jobKey] = $this->resolveLetterKey($validated['job']);
+
+        $booking = NewBooking::where('reference_no', $request->job)->firstOrFail();
+        $marketingUser = $booking->marketingPerson;
+        $sent = false;
+
+        if ($marketingUser) {
+            try {
+                $waPhone = $marketingUser->employee->phone_primary ?? null;
+
+                if ($waPhone) {
+                    $invoice = $booking->generatedInvoice;
+                    $invoiceNo = $invoice ? $invoice->invoice_no : 'Not Generated';
+
+                    $paymentStatus = 'Pending';
+                    if ($invoice) {
+                        $paymentStatus = match((int)$invoice->status) {
+                            0 => 'Unpaid',
+                            1 => 'Paid',
+                            2 => 'Cancelled',
+                            3 => 'Partial',
+                            4 => 'Settled',
+                            default => 'Pending'
+                        };
+                    }
+
+                    // Letter API Route
+                    $letterRoute = route('booking.letter', [
+                        'id' => $booking->id
+                    ]);
+                    $letterSuffix = ltrim(parse_url($letterRoute, PHP_URL_PATH), '/');
+
+                    // Report Route
+                    $reportRoute = route('public.reports.index', [
+                        'job' => $jobKey
+                    ]);
+                    $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
+                    // Sanitization for spaces
+                    $reportSuffix = str_replace(' ', '%20', $reportSuffix);
+
+                    $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
+
+                    $waComponents = [
+                        // Body Parameters
+                        [
+                            'type' => 'body',
+                            'parameters' => [
+                                [ 'type' => 'text', 'text' => $booking->client_name ?? 'Valued Client' ],
+                                [ 'type' => 'text', 'text' => $booking->reference_no ?? 'N/A' ],
+                                [ 'type' => 'text', 'text' => $invoiceNo ],
+                                [ 'type' => 'text', 'text' => $paymentStatus ],
+                                [ 'type' => 'text', 'text' => $contactName ],
+                            ]
+                        ],
+
+                        // Letter Button
+                        [
+                            'type' => 'button',
+                            'sub_type' => 'url',
+                            'index' => 0,
+                            'parameters' => [
+                                [ 'type' => 'text', 'text' => $letterSuffix ]
+                            ]
+                        ],
+
+                        // Report Button
+                        [
+                            'type' => 'button',
+                            'sub_type' => 'url',
+                            'index' => 1,
+                            'parameters' => [
+                                [ 'type' => 'text', 'text' => $reportSuffix ]
+                            ]
+                        ]
+                    ];
+
+                    $waService = new \App\Services\WhatsAppService();
+                    $waService->sendTemplateMessage(
+                        $waPhone,
+                        'testing_send_itl',
+                        $waComponents,
+                        'en'
+                    );
+                    $sent = true;
+                }
+            } catch (\Throwable $e) {
+                \Log::error('WhatsApp Notification Failed: ' . $e->getMessage());
+                return response()->json(['ok' => false, 'error' => $e->getMessage()], 500);
+            }
+        } else {
+             return response()->json(['ok' => false, 'error' => 'No marketing person found.'], 404);
+        }
+
+        return response()->json([
+            'ok' => true,
+            'sent' => $sent
+        ]);
+    }
+
     public function upload(Request $request)
     {
         $validated = $request->validate([

@@ -135,6 +135,11 @@
                         <input type="file" name="letters[]" id="upload-letters-input" class="form-control" multiple accept=".pdf,.jpg,.jpeg,.png,.doc,.docx" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>
                         <div class="d-flex gap-2 align-items-center">
                             <button type="submit" class="btn btn-primary" <?php echo e($uploadRoute === '#' ? 'disabled' : ''); ?>>Upload</button>
+                            <?php if(\Illuminate\Support\Facades\Route::has('superadmin.reporting.letters.notify')): ?>
+                            <button type="button" class="btn btn-success text-white" id="notify-letters-btn" data-job="<?php echo e($letterKey); ?>" data-url="<?php echo e(route('superadmin.reporting.letters.notify')); ?>" title="Send WhatsApp Notification">
+                                Notify
+                            </button>
+                            <?php endif; ?>
                             <button type="button" class="btn btn-outline-secondary position-relative" id="view-letters-btn" <?php echo e(empty($listRoute) ? 'disabled' : ''); ?>>
                                 View
                                 <span class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-secondary" id="letters-count-badge" style="display:none;">0</span>
@@ -2087,5 +2092,61 @@ form .btn {
 }
 
 </style>
+<?php $__env->stopPush(); ?>
+
+<?php $__env->startPush('scripts'); ?>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const notifyBtn = document.getElementById('notify-letters-btn');
+        if (notifyBtn) {
+            notifyBtn.addEventListener('click', function() {
+                const job = this.getAttribute('data-job');
+                const url = this.getAttribute('data-url');
+                const token = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+                
+                if (confirm('Send WhatsApp notification for Job: ' + job + '?')) {
+                    
+                    const btnOriginalText = notifyBtn.innerHTML;
+                    notifyBtn.disabled = true;
+                    notifyBtn.innerText = 'Sending...';
+                    
+                    fetch(url, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'X-CSRF-TOKEN': token
+                        },
+                        body: JSON.stringify({ job: job })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        notifyBtn.disabled = false;
+                        notifyBtn.innerHTML = btnOriginalText;
+                        
+                        if (data.ok) {
+                            if (window.Swal) {
+                                Swal.fire('Success', 'WhatsApp notification sent!', 'success');
+                            } else {
+                                alert('WhatsApp notification sent!');
+                            }
+                        } else {
+                             if (window.Swal) {
+                                Swal.fire('Error', data.error || 'Failed to send.', 'error');
+                            } else {
+                                alert('Error: ' + (data.error || 'Failed to send.'));
+                            }
+                        }
+                    })
+                    .catch(error => {
+                        notifyBtn.disabled = false;
+                        notifyBtn.innerHTML = btnOriginalText;
+                        console.error('Error:', error);
+                        alert('An error occurred.');
+                    });
+                }
+            });
+        }
+    });
+</script>
 <?php $__env->stopPush(); ?>
 <?php echo $__env->make('superadmin.layouts.app', array_diff_key(get_defined_vars(), ['__data' => 1, '__path' => 1]))->render(); ?><?php /**PATH C:\Mamp\htdocs\GenLabV2.0\resources\views/superadmin/reporting/received.blade.php ENDPATH**/ ?>

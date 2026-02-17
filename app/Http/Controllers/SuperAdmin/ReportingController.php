@@ -644,20 +644,24 @@ class ReportingController extends Controller
 
     public function pendingsExportPdf(Request $request)
     {
-        $perPage = (int) $request->get('perPage', 10);
-        if ($perPage < 1) { $perPage = 10; }
-        if ($perPage > 500) { $perPage = 500; }
-        $page = (int) $request->get('page', 1);
-        if ($page < 1) { $page = 1; }
-
         $mode = $request->get('mode', 'job');
         if (!in_array($mode, ['job', 'reference'], true)) {
             $mode = 'job';
         }
 
+        // Protect against very large exports — ask user to apply filters first
+        $exportLimit = 2000; // max rows allowed for direct export
         if ($mode === 'reference') {
-            $bookingsPaginator = $this->buildPendingsBookingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
-            $bookings = collect($bookingsPaginator->items());
+            $total = $this->buildPendingsBookingsQuery($request)->count();
+            if ($total > $exportLimit) {
+                return response()->json([
+                    'error' => 'Too many records',
+                    'message' => "Your current selection returns {$total} bookings. Please narrow down the results (apply month/year/department) before exporting. Maximum allowed: {$exportLimit}.",
+                ], 413);
+            }
+
+            // Export all matching bookings (no pagination)
+            $bookings = $this->buildPendingsBookingsQuery($request)->latest('id')->get();
 
             $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('superadmin.reporting.pendings_reference_pdf', [
                 'bookings' => $bookings,
@@ -670,11 +674,24 @@ class ReportingController extends Controller
                 'overdue' => $request->boolean('overdue'),
             ])->setPaper('a4', 'landscape');
 
-            return $pdf->download('pending_reports_by_reference.pdf');
+            $response = $pdf->download('pending_reports_by_reference.pdf');
+            // Attach helpful export headers for client-side estimate
+            $estimate = (int) ceil($total / 200); // rough seconds estimate (200 rows/sec)
+            $response->headers->set('X-Export-Total', (string) $total);
+            $response->headers->set('X-Export-EstimateSeconds', (string) max(1, $estimate));
+            return $response;
         }
 
-        $itemsPaginator = $this->buildPendingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
-        $items = collect($itemsPaginator->items());
+        $totalItems = $this->buildPendingsQuery($request)->count();
+        if ($totalItems > $exportLimit) {
+            return response()->json([
+                'error' => 'Too many records',
+                'message' => "Your current selection returns {$totalItems} items. Please narrow down the results (apply month/year/department) before exporting. Maximum allowed: {$exportLimit}.",
+            ], 413);
+        }
+
+        // Export all matching items (no pagination)
+        $items = $this->buildPendingsQuery($request)->latest('id')->get();
         $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadView('superadmin.reporting.pendings_pdf', [
             'items' => $items,
             'search' => $request->get('search'),
@@ -685,31 +702,52 @@ class ReportingController extends Controller
             'lab_analyst' => $request->get('lab_analyst'),
             'overdue' => $request->boolean('overdue'),
         ])->setPaper('a4','landscape');
-        return $pdf->download('pending_reports_by_job.pdf');
+        $response = $pdf->download('pending_reports_by_job.pdf');
+        $estimate = (int) ceil($totalItems / 200);
+        $response->headers->set('X-Export-Total', (string) $totalItems);
+        $response->headers->set('X-Export-EstimateSeconds', (string) max(1, $estimate));
+        return $response;
     }
 
     public function pendingsExportExcel(Request $request)
     {
-        $perPage = (int) $request->get('perPage', 10);
-        if ($perPage < 1) { $perPage = 10; }
-        if ($perPage > 500) { $perPage = 500; }
-        $page = (int) $request->get('page', 1);
-        if ($page < 1) { $page = 1; }
-
         $mode = $request->get('mode', 'job');
         if (!in_array($mode, ['job', 'reference'], true)) {
             $mode = 'job';
         }
 
+        $exportLimit = 2000;
         if ($mode === 'reference') {
-            $bookingsPaginator = $this->buildPendingsBookingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
-            $bookings = collect($bookingsPaginator->items());
-            return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingBookingsExport($bookings), 'pending_reports_by_reference.xlsx');
+            $total = $this->buildPendingsBookingsQuery($request)->count();
+            if ($total > $exportLimit) {
+                return response()->json([
+                    'error' => 'Too many records',
+                    'message' => "Your current selection returns {$total} bookings. Please narrow down the results (apply month/year/department) before exporting. Maximum allowed: {$exportLimit}.",
+                ], 413);
+            }
+
+            $bookings = $this->buildPendingsBookingsQuery($request)->latest('id')->get();
+            $response = \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingBookingsExport($bookings), 'pending_reports_by_reference.xlsx');
+            $estimate = (int) ceil($total / 200);
+            $response->headers->set('X-Export-Total', (string) $total);
+            $response->headers->set('X-Export-EstimateSeconds', (string) max(1, $estimate));
+            return $response;
         }
 
-        $itemsPaginator = $this->buildPendingsQuery($request)->latest('id')->paginate($perPage, ['*'], 'page', $page);
-        $items = collect($itemsPaginator->items());
-        return \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingItemsExport($items), 'pending_reports_by_job.xlsx');
+        $totalItems = $this->buildPendingsQuery($request)->count();
+        if ($totalItems > $exportLimit) {
+            return response()->json([
+                'error' => 'Too many records',
+                'message' => "Your current selection returns {$totalItems} items. Please narrow down the results (apply month/year/department) before exporting. Maximum allowed: {$exportLimit}.",
+            ], 413);
+        }
+
+        $items = $this->buildPendingsQuery($request)->latest('id')->get();
+        $response = \Maatwebsite\Excel\Facades\Excel::download(new \App\Exports\PendingItemsExport($items), 'pending_reports_by_job.xlsx');
+        $estimate = (int) ceil($totalItems / 200);
+        $response->headers->set('X-Export-Total', (string) $totalItems);
+        $response->headers->set('X-Export-EstimateSeconds', (string) max(1, $estimate));
+        return $response;
     }
 
     protected function buildPendingsBookingsQuery(Request $request)

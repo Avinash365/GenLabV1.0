@@ -71,8 +71,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
 Route::middleware(['web', 'multi_auth:web,admin'])
     ->prefix('superadmin/reporting')->name('superadmin.reporting.')->group(function () {
     Route::get('/letters', [ReportingLettersController::class, 'index'])->name('letters.index');
-    Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');
-    Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
+    Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');      Route::post('/letters/notify', [ReportingLettersController::class, 'notify'])->name('letters.notify');    Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
         ->where('filename', '.*')
         ->name('letters.show');
     Route::delete('/letters/delete/{job}/{filename}', [ReportingLettersController::class, 'destroy'])

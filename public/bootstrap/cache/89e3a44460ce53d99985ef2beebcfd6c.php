@@ -193,6 +193,7 @@
                         <select name="payment_option" class="form-select form-select-sm ms-2" onchange="this.form.submit()" style="min-width:160px">
                             <option value="">Select Billing</option>
                             <option value="bill" <?php echo e(request('payment_option') == 'bill' ? 'selected' : ''); ?>>Bill</option>
+                            <option value="old_bill" <?php echo e(request('payment_option') == 'old_bill' ? 'selected' : ''); ?>>Old Bill</option>
                             <option value="without_bill" <?php echo e(request('payment_option') == 'without_bill' ? 'selected' : ''); ?>>Without Bill</option>
                         </select>
                     </form>
