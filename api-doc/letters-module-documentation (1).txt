@@ -1,0 +1,113 @@
+LETTERS MODULE – API DOCUMENTATION
+
+Base Storage Location: public/storage/letters
+
+  ------------------------------
+  1. VIEW LETTER BY BOOKING ID
+  ------------------------------
+
+Endpoint: GET /api/booking/{id}/letter
+
+Description: Displays the uploaded letter file for a specific booking
+ID. If the file exists, it opens in the browser (PDF/Image preview). If
+not found, returns 404 JSON response.
+
+Parameters: id (Integer) – Required – Booking ID
+
+Example: GET /api/booking/15/letter
+
+  --------------------------------------------
+  2. LETTERS FOLDER TREE API (JSON RESPONSE)
+  --------------------------------------------
+
+Endpoint: GET /api/letters-tree
+
+Description: Returns the full folder structure of the letters directory
+in JSON format. Used for frontend frameworks like React, Vue, or Mobile
+applications.
+
+Sample JSON Response:
+
+{ “name”: “letters”, “type”: “folder”, “children”: [ { “name”:
+“ITLM-20221216019”, “type”: “folder”, “url”:
+“http://127.0.0.1:8000/letters-explorer/ITLM-20221216019” }, { “name”:
+“booking.pdf”, “type”: “file”, “url”:
+“http://127.0.0.1:8000/storage/letters/booking.pdf” } ] }
+
+  ------------------------------------
+  3. WEB LETTERS EXPLORER (BLADE UI)
+  ------------------------------------
+
+Root Explorer: Endpoint: GET /letters-explorer
+
+Description: Displays the root letters folder in a browser-based file
+explorer view.
+
+Browse Specific Folder: Endpoint: GET /letters-explorer/{path}
+
+Supports unlimited nested folders.
+
+Examples: GET /letters-explorer/ITLM-20221216019 GET
+/letters-explorer/ITLM-20221216019/subfolder1
+
+Description: Displays only the selected folder’s contents.
+
+  ---------------------------
+  FOLDER STRUCTURE BEHAVIOR
+  ---------------------------
+
+Folder: - Click opens that folder in the explorer view.
+
+File: - Click opens the file preview in a new browser tab.
+
+  -------------------
+  SECURITY FEATURES
+  -------------------
+
+-   Prevents directory traversal attacks (../).
+-   Access restricted to storage/letters directory only.
+-   Files served securely via Laravel.
+
+  --------------------------
+  TECHNICAL IMPLEMENTATION
+  --------------------------
+
+Controller: App
+
+Core Methods: viewLetter() -> Displays letter file by booking ID
+showLetters() -> Renders Blade file explorer buildTree() -> Generates
+folder structure
+
+  --------------------------------
+  FUTURE ENHANCEMENTS (OPTIONAL)
+  --------------------------------
+
+-   Breadcrumb navigation
+-   Search inside folder
+-   File size & modified date display
+-   Download button
+-   Delete file API
+-   Upload into specific folder
+-   Role-based folder access control
+
+  ---------------
+  EXAMPLE NOTES
+  ---------------
+
+1.  Opening: http://127.0.0.1:8000/letters-explorer -> Shows the root
+    letters folder.
+
+2.  Opening: http://127.0.0.1:8000/letters-explorer/ITLM-20221216019 ->
+    Shows only that specific folder’s contents.
+
+3.  Opening a direct file URL:
+    http://127.0.0.1:8000/storage/letters/ITLM-20221216019/file.pdf ->
+    Opens the PDF in the browser (if it exists).
+
+4.  If a booking has no uploaded letter path, the API returns 404 with
+    message “Letter not found”.
+
+5.  If an invalid path like: /letters-explorer/../../ is accessed, the
+    system blocks it for security reasons.
+
+END OF DOCUMENTATION
