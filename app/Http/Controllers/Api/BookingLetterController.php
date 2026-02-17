@@ -34,21 +34,23 @@ class BookingLetterController extends Controller
     //     return response()->file(public_path($path));
     // }
 
+    
     public function viewLetter($id)
     {
         $booking = NewBooking::findOrFail($id);
 
         if (!$booking->upload_letter_path) {
-            return response()->json([
-                'message' => 'Letter not found'
-            ], 404);
+            abort(404);
         }
 
+        // If you stored full URL, extract relative storage path
+        $path = str_replace(asset('storage') . '/', '', $booking->upload_letter_path);
 
-        // Extract the relative file path from the full URL
-        $path = $booking->upload_letter_path;
-        
-        return response()->file($path);
+        if (!Storage::disk('public')->exists($path)) {
+            abort(404);
+        }
+
+        return Storage::disk('public')->response($path);
     }
 
 
