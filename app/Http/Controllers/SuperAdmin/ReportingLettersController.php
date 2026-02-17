@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Carbon\Carbon;
+use Log;
 use Throwable;
 use App\Models\BookingItem;
 use App\Models\NewBooking;
@@ -499,18 +500,24 @@ class ReportingLettersController extends Controller
                     */
 
                     // Letter API Route
-                    $letterRoute = route('booking.letter', [
+                    $letterRoute = route('booking.letter.view', [
                         'id' => $booking->id
                     ]);
-                    $letterSuffix = ltrim(parse_url($letterRoute, PHP_URL_PATH), '/');
+
+                    $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
+                    $letterSuffix = $path;  
 
                     // Report Route
                     $reportRoute = route('public.reports.index', [
-                        'job' => $jobKey
+                        'path' => $jobKey
                     ]);
+
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
+
+                    Log::info('Letter Route: ' . $letterRoute);
+                    Log::info('Letter Suffix: ' . $letterSuffix);
 
                     $waComponents = [
 
@@ -525,7 +532,6 @@ class ReportingLettersController extends Controller
                                 [ 'type' => 'text', 'text' => $contactName ],
                             ]
                         ],
-
                         // Letter Button
                         [
                             'type' => 'button',
@@ -535,8 +541,7 @@ class ReportingLettersController extends Controller
                                 [ 'type' => 'text', 'text' => $letterSuffix ]
                             ]
                         ],
-
-                        // Report Button
+                        //Report Button
                         [
                             'type' => 'button',
                             'sub_type' => 'url',
@@ -550,11 +555,11 @@ class ReportingLettersController extends Controller
                     $waService = new \App\Services\WhatsAppService();
                     $waService->sendTemplateMessage(
                         $waPhone,
-                        'testing_send_itl',
+                        'report_test3',
                         $waComponents,
                         'en'
                     );
-                }
+                } 
 
             } catch (\Throwable $e) {
                 \Log::error('WhatsApp Notification Failed: ' . $e->getMessage());

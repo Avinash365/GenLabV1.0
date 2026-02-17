@@ -21,7 +21,8 @@ class BookingLetterController extends Controller
             ], 404);
         }
         // Remove localhost base URL
-        $path = str_replace('http://127.0.0.1:8000/', '', $booking->upload_letter_path);
+        //$path = str_replace('http://127.0.0.1:8000/', '', $booking->upload_letter_path);
+        $path = str_replace(url('/'), '', $booking->upload_letter_path);
 
         if (!file_exists(public_path($path))) {
             return response()->json([
@@ -29,9 +30,28 @@ class BookingLetterController extends Controller
                 'checked_path' => public_path($path)
             ], 404);
         }
-
         return response()->file(public_path($path));
     }
+
+    
+    // public function viewLetter($id)
+    // {
+    //     $booking = NewBooking::findOrFail($id);
+
+    //     if (!$booking->upload_letter_path) {
+    //         abort(404);
+    //     }
+
+    //     // If you stored full URL, extract relative storage path
+    //     $path = str_replace(asset('storage') . '/', '', $booking->upload_letter_path);
+
+    //     if (!Storage::disk('public')->exists($path)) {
+    //         abort(404);
+    //     }
+
+    //     return Storage::disk('public')->response($path);
+    // }
+
 
 
     // public function showLetters()
@@ -130,11 +150,10 @@ class BookingLetterController extends Controller
 
     foreach (File::directories($path) as $folder) {
         $folderName = basename($folder);
-
         $result['children'][] = [
             'name' => $folderName,
             'type' => 'folder',
-            'url'  => url('letters-explorer/' . trim($relativePath . '/' . $folderName, '/'))
+            'url'  => url('reports-explorer/' . trim($relativePath . '/' . $folderName, '/'))
         ];
     }
 
