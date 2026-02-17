@@ -274,5 +274,5 @@ Route::middleware(['multi_jwt:api'])->prefix('meter-reading')->group(function ()
 });
 
 
-Route::get('/booking/{id}/letter', [BookingLetterController::class, 'viewLetter']);
+// Route::get('/booking/{id}/letter', [BookingLetterController::class, 'viewLetter']);
 //Route::get('/letters-tree', [BookingLetterController::class, 'getFolderTree']);
