@@ -11,6 +11,29 @@ use Illuminate\Support\Facades\File;
 
 class BookingLetterController extends Controller
 {
+    // public function viewLetter($id)
+    // {
+    //     $booking = NewBooking::findOrFail($id);
+
+    //     if (!$booking->upload_letter_path) {
+    //         return response()->json([
+    //             'message' => 'Letter not found'
+    //         ], 404);
+    //     }
+    //     // Remove localhost base URL
+    //     //$path = str_replace('http://127.0.0.1:8000/', '', $booking->upload_letter_path);
+    //     $path = str_replace(url('/'), '', $booking->upload_letter_path);
+
+    //     // if (!file_exists(public_path($path))) {
+    //     //     return response()->json([
+    //     //         'message' => 'File does not exist',
+    //     //         'checked_path' => public_path($path)
+    //     //     ], 404);
+    //     // }
+
+    //     return response()->file(public_path($path));
+    // }
+
     public function viewLetter($id)
     {
         $booking = NewBooking::findOrFail($id);
@@ -20,9 +43,11 @@ class BookingLetterController extends Controller
                 'message' => 'Letter not found'
             ], 404);
         }
-        // Remove localhost base URL
-        $path = str_replace('http://127.0.0.1:8000/', '', $booking->upload_letter_path);
 
+        // Extract the relative file path from the full URL
+        $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
+
+        // Check if the file exists in the public directory
         if (!file_exists(public_path($path))) {
             return response()->json([
                 'message' => 'File does not exist',
@@ -32,6 +57,7 @@ class BookingLetterController extends Controller
 
         return response()->file(public_path($path));
     }
+
 
 
     // public function showLetters()

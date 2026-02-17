@@ -67,8 +67,9 @@
                         'search' => request('search'),
                         'month' => request('month'),
                         'year' => request('year'),
-                        'department' => request('department'),
-                        'marketing' => request('marketing'),
+                            'department' => request('department'),
+                            'marketing' => request('marketing'),
+                            'payment_option' => request('payment_option'),
                         'use_created_at' => request('use_created_at'),
                     ], fn($v) => filled($v));
                     $exportQ = http_build_query($exportParams);
@@ -94,7 +95,6 @@
 
     <div class="card">
 
-
         <div class="card-header d-flex flex-wrap align-items-center justify-content-between gap-2">
 
             <!-- Search Form -->
@@ -105,6 +105,7 @@
                     <input type="hidden" name="year" value="<?php echo e(request('year')); ?>">
                     <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
                     <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
+                    <input type="hidden" name="payment_option" value="<?php echo e(request('payment_option')); ?>">
                     <input type="hidden" name="use_created_at" value="<?php echo e(request('use_created_at')); ?>">
                     <input type="text" name="search" value="<?php echo e(request('search')); ?>" id=" " class="form-control" placeholder="Search...">
     
@@ -119,6 +120,7 @@
                     <input type="hidden" name="search" value="<?php echo e(request('search')); ?>">
                     <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
                     <input type="hidden" name="marketing" value="<?php echo e(request('marketing')); ?>">
+                    <input type="hidden" name="payment_option" value="<?php echo e(request('payment_option')); ?>">
                     <!-- Month Filter -->
                     <select name="month" class="form-control" style="width:auto">
                         <option value="">Select Month</option>
@@ -158,14 +160,14 @@
         <!--  Department filter buttons -->
         <div class="mb-4 mt-4 ms-3">
             <div class="d-flex flex-wrap gap-2 align-items-center">
-                <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v)))); ?>"
+                <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index', array_filter(['search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'payment_option' => request('payment_option'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v)))); ?>"
                    class="btn btn-sm <?php echo e(empty($department) ? 'btn-primary' : 'btn-outline-primary'); ?>">
                     All
                 </a>
 
                 <?php if(isset($departments) && $departments->count()): ?>
                     <?php $__currentLoopData = $departments; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $dept): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
-                        <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v)))); ?>"
+                        <a href="<?php echo e(route('superadmin.bookings.bookingByLetter.index', array_filter(['department' => $dept->id, 'search' => request('search'), 'month' => request('month'), 'year' => request('year'), 'marketing' => request('marketing'), 'payment_option' => request('payment_option'), 'use_created_at' => request('use_created_at')], fn($v) => filled($v)))); ?>"
                            class="btn btn-sm <?php echo e(!empty($department) && $department->id == $dept->id ? 'btn-primary' : 'btn-outline-primary'); ?>">
                             <?php echo e($dept->name); ?>
 
@@ -180,17 +182,23 @@
                         <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
                         <?php if(request('department')): ?><input type="hidden" name="department" value="<?php echo e(request('department')); ?>"><?php endif; ?>
                         <?php if(request('use_created_at')): ?><input type="hidden" name="use_created_at" value="<?php echo e(request('use_created_at')); ?>"><?php endif; ?>
+                        <?php if(request('payment_option')): ?><input type="hidden" name="payment_option" value="<?php echo e(request('payment_option')); ?>"><?php endif; ?>
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
                             <option value="">Select Marketing Person</option>
                             <?php $__currentLoopData = $marketingPersons; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                 <option value="<?php echo e($mp->user_code); ?>" <?php echo e(request('marketing') == $mp->user_code ? 'selected' : ''); ?>><?php echo e($mp->user_code); ?> - <?php echo e($mp->name); ?></option>
                             <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                         </select>
+
+                        <select name="payment_option" class="form-select form-select-sm ms-2" onchange="this.form.submit()" style="min-width:160px">
+                            <option value="">Select Billing</option>
+                            <option value="bill" <?php echo e(request('payment_option') == 'bill' ? 'selected' : ''); ?>>Bill</option>
+                            <option value="without_bill" <?php echo e(request('payment_option') == 'without_bill' ? 'selected' : ''); ?>>Without Bill</option>
+                        </select>
                     </form>
                 <?php endif; ?>
             </div>
         </div>
-
 
         <div class="card-body p-0">
             <div class="search-set px-4 py-2">
