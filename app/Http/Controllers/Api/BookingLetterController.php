@@ -46,7 +46,7 @@ class BookingLetterController extends Controller
 
 
         // Extract the relative file path from the full URL
-        $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
+        $path = $booking->upload_letter_path;
         
         return response()->file($path);
     }
