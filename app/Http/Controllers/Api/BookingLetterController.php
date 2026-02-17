@@ -11,47 +11,46 @@ use Illuminate\Support\Facades\File;
 
 class BookingLetterController extends Controller
 {
-    // public function viewLetter($id)
-    // {
-    //     $booking = NewBooking::findOrFail($id);
-
-    //     if (!$booking->upload_letter_path) {
-    //         return response()->json([
-    //             'message' => 'Letter not found'
-    //         ], 404);
-    //     }
-    //     // Remove localhost base URL
-    //     //$path = str_replace('http://127.0.0.1:8000/', '', $booking->upload_letter_path);
-    //     $path = str_replace(url('/'), '', $booking->upload_letter_path);
-
-    //     // if (!file_exists(public_path($path))) {
-    //     //     return response()->json([
-    //     //         'message' => 'File does not exist',
-    //     //         'checked_path' => public_path($path)
-    //     //     ], 404);
-    //     // }
-
-    //     return response()->file(public_path($path));
-    // }
-
-    
     public function viewLetter($id)
     {
         $booking = NewBooking::findOrFail($id);
 
         if (!$booking->upload_letter_path) {
-            abort(404);
+            return response()->json([
+                'message' => 'Letter not found'
+            ], 404);
         }
+        // Remove localhost base URL
+        //$path = str_replace('http://127.0.0.1:8000/', '', $booking->upload_letter_path);
+        $path = str_replace(url('/'), '', $booking->upload_letter_path);
 
-        // If you stored full URL, extract relative storage path
-        $path = str_replace(asset('storage') . '/', '', $booking->upload_letter_path);
-
-        if (!Storage::disk('public')->exists($path)) {
-            abort(404);
+        if (!file_exists(public_path($path))) {
+            return response()->json([
+                'message' => 'File does not exist',
+                'checked_path' => public_path($path)
+            ], 404);
         }
-
-        return Storage::disk('public')->response($path);
+        return response()->file(public_path($path));
     }
+
+    
+    // public function viewLetter($id)
+    // {
+    //     $booking = NewBooking::findOrFail($id);
+
+    //     if (!$booking->upload_letter_path) {
+    //         abort(404);
+    //     }
+
+    //     // If you stored full URL, extract relative storage path
+    //     $path = str_replace(asset('storage') . '/', '', $booking->upload_letter_path);
+
+    //     if (!Storage::disk('public')->exists($path)) {
+    //         abort(404);
+    //     }
+
+    //     return Storage::disk('public')->response($path);
+    // }
 
 
 

@@ -398,7 +398,9 @@ class ReportingLettersController extends Controller
                     $letterRoute = route('booking.letter.view', [
                         'id' => $booking->id
                     ]);
-                    $letterSuffix = ltrim(parse_url($letterRoute, PHP_URL_PATH), '/');
+
+                    $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
+                    $letterSuffix = $path;  
 
                     // Report Route
                     $reportRoute = route('public.reports.index', [
