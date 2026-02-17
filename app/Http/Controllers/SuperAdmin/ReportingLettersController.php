@@ -404,9 +404,9 @@ class ReportingLettersController extends Controller
 
                     // Report Route
                     $reportRoute = route('public.reports.index', [
-                        'job' => $jobKey
+                        'path' => $jobKey
                     ]);
-                    
+
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';

@@ -150,11 +150,10 @@ class BookingLetterController extends Controller
 
     foreach (File::directories($path) as $folder) {
         $folderName = basename($folder);
-
         $result['children'][] = [
             'name' => $folderName,
             'type' => 'folder',
-            'url'  => url('letters-explorer/' . trim($relativePath . '/' . $folderName, '/'))
+            'url'  => url('reports-explorer/' . trim($relativePath . '/' . $folderName, '/'))
         ];
     }
 
