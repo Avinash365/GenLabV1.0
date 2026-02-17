@@ -407,7 +407,10 @@ class ReportingLettersController extends Controller
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
-                   
+
+                    Log::info('Letter Route: ' . $letterRoute);
+                    Log::info('Letter Suffix: ' . $letterSuffix);
+
                     $waComponents = [
 
                         // Body Parameters

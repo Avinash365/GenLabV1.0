@@ -44,9 +44,11 @@ class BookingLetterController extends Controller
             ], 404);
         }
 
+
         // Extract the relative file path from the full URL
         $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
-
+        dd($path);
+        exit; 
         // Check if the file exists in the public directory
         if (!file_exists(public_path($path))) {
             return response()->json([
