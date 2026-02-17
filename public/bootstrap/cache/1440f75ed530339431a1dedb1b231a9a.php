@@ -272,15 +272,7 @@
                                 <i class="ti ti-layout-grid fs-16 me-2"></i><span>Dashboard</span>
                             </a>
                         </li>
-
-                        <!-- Zoom Meetings -->
-                        <li>
-                            <a href="<?php echo e(route('superadmin.zoom-meetings.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : ''); ?>">
-                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
-                            </a>
-                        </li>
-
-
+ 
                         <!-- All Booking --> 
 
                     <?php if($user && ($user instanceof Admin || $user->hasPermission('booking.view'))): ?>
@@ -793,6 +785,13 @@
                                     </a>
                                 </li>
                             </ul>
+                        </li>
+
+                         <!-- Zoom Meetings -->
+                        <li>
+                            <a href="<?php echo e(route('superadmin.zoom-meetings.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : ''); ?>">
+                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
+                            </a>
                         </li>
 
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('sample_cell.view'))): ?>

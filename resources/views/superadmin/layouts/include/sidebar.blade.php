@@ -272,15 +272,7 @@
                                 <i class="ti ti-layout-grid fs-16 me-2"></i><span>Dashboard</span>
                             </a>
                         </li>
-
-                        <!-- Zoom Meetings -->
-                        <li>
-                            <a href="{{ route('superadmin.zoom-meetings.index') }}" class="{{ Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : '' }}">
-                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
-                            </a>
-                        </li>
-
-
+ 
                         <!-- All Booking --> 
 
                     @if($user && ($user instanceof Admin || $user->hasPermission('booking.view')))
@@ -792,6 +784,13 @@
                                     </a>
                                 </li>
                             </ul>
+                        </li>
+
+                         <!-- Zoom Meetings -->
+                        <li>
+                            <a href="{{ route('superadmin.zoom-meetings.index') }}" class="{{ Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : '' }}">
+                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
+                            </a>
                         </li>
 
                         @if($user && ($user instanceof Admin || $user->hasPermission('sample_cell.view')))
