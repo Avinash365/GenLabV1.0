@@ -343,6 +343,16 @@ class ReportingLettersController extends Controller
         [$jobKey] = $this->resolveLetterKey($validated['job']);
         $dir = "public/letters/{$jobKey}";
 
+        /*
+        |--------------------------------------------------------------------------
+        | CREATE DIRECTORY WITH 777 PERMISSION
+        |--------------------------------------------------------------------------
+        */
+        if (!File::exists($dir)) {
+            File::makeDirectory($dir, 0777, true, true);
+            chmod($dir, 0777);
+        }
+
         $uploaded = [];
 
         foreach ($request->file('letters', []) as $file) {
@@ -356,6 +366,11 @@ class ReportingLettersController extends Controller
             $path = $file->storeAs($dir, $filename);
 
             if ($path) {
+                // Set full permission to file
+                $fullPath = storage_path("app/{$path}");
+                // Set full permission to file
+                chmod($fullPath, 0777);
+            
                 $uploaded[] = [
                     'filename' => basename($path),
                     'url' => Storage::url($path),
@@ -411,8 +426,8 @@ class ReportingLettersController extends Controller
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
 
-                    Log::info('Letter Route: ' . $letterRoute);
-                    Log::info('Letter Suffix: ' . $letterSuffix);
+                    // Log::info('Letter Route: ' . $letterRoute);
+                    // Log::info('Letter Suffix: ' . $letterSuffix);
 
                     $waComponents = [
 
