@@ -10,10 +10,10 @@
         </div>
         <ul class="table-top-head list-inline d-flex gap-3">
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page']))); ?>" class="download-link" data-type="pdf" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportPdf', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode']))); ?>" class="download-link" data-type="pdf" data-bs-toggle="tooltip" title="PDF"><div class="fa fa-file-pdf"></div></a>
             </li>
             <li class="list-inline-item">
-                <a href="<?php echo e(route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode','perPage','page']))); ?>" class="download-link" data-type="excel" data-bs-toggle="tooltip" title="Excel">
+                <a href="<?php echo e(route('superadmin.reporting.pendings.exportExcel', request()->only(['search','month','year','department','overdue','marketing','lab_analyst','mode']))); ?>" class="download-link" data-type="excel" data-bs-toggle="tooltip" title="Excel">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="24" fill="green" viewBox="0 0 24 24">
                         <path d="M19 2H8c-1.1 0-2 .9-2 2v16c0 1.1.9 2 2 2h11c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm-8.5 14-2-3 2-3H9l-1.5 2.25L6 10H4l2.5 3L4 16h2l1.5-2.25L9 16h1.5zM19 20H8V4h11v16z"/>
                     </svg>
@@ -66,7 +66,7 @@
                 </div>
             </div>
             <div class="search-set">
-                <form id="pendings-filter-form" method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group align-items-center gap-2 flex-wrap">
+                <form id="pendings-filter-form" method="GET" action="<?php echo e(route('superadmin.reporting.pendings')); ?>" class="d-flex input-group align-items-center flex-wrap">
                     <input type="hidden" name="mode" value="<?php echo e($mode); ?>">
                     <?php if(request('department')): ?>
                         <input type="hidden" name="department" value="<?php echo e(request('department')); ?>">
@@ -90,7 +90,7 @@
                             <option value="<?php echo e($y); ?>" <?php echo e(request('year') == $y ? 'selected' : ''); ?>><?php echo e($y); ?></option>
                         <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); ?>
                     </select>
-                        <button class="btn btn-outline-secondary" type="submit">Filter</button>
+                    <button class="btn btn-outline-secondary" type="submit">Filter</button>
                 </form>
             </div>
         </div>
@@ -376,6 +376,30 @@ document.addEventListener('DOMContentLoaded', function(){
     const modalHtml = `<div class="modal fade" id="${modalId}" tabindex="-1" aria-hidden="true">\n  <div class="modal-dialog modal-lg modal-dialog-scrollable">\n    <div class="modal-content">\n      <div class="modal-header">\n        <h5 class="modal-title">Pending Items</h5>\n        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>\n      </div>\n      <div class="modal-body">\n        <div class="mb-2 small text-muted" id="pending-items-meta"></div>\n        <div class="table-responsive">\n          <table class="table table-sm table-bordered mb-0">\n            <thead class="table-light">\n              <tr><th>#</th><th>Job Order No</th><th>Sample Description</th><th>Sample Quality</th><th>Particulars</th><th>Status</th></tr>\n            </thead>\n            <tbody id="pending-items-body"><tr><td colspan=6 class='text-center text-muted'>No data</td></tr></tbody>\n          </table>\n        </div>\n      </div>\n      <div class="modal-footer">\n        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>\n      </div>\n    </div>\n  </div>\n</div>`;
         document.body.insertAdjacentHTML('beforeend', modalHtml);
     }
+        // Export status modal (professional alert with estimate)
+        const exportModalId = 'exportStatusModal';
+        if (!document.getElementById(exportModalId)) {
+                const exportHtml = `
+                <div class="modal fade" id="${exportModalId}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-sm modal-dialog-centered">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h5 class="modal-title">Preparing Export</h5>
+                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            </div>
+                            <div class="modal-body text-center">
+                                <div class="spinner-border text-primary" role="status"><span class="visually-hidden">Loading...</span></div>
+                                <div id="export-status-message" class="mt-3">Please wait while we prepare your download.</div>
+                                <div id="export-estimate" class="mt-2 text-muted small"></div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-sm btn-secondary" data-bs-dismiss="modal">Close</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>`;
+                document.body.insertAdjacentHTML('beforeend', exportHtml);
+        }
     const modalEl = document.getElementById(modalId);
     const modal = () => new bootstrap.Modal(modalEl);
             document.querySelectorAll('.show-pending-modal').forEach(function(btn){
@@ -410,20 +434,58 @@ document.addEventListener('DOMContentLoaded', function() {
         link.addEventListener('click', async (e) => {
             e.preventDefault();
             
-            // Show overlay
-            if(window.LoadingOverlay) {
-                window.LoadingOverlay.show('Generating Report', 'Please wait while we prepare your download...');
+            const exportModalEl = document.getElementById('exportStatusModal');
+            const exportModal = exportModalEl ? new bootstrap.Modal(exportModalEl) : null;
+            // Show overlay only if modal not available; prefer the professional modal when present
+            if (!exportModal) {
+                if (window.LoadingOverlay) {
+                    window.LoadingOverlay.show('Generating Report', 'Please wait while we prepare your download...');
+                }
+            } else {
+                document.getElementById('export-status-message').textContent = 'Preparing export...';
+                document.getElementById('export-estimate').textContent = '';
+                exportModal.show();
             }
 
             try {
                 const response = await fetch(link.href);
-                if(!response.ok) throw new Error('Download failed: ' + response.statusText);
-                
+                if (!response.ok) {
+                    let msg = 'Failed to generate export. Please try applying filters.';
+                    try { const data = await response.json(); msg = data.message || data.error || msg; } catch (e) {}
+                    // Hide overlay (only if we used it) and show professional modal message
+                    if (!exportModal && window.LoadingOverlay) { window.LoadingOverlay.hide(); }
+                    if (exportModal) {
+                        document.getElementById('export-status-message').textContent = msg;
+                        document.getElementById('export-estimate').textContent = '';
+                    } else {
+                        if (typeof window.toastr === 'object' && typeof window.toastr.error === 'function') { window.toastr.error(msg); } else { alert(msg); }
+                    }
+                    return;
+                }
+
+                // Read estimate headers and show estimated time
+                try {
+                    const total = parseInt(response.headers.get('X-Export-Total') || '0', 10) || 0;
+                    const est = parseInt(response.headers.get('X-Export-EstimateSeconds') || '0', 10) || 0;
+                    if (exportModal) {
+                        document.getElementById('export-status-message').textContent = `Preparing ${total || ''} records...`;
+                        if (est) {
+                            let remaining = est;
+                            document.getElementById('export-estimate').textContent = `Estimated time: ${remaining}s`;
+                            const iv = setInterval(() => {
+                                remaining--;
+                                if (remaining <= 0) { clearInterval(iv); document.getElementById('export-estimate').textContent = `Finalizing...`; }
+                                else { document.getElementById('export-estimate').textContent = `Estimated time: ${remaining}s`; }
+                            }, 1000);
+                        }
+                    }
+                } catch (e) { /* ignore header parse errors */ }
+
                 const blob = await response.blob();
                 const downloadUrl = window.URL.createObjectURL(blob);
                 const a = document.createElement('a');
                 a.href = downloadUrl;
-                
+
                 // Try to extract filename from Content-Disposition header
                 let fileName = 'report';
                 const contentDisposition = response.headers.get('Content-Disposition');
@@ -437,11 +499,11 @@ document.addEventListener('DOMContentLoaded', function() {
                         fileName = f;
                     }
                 }
-                
+
                 // Fallback filename if extraction failed
                 if (fileName === 'report') {
-                     const isPdf = link.getAttribute('data-type') === 'pdf';
-                     fileName = isPdf ? 'pending_reports.pdf' : 'pending_reports.xlsx';
+                    const isPdf = link.getAttribute('data-type') === 'pdf';
+                    fileName = isPdf ? 'pending_reports.pdf' : 'pending_reports.xlsx';
                 }
 
                 a.download = fileName;
@@ -449,12 +511,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 a.click();
                 document.body.removeChild(a);
                 window.URL.revokeObjectURL(downloadUrl);
+                // Close export modal if open
+                if (exportModal) {
+                    try { exportModal.hide(); } catch (e) {}
+                }
             } catch (error) {
                 console.error('Download error:', error);
-                // Optionally show an error toast here
+                if (exportModal) {
+                    try { document.getElementById('export-status-message').textContent = 'Failed to download report'; } catch (e) {}
+                    if (typeof window.toastr === 'object' && typeof window.toastr.error === 'function') { window.toastr.error('Failed to download report'); }
+                } else {
+                    if (typeof window.toastr === 'object' && typeof window.toastr.error === 'function') { window.toastr.error('Failed to download report'); } else { alert('Failed to download report'); }
+                }
             } finally {
-                // Always hide overlay
-                if(window.LoadingOverlay) {
+                // Hide overlay only if we used it; modal handles its own UI
+                if (!exportModal && window.LoadingOverlay) {
                     window.LoadingOverlay.hide();
                 }
             }

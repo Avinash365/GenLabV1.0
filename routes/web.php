@@ -71,8 +71,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
 Route::middleware(['web', 'multi_auth:web,admin'])
     ->prefix('superadmin/reporting')->name('superadmin.reporting.')->group(function () {
     Route::get('/letters', [ReportingLettersController::class, 'index'])->name('letters.index');
-    Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');
-    Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
+    Route::post('/letters/upload', [ReportingLettersController::class, 'upload'])->name('letters.upload');      Route::post('/letters/notify', [ReportingLettersController::class, 'notify'])->name('letters.notify');    Route::get('/letters/show/{job}/{filename}', [ReportingLettersController::class, 'show'])
         ->where('filename', '.*')
         ->name('letters.show');
     Route::delete('/letters/delete/{job}/{filename}', [ReportingLettersController::class, 'destroy'])
@@ -81,6 +80,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])
 
     Route::get('/hold-cancel', [HoldCancelController::class, 'index'])->name('holdcancel.index');
     Route::post('/hold/{id}', [HoldCancelController::class, 'hold'])->name('hold');
+    Route::post('/notify/{id}', [HoldCancelController::class, 'notify'])->name('notify');
     Route::post('/unhold/{id}', [HoldCancelController::class, 'unhold'])->name('unhold');
     Route::post('/cancel/{id}', [HoldCancelController::class, 'cancel'])->name('cancel');
     Route::post('/hold-all', [HoldCancelController::class, 'holdAll'])->name('holdAll');

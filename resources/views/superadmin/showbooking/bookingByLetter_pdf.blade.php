@@ -22,7 +22,7 @@
             @if(!empty($filters['year'])) <span style="margin-left:12px;">Year: {{ $filters['year'] }}</span>@endif
             @if(!empty($filters['department'])) <span style="margin-left:12px;">Department: {{ $filters['department'] }}</span>@endif
             @if(!empty($filters['marketing'])) <span style="margin-left:12px;">Marketing: {{ $filters['marketing'] }}</span>@endif
-            @if(!empty($filters['payment_option'])) <span style="margin-left:12px;">Payment: {{ $filters['payment_option'] == 'bill' ? 'Bill' : ($filters['payment_option'] == 'without_bill' ? 'Without Bill' : $filters['payment_option']) }}</span>@endif
+            @if(!empty($filters['payment_option'])) <span style="margin-left:12px;">Payment: {{ $filters['payment_option'] == 'bill' ? 'Bill' : ($filters['payment_option'] == 'without_bill' ? 'Without Bill' : ($filters['payment_option'] == 'old_bill' ? 'Old Bill' : $filters['payment_option'])) }}</span>@endif
             <span style="margin-left:12px;">Use Created At: {{ !empty($filters['use_created_at']) ? 'Yes' : 'No' }}</span>
         </div>
     </div>
