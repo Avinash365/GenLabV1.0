@@ -13,6 +13,8 @@ use App\Models\BookingItem;
 use App\Models\NewBooking;
 use App\Models\SiteSetting;
 use App\Jobs\SendMarketingNotificationJob; 
+use Illuminate\Support\Facades\File; 
+
 
 // Optional PDF page count support; if library missing we'll skip.
 
