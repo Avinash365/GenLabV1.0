@@ -8,6 +8,8 @@ use App\Models\BookingItem;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
+use App\Services\WhatsAppService;
+use App\Models\SiteSetting;
 
 class HoldCancelController extends Controller
 {
@@ -140,13 +142,73 @@ class HoldCancelController extends Controller
         return view('superadmin.reporting.hold_cancel', compact('items', 'header', 'job'));
     }
 
-    public function hold(Request $request, $id)
+    public function hold(Request $request, $id, WhatsAppService $whatsapp)
     {
         $data = $request->validate(['reason' => ['required', 'string', 'max:2000']]);
-        $item = BookingItem::with(['receivedBy'])->findOrFail((int) $id);
+        $item = BookingItem::with(['receivedBy', 'booking'])->findOrFail((int) $id);
         $item->hold_reason = $data['reason'];
         $item->hold_at = now();
         $item->save();
+
+        // Send WhatsApp Notification
+        try {
+            $booking = $item->booking;
+            if ($booking && $booking->contact_no) {
+                // Formatting phone number
+                $phone = preg_replace('/[^0-9]/', '', $booking->contact_no);
+                // If length is 10, default to India (91)
+                if (strlen($phone) === 10) {
+                    $phone = '91' . $phone;
+                }
+                
+
+                $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
+
+                // Resolve Letter Path for Button
+                $letterRoute = route('booking.letter.view', ['id' => $booking->id]);
+                // If the user wants the exact same logic as ReportingLettersController, they used the file path suffix
+                // " $path = parse_url($booking->upload_letter_path, PHP_URL_PATH); $letterSuffix = $path; "
+                $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
+                $letterSuffix = $path ?: 'home'; 
+
+                // Template: hold_test1
+                /*
+                 * 1 -> Client Name
+                 * 2 -> Letter No (Ref No)
+                 * 3 -> Job No
+                 * 4 -> Sample
+                 * 5 -> Reason
+                 * 6 -> Hold By
+                 * 7 -> Sender Name
+                 */
+                $components = [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => substr($booking->client_name ?? '', 0, 60)],
+                            ['type' => 'text', 'text' => substr($booking->reference_no ?? '-', 0, 60)],
+                            ['type' => 'text', 'text' => substr($item->job_order_no ?? '-', 0, 60)],
+                            ['type' => 'text', 'text' => substr($item->sample_description ?? '-', 0, 60)],
+                            ['type' => 'text', 'text' => substr($data['reason'], 0, 100)],
+                            ['type' => 'text', 'text' => auth()->user()->name],
+                            ['type' => 'text', 'text' => substr($contactName, 0, 60)], 
+                        ]
+                    ],
+                    [
+                        'type' => 'button',
+                        'sub_type' => 'url',
+                        'index' => '0',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $letterSuffix]
+                        ]
+                    ]
+                ];
+
+                $whatsapp->sendTemplateMessage($phone, 'hold_test1', $components, 'en');
+            }
+        } catch (\Exception $e) {
+            Log::error('Hold WhatsApp notification failed: ' . $e->getMessage());
+        }
 
         return response()->json([
             'ok' => true,
@@ -154,6 +216,63 @@ class HoldCancelController extends Controller
             'reason' => $item->hold_reason,
             'hold_at' => optional($item->hold_at)->toDateTimeString(),
         ]);
+    }
+
+    public function notify(Request $request, $id, WhatsAppService $whatsapp)
+    {
+        $item = BookingItem::with(['receivedBy', 'booking'])->findOrFail((int) $id);
+
+        if (!$item->hold_reason) {
+            return response()->json(['ok' => false, 'message' => 'Not on hold'], 400);
+        }
+
+        try {
+            $booking = $item->booking;
+            if ($booking && $booking->contact_no) {
+                // Formatting phone number
+                $phone = preg_replace('/[^0-9]/', '', $booking->contact_no);
+                if (strlen($phone) === 10) {
+                    $phone = '91' . $phone;
+                }
+                
+                $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
+
+                // Resolve Letter Path for Button
+                $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
+                $letterSuffix = $path ?: 'home'; 
+
+                $components = [
+                    [
+                        'type' => 'body',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => substr($booking->client_name ?? '', 0, 60)],
+                            ['type' => 'text', 'text' => substr($booking->reference_no ?? '-', 0, 60)],
+                            ['type' => 'text', 'text' => substr($item->job_order_no ?? '-', 0, 60)],
+                            ['type' => 'text', 'text' => substr($item->sample_description ?? '-', 0, 60)],
+                            ['type' => 'text', 'text' => substr($item->hold_reason, 0, 100)],
+                            ['type' => 'text', 'text' => auth()->user()->name],
+                            ['type' => 'text', 'text' => substr($contactName, 0, 60)], 
+                        ]
+                    ],
+                    [
+                        'type' => 'button',
+                        'sub_type' => 'url',
+                        'index' => '0',
+                        'parameters' => [
+                            ['type' => 'text', 'text' => $letterSuffix]
+                        ]
+                    ]
+                ];
+
+                $whatsapp->sendTemplateMessage($phone, 'hold_test1', $components, 'en');
+                
+                return response()->json(['ok' => true, 'message' => 'Notification sent']);
+            }
+            return response()->json(['ok' => false, 'message' => 'No contact number'], 400);
+        } catch (\Exception $e) {
+            Log::error('Notify WhatsApp notification failed: ' . $e->getMessage());
+            return response()->json(['ok' => false, 'message' => 'Notification failed'], 500);
+        }
     }
 
     public function unhold(Request $request, $id)

@@ -80,6 +80,7 @@ Route::middleware(['web', 'multi_auth:web,admin'])
 
     Route::get('/hold-cancel', [HoldCancelController::class, 'index'])->name('holdcancel.index');
     Route::post('/hold/{id}', [HoldCancelController::class, 'hold'])->name('hold');
+    Route::post('/notify/{id}', [HoldCancelController::class, 'notify'])->name('notify');
     Route::post('/unhold/{id}', [HoldCancelController::class, 'unhold'])->name('unhold');
     Route::post('/cancel/{id}', [HoldCancelController::class, 'cancel'])->name('cancel');
     Route::post('/hold-all', [HoldCancelController::class, 'holdAll'])->name('holdAll');

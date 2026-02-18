@@ -129,6 +129,7 @@
                                 <td>
                                     <div class="d-flex gap-2">
                                         <form method="POST" action="{{ route('superadmin.reporting.hold', $item->id) }}" class="hold-form {{ ($item->cancel_reason || $isCancelMarker) ? 'd-none' : '' }}" data-id="{{ $item->id }}">@csrf <button type="button" class="btn btn-sm {{ $item->hold_reason ? 'btn-secondary' : 'btn-warning' }} hold-btn" data-id="{{ $item->id }}" data-state="{{ $item->hold_reason ? 'unhold' : 'hold' }}">{{ $item->hold_reason ? 'Unhold' : 'Hold' }}</button></form>
+                                        <form method="POST" action="{{ route('superadmin.reporting.notify', $item->id) }}" class="notify-form {{ $item->hold_reason ? '' : 'd-none' }}" data-id="{{ $item->id }}">@csrf <button type="button" class="btn btn-sm btn-info notify-btn" data-id="{{ $item->id }}">Notify</button></form>
                                         <form method="POST" action="{{ route('superadmin.reporting.unhold', $item->id) }}" class="unhold-form d-none" data-id="{{ $item->id }}">@csrf</form>
                                         <form method="POST" action="{{ route('superadmin.reporting.cancel', $item->id) }}" class="cancel-form" data-id="{{ $item->id }}">@csrf <button type="button" class="btn btn-sm btn-danger cancel-btn" data-id="{{ $item->id }}">Cancel</button></form>
                                     </div>
@@ -305,6 +306,8 @@
                         btn.dataset.state = 'hold';
                         btn.classList.remove('btn-secondary');
                         btn.classList.add('btn-warning');
+                        const notifyForm = document.querySelector('form.notify-form[data-id="'+id+'"]');
+                        if(notifyForm) notifyForm.classList.add('d-none');
                     } else {
                         Swal.fire({ icon:'error', title:'Unhold failed' });
                     }
@@ -325,8 +328,51 @@
                     btn.dataset.state = 'unhold';
                     btn.classList.remove('btn-warning');
                     btn.classList.add('btn-secondary');
+                    const notifyForm = document.querySelector('form.notify-form[data-id="'+id+'"]');
+                    if(notifyForm) notifyForm.classList.remove('d-none');
                 } else {
                     Swal.fire({ icon:'error', title:'Hold failed' });
+                }
+            });
+        });
+
+        // NOTIFY
+        document.querySelectorAll('.notify-btn').forEach(function(btn){
+            if (btn.dataset.bound === '1') return; btn.dataset.bound = '1';
+            btn.addEventListener('click', async function(e){
+                e.preventDefault();
+                const id = btn.getAttribute('data-id');
+                const form = document.querySelector('form.notify-form[data-id="'+id+'"]');
+
+                if (!form) return;
+
+                const oldText = btn.textContent;
+                btn.disabled = true;
+                btn.textContent = 'Sending...';
+
+                try {
+                    const resp = await fetch(form.action, {
+                        method: 'POST',
+                        headers: { 
+                            'X-CSRF-TOKEN': form.querySelector('input[name="_token"]').value, 
+                            'Accept':'application/json',
+                            'X-Requested-With':'XMLHttpRequest' 
+                        },
+                        credentials: 'same-origin', 
+                        cache: 'no-store'
+                    });
+                    const result = await toJson(resp);
+                    
+                    if (result && result.ok) {
+                        Swal.fire({ icon:'success', title: 'Notification Sent' });
+                    } else {
+                        Swal.fire({ icon:'error', title: (result && result.message) || 'Notification Failed' });
+                    }
+                } catch(err) {
+                     Swal.fire({ icon:'error', title:'Error Sending Notification' });
+                } finally {
+                    btn.disabled = false;
+                    btn.textContent = oldText;
                 }
             });
         });

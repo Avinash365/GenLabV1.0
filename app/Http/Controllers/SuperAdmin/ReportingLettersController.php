@@ -368,31 +368,24 @@ class ReportingLettersController extends Controller
                     $letterRoute = route('booking.letter.view', [
                         'id' => $booking->id
                     ]);
-                    
-                    if ($booking->upload_letter_path) {
-                        $p = parse_url($booking->upload_letter_path, PHP_URL_PATH);
-                        $letterSuffix = $p ? ltrim($p, '/') : ltrim($booking->upload_letter_path, '/');
-                    } else {
-                        $letterSuffix = ltrim(parse_url($letterRoute, PHP_URL_PATH), '/');
-                    }
-                    
-                    // Sanitization for spaces in letter suffix if needed
-                    // $letterSuffix = str_replace(' ', '%20', $letterSuffix);
+
+                    $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
+                    $letterSuffix = $path;  
 
                     // Report Route
-                    $rptParam = $jobKey;
-                    // If public.reports.index uses 'path' parameter, use it.
-                    // Based on route definition: Route::get('/reports-explorer/{path?}' ...) ->name('public.reports.index');
                     $reportRoute = route('public.reports.index', [
                         'path' => $jobKey
                     ]);
+
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
-                    // Sanitization for spaces
-                    $reportSuffix = str_replace(' ', '%20', $reportSuffix);
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
 
+                    Log::info('Letter Route: ' . $letterRoute);
+                    Log::info('Letter Suffix: ' . $letterSuffix);
+
                     $waComponents = [
+
                         // Body Parameters
                         [
                             'type' => 'body',
@@ -404,7 +397,6 @@ class ReportingLettersController extends Controller
                                 [ 'type' => 'text', 'text' => $contactName ],
                             ]
                         ],
-
                         // Letter Button
                         [
                             'type' => 'button',
@@ -414,8 +406,7 @@ class ReportingLettersController extends Controller
                                 [ 'type' => 'text', 'text' => $letterSuffix ]
                             ]
                         ],
-
-                        // Report Button
+                        //Report Button
                         [
                             'type' => 'button',
                             'sub_type' => 'url',
@@ -429,7 +420,7 @@ class ReportingLettersController extends Controller
                     $waService = new \App\Services\WhatsAppService();
                     $waService->sendTemplateMessage(
                         $waPhone,
-                        'testing_send_itl',
+                        'report_test3',
                         $waComponents,
                         'en'
                     );
