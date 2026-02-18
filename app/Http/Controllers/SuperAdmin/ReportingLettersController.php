@@ -420,7 +420,7 @@ class ReportingLettersController extends Controller
                     $waService = new \App\Services\WhatsAppService();
                     $waService->sendTemplateMessage(
                         $waPhone,
-                        'report_test3',
+                        'report_test4',
                         $waComponents,
                         'en'
                     );
@@ -558,7 +558,7 @@ class ReportingLettersController extends Controller
                     $waService = new \App\Services\WhatsAppService();
                     $waService->sendTemplateMessage(
                         $waPhone,
-                        'report_test3',
+                        'report_test4',
                         $waComponents,
                         'en'
                     );

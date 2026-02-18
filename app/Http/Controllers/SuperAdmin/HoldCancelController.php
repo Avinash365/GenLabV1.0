@@ -153,9 +153,12 @@ class HoldCancelController extends Controller
         // Send WhatsApp Notification
         try {
             $booking = $item->booking;
-            if ($booking && $booking->contact_no) {
+            $marketingUser = $booking->marketingPerson ?? null;
+            $phone = $marketingUser->employee->phone_primary ?? null;
+
+            if ($phone) {
                 // Formatting phone number
-                $phone = preg_replace('/[^0-9]/', '', $booking->contact_no);
+                $phone = preg_replace('/[^0-9]/', '', $phone);
                 // If length is 10, default to India (91)
                 if (strlen($phone) === 10) {
                     $phone = '91' . $phone;
@@ -228,9 +231,12 @@ class HoldCancelController extends Controller
 
         try {
             $booking = $item->booking;
-            if ($booking && $booking->contact_no) {
+            $marketingUser = $booking->marketingPerson ?? null;
+            $phone = $marketingUser->employee->phone_primary ?? null;
+
+            if ($phone) {
                 // Formatting phone number
-                $phone = preg_replace('/[^0-9]/', '', $booking->contact_no);
+                $phone = preg_replace('/[^0-9]/', '', $phone);
                 if (strlen($phone) === 10) {
                     $phone = '91' . $phone;
                 }
