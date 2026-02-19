@@ -151,7 +151,7 @@
                             </div>
                         </div>
 
-                        <!-- Dispatch Template Card -->
+                        <!-- Invoice Template Card -->
                         <div class="col-md-4">
                             <div class="card bg-light">
                                 <div class="card-header bg-info text-white py-2">
@@ -161,14 +161,24 @@
                                     <p class="mb-1"><strong>Variables sent:</strong></p>
                                     <ol class="ps-3 mb-2">
                                         <li>Client Name: {1}</li>
-                                        <li>Reference No: {2}</li>
-                                        <li>Job Order No: {3}</li>
-                                        <li>Sample Description: {4}</li>
-                                        <li>Sender Name (Company): {5}</li>
+                                        <li>Letter No: {2}</li>
+                                        <li>Invoice No: {3}</li>
+                                        <li>Payment Status: {4}</li>
+                                        <li>Sender Name: {5}</li>
+                                        <li>Amount: {6}</li>
                                     </ol>
+                                    <p class="mb-1"><strong>Button {1}:</strong> View Invoice (URL)</p>
+                                    <p class="mb-1"><strong>Button {2}:</strong> View Report (URL)</p>
                                     <hr class="my-2">
                                     <p class="mb-0 text-muted"><em>Example Body:</em><br>
-                                    Dear {{1}}, Job {{3}} has been uploaded Invoice {{5}} . Thanks, {{6}}</p>
+                                    Your Invoice is successfully Generated.<br>
+                                    *Issue to:* {{1}}<br>
+                                    *Letter No:* {{2}}<br>
+                                    *Invoice No. :* {{3}}<br>
+                                    *Amount :* {{6}}<br>
+                                    *Payment Status. :* {{4}}<br>
+                                    Thanks and Regards<br>
+                                    {{5}} 😊</p>
                                 </div>
                             </div>
                         </div>

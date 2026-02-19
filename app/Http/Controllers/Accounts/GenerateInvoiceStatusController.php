@@ -21,6 +21,9 @@ use App\Services\{InvoicePdfService, NumberToWordsService};
 use Illuminate\Support\Facades\DB;
 
 use App\Http\Requests\GenerateInvoiceRequest;
+use App\Models\WhatsappSetting;
+use App\Services\WhatsAppService;
+use App\Jobs\SendMarketingNotificationJob;
 
 class GenerateInvoiceStatusController extends Controller
 {
@@ -303,7 +306,7 @@ class GenerateInvoiceStatusController extends Controller
         return $invoice;
     }
 
-    public function generateInvoice(GenerateInvoiceRequest $request)
+    public function generateInvoice(GenerateInvoiceRequest $request, WhatsAppService $whatsAppService)
     {
         try {
             
@@ -313,6 +316,98 @@ class GenerateInvoiceStatusController extends Controller
             $invoiceData['booking_id'] = $request->booking_id;
 
             $invoice = $this->storeInvoiceData($invoiceData, $invoiceType);
+
+            // ---------------------------
+            // SEND NOTIFICATION TO MARKETING USER
+            // --------------------------- 
+
+            $marketingUser = User::with('employee')->where('user_code', $invoice->marketing_user_code)->first();
+
+            if ($marketingUser) {
+                SendMarketingNotificationJob::dispatch(
+                    $marketingUser,
+                    "Invoice Generated",
+                    "Invoice No: {$invoice->invoice_no} has been generated.",
+                    [
+                        "invoice_pdf" => "invoices/invoice_{$invoice->id}.html", // Assuming html view path or you create a route to view it
+                    ]
+                );
+
+                // ---------------------------
+                // SEND WHATSAPP MESSAGE
+                // ---------------------------
+                try {
+                    $waSettings = WhatsappSetting::first();
+                    $templateName = $waSettings->dispatch_template_name ?? null;
+                    $languageCode = $waSettings->default_language ?? 'en_US';
+
+                    if ($templateName && $marketingUser->employee && $marketingUser->employee->phone_primary) {
+                        $phone = preg_replace('/[^0-9]/', '', $marketingUser->employee->phone_primary);
+                        if (strlen($phone) == 10) {
+                            $phone = '91' . $phone;
+                        }
+                        
+                        $statusLabels = [
+                            0 => 'Pending',
+                            1 => 'Paid',
+                            2 => 'Cancelled',
+                            3 => 'Partial',
+                            4 => 'Settled',
+                        ];
+                        $paymentStatus = $statusLabels[$invoice->status ?? 0] ?? 'Unknown';
+
+                        $booking = NewBooking::find($request->booking_id); // Fetch booking to get reference no
+                        $letterNo = $booking->reference_no ?? 'N/A';
+                        $issueTo = $invoice->issue_to ?? ($booking->report_issue_to ?? 'N/A');
+
+                        // Button 0: Invoice View (Letter)
+                        $invoiceRoute = route('booking.letter.view', ['id' => $booking->id]);
+                        $invoiceSuffix = ltrim(parse_url($invoiceRoute, PHP_URL_PATH), '/');
+
+                        // Button 1: Report View
+                        $reportRoute = route('public.reports.index', ['path' => $letterNo]);
+                        $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
+                        
+                        $senderName = SiteSetting::first()?->company_name ?? 'GenLab';
+                        
+                        $components = [
+                            [
+                                'type' => 'body',
+                                'parameters' => [
+                                    ['type' => 'text', 'text' => substr($issueTo, 0, 60)],
+                                    ['type' => 'text', 'text' => substr($letterNo, 0, 60)],
+                                    ['type' => 'text', 'text' => substr($invoice->invoice_no, 0, 60)],
+                                    ['type' => 'text', 'text' => substr($paymentStatus, 0, 60)],
+                                    ['type' => 'text', 'text' => substr($senderName, 0, 60)], 
+                                    ['type' => 'text', 'text' => substr(number_format($invoice->total_amount, 2), 0, 60)],
+                                ]
+                            ],
+                            // Button 0: View Invoice
+                            [
+                                'type' => 'button',
+                                'sub_type' => 'url',
+                                'index' => 0,
+                                'parameters' => [
+                                    ['type' => 'text', 'text' => $invoiceSuffix] 
+                                ]
+                            ],
+                            // Button 1: View Report
+                            [
+                                'type' => 'button',
+                                'sub_type' => 'url',
+                                'index' => 1,
+                                'parameters' => [
+                                    ['type' => 'text', 'text' => $reportSuffix]
+                                ]
+                            ]
+                        ];
+
+                        $whatsAppService->sendTemplateMessage($phone, $templateName, $components, $languageCode);
+                    }
+                } catch (\Exception $e) {
+                    Log::error('WhatsApp sending failed: ' . $e->getMessage());
+                }
+            }
 
             $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
             $invoiceData['invoice']['id'] = $invoice->id;
