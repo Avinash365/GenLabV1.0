@@ -18,6 +18,10 @@ use Illuminate\Support\Facades\Storage;
 
 
 
+use App\Models\SiteSetting;
+use App\Models\WhatsappSetting;
+use Illuminate\Support\Facades\Log;
+
 class ReportingController extends Controller
 {
     /**
@@ -1483,6 +1487,50 @@ class ReportingController extends Controller
     foreach ($meta as $k => $v) { $item->{$k} = $v; }
         $item->save();
         $item->refresh();
+
+        // Send WhatsApp Notification
+        try {
+            $booking = $item->booking;
+            $marketingUser = $booking->marketingPerson ?? null;
+            $phone = $marketingUser->employee->phone_primary ?? null;
+
+            if ($phone) {
+                // Formatting phone number
+                $phone = preg_replace('/[^0-9]/', '', $phone);
+                // If length is 10, default to India (91)
+                if (strlen($phone) === 10) {
+                    $phone = '91' . $phone;
+                }
+
+                $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
+
+                $waSetting = WhatsappSetting::first();
+                $template = $waSetting->dispatch_template_name;
+                $language = $waSetting->default_language ?? 'en';
+
+                    $waService = new \App\Services\WhatsAppService();
+                    if ($template) {
+                        // Ensure $components is defined before use
+                         $components = [
+                            [
+                                'type' => 'body',
+                                'parameters' => [
+                                    ['type' => 'text', 'text' => substr($booking->client_name ?? '', 0, 60)],
+                                    ['type' => 'text', 'text' => substr($booking->reference_no ?? '-', 0, 60)],
+                                    ['type' => 'text', 'text' => substr($item->job_order_no ?? '-', 0, 60)],
+                                    ['type' => 'text', 'text' => substr($item->sample_description ?? '-', 0, 60)],
+                                    ['type' => 'text', 'text' => substr($item->dispatch_by ?? 'Courier', 0, 60)],
+                                    ['type' => 'text', 'text' => substr($item->dispatch_assignment_no ?? '-', 0, 60)],
+                                    ['type' => 'text', 'text' => substr($contactName, 0, 60)],
+                                ]
+                            ]
+                        ];
+                        $waService->sendTemplateMessage($phone, $template, $components, $language);
+                    }
+                }
+            } catch (\Exception $e) {
+            Log::error('Dispatch WhatsApp notification failed: ' . $e->getMessage());
+        }
 
         if ($request->wantsJson()) {
             return response()->json([

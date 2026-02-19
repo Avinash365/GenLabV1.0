@@ -8,6 +8,7 @@ use App\Http\Controllers\Product\ProductCategoryController;
 use App\Http\Controllers\SuperAdmin\ProductController;
 use App\Http\Controllers\SuperAdmin\ProductViewController;
 use App\Http\Controllers\SuperAdmin\WebSettingController;
+use App\Http\Controllers\SuperAdmin\WhatsappSettingController;
 use App\Http\Controllers\SuperAdmin\ReportingLettersController;
 use App\Http\Controllers\SuperAdmin\HoldCancelController;
 use App\Http\Controllers\Superadmin\LabAnalystsController;
@@ -59,6 +60,11 @@ Route::middleware(['web', 'multi_auth:web,admin'])->prefix('superadmin')->name('
     // Web Settings
     Route::get('/web-settings', [WebSettingController::class, 'edit'])->name('websettings.edit')->middleware('permission:web_setting.edit');
     Route::post('/web-settings', [WebSettingController::class, 'update'])->name('websettings.update')->middleware('permission:web_setting.edit');
+    
+    // WhatsApp Settings
+    Route::get('/whatsapp-settings', [WhatsappSettingController::class, 'index'])->name('whatsapp-settings.index')->middleware('permission:web_setting.edit');
+    Route::post('/whatsapp-settings', [WhatsappSettingController::class, 'update'])->name('whatsapp-settings.update')->middleware('permission:web_setting.edit');
+
     Route::get('websettings/backed-booking', [WebSettingController::class, 'updateBackedBooking'])->name('websettings.backed_booking')->middleware('permission:web_setting.edit');
 
     // Quick AJAX role creation used on role create page

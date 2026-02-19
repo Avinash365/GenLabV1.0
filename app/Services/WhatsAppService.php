@@ -4,6 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use App\Models\WhatsappSetting;
 
 class WhatsAppService
 {
@@ -13,9 +14,16 @@ class WhatsAppService
 
     public function __construct()
     {
-        $this->token = config('services.whatsapp.token');
-        $this->phoneNumberId = config('services.whatsapp.phone_number_id');
-        $this->apiVersion = 'v18.0';
+        $setting = WhatsappSetting::first();
+        if ($setting) {
+            $this->token = $setting->access_token ?: config('services.whatsapp.token');
+            $this->phoneNumberId = $setting->phone_number_id ?: config('services.whatsapp.phone_number_id');
+            $this->apiVersion = $setting->api_version ?: 'v18.0';
+        } else {
+            $this->token = config('services.whatsapp.token');
+            $this->phoneNumberId = config('services.whatsapp.phone_number_id');
+            $this->apiVersion = 'v18.0';
+        }
     }
 
     /**

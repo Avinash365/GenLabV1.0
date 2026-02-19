@@ -845,6 +845,13 @@
                                                     Web Settings
                                                 </a> 
                                             </li>
+                                            
+                                            <li>
+                                                <a href="{{ route('superadmin.whatsapp-settings.index') }}" 
+                                                    class="{{ Request::routeIs('superadmin.whatsapp-settings.*') ? 'active' : '' }}">
+                                                    WhatsApp API Settings
+                                                </a> 
+                                            </li>
                                         @endif  
 
                                         {{--  Bank Details --}}

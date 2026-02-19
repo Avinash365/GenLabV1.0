@@ -846,6 +846,13 @@
                                                     Web Settings
                                                 </a> 
                                             </li>
+                                            
+                                            <li>
+                                                <a href="<?php echo e(route('superadmin.whatsapp-settings.index')); ?>" 
+                                                    class="<?php echo e(Request::routeIs('superadmin.whatsapp-settings.*') ? 'active' : ''); ?>">
+                                                    WhatsApp API Settings
+                                                </a> 
+                                            </li>
                                         <?php endif; ?>  
 
                                         

@@ -10,6 +10,7 @@ use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Log;
 use App\Services\WhatsAppService;
 use App\Models\SiteSetting;
+use App\Models\WhatsappSetting;
 
 class HoldCancelController extends Controller
 {
@@ -207,7 +208,11 @@ class HoldCancelController extends Controller
                     ]
                 ];
 
-                $whatsapp->sendTemplateMessage($phone, 'hold_test1', $components, 'en');
+                $waSetting = WhatsappSetting::first();
+                $template = $waSetting->hold_template_name ?? 'hold_test1';
+                $language = $waSetting->default_language ?? 'en';
+
+                $whatsapp->sendTemplateMessage($phone, $template, $components, $language);
             }
         } catch (\Exception $e) {
             Log::error('Hold WhatsApp notification failed: ' . $e->getMessage());
@@ -270,7 +275,11 @@ class HoldCancelController extends Controller
                     ]
                 ];
 
-                $whatsapp->sendTemplateMessage($phone, 'hold_test1', $components, 'en');
+                $waSetting = WhatsappSetting::first();
+                $template = $waSetting->hold_template_name ?? 'hold_test1';
+                $language = $waSetting->default_language ?? 'en';
+
+                $whatsapp->sendTemplateMessage($phone, $template, $components, $language);
                 
                 return response()->json(['ok' => true, 'message' => 'Notification sent']);
             }

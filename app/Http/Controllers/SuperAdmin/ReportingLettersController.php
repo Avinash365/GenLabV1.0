@@ -12,6 +12,7 @@ use Throwable;
 use App\Models\BookingItem;
 use App\Models\NewBooking;
 use App\Models\SiteSetting;
+use App\Models\WhatsappSetting;
 use App\Jobs\SendMarketingNotificationJob; 
 use Illuminate\Support\Facades\File; 
 
@@ -419,12 +420,16 @@ class ReportingLettersController extends Controller
                         ]
                     ];
 
+                    $waSetting = WhatsappSetting::first();
+                    $template = $waSetting->report_template_name ?? 'report_test4';
+                    $language = $waSetting->default_language ?? 'en';
+
                     $waService = new \App\Services\WhatsAppService();
                     $waService->sendTemplateMessage(
                         $waPhone,
-                        'report_test4',
+                        $template,
                         $waComponents,
-                        'en'
+                        $language
                     );
                     $sent = true;
                 }
