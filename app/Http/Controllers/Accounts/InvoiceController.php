@@ -736,7 +736,8 @@ class InvoiceController extends Controller
                     
                     // Button 0: Invoice View (Letter)
                     $invoiceRoute = route('booking.letter.view', ['id' => $invoice->relatedBooking->id]);
-                    $invoiceSuffix = ltrim(parse_url($invoiceRoute, PHP_URL_PATH), '/');
+                    
+                    $invoiceSuffix =  $invoice->invoice_letter_path;
 
                     // Button 1: Report View
                     $reportRoute = route('public.reports.index', ['path' => $letterNo]);
