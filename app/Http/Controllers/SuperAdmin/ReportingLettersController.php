@@ -373,14 +373,19 @@ class ReportingLettersController extends Controller
                     ]);
 
                     $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
-                    $letterSuffix = $path;  
-
+                    $path = $path ?? $booking->upload_letter_path; // Fallback
+                    $letterSuffix = ltrim($path, '/');
+                    // Fix: URL Encode the suffix to handle spaces in filenames
+                    $letterSuffix = str_replace(' ', '%20', $letterSuffix);
+                    
                     // Report Route
                     $reportRoute = route('public.reports.index', [
                         'path' => $jobKey
                     ]);
 
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
+                    // Fix: URL Encode the suffix to handle spaces in filenames
+                    $reportSuffix = str_replace(' ', '%20', $reportSuffix);
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
 
@@ -536,7 +541,10 @@ class ReportingLettersController extends Controller
                     ]);
 
                     $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
-                    $letterSuffix = $path;  
+                    $path = $path ?? $booking->upload_letter_path; // Fallback
+                    $letterSuffix = ltrim($path, '/');
+                    // Fix: URL Encode the suffix to handle spaces in filenames
+                    $letterSuffix = str_replace(' ', '%20', $letterSuffix);
 
                     // Report Route
                     $reportRoute = route('public.reports.index', [
@@ -544,6 +552,8 @@ class ReportingLettersController extends Controller
                     ]);
 
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
+                    // Fix: URL Encode the suffix to handle spaces in filenames
+                    $reportSuffix = str_replace(' ', '%20', $reportSuffix);
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
 
