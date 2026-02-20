@@ -177,6 +177,9 @@
             text-align: left !important;
         }
 
+        .text-centre { text-align: center !important;}
+
+
         /* ================= PRINT ================= */
         @media print {
             body * {
@@ -343,7 +346,7 @@
                                         <td contenteditable="true" class="editable description"></td>
                                         <td></td>
                                         <td></td>
-                                        <td contenteditable="true" class="editable qty">1</td>
+                                        <td contenteditable="true" class="editable text-center qty">1</td>
                                         <td contenteditable="true" class="editable rate text-right">0.00</td>
                                         <td class="amount text-right" contenteditable="true">0.00</td>
                                     </tr>

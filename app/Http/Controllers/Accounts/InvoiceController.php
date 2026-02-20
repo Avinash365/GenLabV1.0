@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Invoice;
 use App\Models\InvoiceBookingItem;
-use App\Models\{NewBooking, Department, Client, PaymentSetting, BookingItem};
+use App\Models\{NewBooking, Department, Client, PaymentSetting, BookingItem, User};
 use Carbon\Carbon;
 use App\Services\{GetUserActiveDepartment, BillingService};
 use App\Services\InvoicePdfService;

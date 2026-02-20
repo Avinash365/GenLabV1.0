@@ -167,6 +167,16 @@
             border-radius: 4px;
         }
 
+         .text-right {
+            text-align: right !important;
+        }
+        .text-left{
+            text-align: left !important;
+        }
+        .text-centre{
+            text-align: center !important;
+        }
+        
         /* ================= PRINT ================= */
         @media print {
             body * {
@@ -185,8 +195,9 @@
                 width: 210mm;
                 height: 297mm;
                 page-break-after: always;
-            }
+            } 
         }
+        
     </style>
 
 
