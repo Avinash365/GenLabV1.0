@@ -15,27 +15,23 @@ class WhatsappWebhookController extends Controller
     public function verify(Request $request)
     {
         $mode = $request->query('hub_mode');
-        $token = $request->query('hub_verify_token');
+        $verifyToken = $request->query('hub_verify_token');
         $challenge = $request->query('hub_challenge');
-        
-        // This token must match the one you set in your Meta App Dashboard
-        // For security, you should store this in your .env or a config file
-        $setting = WhatsappSetting::first();
-        $myVerifyToken = optional($setting)->webhook_verify_token ?? env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'my_secure_token');
 
-        if ($mode && $token) {
-            if ($mode === 'subscribe' && $token === $myVerifyToken) {
-                Log::info('WhatsApp Webhook Verified');
-                return response($challenge, 200);
-            } else {
-                Log::warning('WhatsApp Webhook Verification Failed', [
-                    'mode' => $mode,
-                    'token' => $token
-                ]);
-                return response('Forbidden', 403);
-            }
+        // This token is fetched from DB or falls back to 'GenSkytech_Secret_2027' from env
+        $setting = WhatsappSetting::first();
+        $token = optional($setting)->webhook_verify_token ?: env('WHATSAPP_WEBHOOK_VERIFY_TOKEN', 'GenSkytech_Secret_2027');
+
+        if ($mode === 'subscribe' && $verifyToken === $token) {
+            Log::info('WhatsApp Webhook Verified');
+            return response($challenge, 200)->header('Content-Type', 'text/plain');
         }
-        return response('Bad Request', 400);
+
+        Log::warning('WhatsApp Webhook Verification Failed', [
+            'mode' => $mode,
+            'token' => $verifyToken
+        ]);
+        return response('Invalid token', 403);
     }
 
     // Handle Incoming Webhook Events
