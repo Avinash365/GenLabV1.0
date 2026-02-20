@@ -426,7 +426,7 @@ class ReportingLettersController extends Controller
                     ];
 
                     $waSetting = WhatsappSetting::first();
-                    $template = $waSetting->report_template_name ?? 'report_test4';
+                    $template = $waSetting->report_template_name ?? '';
                     $language = $waSetting->default_language ?? 'en';
 
                     $waService = new \App\Services\WhatsAppService();
@@ -593,13 +593,23 @@ class ReportingLettersController extends Controller
                         ]
                     ];
 
-                    $waService = new \App\Services\WhatsAppService();
-                    $waService->sendTemplateMessage(
-                        $waPhone,
-                        'report_test4',
-                        $waComponents,
-                        'en'
-                    );
+                    $waSetting = WhatsappSetting::first();
+                    $template = $waSetting->report_template_name ?? null; 
+                    $language = $waSetting->default_language ?? 'en';
+
+                    if ($template) {
+                        $waService = new \App\Services\WhatsAppService();
+                        $waService->sendTemplateMessage(
+                            $waPhone,
+                            $template,
+                            $waComponents,
+                            $language
+                        );
+                    } else {
+                        Log::warning('WhatsApp Notification skipped: No report_template_name configured.');
+                    }
+
+
                 } 
 
             } catch (\Throwable $e) {
