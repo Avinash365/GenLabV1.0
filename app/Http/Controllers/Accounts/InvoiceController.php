@@ -764,14 +764,16 @@ class InvoiceController extends Controller
                                 ['type' => 'text', 'text' => substr(number_format($invoice->total_amount, 2), 0, 60)],
                             ]
                         ],
+                        // Button 0: View Invoice
                         [
                             'type' => 'button',
                             'sub_type' => 'url',
                             'index' => 0,
                             'parameters' => [
-                                ['type' => 'text', 'text' => $invoiceSuffix]
+                                ['type' => 'text', 'text' => $invoiceSuffix] 
                             ]
                         ],
+                        // Button 1: View Report
                         [
                             'type' => 'button',
                             'sub_type' => 'url',

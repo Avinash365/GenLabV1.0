@@ -89,6 +89,7 @@ use App\Http\Controllers\Accounts\ManualInvoicePaymentController;
 
 
 use App\Http\Controllers\SuperAdmin\WhatsappSettingController;
+use App\Http\Controllers\SuperAdmin\WhatsappChatController;
 
 // =======================
 // Super Admin Login Routes
@@ -194,6 +195,12 @@ Route::middleware(['multi_auth:web,admin','ensure_user_active'])->prefix('supera
 
         });
     
+
+    // WhatsApp Chats
+    Route::group(['prefix' => 'whatsapp', 'as' => 'whatsapp.'], function() {
+        Route::get('chats', [WhatsappChatController::class, 'index'])->name('chats.index');
+        Route::get('chats/{phoneNumber}', [WhatsappChatController::class, 'show'])->name('chat.show');
+    });
 
     // Booking Management
     Route::prefix('bookings')

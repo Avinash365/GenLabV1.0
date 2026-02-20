@@ -14,5 +14,7 @@ class VerifyCsrfToken extends Middleware
     protected $except = [
         'chatbot/query',
         'iclock/cdata',
+        'api/whatsapp/webhook', // Exclude WhatsApp Webhook
+        'whatsapp/webhook',      // Just in case route mismatch
     ];
 }

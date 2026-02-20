@@ -273,6 +273,13 @@
                             </a>
                         </li>
  
+                        <!-- WhatsApp Chats -->
+                        <li>
+                            <a href="{{ route('superadmin.whatsapp.chats.index') }}" class="{{ Request::routeIs('superadmin.whatsapp.chats.*') || Request::routeIs('superadmin.whatsapp.chat.*') ? 'active' : '' }}">
+                                <i class="ti ti-message fs-16 me-2"></i><span>WhatsApp Chats</span>
+                            </a>
+                        </li>
+
                         <!-- All Booking --> 
 
                     @if($user && ($user instanceof Admin || $user->hasPermission('booking.view')))

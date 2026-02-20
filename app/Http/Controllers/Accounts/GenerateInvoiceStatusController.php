@@ -397,7 +397,7 @@ class GenerateInvoiceStatusController extends Controller
                                 'sub_type' => 'url',
                                 'index' => 1,
                                 'parameters' => [
-                                    ['type' => 'text', 'text' => $reportSuffix]
+                                    ['type' => 'text', 'text' => $reportSuffix] 
                                 ]
                             ]
                         ];

@@ -463,9 +463,15 @@ class ReportingLettersController extends Controller
         | CREATE DIRECTORY WITH 777 PERMISSION
         |--------------------------------------------------------------------------
         */
-        if (!File::exists($dir)) {
-            File::makeDirectory($dir, 0777, true, true);
-            chmod($dir, 0777);
+        $fullDirPath = storage_path("app/{$dir}");
+        if (!File::exists($fullDirPath)) {
+            File::makeDirectory($fullDirPath, 0777, true, true);
+        }
+        // Always set permission to 777
+        try {
+            chmod($fullDirPath, 0777);
+        } catch (\Throwable $e) {
+            \Log::warning("Failed to chmod directory: {$fullDirPath}");
         }
 
         $uploaded = [];

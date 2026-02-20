@@ -3,6 +3,7 @@
 use App\Http\Controllers\MobileControllers\Auth\UserAuthController;
 use App\Http\Controllers\MobileControllers\Auth\AdminAuthController;
  use App\Http\Controllers\Api\Attendance\EsslWebhookController;
+use App\Http\Controllers\Api\WhatsappWebhookController;
  use App\Http\Controllers\MobileControllers\Accounts\MarketingPersonInfo; 
 use App\Http\Controllers\Api\ExpenseApiController;
 use App\Http\Controllers\MobileControllers\MarketingHoldCancelApiController;
@@ -32,6 +33,10 @@ Route::get('marketing-person/letters/show/{job}/{filename}', [ReportingLettersCo
     ->name('api.reporting.letters.show');
 
 Route::post('attendance/essl/webhook', EsslWebhookController::class)->name('api.attendance.essl.webhook');
+
+// WhatsApp Webhook
+Route::get('whatsapp/webhook', [WhatsappWebhookController::class, 'verify']);
+Route::post('whatsapp/webhook', [WhatsappWebhookController::class, 'handle']);
 
 // Debug helper routes removed. These were used for local E2E testing only.
 // If you need similar functionality for local debugging, re-add guarded
