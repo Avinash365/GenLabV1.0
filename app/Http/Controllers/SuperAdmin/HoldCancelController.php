@@ -172,8 +172,9 @@ class HoldCancelController extends Controller
                 $letterRoute = route('booking.letter.view', ['id' => $booking->id]);
                 // If the user wants the exact same logic as ReportingLettersController, they used the file path suffix
                 // " $path = parse_url($booking->upload_letter_path, PHP_URL_PATH); $letterSuffix = $path; "
-                $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
-                $letterSuffix = $path ?: 'home'; 
+                $path = parse_url($booking->upload_letter_path ?? '', PHP_URL_PATH);
+                 // Remove leading slash to prevent double slashes in URL
+                $letterSuffix = ($path && $path !== '/') ? ltrim($path, '/') : 'home'; 
 
                 // Template: hold_test1
                 /*
@@ -249,8 +250,13 @@ class HoldCancelController extends Controller
                 $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
 
                 // Resolve Letter Path for Button
-                $path = parse_url($booking->upload_letter_path, PHP_URL_PATH);
-                $letterSuffix = $path ?: 'home'; 
+                $path = parse_url($booking->upload_letter_path ?? '', PHP_URL_PATH);
+                // Remove leading slash to prevent double slashes in URL
+                // Check if path is empty/invalid
+                $letterSuffix = ($path && $path !== '/') ? ltrim($path, '/') : 'home'; 
+                
+                // Fix: URL Encode the suffix to handle spaces in filenames
+                $letterSuffix = str_replace(' ', '%20', $letterSuffix);
 
                 $components = [
                     [
