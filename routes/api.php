@@ -36,7 +36,10 @@ Route::post('attendance/essl/webhook', EsslWebhookController::class)->name('api.
 
 // WhatsApp Webhook
 Route::get('whatsapp/webhook', [WhatsappWebhookController::class, 'verify']);
-Route::post('whatsapp/webhook', [WhatsappWebhookController::class, 'handle']);
+Route::post('whatsapp/webhook', function(Request $request) {
+    Log::channel('daily')->info('Refined Webhook Route Hit', $request->all());
+    return app(WhatsappWebhookController::class)->handle($request);
+});
 
 // Debug helper routes removed. These were used for local E2E testing only.
 // If you need similar functionality for local debugging, re-add guarded
