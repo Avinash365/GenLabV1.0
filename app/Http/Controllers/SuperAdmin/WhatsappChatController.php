@@ -14,8 +14,10 @@ class WhatsappChatController extends Controller
     {
         // Get list of unique phone numbers that have sent messages
         // Group by phone number and get the latest message
-        $chats = WhatsappMessage::select('phone_number', DB::raw('MAX(created_at) as last_activity'))
-            ->where('status', 'received') // Assuming we only care about received messages for now 
+        // Relax status filter and strict grouping for now
+        $chats = WhatsappMessage::select('phone_number')
+            ->selectRaw('MAX(created_at) as last_activity')
+            // ->where('status', 'received') // Allow seeing SENT messages too
             ->groupBy('phone_number')
             ->orderBy('last_activity', 'desc')
             ->get();
@@ -26,8 +28,14 @@ class WhatsappChatController extends Controller
             $lastMsg = WhatsappMessage::where('phone_number', $chat->phone_number)
                 ->orderBy('created_at', 'desc')
                 ->first();
-            $chat->last_message = $lastMsg->message;
-            $chat->last_message_type = $lastMsg->type;
+                
+            if ($lastMsg) {
+                $chat->last_message = $lastMsg->message;
+                $chat->last_message_type = $lastMsg->type;
+            } else {
+                $chat->last_message = 'No messages';
+                $chat->last_message_type = 'text';
+            }
         }
 
         return view('superadmin.whatsapp.index', compact('chats'));
