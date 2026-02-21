@@ -272,14 +272,13 @@
                                 <i class="ti ti-layout-grid fs-16 me-2"></i><span>Dashboard</span>
                             </a>
                         </li>
-
-                        <!-- Zoom Meetings -->
+ 
+                        <!-- WhatsApp Chats -->
                         <li>
-                            <a href="<?php echo e(route('superadmin.zoom-meetings.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : ''); ?>">
-                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
+                            <a href="<?php echo e(route('superadmin.whatsapp.chats.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.whatsapp.chats.*') || Request::routeIs('superadmin.whatsapp.chat.*') ? 'active' : ''); ?>">
+                                <i class="ti ti-message fs-16 me-2"></i><span>WhatsApp Chats</span>
                             </a>
                         </li>
-
 
                         <!-- All Booking --> 
 
@@ -795,6 +794,13 @@
                             </ul>
                         </li>
 
+                         <!-- Zoom Meetings -->
+                        <li>
+                            <a href="<?php echo e(route('superadmin.zoom-meetings.index')); ?>" class="<?php echo e(Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : ''); ?>">
+                                <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
+                            </a>
+                        </li>
+
                         <?php if($user && ($user instanceof Admin || $user->hasPermission('sample_cell.view'))): ?>
                             <li><a href="#"><i class="ti ti-shopping-cart fs-16 me-2"></i><span>Sample Cell</span></a></li>
                         <?php endif; ?>
@@ -845,6 +851,13 @@
                                                 <a href="<?php echo e(route('superadmin.websettings.edit')); ?>" 
                                                 class="<?php echo e(Request::routeIs('superadmin.websettings.*') ? 'active' : ''); ?>">
                                                     Web Settings
+                                                </a> 
+                                            </li>
+                                            
+                                            <li>
+                                                <a href="<?php echo e(route('superadmin.whatsapp-settings.index')); ?>" 
+                                                    class="<?php echo e(Request::routeIs('superadmin.whatsapp-settings.*') ? 'active' : ''); ?>">
+                                                    WhatsApp API Settings
                                                 </a> 
                                             </li>
                                         <?php endif; ?>  

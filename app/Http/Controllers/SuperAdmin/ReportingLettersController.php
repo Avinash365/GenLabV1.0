@@ -389,8 +389,8 @@ class ReportingLettersController extends Controller
 
                     $contactName = SiteSetting::first()?->company_name ?? 'GenLab';
 
-                    Log::info('Letter Route: ' . $letterRoute);
-                    Log::info('Letter Suffix: ' . $letterSuffix);
+                    // Log::info('Letter Route: ' . $letterRoute);
+                    // Log::info('Letter Suffix: ' . $letterSuffix);
 
                     $waComponents = [
 

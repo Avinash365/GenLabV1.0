@@ -7,7 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use App\Models\Invoice;
 use App\Models\InvoiceBookingItem;
-use App\Models\{NewBooking, Department, Client, PaymentSetting, BookingItem};
+use App\Models\{NewBooking, Department, Client, PaymentSetting, BookingItem, User};
 use Carbon\Carbon;
 use App\Services\{GetUserActiveDepartment, BillingService};
 use App\Services\InvoicePdfService;
@@ -736,7 +736,8 @@ class InvoiceController extends Controller
                     
                     // Button 0: Invoice View (Letter)
                     $invoiceRoute = route('booking.letter.view', ['id' => $invoice->relatedBooking->id]);
-                    $invoiceSuffix = ltrim(parse_url($invoiceRoute, PHP_URL_PATH), '/');
+                    
+                    $invoiceSuffix =  $invoice->invoice_letter_path;
 
                     // Button 1: Report View
                     $reportRoute = route('public.reports.index', ['path' => $letterNo]);

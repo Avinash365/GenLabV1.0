@@ -333,91 +333,16 @@ class GenerateInvoiceStatusController extends Controller
                     ]
                 );
 
-                // ---------------------------
-                // SEND WHATSAPP MESSAGE
-                // ---------------------------
-                try {
-                    $waSettings = WhatsappSetting::first();
-                    $templateName = $waSettings->dispatch_template_name ?? null;
-                    $languageCode = $waSettings->default_language ?? 'en_US';
+            
+                $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
+                $invoiceData['invoice']['id'] = $invoice->id;
 
-                    if ($templateName && $marketingUser->employee && $marketingUser->employee->phone_primary) {
-                        $phone = preg_replace('/[^0-9]/', '', $marketingUser->employee->phone_primary);
-                        if (strlen($phone) == 10) {
-                            $phone = '91' . $phone;
-                        }
-                        
-                        $statusLabels = [
-                            0 => 'Pending',
-                            1 => 'Paid',
-                            2 => 'Cancelled',
-                            3 => 'Partial',
-                            4 => 'Settled',
-                        ];
-                        $paymentStatus = $statusLabels[$invoice->status ?? 0] ?? 'Unknown';
-
-                        $booking = NewBooking::find($request->booking_id); // Fetch booking to get reference no
-                        $letterNo = $booking->reference_no ?? 'N/A';
-                        $issueTo = $invoice->issue_to ?? ($booking->report_issue_to ?? 'N/A');
-
-                        // Button 0: Invoice View (Letter)
-                        $invoiceRoute = route('booking.letter.view', ['id' => $booking->id]);
-                        $invoiceSuffix = ltrim(parse_url($invoiceRoute, PHP_URL_PATH), '/');
-
-                        // Button 1: Report View
-                        $reportRoute = route('public.reports.index', ['path' => $letterNo]);
-                        $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
-                        
-                        $senderName = SiteSetting::first()?->company_name ?? 'GenLab';
-                        
-                        $components = [
-                            [
-                                'type' => 'body',
-                                'parameters' => [
-                                    ['type' => 'text', 'text' => substr($issueTo, 0, 60)],
-                                    ['type' => 'text', 'text' => substr($letterNo, 0, 60)],
-                                    ['type' => 'text', 'text' => substr($invoice->invoice_no, 0, 60)],
-                                    ['type' => 'text', 'text' => substr($paymentStatus, 0, 60)],
-                                    ['type' => 'text', 'text' => substr($senderName, 0, 60)], 
-                                    ['type' => 'text', 'text' => substr(number_format($invoice->total_amount, 2), 0, 60)],
-                                ]
-                            ],
-                            // Button 0: View Invoice
-                            [
-                                'type' => 'button',
-                                'sub_type' => 'url',
-                                'index' => 0,
-                                'parameters' => [
-                                    ['type' => 'text', 'text' => $invoiceSuffix] 
-                                ]
-                            ],
-                            // Button 1: View Report
-                            [
-                                'type' => 'button',
-                                'sub_type' => 'url',
-                                'index' => 1,
-                                'parameters' => [
-                                    ['type' => 'text', 'text' => $reportSuffix] 
-                                ]
-                            ]
-                        ];
-
-                        $whatsAppService->sendTemplateMessage($phone, $templateName, $components, $languageCode);
-                    }
-                } catch (\Exception $e) {
-                    Log::error('WhatsApp sending failed: ' . $e->getMessage());
-                }
+                $html = $request->invoice_html;
+                Storage::put(
+                    "invoices/invoice_{$invoice->id}.html",
+                    $html
+                );
             }
-
-            $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
-            $invoiceData['invoice']['id'] = $invoice->id;
-
-            $html = $request->invoice_html;
-            Storage::put(
-                "invoices/invoice_{$invoice->id}.html",
-                $html
-            );
-
             // return $this->invoicePdfService->generate($invoiceData);
             return $this->invoicePdfService->generateHtml2Pdf($invoice);
 
