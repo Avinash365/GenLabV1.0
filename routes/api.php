@@ -36,9 +36,15 @@ Route::post('attendance/essl/webhook', EsslWebhookController::class)->name('api.
 
 // WhatsApp Webhook
 Route::get('whatsapp/webhook', [WhatsappWebhookController::class, 'verify']);
-Route::post('whatsapp/webhook', function(Request $request) {
-    Log::channel('daily')->info('Refined Webhook Route Hit', $request->all());
-    return app(WhatsappWebhookController::class)->handle($request);
+Route::post('whatsapp/webhook', [WhatsappWebhookController::class, 'handle']);
+
+// Temporary Debug Route to check received messages JSON
+Route::get('whatsapp/debug-messages', function() {
+    return [
+        'count' => \App\Models\WhatsappMessage::count(),
+        'latest' => \App\Models\WhatsappMessage::orderBy('id', 'desc')->take(5)->get(),
+        'server_time' => now()->toDateTimeString(),
+    ];
 });
 
 // Debug helper routes removed. These were used for local E2E testing only.
