@@ -23,6 +23,7 @@ use App\Http\Controllers\Accounts\ManualInvoicePaymentController;
 use App\Http\Controllers\Api\BookingLetterController; 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -251,6 +252,7 @@ Route::get('/reports-explorer/{path?}', [BookingLetterController::class, 'showLe
 
 Route::get('/booking/{id}/letter', [BookingLetterController::class, 'viewLetter'])->name('booking.letter.view');
 
+Route::get('/invoice-letters/{invoiceId}',[BookingLetterController::class, 'showInvoiceLetters'])->name('invoice.letters');
 
 
 
