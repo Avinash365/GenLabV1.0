@@ -457,7 +457,8 @@ class ReportingLettersController extends Controller
         $validated = $request->validate([
             'job' => ['required', 'string', 'max:255'],
             'letters' => ['required'],
-            'letters.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:101200'],
+            // 524288 KB = 512 MB
+            'letters.*' => ['file', 'mimes:pdf,jpg,jpeg,png,doc,docx', 'max:524288'],
         ]);
 
         [$jobKey] = $this->resolveLetterKey($validated['job']);

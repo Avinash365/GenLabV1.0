@@ -793,7 +793,39 @@
         };
 
         // Upload/View Letters handlers
+        // Client-side file size guard (per-file max 512 MB)
+        const MAX_UPLOAD_BYTES = 512 * 1024 * 1024; // 512 MB
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
         const uploadForms = Array.from(document.querySelectorAll('form[data-letters-upload-form="1"]'));
+        // Attach quick client-side validation to prevent attempts to upload files larger than 512MB
+        uploadForms.forEach((f) => {
+            if (f.dataset.clientBound === '1') return;
+            f.dataset.clientBound = '1';
+            f.addEventListener('submit', function (ev) {
+                const inputs = Array.from(f.querySelectorAll('input[type=file][name="letters[]"]'));
+                for (const inp of inputs) {
+                    const files = inp.files || [];
+                    for (const file of files) {
+                        if (file.size > MAX_UPLOAD_BYTES) {
+                            ev.preventDefault();
+                            const msg = `File "${file.name}" is ${formatBytes(file.size)} — maximum allowed is 512 MB.`;
+                            if (window.Swal) {
+                                Swal.fire({ icon: 'error', title: 'File too large', text: msg });
+                            } else {
+                                alert(msg);
+                            }
+                            return false;
+                        }
+                    }
+                }
+            }, { capture: true, passive: false });
+        });
         const viewLettersBtn = document.getElementById('view-letters-btn');
         const lettersModalEl = document.getElementById('lettersModal');
         const lettersListEl = document.getElementById('letters-list');
