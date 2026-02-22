@@ -335,6 +335,8 @@ class BookingLetterController extends Controller
         //  Build folder structure using ref_no as folder name
         foreach ($refNumbers as $refNo) {
 
+            $refNo = $this->convertToFolderName($refNo);
+
             $folderPath = $basePath . '/' . $refNo;
 
             if (File::exists($folderPath) && File::isDirectory($folderPath)) {
@@ -359,5 +361,24 @@ class BookingLetterController extends Controller
         }
 
         return view('letters.invoice_explorer', compact('result', 'invoice'));
+    }
+
+    private function convertToFolderName($invoiceNumber)
+    {
+        // Replace special characters with dash
+        $folder = str_replace(
+            ['/', '\\', '(', ')', '.', ' '],
+            '-',
+            $invoiceNumber
+        );
+
+        // Remove multiple dashes
+        $folder = preg_replace('/-+/', '-', $folder);
+
+        // Remove any character not letter, number or dash
+        $folder = preg_replace('/[^A-Za-z0-9\-]/', '', $folder);
+
+        // Trim dash from start/end
+        return trim($folder, '-');
     }
 }
