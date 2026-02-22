@@ -336,7 +336,8 @@ class BookingLetterController extends Controller
         foreach ($refNumbers as $refNo) {
 
             $refNo = $this->convertToFolderName($refNo);
-
+            dd($refNo);
+            exit;
             $folderPath = $basePath . '/' . $refNo;
 
             if (File::exists($folderPath) && File::isDirectory($folderPath)) {
