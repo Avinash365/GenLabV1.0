@@ -335,9 +335,7 @@ class BookingLetterController extends Controller
         //  Build folder structure using ref_no as folder name
         foreach ($refNumbers as $refNo) {
 
-            $refNo = $this->convertToFolderName($refNo);
-            dd($refNo);
-            exit;
+            $refNo = $this->sanitizeJob($refNo);
             $folderPath = $basePath . '/' . $refNo;
 
             if (File::exists($folderPath) && File::isDirectory($folderPath)) {
@@ -364,6 +362,11 @@ class BookingLetterController extends Controller
         return view('letters.invoice_explorer', compact('result', 'invoice'));
     }
 
+     private function sanitizeJob(string $job): string
+    {
+        // Allow alphanumerics, dash and underscore to prevent path traversal
+        return preg_replace('/[^A-Za-z0-9_\-]/', '-', $job) ?: 'unknown';
+    }
     private function convertToFolderName($invoiceNumber)
     {
         // Replace special characters with dash
