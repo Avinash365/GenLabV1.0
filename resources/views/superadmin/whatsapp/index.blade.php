@@ -16,7 +16,7 @@
             <div class="list-group">
                 @if($chats->count() > 0)
                     @foreach($chats as $chat)
-                        <a href="{{ route('whatsapp.chat.show', ['phoneNumber' => $chat->phone_number]) }}" class="list-group-item list-group-item-action flex-column align-items-start">
+                        <a href="{{ route('superadmin.whatsapp.chat.show', ['phoneNumber' => $chat->phone_number]) }}" class="list-group-item list-group-item-action flex-column align-items-start">
                             <div class="d-flex w-100 justify-content-between">
                                 <h5 class="mb-1">Phone: {{ $chat->phone_number }}</h5>
                                 <small>{{ \Carbon\Carbon::parse($chat->last_activity)->diffForHumans() }}</small>

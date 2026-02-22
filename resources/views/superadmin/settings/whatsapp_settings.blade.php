@@ -83,7 +83,7 @@
                          <div class="col-md-4">
                             <div class="mb-3">
                                 <label class="form-label fw-bold">Report Ready Notification</label>
-                                <input type="text" class="form-control" name="report_template_name" value="{{ old('report_template_name', optional($setting)->report_template_name ?? 'report_test4') }}" placeholder="Template Name">
+                                <input type="text" class="form-control" name="report_template_name" value="{{ old('report_template_name', optional($setting)->report_template_name ?? '') }}" placeholder="Template Name">
                                 <small class="text-muted">Matches Meta Template Name</small>
                             </div>
                         </div>
