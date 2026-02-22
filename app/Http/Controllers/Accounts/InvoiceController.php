@@ -692,6 +692,8 @@ class InvoiceController extends Controller
         $invoice->invoice_letter_path = 'uploads/invoices/' . $fileName;
         $invoice->save();
 
+     
+
         // ---------------------------
         // SEND NOTIFICATION TO MARKETING USER
         // --------------------------- 
@@ -745,7 +747,8 @@ class InvoiceController extends Controller
                     ]);
 
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
-
+                    
+                  
                     $senderName = SiteSetting::first()?->company_name ?? 'GenLab';
                     
                     // Parameters for 'itl_invoice' template

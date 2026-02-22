@@ -209,10 +209,87 @@ class BookingLetterController extends Controller
     //     return view('letters.invoice_explorer', compact('result', 'invoice'));
     // }
 
+    // public function showInvoiceLetters($invoiceId)
+    // {
+    //     $basePath = public_path('storage/letters');
+
+    //     //  Get Invoice
+    //     $invoice = Invoice::findOrFail($invoiceId);
+
+    //     $allBookingIds = [];
+
+    //     //  Single booking id
+    //     if (!empty($invoice->new_booking_id)) {
+    //         $allBookingIds[] = $invoice->new_booking_id;
+    //     }
+
+    //     //  Multiple booking ids (comma separated)
+    //     if (!empty($invoice->invoice_booking_ids)) {
+    //         $multipleIds = explode(',', $invoice->invoice_booking_ids);
+
+    //         foreach ($multipleIds as $id) {
+    //             $cleanId = trim($id);
+    //             if (!empty($cleanId)) {
+    //                 $allBookingIds[] = $cleanId;
+    //             }
+    //         }
+    //     }
+
+    //     //  Remove duplicates
+    //     $allBookingIds = array_unique($allBookingIds);
+
+    //     if (empty($allBookingIds)) {
+    //         return view('letters.invoice_explorer', [
+    //             'result' => ['children' => []],
+    //             'invoice' => $invoice
+    //         ]);
+    //     }
+
+    //     //  Directly fetch job_order_number from BookingItem (Optimized)
+    //     $jobOrders = \App\Models\BookingItem::whereIn('new_booking_id', $allBookingIds)
+    //         ->pluck('job_order_no')
+    //         ->filter()
+    //         ->unique()
+    //         ->toArray();
+
+    //     $result = [
+    //         'children' => []
+    //     ];
+
+    //     //  Build folder structure
+    //     foreach ($jobOrders as $jobOrder) {
+
+    //         $folderPath = $basePath . '/' . $jobOrder;
+
+    //         if (File::exists($folderPath) && File::isDirectory($folderPath)) {
+
+    //             $folderData = [
+    //                 'name' => $jobOrder,   // Folder name = job_order_number
+    //                 'type' => 'folder',
+    //                 'children' => []
+    //             ];
+
+    //             foreach (File::files($folderPath) as $file) {
+
+    //                 $folderData['children'][] = [
+    //                     'name' => $file->getFilename(),
+    //                     'type' => 'file',
+    //                     'url'  => asset('storage/letters/' . $jobOrder . '/' . $file->getFilename())
+    //                 ];
+    //             }
+
+    //             $result['children'][] = $folderData;
+    //         }
+    //     }
+
+    //     return view('letters.invoice_explorer', compact('result', 'invoice'));
+    // }
+
     public function showInvoiceLetters($invoiceId)
     {
         $basePath = public_path('storage/letters');
-
+        
+      
         //  Get Invoice
         $invoice = Invoice::findOrFail($invoiceId);
 
@@ -221,8 +298,7 @@ class BookingLetterController extends Controller
         //  Single booking id
         if (!empty($invoice->new_booking_id)) {
             $allBookingIds[] = $invoice->new_booking_id;
-        }
-
+        } 
         //  Multiple booking ids (comma separated)
         if (!empty($invoice->invoice_booking_ids)) {
             $multipleIds = explode(',', $invoice->invoice_booking_ids);
@@ -245,9 +321,9 @@ class BookingLetterController extends Controller
             ]);
         }
 
-        //  Directly fetch job_order_number from BookingItem (Optimized)
-        $jobOrders = \App\Models\BookingItem::whereIn('new_booking_id', $allBookingIds)
-            ->pluck('job_order_no')
+        //  Fetch ref_no directly from NewBooking
+        $refNumbers = \App\Models\NewBooking::whereIn('id', $allBookingIds)
+            ->pluck('reference_no')
             ->filter()
             ->unique()
             ->toArray();
@@ -256,15 +332,15 @@ class BookingLetterController extends Controller
             'children' => []
         ];
 
-        //  Build folder structure
-        foreach ($jobOrders as $jobOrder) {
+        //  Build folder structure using ref_no as folder name
+        foreach ($refNumbers as $refNo) {
 
-            $folderPath = $basePath . '/' . $jobOrder;
+            $folderPath = $basePath . '/' . $refNo;
 
             if (File::exists($folderPath) && File::isDirectory($folderPath)) {
 
                 $folderData = [
-                    'name' => $jobOrder,   // Folder name = job_order_number
+                    'name' => $refNo,   // Folder name = ref_no
                     'type' => 'folder',
                     'children' => []
                 ];
@@ -274,7 +350,7 @@ class BookingLetterController extends Controller
                     $folderData['children'][] = [
                         'name' => $file->getFilename(),
                         'type' => 'file',
-                        'url'  => asset('storage/letters/' . $jobOrder . '/' . $file->getFilename())
+                        'url'  => asset('storage/letters/' . $refNo . '/' . $file->getFilename())
                     ];
                 }
 
