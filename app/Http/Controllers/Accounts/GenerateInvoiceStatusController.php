@@ -317,6 +317,16 @@ class GenerateInvoiceStatusController extends Controller
 
             $invoice = $this->storeInvoiceData($invoiceData, $invoiceType);
 
+            
+            
+            $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
+            $invoiceData['invoice']['id'] = $invoice->id;
+
+            $html = $request->invoice_html;
+            Storage::put(
+                 "invoices/invoice_{$invoice->id}.html",
+                  $html
+            );
             // ---------------------------
             // SEND NOTIFICATION TO MARKETING USER
             // --------------------------- 
@@ -331,16 +341,6 @@ class GenerateInvoiceStatusController extends Controller
                     [
                         "invoice_pdf" => "invoices/invoice_{$invoice->id}.html", // Assuming html view path or you create a route to view it
                     ]
-                );
-
-            
-                $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
-                $invoiceData['invoice']['id'] = $invoice->id;
-
-                $html = $request->invoice_html;
-                Storage::put(
-                    "invoices/invoice_{$invoice->id}.html",
-                    $html
                 );
             }
             // return $this->invoicePdfService->generate($invoiceData);

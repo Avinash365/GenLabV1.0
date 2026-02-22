@@ -740,7 +740,10 @@ class InvoiceController extends Controller
                     $invoiceSuffix =  $invoice->invoice_letter_path;
 
                     // Button 1: Report View
-                    $reportRoute = route('public.reports.index', ['path' => $letterNo]);
+                    $reportRoute = route('invoice.letters', [
+                        'invoiceId' => $invoice->id
+                    ]);
+
                     $reportSuffix = ltrim(parse_url($reportRoute, PHP_URL_PATH), '/');
 
                     $senderName = SiteSetting::first()?->company_name ?? 'GenLab';
