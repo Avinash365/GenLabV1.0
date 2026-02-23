@@ -272,13 +272,7 @@
                                 <i class="ti ti-layout-grid fs-16 me-2"></i><span>Dashboard</span>
                             </a>
                         </li>
- 
-                        <!-- WhatsApp Chats -->
-                        <li>
-                            <a href="{{ route('superadmin.whatsapp.chats.index') }}" class="{{ Request::routeIs('superadmin.whatsapp.chats.*') || Request::routeIs('superadmin.whatsapp.chat.*') ? 'active' : '' }}">
-                                <i class="ti ti-message fs-16 me-2"></i><span>WhatsApp Chats</span>
-                            </a>
-                        </li>
+        
 
                         <!-- All Booking --> 
 
@@ -797,6 +791,13 @@
                         <li>
                             <a href="{{ route('superadmin.zoom-meetings.index') }}" class="{{ Request::routeIs('superadmin.zoom-meetings.*') ? 'active' : '' }}">
                                 <i class="ti ti-video fs-16 me-2"></i><span>Zoom Meetings</span>
+                            </a>
+                        </li>
+
+                         <!-- WhatsApp Chats -->
+                        <li>
+                            <a href="{{ route('superadmin.whatsapp.chats.index') }}" class="{{ Request::routeIs('superadmin.whatsapp.chats.*') || Request::routeIs('superadmin.whatsapp.chat.*') ? 'active' : '' }}">
+                                <i class="ti ti-message fs-16 me-2"></i><span>WhatsApp Chats</span>
                             </a>
                         </li>
 
