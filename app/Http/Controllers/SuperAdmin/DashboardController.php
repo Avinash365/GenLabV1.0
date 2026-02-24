@@ -1681,7 +1681,7 @@ class DashboardController extends Controller
         ];
     }
 
-    protected function buildQualityManagerPayload($user): array
+        protected function buildQualityManagerPayload($user): array
     {
         $today = Carbon::today();
         $rangeStart = $today->copy();

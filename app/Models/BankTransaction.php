@@ -3,7 +3,8 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use Illuminate\Support\Facades\DB; 
+use App\Models\BankTransactionInvoice; 
 
 class BankTransaction extends Model
 {   
@@ -35,4 +36,12 @@ class BankTransaction extends Model
         return $this->belongsToMany(Client::class, 'bank_transaction_client');
     } 
 
+    public function invoices()
+    {
+        return $this->hasMany(
+            BankTransactionInvoice::class,
+            'bank_transaction_id'
+        );
+    }
 }
+    
