@@ -133,6 +133,19 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
     Route::get('/accounts/cleared-expenses', [MarketingExpenseController::class, 'clearedExpenses'])
         ->name('accounts.cleared_expenses')
         ->middleware('permission:cleared_expense.view');
+
+        // Accounts: Export Report for Marketing Persons (view + exports)
+        Route::get('/accounts/export-report', [App\Http\Controllers\SuperAdmin\Accounts\ExportReportController::class, 'index'])
+            ->name('accounts.export')
+            ->middleware('permission:invoice.view');
+
+        Route::get('/accounts/export-report/pdf', [App\Http\Controllers\SuperAdmin\Accounts\ExportReportController::class, 'exportPdf'])
+            ->name('accounts.export.pdf')
+            ->middleware('permission:invoice.view');
+
+        Route::get('/accounts/export-report/excel', [App\Http\Controllers\SuperAdmin\Accounts\ExportReportController::class, 'exportExcel'])
+            ->name('accounts.export.excel')
+            ->middleware('permission:invoice.view');
 });
 
  

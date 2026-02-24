@@ -647,8 +647,23 @@
                                     <li>
                                         <a href="{{ route('superadmin.accounts.cleared_expenses') }}" class="{{ Request::routeIs('superadmin.accounts.cleared_expenses') ? 'active' : '' }}">Cleared Expenses</a>
                                     </li>
+
+                                    @if(Route::has('superadmin.accounts.export'))
+                                        <li>
+                                            <a href="{{ route('superadmin.accounts.export') }}" class="{{ Request::routeIs('superadmin.accounts.export') ? 'active' : '' }}">
+                                                Export Report
+                                            </a>
+                                        </li>
+                                    @else
+                                        <li>
+                                            <a href="#" class="">
+                                                Export Report
+                                            </a>
+                                        </li>
+                                    @endif
                                 </ul>
                                 @endif
+ 
                             </li> 
                         @endif   
 

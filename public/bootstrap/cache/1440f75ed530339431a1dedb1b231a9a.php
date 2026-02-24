@@ -648,8 +648,23 @@
                                     <li>
                                         <a href="<?php echo e(route('superadmin.accounts.cleared_expenses')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.cleared_expenses') ? 'active' : ''); ?>">Cleared Expenses</a>
                                     </li>
+
+                                    <?php if(Route::has('superadmin.accounts.export')): ?>
+                                        <li>
+                                            <a href="<?php echo e(route('superadmin.accounts.export')); ?>" class="<?php echo e(Request::routeIs('superadmin.accounts.export') ? 'active' : ''); ?>">
+                                                Export Report
+                                            </a>
+                                        </li>
+                                    <?php else: ?>
+                                        <li>
+                                            <a href="#" class="">
+                                                Export Report
+                                            </a>
+                                        </li>
+                                    <?php endif; ?>
                                 </ul>
                                 <?php endif; ?>
+ 
                             </li> 
                         <?php endif; ?>   
 
