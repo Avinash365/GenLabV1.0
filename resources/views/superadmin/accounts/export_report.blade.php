@@ -204,7 +204,8 @@
                             <th class="sample-desc-col">Sample Description</th>
                             <th class="status-col">Status</th>
                             <th class="amount-col">Amount</th>
-                            <th class="payment-col">Payment Status</th>
+                            <th class="payment-status-col">Payment Status</th>
+                            <th class="payment-col">Payment Option</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -238,7 +239,32 @@
                                     {{ isset($item->amount) ? number_format($item->amount,2) : '-' }}
                                 </div>
                             </td>
-                           
+
+                            <td class="payment-status-cell">
+                                <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->payment_status ?? '-' }}">
+                                        @php
+                                            $paymentStateLabel = '-';
+                                            $inv = $item->booking?->generatedInvoice ?? null;
+                                            if (!empty($inv) && isset($inv->status)) {
+                                                $s = $inv->status;
+                                                if (is_numeric($s) || ctype_digit((string)$s)) {
+                                                    switch ((int)$s) {
+                                                        case 1: $paymentStateLabel = 'Paid'; break;
+                                                        case 2: $paymentStateLabel = 'Canceled'; break;
+                                                        default: $paymentStateLabel = 'Unpaid';
+                                                    }
+                                                } else {
+                                                    $paymentStateLabel = ucfirst((string)$s);
+                                                }
+                                            } else {
+                                                $ps = $item->booking?->payment_status ?? null;
+                                                $paymentStateLabel = $ps ? ucfirst($ps) : '-';
+                                            }
+                                        @endphp
+                                        {{ $paymentStateLabel }}
+                                </div>
+                            </td>
+
                             <td class="payment-cell">
                                 <div class="cell-inner" data-bs-toggle="tooltip" title="{{ $item->booking?->payment_option ?? '-' }}">
                                     @php
@@ -262,7 +288,7 @@
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="9" class="text-center">No items found.</td>
+                            <td colspan="8" class="text-center">No items found.</td>
                         </tr>
                         @endforelse
                     </tbody>
@@ -321,12 +347,12 @@
     /* Percentage-based column widths (sum ~100%) */
     th.checkbox-col, td.checkbox-col { width: 4%; }
     th.job-order-col, td.job-order-cell { width: 12%; }
-    th.client-col, td.client-col { width: 20%; }
-    th.reference-col, td.reference-col { width: 15%; }
-    th.sample-desc-col { width: 20%; }
+    th.client-col, td.client-col { width: 18%; }
+    th.reference-col, td.reference-col { width: 14%; }
+    th.sample-desc-col { width: 18%; }
     th.sample-quality-col { width: 8%; }
-    th.particulars-col { width: 17%; }
-    th.status-col, td.status-cell { width:10% }
+    th.particulars-col { width: 16%; }
+    th.status-col, td.status-cell { width:12%;}
     th.action-col, td.action-cell { width: 10%; }
 
     /* Amount column alignment */

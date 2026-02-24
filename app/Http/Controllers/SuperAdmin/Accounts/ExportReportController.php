@@ -13,6 +13,14 @@ class ExportReportController extends Controller
 {
     public function index(Request $request)
     {
+        // Ensure default view shows current month/year when not specified
+        if (!$request->query('month')) {
+            $request->query->set('month', now()->month);
+        }
+        if (!$request->query('year')) {
+            $request->query->set('year', now()->year);
+        }
+
         $query = BookingItem::with(['booking']);
 
         // Marketing filter (booking.marketing_id stores user_code)
@@ -103,7 +111,7 @@ class ExportReportController extends Controller
             fputcsv($out, []);
 
             // Column header (match the on-screen table)
-            fputcsv($out, ['Job Order No','Client Name','Reference No','Sample Description','Status','Amount','Payment Status']);
+            fputcsv($out, ['Job Order No','Client Name','Reference No','Sample Description','Status','Amount','Payment Status','Payment Option']);
 
             foreach ($rows as $r) {
                 $booking = $r->booking;
@@ -126,6 +134,24 @@ class ExportReportController extends Controller
                 elseif ($po === 'without_bill') $poLabel = 'Without Bill';
                 elseif ($po) $poLabel = ucfirst($po);
 
+                // Payment state (prefer invoice.status if present, map numeric codes)
+                $paymentStateLabel = '-';
+                if (!empty($booking->generatedInvoice) && isset($booking->generatedInvoice->status)) {
+                    $invStatus = $booking->generatedInvoice->status;
+                    if (is_numeric($invStatus) || ctype_digit((string)$invStatus)) {
+                        switch ((int)$invStatus) {
+                            case 1: $paymentStateLabel = 'Paid'; break;
+                            case 2: $paymentStateLabel = 'Canceled'; break;
+                            default: $paymentStateLabel = 'Unpaid';
+                        }
+                    } else {
+                        $paymentStateLabel = ucfirst((string)$invStatus);
+                    }
+                } else {
+                    $paymentState = $booking->payment_status ?? null;
+                    $paymentStateLabel = $paymentState ? ucfirst($paymentState) : '-';
+                }
+
                 fputcsv($out, [
                     $r->job_order_no,
                     $booking->client_name ?? '-',
@@ -133,13 +159,14 @@ class ExportReportController extends Controller
                     $sampleDesc,
                     $r->status ?? '-',
                     isset($r->amount) ? number_format($r->amount,2) : '-',
+                    $paymentStateLabel,
                     $poLabel,
                 ]);
             }
 
             // Total row: place total in Amount column (6th)
             fputcsv($out, []);
-            fputcsv($out, ['Total','','','', '', number_format($totalAmount,2), '']);
+            fputcsv($out, ['Total','','','', '', number_format($totalAmount,2), '', '']);
 
             fclose($out);
         };
@@ -155,7 +182,7 @@ class ExportReportController extends Controller
             $user = User::where('user_code', $marketing)->first();
             $filters['Marketing'] = $user ? ($user->user_code . ' - ' . $user->name) : $marketing;
         }
-        if ($month = $request->query('month')) $filters['Month'] = \Carbon\Carbon::create()->month($month)->format('F');
+        if ($month = $request->query('month')) $filters['Month'] = \Carbon\Carbon::create()->month((int) $month)->format('F');
         if ($year = $request->query('year')) $filters['Year'] = $year;
         if ($po = $request->query('payment_option')) {
             $map = ['bill' => 'Bill', 'old_bill' => 'Old Bill', 'without_bill' => 'Without Bill'];
@@ -166,7 +193,7 @@ class ExportReportController extends Controller
 
     protected function buildExportQuery(Request $request)
     {
-        $query = BookingItem::with('booking');
+        $query = BookingItem::with(['booking.generatedInvoice']);
 
         if ($marketing = $request->query('marketing')) {
             $query->whereHas('booking', function ($q) use ($marketing) {

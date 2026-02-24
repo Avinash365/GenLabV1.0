@@ -32,6 +32,7 @@
                 <th>Status</th>
                 <th style="text-align:right">Amount</th>
                 <th>Payment Status</th>
+                <th>Payment Option</th>
             </tr>
         </thead>
         <tbody>
@@ -43,6 +44,27 @@
                     <td>{{ $r->sample_description ?? '' }}@if(!empty($r->sample_details)) - {{ $r->sample_details }}@endif</td>
                     <td>{{ $r->status ?? '-' }}</td>
                     <td style="text-align:right">{{ isset($r->amount) ? number_format($r->amount,2) : '-' }}</td>
+                    <td>
+                        @php
+                            $paymentStateLabel = '-';
+                            $inv = $r->booking->generatedInvoice ?? null;
+                            if (!empty($inv) && isset($inv->status)) {
+                                $s = $inv->status;
+                                if (is_numeric($s) || ctype_digit((string)$s)) {
+                                    switch ((int)$s) {
+                                        case 1: $paymentStateLabel = 'Paid'; break;
+                                        case 2: $paymentStateLabel = 'Canceled'; break;
+                                        default: $paymentStateLabel = 'Unpaid';
+                                    }
+                                } else {
+                                    $paymentStateLabel = ucfirst((string)$s);
+                                }
+                            } else {
+                                $paymentStateLabel = isset($r->booking->payment_status) ? ucfirst($r->booking->payment_status) : '-';
+                            }
+                        @endphp
+                        {{ $paymentStateLabel }}
+                    </td>
                     <td>
                         @php
                             $po = $r->booking->payment_option ?? null;
@@ -68,6 +90,7 @@
             <tr>
                 <td colspan="5" style="text-align:right;font-weight:bold">Total</td>
                 <td style="text-align:right;font-weight:bold">{{ isset($totalAmount) ? number_format($totalAmount,2) : '0.00' }}</td>
+                <td></td>
                 <td></td>
             </tr>
         </tfoot>
