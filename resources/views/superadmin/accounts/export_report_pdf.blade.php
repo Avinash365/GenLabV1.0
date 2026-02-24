@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <title>Marketing Export</title>
     <style>
-        body { font-family: DejaVu Sans, sans-serif; font-size:12px }
+        body { font-family: DejaVu Sans, sans-serif; font-size:11px }
         table { width:100%; border-collapse: collapse; }
         th, td { border:1px solid #ddd; padding:6px; text-align:left }
         th { background:#f4f4f4 }
@@ -12,6 +12,7 @@
 </head>
 <body>
     <h3>Marketing Export</h3>
+    <div style="font-size:11px;margin-bottom:6px;color:#333">Generated on: {{ now()->format('d M Y H:i') }}</div>
     @if(!empty($filters) && is_array($filters))
         <div style="margin-bottom:8px;font-size:12px">
             <strong>Applied filters:</strong>

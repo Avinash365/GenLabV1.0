@@ -99,6 +99,14 @@
             </tr>
             @endforeach
         </tbody>
+        <tfoot>
+            <tr>
+                <td colspan="5" class="text-right"><strong>Totals</strong></td>
+                <td class="text-right"><strong>{{ number_format((float) $invoices->sum('gst_amount'), 2) }}</strong></td>
+                <td class="text-right"><strong>{{ number_format((float) $invoices->sum('total_amount'), 2) }}</strong></td>
+                <td colspan="2"></td>
+            </tr>
+        </tfoot>
     </table>
 </body>
 </html>

@@ -83,7 +83,7 @@ class ExportReportController extends Controller
             'filters' => $filters,
             'totalAmount' => $totalAmount,
         ])->setPaper('a4', 'landscape');
-        $filename = 'marketing_export_' . now()->format('Ymd_His') . '.pdf';
+        $filename = $this->buildExportFilename($request, 'pdf');
         return $pdf->download($filename);
     }
 
@@ -94,7 +94,7 @@ class ExportReportController extends Controller
         $filters = $this->gatherFilters($request);
         $totalAmount = $rows->sum(function($r){ return isset($r->amount) ? floatval($r->amount) : 0; });
 
-        $filename = 'marketing_export_' . now()->format('Ymd_His') . '.csv';
+        $filename = $this->buildExportFilename($request, 'csv');
         $headers = [
             'Content-Type' => 'text/csv',
             'Content-Disposition' => "attachment; filename=\"{$filename}\"",
@@ -172,6 +172,37 @@ class ExportReportController extends Controller
         };
 
         return new StreamedResponse($callback, 200, $headers);
+    }
+
+    /**
+     * Build a friendly export filename: "{Marketing Name} report {Mon} {Year}.{ext}"
+     */
+    protected function buildExportFilename(Request $request, $ext = 'pdf')
+    {
+        $marketing = $request->query('marketing');
+        $month = $request->query('month') ?: now()->month;
+        $year = $request->query('year') ?: now()->year;
+
+        $marketingLabel = 'All';
+        if ($marketing) {
+            $user = User::where('user_code', $marketing)->first();
+            $marketingLabel = $user ? $user->name : $marketing;
+        }
+
+        // month name (shorten to Jan, Feb etc)
+        try {
+            $monthName = \Carbon\Carbon::create()->month((int)$month)->format('M');
+        } catch (\Exception $e) {
+            $monthName = (string)$month;
+        }
+
+        $label = sprintf('%s report %s %s', $marketingLabel, $monthName, $year);
+
+        // sanitize for filename: replace problematic chars and collapse spaces
+        $safe = preg_replace('/[^A-Za-z0-9 _-]/', '', $label);
+        $safe = preg_replace('/\s+/', '_', trim($safe));
+
+        return $safe . '.' . ltrim($ext, '.');
     }
 
     protected function gatherFilters(Request $request)
