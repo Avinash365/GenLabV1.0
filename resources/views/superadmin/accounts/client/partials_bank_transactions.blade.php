@@ -9,7 +9,8 @@
                     <th>Remarks</th>
                     <th>Deposit</th>
                     <th>Withdrawal</th>
-                    <th>Closing Balance</th>
+                    <!-- <th>Closing Balance</th> -->
+                     <th>Invoice(s)</th>
                     <th>Note</th>
                 </tr>
             </thead>
@@ -48,10 +49,21 @@
                                 -
                             @endif
                         </td>
-
+                        <td>
+                            @if(!empty($txn->invoices) && count($txn->invoices) > 0)
+                                @foreach($txn->invoices as $invoice)
+                                    <span class="badge bg-info me-1">
+                                        {{ $invoice->invoice_no ?? 'N/A' }}
+                                    </span>
+                                @endforeach
+                            @else
+                                <span class="text-muted">-</span>
+                            @endif
+                        </td>
+<!-- 
                         <td class="fw-bold">
                             ₹{{ number_format($txn->closing_balance ?? 0, 2) }}
-                        </td>
+                        </td> -->
 
                         <td>{{ $txn->note ?? '-' }}</td>
                     </tr>

@@ -423,15 +423,19 @@ class ClientLedgerController extends Controller
         ])->render();
     }
 
-     public function fetchAllBankTransaction(Request $request, $id)
+    public function fetchAllBankTransaction(Request $request, $id)
     {
         try {
+
             $client = Client::findOrFail($id);
 
-            $query = BankTransaction::whereHas('clients', function ($q) use ($id) {
+            // $query = BankTransaction::whereHas('clients', function ($q) use ($id) {
+            //     $q->where('client_id', $id);
+            // });
+             $query = BankTransaction::with('invoices') // USE RELATION
+                ->whereHas('clients', function ($q) use ($id) {
                 $q->where('client_id', $id);
             });
-
             // Optional filters
             if ($request->filled('year')) {
                 $query->whereYear('date', $request->year);
