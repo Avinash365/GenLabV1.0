@@ -15,6 +15,7 @@
                 <h1 class="mb-1">Welcome, {{ auth()->user()->name ?? 'Admin' }}</h1>
                
             </div>
+            
         </div>
 
         <!-- Invoice and Payment + Overall Info -->
@@ -66,29 +67,61 @@
                 <div class="d-flex flex-column gap-3 h-100">
                     <div class="card">
                         <div class="card-header d-flex align-items-center justify-content-between">
-                            <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> Overall Information</h6>
+                            <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> GST Overview</h6>
+                            <div class="gst-range-toggle btn-group" role="group" aria-label="GST Range">
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="30">1M</button>
+                                <!-- <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="90">3M</button> -->
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="180">6M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="365">1Y</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-gst-days="all">All</button>
+                            </div>
                         </div>
                         <div class="card-body">
                             <div class="row g-3">
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Suppliers</div>
-                                        <div class="fw-bold" id="statSuppliers">6987</div>
+                                        <div class="text-muted">Sales</div>
+                                        <div class="fw-bold" id="statSales">{{ number_format($salesGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Customer</div>
-                                        <div class="fw-bold" id="statCustomers">4896</div>
+                                        <div class="text-muted">Purchase</div>
+                                        <div class="fw-bold" id="statPurchase">{{ number_format($purchaseGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                                 <div class="col-4">
                                     <div class="text-center p-2 border rounded small">
-                                        <div class="text-muted">Orders</div>
-                                        <div class="fw-bold" id="statOrders">487</div>
+                                        <div class="text-muted">Total</div>
+                                        <div class="fw-bold" id="statTotal">{{ number_format($totalGst ?? 0, 2) }}</div>
                                     </div>
                                 </div>
                             </div>
+                            <script>
+                                document.addEventListener('DOMContentLoaded', function() {
+                                    const buttons = document.querySelectorAll('.gst-range-toggle [data-gst-days]');
+                                    buttons.forEach(btn => {
+                                        btn.addEventListener('click', async function() {
+                                            // Update active state
+                                            buttons.forEach(b => b.classList.remove('active'));
+                                            this.classList.add('active');
+
+                                            const days = this.getAttribute('data-gst-days');
+                                            try {
+                                                const response = await fetch(`/superadmin/dashboard/gst-overview?days=${days}`);
+                                                if (response.ok) {
+                                                    const data = await response.json();
+                                                    document.getElementById('statSales').innerText = Number(data.salesGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                    document.getElementById('statPurchase').innerText = Number(data.purchaseGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                    document.getElementById('statTotal').innerText = Number(data.totalGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
+                                                }
+                                            } catch (error) {
+                                                console.error('Error fetching GST overview:', error);
+                                            }
+                                        });
+                                    });
+                                });
+                            </script>
                         </div>
                     </div>
 
@@ -123,34 +156,214 @@
 
         <!-- Booking Trend & Department -->
         <div class="row g-3 mb-4">
+
             <div class="col-xl-8">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Booking Trend</h6>
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Marketing Persons (Bookings and Revenue)</h6>
                         <div class="d-flex align-items-center gap-2">
                             <div class="booking-range-toggle btn-group" role="group" aria-label="Booking Range">
-                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="30">30D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="90">90D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="all">All</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="1M">1M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="3M">3M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="6M">6M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="1Y">1Y</button>
                             </div>
-                         </div>
+                        </div>
                     </div>
                     <div class="card-body">
-                        <div class="chart-container" style="height: 280px;">
-                            <canvas id="bookingTrend"></canvas>
+                        <div class="chart-container" style="height:240px;">
+                            <canvas id="bookingsMarketingBar"></canvas>
                         </div>
+
+                        <script>
+                        @php
+                            $__bookingsByDeptFallback = [
+                                'GENERAL' => ['total' => 10000, 'amount' => 1000000],
+                                'UTTRAKHAND' => ['total' => 8000, 'amount' => 800000],
+                                'NBCC' => ['total' => 2000, 'amount' => 200000],
+                                'BIS' => ['total' => 2500, 'amount' => 250000],
+                            ];
+                        @endphp
+                        window.__initialBookingsByMarketing = {!! json_encode($bookingsByMarketing ?? $__bookingsByDeptFallback) !!};
+
+                        (function renderBookingsDeptChart(){
+                            function normalizeDaysToken(token){
+                                if(!token) return '30';
+                                token = String(token).toUpperCase();
+                                if(token === 'ALL') return 'all';
+                                const map = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 };
+                                return map[token] ?? token;
+                            }
+
+                            async function fetchDept(daysToken){
+                                try{
+                                    const days = normalizeDaysToken(daysToken);
+                                    const url = '/superadmin/dashboard/bookings-by-marketing?days=' + encodeURIComponent(days);
+                                    const r = await fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
+                                    if(!r.ok) return null;
+                                    return await r.json();
+                                } catch(e){ return null; }
+                            }
+
+                            function drawFromRaw(raw){
+                                if(typeof Chart === 'undefined'){
+                                    return setTimeout(()=> drawFromRaw(raw), 50);
+                                }
+
+                                const rawObj = raw || {};
+                                const labels = [];
+                                const counts = [];
+                                const amounts = [];
+
+                                if(Array.isArray(rawObj)){
+                                    rawObj.forEach(item => {
+                                        if(item && typeof item === 'object'){
+                                            const label = item.label ?? Object.keys(item)[0];
+                                            labels.push(label);
+                                            counts.push(Number(item.total ?? item.value ?? 0));
+                                            amounts.push(Number(item.amount ?? 0));
+                                        }
+                                    });
+                                } else if(rawObj && typeof rawObj === 'object'){
+                                    for(const k in rawObj){
+                                        if(Object.prototype.hasOwnProperty.call(rawObj, k)){
+                                            labels.push(k);
+                                            const v = rawObj[k];
+                                            if(typeof v === 'object'){
+                                                counts.push(Number(v.total || 0));
+                                                amounts.push(Number(v.amount || 0));
+                                            } else {
+                                                counts.push(Number(v || 0));
+                                                amounts.push(0);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                // sort entries by amount (desc) so highest booking amount appears first
+                                const combined = labels.map((lab, i) => ({ label: lab, count: counts[i] || 0, amount: amounts[i] || 0 }));
+                                combined.sort((a, b) => {
+                                    if (b.amount !== a.amount) return b.amount - a.amount;
+                                    return b.count - a.count;
+                                });
+                                const finalLabels = combined.map(c => c.label);
+                                const finalCounts = combined.map(c => c.count);
+                                const finalAmounts = combined.map(c => c.amount);
+
+                                const ctx = document.getElementById('bookingsMarketingBar').getContext('2d');
+                                function formatCurrencyCompact(v){
+                                    v = Number(v || 0);
+                                    if(isNaN(v)) return v;
+                                    // Crores (1 Cr = 1e7), Lakhs (1 L = 1e5), Thousands
+                                    if (v >= 10000000) return '₹ ' + (v/10000000).toFixed(1).replace(/\.0$/,'') + 'Cr';
+                                    if (v >= 100000) return '₹ ' + (v/100000).toFixed(1).replace(/\.0$/,'') + 'L';
+                                    if (v >= 1000) return '₹ ' + (v/1000).toFixed(1).replace(/\.0$/,'') + 'K';
+                                    return '₹ ' + v.toLocaleString();
+                                }
+
+                                // destroy previous instance for this chart if present
+                                if(window.__bookingsMarketingChart){ window.__bookingsMarketingChart.destroy(); }
+
+                                window.__bookingsMarketingChart = new Chart(ctx, {
+                                    type: 'bar',
+                                    data: {
+                                        labels: finalLabels,
+                                        datasets: [
+                                            {
+                                                label: 'Bookings',
+                                                data: finalCounts,
+                                                backgroundColor: '#1f77b4',
+                                                borderRadius: 4,
+                                                barThickness: 22,
+                                                yAxisID: 'y'
+                                            },
+                                            {
+                                                label: 'Amount (₹)',
+                                                data: finalAmounts,
+                                                backgroundColor: '#ff7f0e',
+                                                borderRadius: 4,
+                                                barThickness: 22,
+                                                yAxisID: 'y1'
+                                            }
+                                        ]
+                                    },
+                                    options: {
+                                        responsive: true,
+                                        maintainAspectRatio: false,
+                                        scales: {
+                                            x: { grid: { display: false } },
+                                            y: { beginAtZero: true, position: 'left', title: { display: true, text: 'Bookings' }, ticks: { maxTicksLimit: 6 } },
+                                            y1: {
+                                                beginAtZero: true,
+                                                position: 'right',
+                                                grid: { display: false },
+                                                ticks: { callback: formatCurrencyCompact, maxTicksLimit: 6 },
+                                                title: { display: true, text: 'Amount (₹)' }
+                                            }
+                                        },
+                                        plugins: {
+                                            legend: { position: 'bottom' },
+                                            tooltip: {
+                                                callbacks: {
+                                                    label: function(ctx){
+                                                        const v = ctx.raw || 0;
+                                                        if(ctx.dataset && /Amount/i.test(ctx.dataset.label || '')){
+                                                            return ctx.dataset.label + ': ' + formatCurrencyCompact(v);
+                                                        }
+                                                        return ctx.dataset.label + ': ' + Number(v).toLocaleString();
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+
+                                // initial draw: prefer fresh 'all' data from API, fallback to server snapshot
+                                (async function(){
+                                    const p = await fetchDept('1M');
+                                    if(p && p.data){
+                                        drawFromRaw(p.data);
+                                    } else {
+                                        drawFromRaw(window.__initialBookingsByMarketing);
+                                    }
+                                })();
+
+                                // attach toggles scoped to this card (booking-range-toggle controls)
+                                (function(){
+                                    const cardEl = document.currentScript?.closest('.card') || document;
+                                    const buttons = cardEl.querySelectorAll('.booking-range-toggle [data-days]');
+                                    buttons.forEach(btn=>{
+                                        btn.addEventListener('click', async function(){
+                                            cardEl.querySelectorAll('.booking-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+                                            this.classList.add('active');
+                                            const days = this.getAttribute('data-days') || '1M';
+                                            const payload = await fetchDept(days);
+                                            if(payload && payload.data){
+                                                drawFromRaw(payload.data);
+                                            } else {
+                                                drawFromRaw(window.__initialBookingsByMarketing);
+                                            }
+                                        });
+                                    });
+                                })();
+                        })();
+                        </script>
+
                     </div>
                 </div>
             </div>
+ 
             <div class="col-xl-4">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-chart-bar"></i>Letters by Department</h6>
                         <div class="d-flex align-items-center gap-2">
                             <div class="dept-range-toggle btn-group" role="group" aria-label="Dept Range">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="30">30D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="90">90D</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="all">All</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="1M">1M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="3M">3M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="6M">6M</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="1Y">1Y</button>
                             </div>
                          </div>
                     </div>
@@ -171,8 +384,17 @@
                         window.__initialBookingsByDepartment = {!! json_encode($bookingsByDepartment ?? $__bookingsByDeptFallback) !!};
 
                         (function renderBookingsDeptChart(){
-                            async function fetchDept(days){
+                            function normalizeDaysToken(token){
+                                if(!token) return '30';
+                                token = String(token).toUpperCase();
+                                if(token === 'ALL') return 'all';
+                                const map = { '1M': 30, '3M': 90, '6M': 180, '1Y': 365 };
+                                return map[token] ?? token;
+                            }
+
+                            async function fetchDept(daysToken){
                                 try{
+                                    const days = normalizeDaysToken(daysToken);
                                     const url = '/superadmin/dashboard/bookings-by-department?days=' + encodeURIComponent(days);
                                     const r = await fetch(url, { headers: { 'Accept': 'application/json' }, cache: 'no-store' });
                                     if(!r.ok) return null;
@@ -286,28 +508,31 @@
 
                             // initial draw: prefer fresh 'all' data from API, fallback to server snapshot
                             (async function(){
-                                const p = await fetchDept('all');
+                                const p = await fetchDept('1M');
                                 if(p && p.data){
                                     drawFromRaw(p.data);
                                 } else {
                                     drawFromRaw(window.__initialBookingsByDepartment);
                                 }
                             })();
-
-                            // attach toggles
-                            document.querySelectorAll('.dept-range-toggle [data-days]').forEach(btn=>{
-                                btn.addEventListener('click', async function(){
-                                    document.querySelectorAll('.dept-range-toggle .btn').forEach(b=>b.classList.remove('active'));
-                                    this.classList.add('active');
-                                    const days = this.getAttribute('data-days') || '30';
-                                    const payload = await fetchDept(days);
-                                    if(payload && payload.data){
-                                        drawFromRaw(payload.data);
-                                    } else {
-                                        drawFromRaw(window.__initialBookingsByDepartment);
-                                    }
+                            // attach toggles scoped to this card (dept-range-toggle controls)
+                            (function(){
+                                const cardEl = document.currentScript?.closest('.card') || document;
+                                const buttons = cardEl.querySelectorAll('.dept-range-toggle [data-days]');
+                                buttons.forEach(btn=>{
+                                    btn.addEventListener('click', async function(){
+                                        cardEl.querySelectorAll('.dept-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+                                        this.classList.add('active');
+                                        const days = this.getAttribute('data-days') || '1M';
+                                        const payload = await fetchDept(days);
+                                        if(payload && payload.data){
+                                            drawFromRaw(payload.data);
+                                        } else {
+                                            drawFromRaw(window.__initialBookingsByDepartment);
+                                        }
+                                    });
                                 });
-                            });
+                            })();
                         })();
                         </script>
 
@@ -322,12 +547,18 @@
             <div class="col-xl-8">
                 <div class="card h-100">
                     <div class="card-header d-flex align-items-center justify-content-between">
-                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-truck-delivery"></i> Report Dispatch</h6>
-                        <div class="small text-muted">This week</div>
+                        <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-calendar"></i> Booking Trend</h6>
+                        <div class="d-flex align-items-center gap-2">
+                            <div class="booking-range-toggle btn-group" role="group" aria-label="Booking Range">
+                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-days="30">30D</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="90">90D</button>
+                                <button type="button" class="btn btn-sm btn-outline-secondary" data-days="all">All</button>
+                            </div>
+                         </div>
                     </div>
                     <div class="card-body">
-                        <div class="chart-container" style="height: 260px;">
-                            <canvas id="dispatchBar"></canvas>
+                        <div class="chart-container" style="height: 280px;">
+                            <canvas id="bookingTrend"></canvas>
                         </div>
                     </div>
                 </div>
@@ -373,9 +604,10 @@
                     <div class="card-header d-flex align-items-center justify-content-between">
                         <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-flask"></i> Lab Analysts - Workload</h6>
                         <div class="workload-range-toggle btn-group" role="group" aria-label="Workload Range">
-                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="30">30D</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="90">90D</button>
-                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="all">All</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary active" data-range="1M">1M</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="3M">3M</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="6M">6M</button>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" data-range="1Y">1Y</button>
                         </div>
                     </div>
                     <div class="card-body">
@@ -390,9 +622,13 @@
                         window.analystWorkloadAll = @json($analystWorkloadAll ?? []);
                         window.analystWorkload30 = @json($analystWorkload30 ?? []);
                         window.analystWorkload90 = @json($analystWorkload90 ?? []);
+                        window.analystWorkload180 = @json($analystWorkload180 ?? []);
+                        window.analystWorkload365 = @json($analystWorkload365 ?? []);
                         window.overdueAll = @json($overdueAll ?? 0);
                         window.overdue30 = @json($overdue30 ?? 0);
                         window.overdue90 = @json($overdue90 ?? 0);
+                        window.overdue180 = @json($overdue180 ?? 0);
+                        window.overdue365 = @json($overdue365 ?? 0);
                         (function renderAnalystWorkload(){
                             function normalize(raw){
                                 if(!Array.isArray(raw)) return [];
@@ -409,12 +645,25 @@
                                 };
                             }
 
+                            function normalizeRangeToken(token){
+                                token = String(token || '').toUpperCase();
+                                const map = { '1M': '30', '3M': '90', '6M': '180', '1Y': '365' };
+                                if (map[token]) return map[token];
+                                if (token === 'ALL') return 'all';
+                                return token;
+                            }
+
                             function draw(rangeKey){
+                                const key = normalizeRangeToken(rangeKey);
                                 const raw = {
                                     '30': window.analystWorkload30 || [],
                                     '90': window.analystWorkload90 || [],
+                                    '180': window.analystWorkload180 || [],
+                                    '365': window.analystWorkload365 || [],
                                     'all': window.analystWorkloadAll || []
-                                }[String(rangeKey)];
+                                }[String(key)];
+
+                                console.debug('AnalystWorkload.draw', { rangeKey, key, rawCount: (raw && raw.length) || 0, sample: (raw && raw.slice ? raw.slice(0,3) : raw) });
 
                                 const normalized = normalize(raw);
                                 const data = buildChartData(normalized);
@@ -473,30 +722,39 @@
                                 });
                             }
 
-                                // initial draw (30D active by default)
+                                // initial draw (1M active by default)
                             function updateOverdueDisplay(rangeKey){
+                                const key = normalizeRangeToken(rangeKey);
                                 const val = {
                                     '30': window.overdue30 || 0,
                                     '90': window.overdue90 || 0,
+                                    '180': window.overdue180 || 0,
+                                    '365': window.overdue365 || 0,
                                     'all': window.overdueAll || 0,
-                                }[String(rangeKey)];
+                                }[String(key)];
                                 const el = document.getElementById('analystOverdueCount');
                                 if(el) el.textContent = Number(val).toLocaleString();
                             }
 
-                            draw('30');
-                            updateOverdueDisplay('30');
+                            draw('1M');
+                            updateOverdueDisplay('1M');
 
-                            // wire up toggle buttons
-                            document.querySelectorAll('.workload-range-toggle [data-range]').forEach(btn=>{
-                                btn.addEventListener('click', function(e){
-                                    document.querySelectorAll('.workload-range-toggle .btn').forEach(b=>b.classList.remove('active'));
-                                    this.classList.add('active');
-                                    const r = this.getAttribute('data-range') || '30';
-                                    draw(r === 'all' ? 'all' : String(r));
-                                    updateOverdueDisplay(r === 'all' ? 'all' : String(r));
+                            // wire up toggle buttons (scoped to card)
+                            (function(){
+                                const cardEl = document.currentScript?.closest('.card') || document;
+                                const btns = cardEl.querySelectorAll('.workload-range-toggle [data-range]');
+                                btns.forEach(btn=>{
+                                    btn.addEventListener('click', function(e){
+                                        cardEl.querySelectorAll('.workload-range-toggle .btn').forEach(b=>b.classList.remove('active'));
+                                        this.classList.add('active');
+                                        const r = this.getAttribute('data-range') || '1M';
+                                        const mapped = normalizeRangeToken(r);
+                                        console.debug('AnalystWorkload.click', { r, mapped });
+                                        draw(mapped === 'all' ? 'all' : String(r));
+                                        updateOverdueDisplay(mapped === 'all' ? 'all' : String(r));
+                                    });
                                 });
-                            });
+                            })();
                         })();
                         </script>
                     </div>
@@ -522,159 +780,10 @@
             </div>
         </div>
         <!-- /Analyst Workload & Status -->
-
-        <div class="row">
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card bg-primary sale-widget flex-fill">
-                    <div class="card-body d-flex align-items-center">
-                        <span class="employee-icon bg-white text-primary p-2 rounded-circle d-inline-flex align-items-center justify-content-center">
-                            <i class="fas fa-users fs-24"></i>
-                        </span>
-                        <div class="ms-2">
-                            <p class="text-white mb-1">Total Users</p>
-                            <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                                <h4 class="text-white">48,988,078</h4>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card bg-secondary sale-widget flex-fill">
-    <div class="card-body d-flex align-items-center">
-        <span class="student-icon bg-white text-secondary p-2 rounded-circle d-inline-flex align-items-center justify-content-center">
-            <i class="ti ti-school fs-24"></i>
-        </span>
-        <div class="ms-2">
-            <p class="text-white mb-1">Total Invoice</p>
-            <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                <h4 class="text-white">16,478,145</h4>
-            </div>
-        </div>
-    </div>
-</div>
-            </div>
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card bg-teal sale-widget flex-fill">
-                    <div class="card-body d-flex align-items-center">
-                        <span class="sale-icon bg-white text-teal">
-                            <i class="ti ti-gift fs-24"></i>
-                        </span>
-                        <div class="ms-2">
-                            <p class="text-white mb-1">Letters</p>
-                            <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                                <h4 class="text-white">24,145,789</h4>
-                                
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card bg-info sale-widget flex-fill">
-    <div class="card-body d-flex align-items-center">
-        <span class="teacher-icon bg-white text-info p-2 rounded-circle d-inline-flex align-items-center justify-content-center">
-            <i class="ti ti-chalkboard fs-24"></i>
-        </span>
-        <div class="ms-2">
-            <p class="text-white mb-1">Total Bookings</p>
-            <div class="d-inline-flex align-items-center flex-wrap gap-2">
-                <h4 class="text-white">18,458,747</h4>
-            </div>
-        </div>
-    </div>
-</div>
-
-            </div>
-        </div>
-
-
+ 
         <div class="row">
 
-            <!-- Profit -->
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card revenue-widget flex-fill">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                            <div>
-                                <h4 class="mb-1">798</h4>
-                                <p>Active </p>
-                            </div>
-                            <span class="revenue-icon bg-cyan-transparent text-cyan">
-                                <i class="fa-solid fa-layer-group fs-16"></i>
-                            </span>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <p class="mb-0"><span class="fs-13 fw-bold text-success">Last 30 Days</span> </p>
-                            <a href="profit-and-loss.html" class="text-decoration-underline fs-13 fw-medium">View All</a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- /Profit -->
-
-            <!-- Invoice -->
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card revenue-widget flex-fill">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                            <div>
-                                <h4 class="mb-1">48,988,78</h4>
-                                <p>Paid</p>
-                            </div>
-                            <span class="revenue-icon bg-teal-transparent text-teal">
-                                <i class="ti ti-chart-pie fs-16"></i>
-                            </span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- /Invoice -->
-
-            <!-- Expenses -->
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card revenue-widget flex-fill">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                            <div>
-                                <h4 class="mb-1">8,980,097</h4>
-                                <p>Genreted</p>
-                            </div>
-                            <span class="revenue-icon bg-orange-transparent text-orange">
-                                <i class="ti ti-lifebuoy fs-16"></i>
-                            </span>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <p class="mb-0"><span class="fs-13 fw-bold text-success"></span> Total Amount</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- /Expenses -->
-
-            <!-- Returns -->
-            <div class="col-xl-3 col-sm-6 col-12 d-flex">
-                <div class="card revenue-widget flex-fill">
-                    <div class="card-body">
-                        <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
-                            <div>
-                                <h4 class="mb-1">78,458,798</h4>
-                                <p>Genreted</p>
-                            </div>
-                            <span class="revenue-icon bg-indigo-transparent text-indigo">
-                                <i class="ti ti-hash fs-16"></i>
-                            </span>
-                        </div>
-                        <div class="d-flex align-items-center justify-content-between">
-                            <p class="mb-0"><span class="fs-13 fw-bold text-danger"></span> Total Amount</p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <!-- /Returns -->
-
-        </div>
+             
 
     </div>
     @include('components.chatbot')
@@ -684,3 +793,4 @@
     <script src="{{ asset('js/superadmin-dashboard.js') }}?v={{ @filemtime(public_path('js/superadmin-dashboard.js')) ?: time() }}" defer></script>
     <script src="{{ asset('js/chatbot.js') }}?v={{ @filemtime(public_path('js/chatbot.js')) ?: time() }}"></script>
 @endsection
+
