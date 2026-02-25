@@ -11,11 +11,23 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('whatsapp_settings', function (Blueprint $table) {
-            $table->string('hold_template_name')->nullable();
-            $table->string('report_template_name')->nullable();
-            $table->string('dispatch_template_name')->nullable();
-        });
+        if (!Schema::hasColumn('whatsapp_settings', 'hold_template_name')) {
+            Schema::table('whatsapp_settings', function (Blueprint $table) {
+                $table->string('hold_template_name')->nullable();
+            });
+        }
+
+        if (!Schema::hasColumn('whatsapp_settings', 'report_template_name')) {
+            Schema::table('whatsapp_settings', function (Blueprint $table) {
+                $table->string('report_template_name')->nullable();
+            });
+        }
+
+        if (!Schema::hasColumn('whatsapp_settings', 'dispatch_template_name')) {
+            Schema::table('whatsapp_settings', function (Blueprint $table) {
+                $table->string('dispatch_template_name')->nullable();
+            });
+        }
     }
 
     /**
@@ -23,8 +35,25 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('whatsapp_settings', function (Blueprint $table) {
-            $table->dropColumn(['hold_template_name', 'report_template_name', 'dispatch_template_name']);
-        });
+        if (Schema::hasColumn('whatsapp_settings', 'hold_template_name') ||
+            Schema::hasColumn('whatsapp_settings', 'report_template_name') ||
+            Schema::hasColumn('whatsapp_settings', 'dispatch_template_name')) {
+            Schema::table('whatsapp_settings', function (Blueprint $table) {
+                $cols = [];
+                if (Schema::hasColumn('whatsapp_settings', 'hold_template_name')) {
+                    $cols[] = 'hold_template_name';
+                }
+                if (Schema::hasColumn('whatsapp_settings', 'report_template_name')) {
+                    $cols[] = 'report_template_name';
+                }
+                if (Schema::hasColumn('whatsapp_settings', 'dispatch_template_name')) {
+                    $cols[] = 'dispatch_template_name';
+                }
+
+                if (!empty($cols)) {
+                    $table->dropColumn($cols);
+                }
+            });
+        }
     }
 };
