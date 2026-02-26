@@ -2790,50 +2790,53 @@ class DashboardController extends Controller
 
     public function gstOverview(Request $request)
     {
+        // Support new ?month=YYYY-MM (preferred) or legacy ?days=N / ?days=all
+        $monthParam = (string) $request->query('month', '');
         $daysParam = $request->query('days', null);
-        $monthParam = $request->query('month', null);
 
-        // cache key should reflect month or days
-        $cacheKey = 'dashboard:gst:' . ($monthParam ? 'm:' . $monthParam : ($daysParam ? 'd:' . $daysParam : 'd:30'));
+        $start = null;
+        $end = null;
+        if ($monthParam) {
+            if (is_string($monthParam) && strtolower($monthParam) === 'all') {
+                $start = null;
+                $end = null;
+                $cacheKey = 'dashboard:gst:all';
+            } else {
+                try {
+                    $m = Carbon::createFromFormat('Y-m', $monthParam);
+                    $start = $m->copy()->startOfMonth()->startOfDay();
+                    $end = $m->copy()->endOfMonth()->endOfDay();
+                    $cacheKey = 'dashboard:gst:month:' . $monthParam;
+                } catch (\Throwable $e) {
+                    // invalid month format, fall back to 30 days
+                    $start = Carbon::now()->subDays(30)->startOfDay();
+                    $end = Carbon::now()->endOfDay();
+                    $cacheKey = 'dashboard:gst:days:30';
+                }
+            }
+        } else {
+            $daysParam = $daysParam ?? '30';
+            if (is_string($daysParam) && strtolower($daysParam) === 'all') {
+                $start = null; // no date filter
+                $end = null;
+                $cacheKey = 'dashboard:gst:all';
+            } else {
+                $days = (int) $daysParam;
+                $days = max(1, $days);
+                $start = Carbon::now()->subDays($days)->startOfDay();
+                $end = Carbon::now()->endOfDay();
+                $cacheKey = 'dashboard:gst:days:' . $days;
+            }
+        }
 
-        $data = Cache::remember($cacheKey, 300, function() use ($daysParam, $monthParam) {
+        $data = Cache::remember($cacheKey, 300, function() use ($start, $end) {
             $querySales = \App\Models\Invoice::query();
             $queryPurchase = \App\Models\PurchaseBill::query();
 
-            // if month param provided
-            if ($monthParam) {
-                // 'all' => no date filter (show whole data)
-                if (strtoupper($monthParam) === 'ALL') {
-                    // no where clauses
-                } else {
-                    try {
-                        $dt = Carbon::createFromFormat('Y-m', $monthParam);
-                        $startDate = $dt->startOfMonth();
-                        $endDate = $dt->endOfMonth();
-
-                        $querySales->whereBetween('invoice_date', [$startDate, $endDate]);
-                        $queryPurchase->whereBetween('purchase_date', [$startDate, $endDate]);
-                    } catch (\Exception $e) {
-                        // fallback to days behaviour if parse fails
-                        $daysToken = $daysParam ?? '30';
-                        if (strtoupper($daysToken) !== 'ALL') {
-                            $days = (int)$daysToken;
-                            $startDate = Carbon::now()->subDays($days)->startOfDay();
-                            $querySales->where('invoice_date', '>=', $startDate);
-                            $queryPurchase->where('purchase_date', '>=', $startDate);
-                        }
-                    }
-                }
-
-            // otherwise use days param (or default)
-            } else {
-                $daysToken = $daysParam ?? '30';
-                if (strtoupper($daysToken) !== 'ALL') {
-                    $days = (int)$daysToken;
-                    $startDate = Carbon::now()->subDays($days)->startOfDay();
-                    $querySales->where('invoice_date', '>=', $startDate);
-                    $queryPurchase->where('purchase_date', '>=', $startDate);
-                }
+            // Apply date filters when start/end are provided
+            if ($start && $end) {
+                $querySales->whereBetween('invoice_date', [$start, $end]);
+                $queryPurchase->whereBetween('purchase_date', [$start, $end]);
             }
 
             $salesGst = (float) $querySales->sum('gst_amount');

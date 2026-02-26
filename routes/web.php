@@ -12,7 +12,7 @@ use App\Http\Controllers\SuperAdmin\WhatsappSettingController;
 use App\Http\Controllers\SuperAdmin\ReportingLettersController;
 use App\Http\Controllers\SuperAdmin\HoldCancelController;
 use App\Http\Controllers\Superadmin\LabAnalystsController;
- use App\Http\Controllers\Superadmin\ProfileController;
+use App\Http\Controllers\Superadmin\ProfileController;
 use App\Http\Controllers\Accounts\MarketingExpenseController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\Api\Attendance\EsslAdmsController;
