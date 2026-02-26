@@ -2790,27 +2790,56 @@ class DashboardController extends Controller
 
     public function gstOverview(Request $request)
     {
-        $daysParam = $request->query('days', '30'); 
-        
-        $cacheKey = 'dashboard:gst:' . $daysParam;
-        
-        $data = Cache::remember($cacheKey, 300, function() use ($daysParam) {
+        $daysParam = $request->query('days', null);
+        $monthParam = $request->query('month', null);
+
+        // cache key should reflect month or days
+        $cacheKey = 'dashboard:gst:' . ($monthParam ? 'm:' . $monthParam : ($daysParam ? 'd:' . $daysParam : 'd:30'));
+
+        $data = Cache::remember($cacheKey, 300, function() use ($daysParam, $monthParam) {
             $querySales = \App\Models\Invoice::query();
             $queryPurchase = \App\Models\PurchaseBill::query();
 
-            // purchase_date, invoice_date
-            if (strtoupper($daysParam) !== 'ALL') {
-                $days = (int)$daysParam;
-                $startDate = Carbon::now()->subDays($days)->startOfDay();
-                
-                $querySales->where('invoice_date', '>=', $startDate);
-                $queryPurchase->where('purchase_date', '>=', $startDate);
+            // if month param provided
+            if ($monthParam) {
+                // 'all' => no date filter (show whole data)
+                if (strtoupper($monthParam) === 'ALL') {
+                    // no where clauses
+                } else {
+                    try {
+                        $dt = Carbon::createFromFormat('Y-m', $monthParam);
+                        $startDate = $dt->startOfMonth();
+                        $endDate = $dt->endOfMonth();
+
+                        $querySales->whereBetween('invoice_date', [$startDate, $endDate]);
+                        $queryPurchase->whereBetween('purchase_date', [$startDate, $endDate]);
+                    } catch (\Exception $e) {
+                        // fallback to days behaviour if parse fails
+                        $daysToken = $daysParam ?? '30';
+                        if (strtoupper($daysToken) !== 'ALL') {
+                            $days = (int)$daysToken;
+                            $startDate = Carbon::now()->subDays($days)->startOfDay();
+                            $querySales->where('invoice_date', '>=', $startDate);
+                            $queryPurchase->where('purchase_date', '>=', $startDate);
+                        }
+                    }
+                }
+
+            // otherwise use days param (or default)
+            } else {
+                $daysToken = $daysParam ?? '30';
+                if (strtoupper($daysToken) !== 'ALL') {
+                    $days = (int)$daysToken;
+                    $startDate = Carbon::now()->subDays($days)->startOfDay();
+                    $querySales->where('invoice_date', '>=', $startDate);
+                    $queryPurchase->where('purchase_date', '>=', $startDate);
+                }
             }
 
             $salesGst = (float) $querySales->sum('gst_amount');
             $purchaseGst = (float) $queryPurchase->sum('gst_amount');
             $totalGst = $salesGst - $purchaseGst;
-            
+
             return [
                 'salesGst' => $salesGst,
                 'purchaseGst' => $purchaseGst,
