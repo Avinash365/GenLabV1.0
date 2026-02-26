@@ -63,12 +63,10 @@
                     <div class="card">
                         <div class="card-header d-flex align-items-center justify-content-between">
                             <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> GST Overview</h6>
-                            <div class="gst-range-toggle btn-group" role="group" aria-label="GST Range">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="30">1M</button>
-                                <!-- <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="90">3M</button> -->
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="180">6M</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="365">1Y</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-gst-days="all">All</button>
+                            <div class="gst-range-toggle" role="group" aria-label="GST Month">
+                                <select id="gstMonthSelect" class="form-select form-select-sm" style="width:160px;">
+                                    <!-- options populated by JS -->
+                                </select>
                             </div>
                         </div>
                         <div class="card-body">
@@ -94,26 +92,48 @@
                             </div>
                             <script>
                                 document.addEventListener('DOMContentLoaded', function() {
-                                    const buttons = document.querySelectorAll('.gst-range-toggle [data-gst-days]');
-                                    buttons.forEach(btn => {
-                                        btn.addEventListener('click', async function() {
-                                            // Update active state
-                                            buttons.forEach(b => b.classList.remove('active'));
-                                            this.classList.add('active');
+                                    const container = document.querySelector('.gst-range-toggle');
+                                    const select = document.getElementById('gstMonthSelect');
 
-                                            const days = this.getAttribute('data-gst-days');
-                                            try {
-                                                const response = await fetch(`/superadmin/dashboard/gst-overview?days=${days}`);
-                                                if (response.ok) {
-                                                    const data = await response.json();
-                                                    document.getElementById('statSales').innerText = Number(data.salesGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                                    document.getElementById('statPurchase').innerText = Number(data.purchaseGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                                    document.getElementById('statTotal').innerText = Number(data.totalGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                                }
-                                            } catch (error) {
-                                                console.error('Error fetching GST overview:', error);
+                                    // populate last 12 months (current first) + 'All' option
+                                    const now = new Date();
+                                    for (let i = 0; i < 12; i++) {
+                                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                                        const monthVal = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                                        const opt = document.createElement('option');
+                                        opt.value = monthVal;
+                                        opt.text = d.toLocaleString(undefined, { month: 'short', year: 'numeric' });
+                                        select.appendChild(opt);
+                                    }
+                                    const optAll = document.createElement('option');
+                                    optAll.value = 'all';
+                                    optAll.text = 'All';
+                                    select.appendChild(optAll);
+
+                                    // default to current month
+                                    select.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+                                    async function fetchAndUpdate(month) {
+                                        try {
+                                            const url = '/superadmin/dashboard/gst-overview' + (month ? ('?month=' + encodeURIComponent(month)) : '');
+                                            const response = await fetch(url);
+                                            if (response.ok) {
+                                                const data = await response.json();
+                                                document.getElementById('statSales').innerText = Number(data.salesGst || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                document.getElementById('statPurchase').innerText = Number(data.purchaseGst || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                document.getElementById('statTotal').innerText = Number(data.totalGst || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                             }
-                                        });
+                                        } catch (error) {
+                                            console.error('Error fetching GST overview:', error);
+                                        }
+                                    }
+
+                                    // initial load for current month
+                                    fetchAndUpdate(select.value);
+
+                                    // react to user change
+                                    select.addEventListener('change', function() {
+                                        fetchAndUpdate(this.value);
                                     });
                                 });
                             </script>
