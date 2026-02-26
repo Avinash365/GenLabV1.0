@@ -37,12 +37,12 @@ class ExportReportController extends Controller
             });
         }
 
-        // Month / Year filtering (use booking.job_order_date by default)
+        // Month / Year filtering (use booking.created_at by default)
         if ($month = $request->query('month')) {
-            $query->whereMonth('job_order_date', $month);
+            $query->whereMonth('created_at', $month);
         }
         if ($year = $request->query('year')) {
-            $query->whereYear('job_order_date', $year);
+            $query->whereYear('created_at', $year);
         }
 
         // search across multiple fields
@@ -58,7 +58,7 @@ class ExportReportController extends Controller
         }
 
         $perPage = intval($request->query('perPage', 25));
-        $items = $query->orderByDesc('job_order_date')->paginate($perPage)->withQueryString();
+        $items = $query->orderByDesc('created_at')->paginate($perPage)->withQueryString();
 
         // Marketing persons list (role containing 'market')
         $marketingPersons = User::whereHas('role', function ($q) {
@@ -239,10 +239,10 @@ class ExportReportController extends Controller
         }
 
         if ($month = $request->query('month')) {
-            $query->whereMonth('job_order_date', $month);
+            $query->whereMonth('created_at', $month);
         }
         if ($year = $request->query('year')) {
-            $query->whereYear('job_order_date', $year);
+            $query->whereYear('created_at', $year);
         }
 
         if ($search = $request->query('search')) {
@@ -256,6 +256,6 @@ class ExportReportController extends Controller
             });
         }
 
-        return $query->orderByDesc('job_order_date');
+        return $query->orderByDesc('created_at');
     }
 }
