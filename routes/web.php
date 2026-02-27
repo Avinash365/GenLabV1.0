@@ -12,7 +12,7 @@ use App\Http\Controllers\SuperAdmin\WhatsappSettingController;
 use App\Http\Controllers\SuperAdmin\ReportingLettersController;
 use App\Http\Controllers\SuperAdmin\HoldCancelController;
 use App\Http\Controllers\Superadmin\LabAnalystsController;
- use App\Http\Controllers\Superadmin\ProfileController;
+use App\Http\Controllers\Superadmin\ProfileController;
 use App\Http\Controllers\Accounts\MarketingExpenseController;
 use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\Api\Attendance\EsslAdmsController;
@@ -150,7 +150,7 @@ Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 // Public List of Reports (View) - Explicit Route
 Route::get('/public/reports/view/{job}', [ReportingLettersController::class, 'viewReports'])
     ->where('job', '.*')
-    ->name('public.reports.index');
+    ->name('public.reports.view');
 
 // Public Report Download (No Auth) - Explicit Route
 Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersController::class, 'show'])
@@ -161,7 +161,7 @@ Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersControl
 // FIX: Catch-all for Malformed Meta URL prefixes (e.g. {{6}}public)
 // This must come AFTER the specific /public routes to act as a fallback/redirector
 Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
-    return redirect()->route('public.reports.index', ['job' => $job]);
+    return redirect()->route('public.reports.view', ['job' => $job]);
 })->where('prefix', '.*public')->where('job', '.*');
 
 
@@ -256,7 +256,7 @@ Route::middleware(['web','multi_auth:web,admin'])->prefix('superadmin')->name('s
 
 Route::get('/letters-tree', [BookingLetterController::class, 'getFolderTree']);
 //Route::get('/letters-explorer', [BookingLetterController::class, 'showLetters']);
-Route::get('/reports-explorer/{path?}', [BookingLetterController::class, 'showLetters'])->where('path', '.*')->name('public.reports.index');
+Route::get('/reports-explorer/{path?}', [BookingLetterController::class, 'showLetters'])->where('path', '.*')->name('public.reports.explorer');
 
 Route::get('/booking/{id}/letter', [BookingLetterController::class, 'viewLetter'])->name('booking.letter.view');
 

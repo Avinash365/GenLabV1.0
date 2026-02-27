@@ -68,12 +68,10 @@
                     <div class="card">
                         <div class="card-header d-flex align-items-center justify-content-between">
                             <h6 class="mb-0 d-flex align-items-center gap-2"><i class="ti ti-info-circle"></i> GST Overview</h6>
-                            <div class="gst-range-toggle btn-group" role="group" aria-label="GST Range">
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="30">1M</button>
-                                <!-- <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="90">3M</button> -->
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="180">6M</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary" data-gst-days="365">1Y</button>
-                                <button type="button" class="btn btn-sm btn-outline-secondary active" data-gst-days="all">All</button>
+                            <div class="gst-range-toggle" role="group" aria-label="GST Month">
+                                <select id="gstMonthSelect" class="form-select form-select-sm" style="width:160px;">
+                                    <!-- options populated by JS -->
+                                </select>
                             </div>
                         </div>
                         <div class="card-body">
@@ -99,26 +97,48 @@
                             </div>
                             <script>
                                 document.addEventListener('DOMContentLoaded', function() {
-                                    const buttons = document.querySelectorAll('.gst-range-toggle [data-gst-days]');
-                                    buttons.forEach(btn => {
-                                        btn.addEventListener('click', async function() {
-                                            // Update active state
-                                            buttons.forEach(b => b.classList.remove('active'));
-                                            this.classList.add('active');
+                                    const container = document.querySelector('.gst-range-toggle');
+                                    const select = document.getElementById('gstMonthSelect');
 
-                                            const days = this.getAttribute('data-gst-days');
-                                            try {
-                                                const response = await fetch(`/superadmin/dashboard/gst-overview?days=${days}`);
-                                                if (response.ok) {
-                                                    const data = await response.json();
-                                                    document.getElementById('statSales').innerText = Number(data.salesGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                                    document.getElementById('statPurchase').innerText = Number(data.purchaseGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                                    document.getElementById('statTotal').innerText = Number(data.totalGst || 0).toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2});
-                                                }
-                                            } catch (error) {
-                                                console.error('Error fetching GST overview:', error);
+                                    // populate last 12 months (current first) + 'All' option
+                                    const now = new Date();
+                                    for (let i = 0; i < 12; i++) {
+                                        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                                        const monthVal = d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0');
+                                        const opt = document.createElement('option');
+                                        opt.value = monthVal;
+                                        opt.text = d.toLocaleString(undefined, { month: 'short', year: 'numeric' });
+                                        select.appendChild(opt);
+                                    }
+                                    const optAll = document.createElement('option');
+                                    optAll.value = 'all';
+                                    optAll.text = 'All';
+                                    select.appendChild(optAll);
+
+                                    // default to current month
+                                    select.value = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+
+                                    async function fetchAndUpdate(month) {
+                                        try {
+                                            const url = '/superadmin/dashboard/gst-overview' + (month ? ('?month=' + encodeURIComponent(month)) : '');
+                                            const response = await fetch(url);
+                                            if (response.ok) {
+                                                const data = await response.json();
+                                                document.getElementById('statSales').innerText = Number(data.salesGst || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                document.getElementById('statPurchase').innerText = Number(data.purchaseGst || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                                                document.getElementById('statTotal').innerText = Number(data.totalGst || 0).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                                             }
-                                        });
+                                        } catch (error) {
+                                            console.error('Error fetching GST overview:', error);
+                                        }
+                                    }
+
+                                    // initial load for current month
+                                    fetchAndUpdate(select.value);
+
+                                    // react to user change
+                                    select.addEventListener('change', function() {
+                                        fetchAndUpdate(this.value);
                                     });
                                 });
                             </script>
@@ -630,18 +650,39 @@
                         window.overdue180 = @json($overdue180 ?? 0);
                         window.overdue365 = @json($overdue365 ?? 0);
                         (function renderAnalystWorkload(){
+                            // Wait for Chart.js to load before executing the widget logic
+                            if (typeof Chart === 'undefined'){
+                                const _waitId = setInterval(function(){
+                                    if (typeof Chart !== 'undefined'){
+                                        clearInterval(_waitId);
+                                        try{ renderAnalystWorkload(); }catch(e){ console.error('renderAnalystWorkload.retry.error', e); }
+                                    }
+                                }, 50);
+                                return;
+                            }
                             function normalize(raw){
                                 if(!Array.isArray(raw)) return [];
                                 return raw.map(r => ({ name: r.name ?? (r.code||'Unknown'), total: Number(r.count||0), overdue: Number(r.overdue||0) }));
                             }
 
                             function buildChartData(list){
-                                // sort by total desc
-                                list = list.slice().sort((a,b)=>b.total - a.total).slice(0, 12);
+                                if(!Array.isArray(list)) list = [];
+                                // filter out entries with no data, non-positive totals, or missing/unknown names
+                                const filtered = list.slice().filter(i => {
+                                    const t = Number(i.total || 0);
+                                    const ov = Number(i.overdue || 0);
+                                    const name = String(i.name || '').trim();
+                                    if(!name) return false;
+                                    if(name.toLowerCase() === 'unknown') return false;
+                                    return (t > 0) || (ov > 0);
+                                });
+                                // sort by total desc and keep top 12
+                                const top = filtered.sort((a,b)=>b.total - a.total).slice(0, 12);
+                                console.debug('AnalystWorkload.filtered', { original: list.length, filtered: filtered.length, names: filtered.map(x=>x.name).slice(0,20) });
                                 return {
-                                    labels: list.map(i=>i.name),
-                                    totals: list.map(i=>i.total),
-                                    overdue: list.map(i=>i.overdue)
+                                    labels: top.map(i=>i.name),
+                                    totals: top.map(i=>i.total),
+                                    overdue: top.map(i=>i.overdue)
                                 };
                             }
 
@@ -668,9 +709,22 @@
                                 const normalized = normalize(raw);
                                 const data = buildChartData(normalized);
 
-                                const ctx = document.getElementById('analystWorkloadChart').getContext('2d');
+                                const canvasEl = document.getElementById('analystWorkloadChart');
+                                const ctx = canvasEl.getContext('2d');
 
-                                if(window.__analystWorkloadChart){ window.__analystWorkloadChart.destroy(); }
+                                // robustly destroy any existing Chart instance tied to this canvas
+                                try {
+                                    if (window.__analystWorkloadChart){ window.__analystWorkloadChart.destroy(); window.__analystWorkloadChart = null; }
+                                    if (typeof Chart !== 'undefined' && Chart.getChart){
+                                        const existing = Chart.getChart(canvasEl);
+                                        if (existing) { existing.destroy(); }
+                                    } else if (window.Chart && window.Chart.instances){
+                                        // handle older Chart.js versions
+                                        Object.values(Chart.instances || {}).forEach(inst => {
+                                            try { if(inst && inst.canvas && inst.canvas.id === (canvasEl.id || '')) inst.destroy(); } catch(e){}
+                                        });
+                                    }
+                                } catch(e){ console.warn('Error while destroying existing analystWorkloadChart', e); }
 
                                 // prepare stacked data: overdue + remaining (so they appear in same bar)
                                 const overdueArr = data.overdue.map(v => Number(v || 0));
@@ -793,4 +847,3 @@
     <script src="{{ asset('js/superadmin-dashboard.js') }}?v={{ @filemtime(public_path('js/superadmin-dashboard.js')) ?: time() }}" defer></script>
     <script src="{{ asset('js/chatbot.js') }}?v={{ @filemtime(public_path('js/chatbot.js')) ?: time() }}"></script>
 @endsection
-
