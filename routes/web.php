@@ -103,18 +103,12 @@ Route::middleware(['web', 'multi_auth:web,admin'])
     Route::post('/marketing-hold-cancel/enquiry', [App\Http\Controllers\SuperAdmin\MarketingHoldCancelController::class, 'storeEnquiry'])->name('enquiry.store');
 });
 
-
 // Lab Analysts (protected)
 Route::prefix('superadmin')->name('superadmin.')->middleware(['web','auth'])->group(function(){
     Route::get('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render')->middleware('permission:lab-analysts.view');
     // Separate name for POST to avoid duplicate route name in cache
     Route::post('/lab-analysts/render', [LabAnalystsController::class, 'render'])->name('labanalysts.render.submit')->middleware('permission:lab-analysts.edit');
 });
-
-
- 
-
- 
 
 // Superadmin Profile (protected)
 Route::middleware(['web', 'auth:web,admin'])->prefix('superadmin')->as('superadmin.')->group(function(){
@@ -169,6 +163,7 @@ Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersControl
 Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
     return redirect()->route('public.reports.index', ['job' => $job]);
 })->where('prefix', '.*public')->where('job', '.*');
+
 
 Route::get('/{prefix}/reports/download/{job}/{filename}', function ($prefix, $job, $filename) {
     return redirect()->route('public.reports.download', ['job' => $job, 'filename' => $filename]);
@@ -266,7 +261,6 @@ Route::get('/reports-explorer/{path?}', [BookingLetterController::class, 'showLe
 Route::get('/booking/{id}/letter', [BookingLetterController::class, 'viewLetter'])->name('booking.letter.view');
 
 Route::get('/invoice-letters/{invoiceId}',[BookingLetterController::class, 'showInvoiceLetters'])->name('invoice.letters');
-
 
 
 
