@@ -245,7 +245,7 @@ class ReportingLettersController extends Controller
     //                 }
 
                     
-    //                 $indexRoute = route('public.reports.index', ['job' => $jobKey]);
+                    //                 $indexRoute = route('public.reports.view', ['job' => $jobKey]);
                     
                 
     //                 $letterRoute = route('booking.letter', ['id' => $booking->id]);
@@ -277,7 +277,7 @@ class ReportingLettersController extends Controller
                     
                    
                     
-    //                 $letterPath = route('public.reports.index', ['job' => $jobKey]); // Revert to index for safety first
+                    //                 $letterPath = route('public.reports.view', ['job' => $jobKey]); // Revert to index for safety first
                     
                     
     //                 $letterPath = $indexRoute; // Safety revert
@@ -379,7 +379,7 @@ class ReportingLettersController extends Controller
                     $letterSuffix = str_replace(' ', '%20', $letterSuffix);
                     
                     // Report Route
-                    $reportRoute = route('public.reports.index', [
+                    $reportRoute = route('public.reports.view', [
                         'path' => $jobKey
                     ]);
 
@@ -548,7 +548,7 @@ class ReportingLettersController extends Controller
                     $letterSuffix = str_replace(' ', '%20', $letterSuffix);
 
                     // Report Route
-                    $reportRoute = route('public.reports.index', [
+                    $reportRoute = route('public.reports.view', [
                         'path' => $jobKey
                     ]);
 

@@ -156,7 +156,7 @@ Route::post('/chatbot/query', [ChatbotController::class, 'query']);
 // Public List of Reports (View) - Explicit Route
 Route::get('/public/reports/view/{job}', [ReportingLettersController::class, 'viewReports'])
     ->where('job', '.*')
-    ->name('public.reports.index');
+    ->name('public.reports.view');
 
 // Public Report Download (No Auth) - Explicit Route
 Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersController::class, 'show'])
@@ -167,7 +167,7 @@ Route::get('/public/reports/download/{job}/{filename}', [ReportingLettersControl
 // FIX: Catch-all for Malformed Meta URL prefixes (e.g. {{6}}public)
 // This must come AFTER the specific /public routes to act as a fallback/redirector
 Route::get('/{prefix}/reports/view/{job}', function ($prefix, $job) {
-    return redirect()->route('public.reports.index', ['job' => $job]);
+    return redirect()->route('public.reports.view', ['job' => $job]);
 })->where('prefix', '.*public')->where('job', '.*');
 
 Route::get('/{prefix}/reports/download/{job}/{filename}', function ($prefix, $job, $filename) {
