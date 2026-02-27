@@ -703,9 +703,22 @@
                                 const normalized = normalize(raw);
                                 const data = buildChartData(normalized);
 
-                                const ctx = document.getElementById('analystWorkloadChart').getContext('2d');
+                                const canvasEl = document.getElementById('analystWorkloadChart');
+                                const ctx = canvasEl.getContext('2d');
 
-                                if(window.__analystWorkloadChart){ window.__analystWorkloadChart.destroy(); }
+                                // robustly destroy any existing Chart instance tied to this canvas
+                                try {
+                                    if (window.__analystWorkloadChart){ window.__analystWorkloadChart.destroy(); window.__analystWorkloadChart = null; }
+                                    if (typeof Chart !== 'undefined' && Chart.getChart){
+                                        const existing = Chart.getChart(canvasEl);
+                                        if (existing) { existing.destroy(); }
+                                    } else if (window.Chart && window.Chart.instances){
+                                        // handle older Chart.js versions
+                                        Object.values(Chart.instances || {}).forEach(inst => {
+                                            try { if(inst && inst.canvas && inst.canvas.id === (canvasEl.id || '')) inst.destroy(); } catch(e){}
+                                        });
+                                    }
+                                } catch(e){ console.warn('Error while destroying existing analystWorkloadChart', e); }
 
                                 // prepare stacked data: overdue + remaining (so they appear in same bar)
                                 const overdueArr = data.overdue.map(v => Number(v || 0));
