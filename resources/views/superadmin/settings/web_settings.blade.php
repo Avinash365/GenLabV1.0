@@ -185,15 +185,27 @@
 
                 <!-- Footer branding settings -->
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Footer Copyright</label>
                             <input type="text" name="footer_copyright" value="{{ old('footer_copyright', optional($setting)->footer_copyright) }}" class="form-control" placeholder="{{ date('Y') }} &amp;copy; Company Name. All Right Reserved">
                             <small class="text-muted d-block mt-1">Shown in the footer; may include year and company name.</small>
                         </div>
                     </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">Invoice Prefix</label>    
+                            <input type="text" name="invoice_prefix" value="{{ old('invoice_prefix', optional($setting)->invoice_prefix) }}" class="form-control" placeholder="ITLPL-">
+                            <small class="text-muted d-block mt-1">Prefix for generated invoices.</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">Invoice Start Number</label>    
+                            <input type="number" name="invoice_start_number" value="{{ old('invoice_start_number', optional($setting)->invoice_start_number ?? 1001) }}" class="form-control" placeholder="1001" min="1"  readonly>
+                            <small class="text-muted d-block mt-1">Starting number for invoices.</small>    
+                        </div>        
                 </div>
-
                 <div class="text-end">
                     <button type="button" id="reset_btn" class="btn btn-outline-secondary me-2">Reset</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>

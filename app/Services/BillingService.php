@@ -4,7 +4,7 @@ namespace App\Services;
 
 use Illuminate\Support\Facades\DB;
 use App\Models\PaymentSetting;
-
+use App\Models\SiteSetting;
 
 
 class BillingService
@@ -168,6 +168,11 @@ class BillingService
 
     public function generateInvoiceNo($prefix = 'ITLPL-', $start = 1001)
     {
+        
+        $siteSetting = SiteSetting::latest()->first(); 
+        $prefix = $siteSetting->invoice_prefix ?? 'ITLPL-'; // fallback if null
+        $start = $siteSetting->invoice_start_number ?? 1001; // fallback if null     
+        
         // Get the last invoice record
         $lastInvoice = \DB::table('invoices')
             ->where('invoice_no', 'like', $prefix . '%')
@@ -187,7 +192,6 @@ class BillingService
         } else {
             $nextNumber = $start;
         }
-
         return $prefix . $nextNumber;
     }
 

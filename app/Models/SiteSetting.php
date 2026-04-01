@@ -20,5 +20,7 @@ class SiteSetting extends Model
         'footer_copyright',
         'restriction_start_time',
         'restriction_end_time',
+        'invoice_prefix',
+        'invoice_start_number',
     ];
 }

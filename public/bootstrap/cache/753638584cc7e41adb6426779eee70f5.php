@@ -643,18 +643,40 @@
                         window.overdue180 = <?php echo json_encode($overdue180 ?? 0, 15, 512) ?>;
                         window.overdue365 = <?php echo json_encode($overdue365 ?? 0, 15, 512) ?>;
                         (function renderAnalystWorkload(){
+                            // Wait for Chart.js to load before executing the widget logic
+                            if (typeof Chart === 'undefined'){
+                                const _waitId = setInterval(function(){
+                                    if (typeof Chart !== 'undefined'){
+                                        clearInterval(_waitId);
+                                        try{ renderAnalystWorkload(); }catch(e){ console.error('renderAnalystWorkload.retry.error', e); }
+                                    }
+                                }, 50);
+                                return;
+                            }
                             function normalize(raw){
                                 if(!Array.isArray(raw)) return [];
                                 return raw.map(r => ({ name: r.name ?? (r.code||'Unknown'), total: Number(r.count||0), overdue: Number(r.overdue||0) }));
                             }
 
                             function buildChartData(list){
-                                // sort by total desc
-                                list = list.slice().sort((a,b)=>b.total - a.total).slice(0, 12);
+                                if(!Array.isArray(list)) list = [];
+                                // filter out entries with no data, non-positive totals, or missing/unknown names
+                                const filtered = list.slice().filter(i => {
+                                    const t = Number(i.total || 0);
+                                    const ov = Number(i.overdue || 0);
+                                    const name = String(i.name || '').trim();
+                                    if(!name) return false;
+                                    if(name.toLowerCase() === 'unknown') return false;
+                                    // include if there's any data (either total > 0 or overdue > 0)
+                                    return (t > 0) || (ov > 0);
+                                });
+                                console.debug('AnalystWorkload.filtered', { original: list.length, filtered: filtered.length, names: filtered.map(x=>x.name).slice(0,20) });
+                                // sort by total desc and keep top 12
+                                const top = filtered.sort((a,b)=>b.total - a.total).slice(0, 12);
                                 return {
-                                    labels: list.map(i=>i.name),
-                                    totals: list.map(i=>i.total),
-                                    overdue: list.map(i=>i.overdue)
+                                    labels: top.map(i=>i.name),
+                                    totals: top.map(i=>i.total),
+                                    overdue: top.map(i=>i.overdue)
                                 };
                             }
 
@@ -681,9 +703,22 @@
                                 const normalized = normalize(raw);
                                 const data = buildChartData(normalized);
 
-                                const ctx = document.getElementById('analystWorkloadChart').getContext('2d');
+                                const canvasEl = document.getElementById('analystWorkloadChart');
+                                const ctx = canvasEl.getContext('2d');
 
-                                if(window.__analystWorkloadChart){ window.__analystWorkloadChart.destroy(); }
+                                // robustly destroy any existing Chart instance tied to this canvas
+                                try {
+                                    if (window.__analystWorkloadChart){ window.__analystWorkloadChart.destroy(); window.__analystWorkloadChart = null; }
+                                    if (typeof Chart !== 'undefined' && Chart.getChart){
+                                        const existing = Chart.getChart(canvasEl);
+                                        if (existing) { existing.destroy(); }
+                                    } else if (window.Chart && window.Chart.instances){
+                                        // handle older Chart.js versions
+                                        Object.values(Chart.instances || {}).forEach(inst => {
+                                            try { if(inst && inst.canvas && inst.canvas.id === (canvasEl.id || '')) inst.destroy(); } catch(e){}
+                                        });
+                                    }
+                                } catch(e){ console.warn('Error while destroying existing analystWorkloadChart', e); }
 
                                 // prepare stacked data: overdue + remaining (so they appear in same bar)
                                 const overdueArr = data.overdue.map(v => Number(v || 0));

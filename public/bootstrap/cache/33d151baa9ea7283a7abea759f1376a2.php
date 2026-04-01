@@ -94,6 +94,57 @@ unset($__errorArgs, $__bag); ?>
                             </div>
                 </div>
 
+                <!-- Login Restriction Times -->
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Login Restriction Start Time</label>
+                            <input type="time" name="restriction_start_time" value="<?php echo e(old('restriction_start_time', optional($setting)->restriction_start_time ? \Carbon\Carbon::parse(optional($setting)->restriction_start_time)->format('H:i') : '18:00')); ?>" class="form-control <?php $__errorArgs = ['restriction_start_time'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                            <?php $__errorArgs = ['restriction_start_time'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="invalid-feedback"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                            <small class="text-muted">Restriction begins at this time (e.g., 18:00 for 6 PM).</small>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="mb-3">
+                            <label class="form-label">Login Restriction End Time</label>
+                            <input type="time" name="restriction_end_time" value="<?php echo e(old('restriction_end_time', optional($setting)->restriction_end_time ? \Carbon\Carbon::parse(optional($setting)->restriction_end_time)->format('H:i') : '08:00')); ?>" class="form-control <?php $__errorArgs = ['restriction_end_time'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?> is-invalid <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>">
+                            <?php $__errorArgs = ['restriction_end_time'];
+$__bag = $errors->getBag($__errorArgs[1] ?? 'default');
+if ($__bag->has($__errorArgs[0])) :
+if (isset($message)) { $__messageOriginal = $message; }
+$message = $__bag->first($__errorArgs[0]); ?>
+                                <div class="invalid-feedback"><?php echo e($message); ?></div>
+                            <?php unset($message);
+if (isset($__messageOriginal)) { $message = $__messageOriginal; }
+endif;
+unset($__errorArgs, $__bag); ?>
+                            <small class="text-muted">Restriction ends at this time (e.g., 08:00 for 8 AM).</small>
+                        </div>
+                    </div>
+                </div>
 
                 <div class="row">
                     <div class="col-md-6">
@@ -233,15 +284,27 @@ unset($__errorArgs, $__bag); ?>
 
                 <!-- Footer branding settings -->
                 <div class="row">
-                    <div class="col-md-12">
+                    <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Footer Copyright</label>
                             <input type="text" name="footer_copyright" value="<?php echo e(old('footer_copyright', optional($setting)->footer_copyright)); ?>" class="form-control" placeholder="<?php echo e(date('Y')); ?> &amp;copy; Company Name. All Right Reserved">
                             <small class="text-muted d-block mt-1">Shown in the footer; may include year and company name.</small>
                         </div>
                     </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">Invoice Prefix</label>    
+                            <input type="text" name="invoice_prefix" value="<?php echo e(old('invoice_prefix', optional($setting)->invoice_prefix)); ?>" class="form-control" placeholder="ITLPL-">
+                            <small class="text-muted d-block mt-1">Prefix for generated invoices.</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">Invoice Start Number</label>    
+                            <input type="number" name="invoice_start_number" value="<?php echo e(old('invoice_start_number', optional($setting)->invoice_start_number ?? 1001)); ?>" class="form-control" placeholder="1001" min="1"  readonly>
+                            <small class="text-muted d-block mt-1">Starting number for invoices.</small>    
+                        </div>        
                 </div>
-
                 <div class="text-end">
                     <button type="button" id="reset_btn" class="btn btn-outline-secondary me-2">Reset</button>
                     <button type="submit" class="btn btn-primary">Save Changes</button>
