@@ -171,6 +171,9 @@ class ShowBookingByLetterController extends Controller
             }
         } 
 
+
+        
+
         $paymentOption = $request->input('payment_option');  
         if (!empty($paymentOption)) {
             $query->whereHas('booking', function ($bq) use ($paymentOption) {
