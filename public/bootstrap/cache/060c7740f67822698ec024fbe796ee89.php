@@ -71,13 +71,13 @@
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Letter Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" name="letter_date" 
-                                        value="<?php echo e(old('letter_date', $booking->letter_date ? \Carbon\Carbon::parse($booking->letter_date)->format('Y-m-d') : '')); ?>" 
+                                        value="<?php echo e(old('letter_date', $booking->getRawOriginal('letter_date') ? substr($booking->getRawOriginal('letter_date'),0,10) : '')); ?>" 
                                         required>
                                 </div>
                                 <div class="col-sm-4 col-12">
                                     <label class="form-label">Job Order Date <span class="text-danger">*</span></label>
                                     <input type="date" class="form-control" name="job_order_date" 
-                                        value="<?php echo e(old('job_order_date', $booking->job_order_date ? \Carbon\Carbon::parse($booking->job_order_date)->format('Y-m-d') : '')); ?>" 
+                                        value="<?php echo e(old('job_order_date', $booking->getRawOriginal('job_order_date') ? substr($booking->getRawOriginal('job_order_date'),0,10) : '')); ?>" 
                                         required>
                                 </div>
                                 <div class="col-sm-4 col-12">
@@ -146,14 +146,7 @@
                                         <input type="text" class="form-control" name="m_s" placeholder="Contractor" value="<?php echo e(old('m_s', $booking->m_s)); ?>">
                                     </div> 
                                 </div>
-                                 <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none" id="misField">
-                                <label class="form-label">Sample Code<span class="text-danger">*</span></label>
-                                <input type="text"
-       class="form-control"
-       name="sample_code"
-       value="<?php echo e(old('sample_code', $booking->sample_code ?? '')); ?>"
-       placeholder="Enter MIS code">
-                            </div>
+                                 
                             </div>
                         </div>
                     </div>
@@ -245,7 +238,7 @@
                                                                     type="date" 
                                                                     class="form-control" 
                                                                     name="booking_items[<?php echo e($index); ?>][job_order_date]" 
-                                                                    value="<?php echo e(!empty($item['job_order_date']) ? \Carbon\Carbon::parse($item['job_order_date'])->format('Y-m-d') : ''); ?>"
+                                                                    value="<?php echo e(!empty($item['job_order_date']) ? substr($item['job_order_date'], 0, 10) : ''); ?>"
 
                                                                     required
                                                                 >
@@ -253,26 +246,35 @@
                                             </div>
                                             <div class="col-lg-2 col-sm-6 col-12">
                                                 <label class="form-label">Amount *</label>
-                                                <input type="text" name="booking_items[<?php echo e($index); ?>][amount]" class="form-control" value="<?php echo e($item['amount'] ?? ''); ?>" required>
+                                                <input type="text" name="booking_items[<?php echo e($index); ?>][amount]" class="form-control amount" value="<?php echo e($item['amount'] ?? ''); ?>" required>
                                             </div>
                                             <div class="col-lg-2 col-sm-6 col-12">
                                                 <label class="form-label">Sample Quality *</label>
                                                 <input type="text" name="booking_items[<?php echo e($index); ?>][sample_quality]" class="form-control" value="<?php echo e($item['sample_quality'] ?? ''); ?>" required>
                                             </div>
-                                            <div class="col-lg-4 col-sm-6 col-12">
+                                            <div class="col-lg-4 col-sm-6 col-12 position-relative">
                                                 <label class="form-label">Lab Analysis *</label>
-                                                <input type="text" name="booking_items[<?php echo e($index); ?>][lab_analysis_code]" class="form-control lab_analysis_code" value="<?php echo e($item['lab_analysis_code'] ?? ''); ?>" required>
-                                                <div class="dropdown-menu w-100 labAnalysisList overflow-auto"></div>
+                                                <input type="text" class="form-control lab_analysis_input" autocomplete="off" value="<?php echo e($item['lab_analysis_code'] ?? ''); ?>" required>
+                                                <input type="hidden" name="booking_items[<?php echo e($index); ?>][lab_analysis_code]" class="lab_analysis_code_hidden" value="<?php echo e($item['lab_analysis_code'] ?? ''); ?>">
+                                                <div class="dropdown-menu w-100 labAnalysisDropdown overflow-auto" style="display: none; max-height: 200px;"></div>
                                             </div>
                                             <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Lab Expected Date *</label>
                                                 <input type="date" name="booking_items[<?php echo e($index); ?>][lab_expected_date]" class="form-control" 
-                                                    value="<?php echo e(!empty($item['lab_expected_date']) ? \Carbon\Carbon::parse($item['lab_expected_date'])->format('Y-m-d') : ''); ?>" required>
+                                                    value="<?php echo e(!empty($item['lab_expected_date']) ? substr($item['lab_expected_date'],0,10) : ''); ?>" required>
                                             </div>
                                              <div class="col-lg-4 col-sm-6 col-12">
                                                 <label class="form-label">Sample Details</label>
                                                 <input type="text" name="booking_items[<?php echo e($index); ?>][sample_details]" class="form-control" value="<?php echo e($item['sample_details'] ?? ''); ?>" >
                                             </div>
+                                                <div class="col-lg-4 col-sm-6 col-12 mt-3 d-none misField">
+                                                    <label class="form-label">Sample Code<span class="text-danger">*</span></label>
+                                                    <input type="text"
+                                                        class="form-control"
+                                                        name="booking_items[<?php echo e($index); ?>][sample_code]"
+                                                        value="<?php echo e(old('booking_items.'. $index .'.sample_code', $item['sample_code'] ?? '')); ?>"
+                                                        placeholder="Enter MIS code">
+                                                </div>
                                     </div>
                                         <button type="button" class="btn btn-danger btn-sm remove-item mt-2" style="<?php echo e($index == 0 ? 'display:none;' : ''); ?>">Remove</button>
                                     </div>
@@ -301,40 +303,89 @@
 
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script>
-document.addEventListener("DOMContentLoaded", function() {
-    const addItemBtn = document.getElementById('addItemBtn');
-    const itemsContainer = document.getElementById('itemsContainer');
+$(document).ready(function() {
+    const $itemsContainer = $('#itemsContainer');
 
     function updateTotalItems() {
-        const count = document.querySelectorAll("#itemsContainer .item-group").length;
-        document.getElementById("totalItems").textContent = "Total Items: " + count;
+        const count = $itemsContainer.find('.item-group').length;
+        $('#totalItems').text('Total Items: ' + count);
     }
 
     updateTotalItems();
 
-    addItemBtn.addEventListener('click', function() {
-        const firstItemGroup = itemsContainer.querySelector('.item-group');
-        const newItemGroup = firstItemGroup.cloneNode(true);
-        const index = itemsContainer.querySelectorAll('.item-group').length;
+    $('#addItemBtn').on('click', function() {
+        const $first = $itemsContainer.find('.item-group:first');
+        const $clone = $first.clone();
+        const index = $itemsContainer.find('.item-group').length;
+        const $prevGroup = $itemsContainer.find('.item-group').eq(index - 1);
 
-        newItemGroup.querySelectorAll('input').forEach(function(el) {
-            const name = el.getAttribute('name');
-            if (name) el.setAttribute('name', name.replace(/\d+/, index));
-            el.value = '';
+        $clone.find('input, select, textarea').each(function() {
+            const $el = $(this);
+            const name = $el.attr('name');
+            if (name) $el.attr('name', name.replace(/\d+/, index));
+
+            // Prefill/copy behavior similar to newBooking
+            if ($el.hasClass('amount')) {
+                const prevAmount = $prevGroup.find('.amount').val();
+                $el.val(prevAmount || '');
+            } else if ($el.hasClass('job_order_no')) {
+                const prevJob = $prevGroup.find('.job_order_no').val();
+                let prefix = '';
+                let num = 1;
+                if (prevJob) {
+                    const match = prevJob.match(/^(\D*)(\d+)$/);
+                    if (match) {
+                        prefix = match[1];
+                        num = parseInt(match[2]) + 1;
+                    } else {
+                        prefix = prevJob;
+                        num = 1;
+                    }
+                }
+                $el.val(prefix + String(num).padStart(3, '0'));
+            } else if ($el.hasClass('lab_analysis_input')) {
+                // clear lab analysis visible input and its hidden code on new cloned row
+                $el.val('');
+                $el.siblings('.lab_analysis_code_hidden').val('');
+            } else {
+                if (name) {
+                    const m = name.match(/booking_items\[(\d+)\]\[(.+)\]/);
+                    if (m) {
+                        const key = m[2];
+                        if (['sample_description','particulars','sample_quality','sample_details','sample_code'].includes(key)) {
+                            const prevVal = $prevGroup.find("[name='booking_items[" + (index-1) + "][" + key + "]']").val();
+                            $el.val(prevVal || '');
+                            return; // continue to next element
+                        }
+                    }
+                }
+                // default: clear value for inputs that are not copied
+                if ($el.is('input[type=text], input[type=number], input[type=email], textarea')) {
+                    // keep as-is for certain copied fields handled above
+                } else if ($el.is('select')) {
+                    $el.prop('selectedIndex', 0);
+                }
+            }
         });
 
-        newItemGroup.querySelector('.remove-item').style.display = 'inline-block';
-        itemsContainer.appendChild(newItemGroup);
+        $clone.find('.remove-item').show();
+        $itemsContainer.append($clone);
+
+        // initialize job order autocomplete on cloned element (function exists below)
+        setTimeout(function() {
+            $itemsContainer.find('.item-group:last .job_order_no').each(function() {
+                // existing attachJobOrderSearch defined later will bind handlers
+                $(this).trigger('keyup');
+            });
+        }, 100);
+
         updateTotalItems();
     });
 
-    itemsContainer.addEventListener('click', function(e) {
-        if (e.target.closest('.remove-item')) {
-            const itemGroup = e.target.closest('.item-group');
-            if (itemsContainer.querySelectorAll('.item-group').length > 1) {
-                itemGroup.remove();
-                updateTotalItems();
-            }
+    $itemsContainer.on('click', '.remove-item', function() {
+        if ($itemsContainer.find('.item-group').length > 1) {
+            $(this).closest('.item-group').remove();
+            updateTotalItems();
         }
     });
 });
@@ -350,10 +401,10 @@ $(document).ready(function () {
                         .toLowerCase();
 
         if (depName === 'bis') {
-            $('#misField').removeClass('d-none');
+            $('#misField, .misField').removeClass('d-none');
         } else {
-            $('#misField').addClass('d-none');
-            $('#misField input').val('');
+            $('#misField, .misField').addClass('d-none');
+            $('#misField input, .misField input').val('');
         }
     }
 
@@ -426,10 +477,75 @@ $(document).ready(function () {
     }
 
     // -------------------------------
+    // LAB ANALYSIS AUTOCOMPLETE
+    // -------------------------------
+    function attachLabAnalysis($input) {
+        const $hidden = $input.siblings('.lab_analysis_code_hidden');
+        const $dropdown = $input.siblings('.labAnalysisDropdown');
+
+        $input.off('keyup').on('keyup', debounce(function () {
+            let query = $input.val().trim();
+            if (query.length < 2) {
+                $dropdown.hide();
+                $hidden.val('');
+                return;
+            }
+
+            abortOldRequest('lab');
+
+            ajaxRequests.lab = $.ajax({
+                url: "<?php echo e(route('superadmin.bookings.autocomplete')); ?>",
+                data: { term: query, type: 'lab' },
+                success: function (data) {
+                    let html = data.length
+                        ? data.map(item => `<button type="button" class="dropdown-item" data-code="${item.user_code}" data-name="${item.name}">${item.label}</button>`).join('')
+                        : '<span class="dropdown-item disabled">No results</span>';
+
+                    $dropdown.html(html).show();
+                }
+            });
+        }, 400));
+
+        $dropdown.off('click').on('click', 'button', function () {
+            $input.val($(this).data('name'));
+            $hidden.val($(this).data('code'));
+            $dropdown.hide();
+        });
+    }
+
+    // -------------------------------
     // INITIALIZE FOR EXISTING ITEMS
     // -------------------------------
     $('.job_order_no').each(function () {
         attachJobOrderSearch($(this));
+    });
+
+    // initialize lab analysis inputs
+    $('.lab_analysis_input').each(function () {
+        attachLabAnalysis($(this));
+    });
+
+    // Resolve existing lab_analysis_code values to show analyst name in visible input
+    $('.lab_analysis_input').each(function () {
+        const $input = $(this);
+        const $hidden = $input.siblings('.lab_analysis_code_hidden');
+        const code = $hidden.val();
+        if (code) {
+            // Query autocomplete endpoint with code to fetch matching name
+            $.ajax({
+                url: "<?php echo e(route('superadmin.bookings.autocomplete')); ?>",
+                data: { term: code, type: 'lab' },
+                success: function (data) {
+                    if (data && data.length) {
+                        // prefer exact code match, otherwise take first
+                        let match = data.find(i => i.user_code === code) || data[0];
+                        if (match) {
+                            $input.val(match.name);
+                        }
+                    }
+                }
+            });
+        }
     });
 
     // -------------------------------
@@ -439,6 +555,9 @@ $(document).ready(function () {
         setTimeout(function () {
             $('#itemsContainer .item-group:last .job_order_no').each(function () {
                 attachJobOrderSearch($(this));
+            });
+            $('#itemsContainer .item-group:last .lab_analysis_input').each(function () {
+                attachLabAnalysis($(this));
             });
         }, 100);
     });

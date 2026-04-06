@@ -144,6 +144,7 @@ class InvoiceController extends Controller
 
     public function index(Request $request)
     {
+        
         $marketingPersons = User::whereHas('role', function ($q) {
             $q->where('slug', 'marketing_person');
         })->get(['id', 'user_code', 'name']);
@@ -271,7 +272,6 @@ class InvoiceController extends Controller
     public function edit(string $InvoiceId)
     {
         try {
-
 
             $gstinApiUrl = config('services.gstin.url');
             $gstinApiKey = config('services.gstin.key');
@@ -630,7 +630,8 @@ class InvoiceController extends Controller
 
     public function generateInvoice(GenerateInvoiceRequest $request)
     {
-        try {
+        try { 
+            
             $invoiceType = $request->input('typeOption');
             $invoiceData = $this->billingService->generateInvoiceData($request);
 

@@ -47,7 +47,7 @@ class GenerateInvoiceStatusController extends Controller
 
     public function index(Request $request, Department $department = null)
     {
-       
+      
         $query = NewBooking::with(['items', 'department', 'marketingPerson', 'client'])
             ->where('payment_option', $request->payment_option ?? 'bill')
             ->whereNotNull('client_id')
@@ -182,6 +182,7 @@ class GenerateInvoiceStatusController extends Controller
 
     public function edit(string $bookingId)
     {
+        
         $prefix = "ITLPL-"; 
 
         if ($bookingId == 0) {

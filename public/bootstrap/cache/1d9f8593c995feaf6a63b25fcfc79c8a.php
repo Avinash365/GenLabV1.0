@@ -319,7 +319,7 @@
 
                         <tbody>
                             <?php if($booking->items->isNotEmpty()): ?>
-                                <?php $__currentLoopData = $booking->items; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
+                                <?php $__currentLoopData = $booking->items->where('is_canceled', '0'); $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $item): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>
                                     <tr class="item-row">
                                         <!-- <td contenteditable="true"><?php echo e($loop->iteration); ?></td> -->
                                         <td contenteditable="true" class="editable description ">
