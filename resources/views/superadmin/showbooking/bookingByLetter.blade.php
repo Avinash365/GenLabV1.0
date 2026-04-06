@@ -179,7 +179,7 @@
                         @if(request('year'))<input type="hidden" name="year" value="{{ request('year') }}">@endif
                         @if(request('department'))<input type="hidden" name="department" value="{{ request('department') }}">@endif
                         @if(request('use_created_at'))<input type="hidden" name="use_created_at" value="{{ request('use_created_at') }}">@endif
-                        @if(request('payment_option'))<input type="hidden" name="payment_option" value="{{ request('payment_option') }}">@endif
+                        <!-- @if(request('payment_option'))<input type="hidden" name="payment_option" value="{{ request('payment_option') }}">@endif -->
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
                             <option value="">Select Marketing Person</option>
                             @foreach($marketingPersons as $mp)

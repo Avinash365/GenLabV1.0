@@ -182,7 +182,7 @@
                         <?php if(request('year')): ?><input type="hidden" name="year" value="<?php echo e(request('year')); ?>"><?php endif; ?>
                         <?php if(request('department')): ?><input type="hidden" name="department" value="<?php echo e(request('department')); ?>"><?php endif; ?>
                         <?php if(request('use_created_at')): ?><input type="hidden" name="use_created_at" value="<?php echo e(request('use_created_at')); ?>"><?php endif; ?>
-                        <?php if(request('payment_option')): ?><input type="hidden" name="payment_option" value="<?php echo e(request('payment_option')); ?>"><?php endif; ?>
+                        <!-- <?php if(request('payment_option')): ?><input type="hidden" name="payment_option" value="<?php echo e(request('payment_option')); ?>"><?php endif; ?> -->
                         <select name="marketing" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width:220px;">
                             <option value="">Select Marketing Person</option>
                             <?php $__currentLoopData = $marketingPersons; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $mp): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); ?>

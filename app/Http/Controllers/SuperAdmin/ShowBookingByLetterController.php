@@ -38,7 +38,7 @@ class ShowBookingByLetterController extends Controller
             $departmentId = (int) $request->input('department');
             $department = $departments->firstWhere('id', $departmentId);
         }
-
+       
         $marketingPersons = User::query()
             ->select(['id', 'user_code', 'name', 'role_id'])
             ->whereHas('role', function ($q) {
@@ -169,8 +169,14 @@ class ShowBookingByLetterController extends Controller
                     $bq->where('department_id', $departmentIdInt);
                 });
             }
-        }
+        } 
 
+        $paymentOption = $request->input('payment_option');  
+        if (!empty($paymentOption)) {
+            $query->whereHas('booking', function ($bq) use ($paymentOption) {
+                $bq->where('payment_option', $paymentOption);
+            });
+        }
         return $query;
     }
 
