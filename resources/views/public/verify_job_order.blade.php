@@ -195,7 +195,7 @@
                     <div class="detail-row">
                         <span class="detail-label">Booking Date</span>
                         <span
-                            class="detail-value text-break">{{ $item->job_order_date ? $item->job_order_date->format('d/m/Y') : 'N/A' }}</span>
+                            class="detail-value text-break">{{ $item->job_order_date ? \Carbon\Carbon::parse($item->job_order_date)->format('d/m/Y') : 'N/A' }}</span>
                     </div>
                     <div class="detail-row">
                         <span class="detail-label">Status</span>
