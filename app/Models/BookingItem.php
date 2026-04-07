@@ -108,5 +108,26 @@ class BookingItem extends Model
     {
         return $this->hasOne(MarketingEnquiry::class, 'booking_item_id')->latestOfMany();
     }
+    
+    public function getDynamicStatusAttribute()
+    {
+        if ($this->dispatched_at) {
+            return 'Dispatched';
+        }
+
+        if ($this->issue_date) {
+            return 'Report Generated';
+        }
+
+        if ($this->received_at) {
+            return 'Reporting';
+        }
+
+        if ($this->created_at) {
+            return 'In Lab';
+        }
+
+        return 'N/A';
+    }
 
 }

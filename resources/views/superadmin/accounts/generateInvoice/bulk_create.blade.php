@@ -339,7 +339,7 @@
                             @php $row = 1; @endphp
                             @foreach($bookings as $booking)
                                 @if($booking->items->isNotEmpty())
-                                    @foreach($booking->items as $item)
+                                    @foreach($booking->items->where('is_canceled', '0') as $item)
                                         <tr class="item-row">
                                             <!-- <td contenteditable="true">{{ $loop->iteration }}</td> -->
                                             <td contenteditable="true" class="editable description ">
