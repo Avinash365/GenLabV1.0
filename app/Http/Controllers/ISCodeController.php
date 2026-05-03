@@ -11,7 +11,8 @@ use App\Services\FileUploadService;
 
 class ISCodeController extends Controller
 {
-   
+    
+    protected $fileUploadService;
     public function __construct(FileUploadService $fileUploadService)
     {
         $this->fileUploadService = $fileUploadService;
@@ -40,8 +41,7 @@ class ISCodeController extends Controller
     public function store(Request $request)
     {
 
-        // dd($request->all()); 
-        // exit; 
+      
 
         $request->validate([
             'Is_code'     => 'required|string|unique:IS_CODE,Is_code|max:100',

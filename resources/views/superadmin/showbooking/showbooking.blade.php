@@ -18,6 +18,7 @@
     </div>
 @endif 
 
+
 <div class="content">
     <!-- Export overlay shown while preparing large exports -->
     <div id="exportOverlay" style="display:none;">
@@ -215,7 +216,7 @@
                             <td class="marketing-col">{{ $booking->marketingPerson?->name ?? '' }}</td>
                             <td class="show-letter-col">
                                 @if($booking->upload_letter_path)
-                                    <a href="{{url($booking->upload_letter_path)}}" target="_blank">View</a>
+                                    <a href="{{url($booking->upload_letter_url)}}" target="_blank">View</a>
                                 @else
                                     -
                                 @endif

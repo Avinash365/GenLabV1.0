@@ -12,6 +12,7 @@ use Illuminate\Support\Facades\Log;
 use App\Models\User;
 
 use App\Models\Approval;
+use Exception;
 
 class ApprovalController extends Controller
 {

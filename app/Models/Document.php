@@ -20,6 +20,16 @@ class Document extends Model
     ];
 
     // Relationship: Document belongs to User
+    
+    public function getFilePathUrlAttribute()
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        return config('app.cloudfront_url') . '/' . $this->file_path;
+    }   
+   
     public function user()
     {
         return $this->belongsTo(User::class, 'uploaded_by');

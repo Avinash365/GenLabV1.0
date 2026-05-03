@@ -44,7 +44,7 @@
                         <td><?php echo e($letter->uploader ? Str::limit($letter->uploader->name, 15) : 'N/A'); ?></td>
                          <td>
                             <?php if($letter->file_path): ?>
-                                <a href="<?php echo e(asset($letter->file_path)); ?>" target="_blank">View</a>
+                                <a href="<?php echo e($letter->file_path_url); ?>" target="_blank">View</a>
                             <?php else: ?>
                                 N/A
                             <?php endif; ?>
@@ -103,7 +103,7 @@
                                                 <label class="form-label">Upload File</label>
                                                 <input type="file" name="file" class="form-control">
                                                 <?php if($letter->file_path): ?>
-                                                    <small class="text-muted">Current: <a href="<?php echo e(asset($letter->file_path)); ?>" target="_blank">View</a></small>
+                                                    <small class="text-muted">Current: <a href="<?php echo e($letter->file_path_url); ?>" target="_blank">View</a></small>
                                                 <?php endif; ?>
                                             </div>
                                             <div class="col-md-6">

@@ -18,6 +18,7 @@
     </div>
 <?php endif; ?> 
 
+
 <div class="content">
     <!-- Export overlay shown while preparing large exports -->
     <div id="exportOverlay" style="display:none;">
@@ -218,7 +219,7 @@
                             <td class="marketing-col"><?php echo e($booking->marketingPerson?->name ?? ''); ?></td>
                             <td class="show-letter-col">
                                 <?php if($booking->upload_letter_path): ?>
-                                    <a href="<?php echo e(url($booking->upload_letter_path)); ?>" target="_blank">View</a>
+                                    <a href="<?php echo e(url($booking->upload_letter_url)); ?>" target="_blank">View</a>
                                 <?php else: ?>
                                     -
                                 <?php endif; ?>

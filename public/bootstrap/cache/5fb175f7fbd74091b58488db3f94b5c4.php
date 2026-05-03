@@ -77,7 +77,7 @@
                             
                             <button type="button" class="btn btn-sm btn-outline-primary load-report" 
                                 data-id="<?php echo e($report->id); ?>"
-                                data-content="<?php echo e(Storage::disk('public')->get($report->file_path)); ?>"
+                                data-content="<?php echo e($report->file_content); ?>"
                                 data-name="<?php echo e($report->report_no); ?>"
                                 data-description="<?php echo e($report->report_description); ?>"
                                 title="Load Report">

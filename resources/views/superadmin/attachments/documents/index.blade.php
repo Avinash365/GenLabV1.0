@@ -46,7 +46,7 @@
                             <td>{{ $doc->description }}</td>
                              <td>
                                 @if($doc->file_path)
-                                    <a href="{{ url($doc->file_path) }}" class="btn btn-sm btn-outline-primary" target="_blank">View
+                                    <a href="{{ $doc->file_path_url }}" class="btn btn-sm btn-outline-primary" target="_blank">View
                                 @else
                                     <span class="text-muted">No File</span>
                                 @endif

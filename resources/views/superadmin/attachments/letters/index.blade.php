@@ -45,7 +45,7 @@
                         <td>{{ $letter->uploader ? Str::limit($letter->uploader->name, 15) : 'N/A' }}</td>
                          <td>
                             @if ($letter->file_path)
-                                <a href="{{ asset($letter->file_path) }}" target="_blank">View</a>
+                                <a href="{{ $letter->file_path_url }}" target="_blank">View</a>
                             @else
                                 N/A
                             @endif
@@ -103,7 +103,7 @@
                                                 <label class="form-label">Upload File</label>
                                                 <input type="file" name="file" class="form-control">
                                                 @if ($letter->file_path)
-                                                    <small class="text-muted">Current: <a href="{{ asset($letter->file_path) }}" target="_blank">View</a></small>
+                                                    <small class="text-muted">Current: <a href="{{ $letter->file_path_url }}" target="_blank">View</a></small>
                                                 @endif
                                             </div>
                                             <div class="col-md-6">

@@ -22,4 +22,14 @@ class ISCode extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    public function getUploadFileUrlAttribute()
+    {
+        if (!$this->upload_file) {
+            return null;
+        }
+
+        return config('app.cloudfront_url') . '/' . $this->upload_file;
+    }
+
 }

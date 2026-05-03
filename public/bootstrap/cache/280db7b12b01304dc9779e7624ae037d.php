@@ -30,8 +30,7 @@
                         <th>#</th>
                         <th>Name</th>
                         <th>Type</th>
-                        <th>Description</th>       
-                        <th>Uploaded By</th>
+                        <th>Description</th>      
                         <th>File</th>
                          <th>Status</th>
                         <th>Actions</th>
@@ -44,10 +43,9 @@
                             <td><?php echo e($doc->name); ?></td>
                             <td><?php echo e(ucfirst($doc->type)); ?></td>
                             <td><?php echo e($doc->description); ?></td>
-                             <td><?php echo e($doc->user->name ?? 'N/A'); ?></td>
-                            <td>
+                             <td>
                                 <?php if($doc->file_path): ?>
-                                    <a href="<?php echo e(url($doc->file_path)); ?>" class="btn btn-sm btn-outline-primary" target="_blank">View
+                                    <a href="<?php echo e($doc->file_path_url); ?>" class="btn btn-sm btn-outline-primary" target="_blank">View
                                 <?php else: ?>
                                     <span class="text-muted">No File</span>
                                 <?php endif; ?>

@@ -8,10 +8,20 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use App\Services\FileUploadService; 
+
+
 
 class ProductStockEntryController extends Controller
-{
-    public function index()
+{   
+
+     protected FileUploadService $fileUploadService; 
+    
+    public function __construct(FileUploadService $fileUploadService)
+    {
+        $this->fileUploadService = $fileUploadService;
+    }
+     public function index()
     {
         try {
             
@@ -61,9 +71,15 @@ class ProductStockEntryController extends Controller
             $validated['type']='buy'; 
             
             $validated['upload_bill'] = null;
-            if ($request->hasFile('upload_bill')) {
-                $validated['upload_bill'] = $request->file('upload_bill')->store('bills', 'public');
+            // if ($request->hasFile('upload_bill')) {
+            //     $validated['upload_bill'] = $request->file('upload_bill')->store('bills', 'public');
+            // } 
+
+            // File upload using service 
+            if($request->hasFile('upload_bill')){
+                $validated['upload_bill'] = $this->fileUploadService->upload($request->file('upload_bill'), 'bills');
             }
+
 
             $product = Product::where('product_code', $validated['product_code'])->first();
             if (!$product) {
@@ -129,8 +145,13 @@ class ProductStockEntryController extends Controller
 
         try {
             // Handle file upload
-            if ($request->hasFile('upload_bill')) {
-                $validated['upload_bill'] = $request->file('upload_bill')->store('bills', 'public');
+            // if ($request->hasFile('upload_bill')) {
+            //     $validated['upload_bill'] = $request->file('upload_bill')->store('bills', 'public');
+            // } 
+
+            // File upload using service
+            if($request->hasFile('upload_bill')){
+                $validated['upload_bill'] = $this->fileUploadService->upload($request->file('upload_bill'), 'bills');
             }
 
             // If product_code or quantity is changed, adjust stock
@@ -148,7 +169,6 @@ class ProductStockEntryController extends Controller
                     $newProduct->increment('unit', $validated['quantity'] ?? 0);
                 }
             }
-
             // Update stock entry record
             $productStockEntry->update($validated);
 
@@ -168,9 +188,7 @@ class ProductStockEntryController extends Controller
             if ($product) {
                 $product->decrement('unit', $productStockEntry->quantity ?? 0);
             }
-
             $productStockEntry->delete();
-
             return redirect()->back()->with('success', 'Stock entry deleted successfully.');
         } catch (\Exception $e) {
             Log::error("Error deleting stock entry: " . $e->getMessage());

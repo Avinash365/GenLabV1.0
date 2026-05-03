@@ -26,6 +26,17 @@ class ProductStockEntry extends Model
      * Relationship: A stock entry belongs to a product
      */
     
+    public function getUploadBillUrlAttribute()
+    {
+        if (!$this->upload_bill) {
+            return null;
+        }
+
+        // Assuming upload_bill stores the S3 path, we can generate the full URL
+        return config('app.cloudfront_url') . '/' . $this->upload_bill;
+    }
+    
+
     public function product()
     {
         return $this->belongsTo(Product::class, 'product_code', 'product_code');

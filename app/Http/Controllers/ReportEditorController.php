@@ -1,50 +1,63 @@
-<?php 
+<?php
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
-use App\Models\ReportEditorFile; 
+use App\Models\ReportEditorFile;
 use App\Models\{BookingItem, NewBooking};
 
-use App\Services\{ReportPdfGenerationService,ReportWordGenerationService}; 
+use App\Services\{ReportPdfGenerationService, ReportWordGenerationService};
 use App\Services\CountTextLineBreakService;
-use SimpleSoftwareIO\QrCode\Facades\QrCode; 
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
+use App\Services\FileUploadService;
 
-
-use Mpdf\Mpdf; 
+use Mpdf\Mpdf;
 
 class ReportEditorController extends Controller
 {
     protected $pdfService, $countTextLineBreak;
     protected $wordService;
+    protected FileUploadService $fileUploadService;
 
 
-    public function __construct(ReportPdfGenerationService $pdfService, CountTextLineBreakService $countTextLineBreak, ReportWordGenerationService $wordService)
+    public function __construct(ReportPdfGenerationService $pdfService, CountTextLineBreakService $countTextLineBreak, ReportWordGenerationService $wordService, FileUploadService $fileUploadService)
     {
-        $this->pdfService = $pdfService;  
+        $this->pdfService = $pdfService;
         $this->wordService = $wordService;
-        $this->countTextLineBreak = $countTextLineBreak; 
+        $this->countTextLineBreak = $countTextLineBreak;
+        $this->fileUploadService = $fileUploadService;
     }
-     
+
 
     public function index()
-    {
-        $reports = ReportEditorFile::latest()->get();
+    { 
+       
+       // $reports = ReportEditorFile::latest()->get();
+        $reports = ReportEditorFile::latest()->get()->map(function ($report) {
+            try {
+                $report->file_content = Storage::disk('s3')->get($report->file_path);
+            } catch (\Exception $e) {
+                $report->file_content = '';
+            }
+            return $report;
+        });
         return view('Reportfrmt.index', compact('reports'));
-    }    
+    }
 
-    public function generate(BookingItem $item, $type = null){  
+    public function generate(BookingItem $item, $type = null)
+    {
+        
+        $assignedReport = $item->reports->first();
+        $booking = $item->booking;
 
-       $assignedReport = $item->reports->first();
-       $booking = $item->booking;
-
-        $reports = ReportEditorFile::latest()->get(); 
+        $reports = ReportEditorFile::latest()->get();
 
         return view('Reportfrmt.generate', compact('reports', 'assignedReport', 'item', 'booking', 'type'));
     }
-    
+
     public function editReport($pivotId, $type = null)
     {
+        
         // Determine table based on type
         $tableName = ($type === '28day') ? 'booking_item_report_28day' : 'booking_item_report';
 
@@ -79,7 +92,7 @@ class ReportEditorController extends Controller
 
     public function viewPdf($filename)
     {
-        
+
         return redirect(asset('storage/generatedReports/' . ltrim($filename, '/')));
     }
 
@@ -99,9 +112,11 @@ class ReportEditorController extends Controller
         if ($editingId) {
             $report = ReportEditorFile::findOrFail($editingId);
 
-            if (ReportEditorFile::where('report_no', $request->report_no)
-                ->where('id', '!=', $editingId)
-                ->exists()) {
+            if (
+                ReportEditorFile::where('report_no', $request->report_no)
+                    ->where('id', '!=', $editingId)
+                    ->exists()
+            ) {
                 return back()->withErrors(['report_no' => 'Report name already exists.'])->withInput();
             }
         } else {
@@ -113,32 +128,38 @@ class ReportEditorController extends Controller
 
         $report_no = $request->report_no;
         $report_description = $request->report_description;
-        $content = $request->content;
+        // $content = $request->content;
+        $content = $request->input('content');
 
         $sanitizedReportNo = preg_replace('/[^A-Za-z0-9_\-]/', '_', $report_no);
         $fileName = 'reportFormat/' . $sanitizedReportNo . '_' . time() . '.html';
 
-        Storage::disk('public')->put($fileName, $content);
+        $fileNameOnly = basename($fileName);
+        $path = $this->fileUploadService->upload(
+            $content,
+            'reportFormat',
+            $fileNameOnly
+        );
 
         // Delete old file if updating
-        if ($editingId && Storage::disk('public')->exists($report->file_path)) {
-            Storage::disk('public')->delete($report->file_path);
-        }
+        // if ($editingId && Storage::disk('public')->exists($report->file_path)) {
+        //     Storage::disk('public')->delete($report->file_path);
+        // }
 
         $report->report_no = $report_no;
         $report->report_description = $report_description;
-        $report->file_path = $fileName;
-        $report->save(); 
+        $report->file_path = $path;
+        $report->save();
 
         // Preserve values after successful save/update
         return back()->with([
             'success' => $editingId ? 'Report updated successfully!' : 'Report saved successfully!',
         ])->withInput([
-            'editing_report_id' => $editingId,
-            'report_no' => $report_no,
-            'report_description' => $report_description,
-            'content' => $content,
-        ]); 
+                    'editing_report_id' => $editingId,
+                    'report_no' => $report_no,
+                    'report_description' => $report_description,
+                    'content' => $content,
+                ]);
     }
 
     public function destroy($id)
@@ -146,21 +167,21 @@ class ReportEditorController extends Controller
         $report = ReportEditorFile::findOrFail($id);
 
         // Delete the file from storage
-        if (Storage::disk('public')->exists($report->file_path)) {
-            Storage::disk('public')->delete($report->file_path);
+        if ($report->file_path) {
+            $this->fileUploadService->delete($report->file_path);
         }
 
         // Delete database record
         $report->delete();
 
         return back()->with('success', 'Report deleted successfully!');
-    } 
+    }
 
 
     public function generateReportPDF(Request $request)
-    {      
-       $booking = NewBooking::findOrFail($request->booking_id);
-       
+    {
+        $booking = NewBooking::findOrFail($request->booking_id);
+
 
         $request->validate([
             'report_no' => 'required|string|max:255',
@@ -179,65 +200,70 @@ class ReportEditorController extends Controller
             'booking_item_id' => 'required|integer',
             'booking_id' => 'required|integer',
             'editing_report_id' => 'nullable|integer',
-            'include_header'   => 'nullable', 
+            'include_header' => 'nullable',
             'm_s' => 'nullable|string|max:255',
         ]);
 
         $headerData = [
-            'sample_code'    => $booking->sample_code ?? "", 
-            'booking_item_id' => $request->input('booking_item_id') ?? "",  
+            'sample_code' => $booking->sample_code ?? "",
+            'booking_item_id' => $request->input('booking_item_id') ?? "",
             'report_no' => $request->input('report_no') ?? "",
             'ulr_no' => $request->input('ulr_no') ?? "",
-            'issued_to' => $request->input('issued_to') ?? "", 
+            'issued_to' => $request->input('issued_to') ?? "",
             'date_of_receipt' => $request->input('date_of_receipt') ?? "",
             'date_of_start_analysis' => $request->input('date_of_start_analysis') ?? "",
-            'letter_ref_date' => $request->input('letter_ref_date') ?? "", 
-            'letter_ref' => $request->input('letter_ref_no') ?? "", 
+            'letter_ref_date' => $request->input('letter_ref_date') ?? "",
+            'letter_ref' => $request->input('letter_ref_no') ?? "",
             'date_of_completion' => $request->input('completion_date') ?? "",
-            'sample_description' => $request->input('sample_description') ?? "", 
+            'sample_description' => $request->input('sample_description') ?? "",
             'date_of_issue' => $request->input('date_of_issue') ?? "",
-            'name_of_work' => $request->input('name_of_work') ?? "", 
+            'name_of_work' => $request->input('name_of_work') ?? "",
             'include_header' => $request->input('include_header') ?? "0",
             'm_s' => $request->input('m_s') ?? "",
-        ]; 
+        ];
 
         // Count line breaks for margin adjustments
         $lineBreaks = $this->countTextLineBreak->countLineBreaks([
             $headerData['issued_to'],
             $headerData['sample_description'],
             $headerData['name_of_work'],
-        ]); 
-        $headerData['line_breaks'] = $lineBreaks; 
+        ]);
+        $headerData['line_breaks'] = $lineBreaks;
 
         // Check for old record
         $oldRecord = \DB::table('booking_item_report')
             ->where('booking_id', $request->input('booking_id'))
             ->where('booking_item_id', $request->input('booking_item_id'))
             ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
-            ->first(); 
+            ->first();
 
         // Delete old HTML if exists
         if ($oldRecord && $oldRecord->generated_report_path) {
-            Storage::disk('public')->delete($oldRecord->generated_report_path);
+            $this->fileUploadService->delete($oldRecord->generated_report_path);
+            // Storage::disk('public')->delete($oldRecord->generated_report_path);
         }
 
         // Save the new HTML content
-        $htmlFileName = 'reports/' . time() . '_report.html';
-        Storage::disk('public')->put($htmlFileName, $request->input('content'));
+        $fileName = time() . '_report.html';
+
+        $htmlFileName = $this->fileUploadService->upload(
+            $request->input('content'),
+            'reports',
+            $fileName
+        );
 
         // Generate PDF
-        $pdfService = new ReportPdfGenerationService();
-        $pdfRelativePath = $pdfService->generateFromHtmlFiles(
+
+        $pdfRelativePath = $this->pdfService->generateFromHtmlFiles(
             [$htmlFileName],
             $headerData
         );
-    
+
         // Delete old PDF if exists
-        if ($oldRecord && $oldRecord->pdf_path) { 
-            $filePath = 'public/' . ltrim($oldRecord->pdf_path, '/');
-            Storage::disk('public')->delete($filePath);
+        if ($oldRecord && $oldRecord->pdf_path) {
+            $this->fileUploadService->delete($oldRecord->pdf_path);
         }
- 
+
         // Update DB with new HTML and PDF paths
         \DB::table('booking_item_report')->updateOrInsert(
             [
@@ -247,28 +273,28 @@ class ReportEditorController extends Controller
             ],
             [
                 'generated_report_path' => $htmlFileName,
-                'pdf_path' => $pdfRelativePath, 
-                'ult_r_no' => $headerData['ulr_no'], 
-                'date_of_start_of_analysis' => $headerData['date_of_start_analysis'], 
-                'date_of_completion_of_analysis' => $headerData['date_of_completion'], 
-                'date_of_receipt'   => $headerData['date_of_receipt'],  
-                'issue_to_date'   => $headerData['date_of_issue'],
+                'pdf_path' => $pdfRelativePath,
+                'ult_r_no' => $headerData['ulr_no'],
+                'date_of_start_of_analysis' => $headerData['date_of_start_analysis'],
+                'date_of_completion_of_analysis' => $headerData['date_of_completion'],
+                'date_of_receipt' => $headerData['date_of_receipt'],
+                'issue_to_date' => $headerData['date_of_issue'],
                 'updated_at' => now(),
             ]
-        );  
+        );
 
         $pivotRecord = \DB::table('booking_item_report')
-                ->where('booking_id', $request->input('booking_id'))
-                ->where('booking_item_id', $request->input('booking_item_id'))
-                ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
-                ->first();
-       
+            ->where('booking_id', $request->input('booking_id'))
+            ->where('booking_item_id', $request->input('booking_item_id'))
+            ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
+            ->first();
+
         return redirect()->route('generateReportPDF.editReport', ['pivotId' => $pivotRecord->id])
-                          ->with('success', 'Report generated successfully!');
-    } 
-    
+            ->with('success', 'Report generated successfully!');
+    }
+
     public function generatePdf28Days(Request $request)
-    {     
+    {
         $request->validate([
             'report_no' => 'required|string|max:255',
             'report_description' => 'nullable|string|max:2000',
@@ -286,62 +312,65 @@ class ReportEditorController extends Controller
             'booking_item_id' => 'required|integer',
             'booking_id' => 'required|integer',
             'editing_report_id' => 'nullable|integer',
-            'include_header'   => 'nullable', 
+            'include_header' => 'nullable',
         ]);
 
         $headerData = [
-            'booking_item_id' => $request->input('booking_item_id') ?? "",  
+            'booking_item_id' => $request->input('booking_item_id') ?? "",
             'report_no' => $request->input('report_no') ?? "",
             'ulr_no' => $request->input('ulr_no') ?? "",
-            'issued_to' => $request->input('issued_to') ?? "", 
+            'issued_to' => $request->input('issued_to') ?? "",
             'date_of_receipt' => $request->input('date_of_receipt') ?? "",
             'date_of_start_analysis' => $request->input('date_of_start_analysis') ?? "",
-            'letter_ref_date' => $request->input('letter_ref_date') ?? "", 
-            'letter_ref' => $request->input('letter_ref_no') ?? "", 
+            'letter_ref_date' => $request->input('letter_ref_date') ?? "",
+            'letter_ref' => $request->input('letter_ref_no') ?? "",
             'date_of_completion' => $request->input('completion_date') ?? "",
-            'sample_description' => $request->input('sample_description') ?? "", 
+            'sample_description' => $request->input('sample_description') ?? "",
             'date_of_issue' => $request->input('date_of_issue') ?? "",
-            'name_of_work' => $request->input('name_of_work') ?? "", 
+            'name_of_work' => $request->input('name_of_work') ?? "",
             'include_header' => $request->input('include_header') ?? "0",
-        ]; 
+        ];
 
         // Count line breaks for margin adjustments
         $lineBreaks = $this->countTextLineBreak->countLineBreaks([
             $headerData['issued_to'],
             $headerData['sample_description'],
             $headerData['name_of_work'],
-        ]); 
-        $headerData['line_breaks'] = $lineBreaks; 
+        ]);
+        $headerData['line_breaks'] = $lineBreaks;
 
         // Check for old record
         $oldRecord = \DB::table('booking_item_report_28day')
             ->where('booking_id', $request->input('booking_id'))
             ->where('booking_item_id', $request->input('booking_item_id'))
             ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
-            ->first(); 
+            ->first();
 
         // Delete old HTML if exists
         if ($oldRecord && $oldRecord->generated_report_path) {
-            Storage::disk('public')->delete($oldRecord->generated_report_path);
+            $this->fileUploadService->delete($oldRecord->generated_report_path);
         }
 
         // Save the new HTML content
-        $htmlFileName = 'reports/' . time() . '_report.html';
-        Storage::disk('public')->put($htmlFileName, $request->input('content'));
+        $fileName = time() . '_report.html';
+        $htmlFileName = $this->fileUploadService->upload(
+            $request->input('content'),
+            'reports',
+            $fileName
+        );
 
         // Generate PDF
-        $pdfService = new ReportPdfGenerationService();
-        $pdfRelativePath = $pdfService->generateFromHtmlFiles(
+        //$pdfService = new ReportPdfGenerationService();
+        $pdfRelativePath = $this->pdfService->generateFromHtmlFiles(
             [$htmlFileName],
             $headerData
         );
-    
+
         // Delete old PDF if exists
-        if ($oldRecord && $oldRecord->pdf_path) { 
-            $filePath = 'public/' . ltrim($oldRecord->pdf_path, '/');
-            Storage::disk('public')->delete($filePath);
+        if ($oldRecord && $oldRecord->pdf_path) {
+            $this->fileUploadService->delete($oldRecord->pdf_path);
         }
- 
+
         // Update DB with new HTML and PDF paths
         \DB::table('booking_item_report_28day')->updateOrInsert(
             [
@@ -351,37 +380,38 @@ class ReportEditorController extends Controller
             ],
             [
                 'generated_report_path' => $htmlFileName,
-                'pdf_path' => $pdfRelativePath, 
-                'ult_r_no' => $headerData['ulr_no'], 
-                'date_of_start_of_analysis' => $headerData['date_of_start_analysis'], 
-                'date_of_completion_of_analysis' => $headerData['date_of_completion'], 
-                'date_of_receipt'   => $headerData['date_of_receipt'],  
-                'issue_to_date'   => $headerData['date_of_issue'],
+                'pdf_path' => $pdfRelativePath,
+                'ult_r_no' => $headerData['ulr_no'],
+                'date_of_start_of_analysis' => $headerData['date_of_start_analysis'],
+                'date_of_completion_of_analysis' => $headerData['date_of_completion'],
+                'date_of_receipt' => $headerData['date_of_receipt'],
+                'issue_to_date' => $headerData['date_of_issue'],
                 'updated_at' => now(),
             ]
-        );  
+        );
 
         $pivotRecord = \DB::table('booking_item_report_28day')
-                ->where('booking_id', $request->input('booking_id'))
-                ->where('booking_item_id', $request->input('booking_item_id'))
-                ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
-                ->first();
-       
+            ->where('booking_id', $request->input('booking_id'))
+            ->where('booking_item_id', $request->input('booking_item_id'))
+            ->where('report_editor_file_id', $request->input('editing_report_id') ?? null)
+            ->first();
+
         return redirect()->route('generateReportPDF.editReport', ['pivotId' => $pivotRecord->id, 'type' => '28day'])
-                          ->with('success', 'Report generated successfully!');
+            ->with('success', 'Report generated successfully!');
     }
 
 
 
 
-    public function downloadReportPdf($pdfRelativePath){ 
+    public function downloadReportPdf($pdfRelativePath)
+    {
 
         return response()->download(storage_path('app/public/' . $pdfRelativePath));
     }
 
     public function downloadMergedBookingPDF($bookingId)
     {
-   
+
 
         // 1. Get all PDF paths for the given booking_id
         $pdfPaths = \DB::table('booking_item_report')
@@ -390,7 +420,7 @@ class ReportEditorController extends Controller
             ->pluck('pdf_path')
             ->toArray();
 
-        
+
         if (empty($pdfPaths)) {
             return response()->json(['message' => 'No PDFs found for this booking.'], 404);
         }
@@ -400,15 +430,18 @@ class ReportEditorController extends Controller
 
         foreach ($pdfPaths as $index => $path) {
             $fullPath = storage_path('app/public/' . $path);
-            if (!file_exists($fullPath)) continue;
+            if (!file_exists($fullPath))
+                continue;
 
-            if ($index > 0) $mpdf->AddPage();
+            if ($index > 0)
+                $mpdf->AddPage();
 
             $pageCount = $mpdf->SetSourceFile($fullPath);
             for ($i = 1; $i <= $pageCount; $i++) {
                 $tplId = $mpdf->ImportPage($i);
                 $mpdf->UseTemplate($tplId);
-                if ($i < $pageCount) $mpdf->AddPage();
+                if ($i < $pageCount)
+                    $mpdf->AddPage();
             }
         }
 
@@ -450,7 +483,11 @@ class ReportEditorController extends Controller
 
     public function livePreview(Request $request)
     {
-        
+        // currently disable live preview due to performance issue, we will enable it after optimization 
+        return response()->json([
+        'error' => 'Live preview is temporarily disabled'
+        ], 403);
+
 
         $request->validate([
             'content' => 'required|string',
@@ -475,7 +512,7 @@ class ReportEditorController extends Controller
         $pdfService = new ReportPdfGenerationService();
 
         // $booking = NewBooking::findOrFail($request->booking_id);
-      
+
         $headerData = [
             'sample_code' => '',
             'booking_item_id' => $request->input('booking_item_id') ?? 1,
@@ -490,7 +527,7 @@ class ReportEditorController extends Controller
             'sample_description' => $request->input('sample_description') ?? "",
             'date_of_issue' => $request->input('date_of_issue') ?? "",
             'name_of_work' => $request->input('name_of_work') ?? "",
-            'include_header' => $request->input('include_header') ?? "1", 
+            'include_header' => $request->input('include_header') ?? "1",
             'm_s' => $request->input('m_s') ?? "",
         ];
 
@@ -509,7 +546,6 @@ class ReportEditorController extends Controller
             'live_preview_' . time() . '.pdf',
             true // store as temp
         );
-
         return response()->json([
             'pdf_url' => asset('storage/' . $pdfPath),
             'html_url' => asset('storage/' . $tempHtmlPath),
@@ -557,8 +593,12 @@ class ReportEditorController extends Controller
             'editing_report_id' => 'nullable|integer',
         ]);
         // Save new HTML content in storage
-        $htmlFileName = 'reports/' . time() . '_report.html';
-        Storage::disk('public')->put($htmlFileName, $request->input('content'));
+        $fileName = time() . '_report.html';     
+        $htmlFileName = $this->fileUploadService->upload(
+            $request->input('content'),
+            'reports',
+            $fileName
+        );  
 
         // Generate Word report and trigger download
         $wordService = new \App\Services\ReportWordGenerationService();
@@ -588,6 +628,6 @@ class ReportEditorController extends Controller
         return response($qrImage, 200)
             ->header('Content-Type', 'image/svg+xml')
             ->header('Content-Disposition', "attachment; filename=\"$fileName\"");
-    } 
-    
+    }
+
 }

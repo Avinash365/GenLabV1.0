@@ -23,7 +23,7 @@ class InvoicePdfService
         $this->fileUploadService = $fileUploadService;
     }
 
-    
+
     public function generate(array $invoiceData, string $view = 'superadmin.accounts.generateInvoice.bill_pdf', string $filename = 'invoice.pdf')
     {
         // $invoiceData['invoice']['ref_no']  
@@ -75,7 +75,14 @@ class InvoicePdfService
         $qrcode = base64_encode( QrCode::format('svg')->size(200)->generate($upiLink));
 
 
-        $html = Storage::get("invoices/invoice_{$invoice->id}.html");
+        // $html = Storage::get("invoices/invoice_{$invoice->id}.html");
+        $path = "invoices/invoice_{$invoice->id}.html";
+
+        if (!Storage::disk('s3')->exists($path)) {
+            throw new \Exception("Invoice HTML not found in S3: {$path}");
+        }
+
+        $html = Storage::disk('s3')->get($path);
 
         $qrcodeBase64 = 'data:image/svg+xml;base64,' . $qrcode; 
 

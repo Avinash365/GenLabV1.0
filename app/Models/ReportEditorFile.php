@@ -13,4 +13,13 @@ class ReportEditorFile extends Model
         'report_description', 'report_no', 'file_path'
     ];
 
+    public function getFilePathUrlAttribute()
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        return config('app.cloudfront_url') . '/' . $this->file_path;
+    }
+
 }

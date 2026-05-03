@@ -47,7 +47,7 @@
                             <td><?php echo e($profile->description); ?></td>
                             <td>
                                 <?php if($profile->file_path): ?>
-                                    <a href="<?php echo e(asset($profile->file_path)); ?>" class="btn btn-sm btn-outline-primary" target="_blank">view</a>
+                                    <a href="<?php echo e($profile->file_path_url); ?>" class="btn btn-sm btn-outline-primary" target="_blank">view</a>
                                 <?php else: ?>
                                     <span class="text-muted">No File</span>
                                 <?php endif; ?>

@@ -173,7 +173,7 @@
 
                                 {{-- If it is an image --}}
                                 @if(Str::endsWith($booking->upload_letter_path, ['jpg','jpeg','png','gif','webp']))
-                                    <img src="{{ $booking->upload_letter_path }}" 
+                                    <img src="{{ $booking->upload_letter_url }}" 
                                         alt="Uploaded Letter" 
                                         class="img-fluid mb-2 border p-1" 
                                         style="max-height: 200px;">
@@ -181,14 +181,15 @@
 
                                 {{-- If it is a PDF --}}
                                 @if(Str::endsWith($booking->upload_letter_path, ['pdf']))
-                                    <embed src="{{ $booking->upload_letter_path }}" 
+                                    <embed src="{{ $booking->upload_letter_url }}" 
+                                         alt="Uploaded Letter"
                                         type="application/pdf" 
                                         class="w-100 mb-2" 
                                         style="height: 250px;">
                                 @endif
 
                                 <div class="mb-3">
-                                    <a href="{{ $booking->upload_letter_path }}" target="_blank" class="btn btn-sm btn-primary">
+                                    <a href="{{ $booking->upload_letter_url }}" target="_blank" class="btn btn-sm btn-primary">
                                         View / Download
                                     </a>
                                 </div>

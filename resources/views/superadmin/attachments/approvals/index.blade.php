@@ -38,7 +38,7 @@
                         <td>{{ $approval->description }}</td>
                         <td>
                             @if ($approval->file_path)
-                                <a href="{{ asset($approval->file_path) }}" target="_blank">View File</a>
+                                <a href="{{ $approval->file_path_url }}" target="_blank">View File</a>
                             @else
                                 N/A
                             @endif
@@ -95,7 +95,7 @@
                                             <label class="form-label">Upload File</label>
                                             <input class="form-control" type="file" name="file">
                                             @if ($approval->file_path)
-                                                <small class="text-muted">Current: <a href="{{ asset('storage/' . $approval->file_path) }}" target="_blank">View File</a></small>
+                                                <small class="text-muted">Current: <a href="{{ $approval->file_path_url }}" target="_blank">View File</a></small>
                                             @endif
                                         </div>
                                         <div class="mb-3">

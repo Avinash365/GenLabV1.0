@@ -27,7 +27,7 @@ class ImportantLetterController extends Controller
         //         $documents = ImportantLetter::with('uploader')->latest()->paginate(10);  
         //         return view('superadmin.attachments.letters.index', compact('documents'));
         // }
-
+         
         $letters = ImportantLetter::with('uploader')->latest()->paginate(10);
         
         return view('superadmin.attachments.letters.index', compact('letters'));

@@ -57,6 +57,8 @@ return [
     'url' => env('APP_URL', 'http://localhost'),
 
     'asset_url' => env('ASSET_URL', '/'),
+    
+    'cloudfront_url' => env('AWS_CLOUDFRONT_URL'),
 
     /*
     |--------------------------------------------------------------------------

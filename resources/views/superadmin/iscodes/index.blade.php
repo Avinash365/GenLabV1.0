@@ -46,7 +46,7 @@
                     <td>{{ $code->creator?->name ?? 'N/A' }}</td>
                     <td>
                         @if($code->upload_file)
-                            <a href="{{ asset($code->upload_file) }}" class="btn btn-sm btn-outline-primary" target="_blank">
+                            <a href="{{ $code->upload_file_url }}" class="btn btn-sm btn-outline-primary" target="_blank">
                                 <i class="bi bi-download"></i> View
                             </a>
                         @else
@@ -93,7 +93,7 @@
                                         <input type="file" name="upload_file" class="form-control" id="upload_file{{ $code->id }}">
                                         @if($code->upload_file)
                                             <small>Current file:
-                                                <a href="{{ asset('storage/'.$code->upload_file) }}" target="_blank">Download</a>
+                                                <a href="{{ $code->upload_file_url }}" target="_blank">Download</a>
                                             </small>
                                         @endif
                                     </div>

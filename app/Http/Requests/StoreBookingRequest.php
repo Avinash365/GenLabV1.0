@@ -23,14 +23,11 @@ class StoreBookingRequest extends FormRequest
         $bookingId = $booking instanceof NewBooking
             ? $booking->id
             : $booking;
-
-
-
         $rules = [
             'client_name' => 'required|string|max:255',
             'client_address' => 'nullable|string',
             'letter_date' => 'required|string',
-            'job_order_date' => 'nullable',
+            'job_order_date' => ['nullable', 'date'],
             'report_issue_to' => 'nullable|string|max:255',
             'department_id' => 'required|exists:departments,id',
             'payment_option' => 'required|in:bill,without_bill',
@@ -54,7 +51,6 @@ class StoreBookingRequest extends FormRequest
             'name_of_work' => 'nullable|string|max:500',
             'hold_status' => 'nullable|boolean',
             'upload_letter_path' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:51200',
-
             'booking_items' => 'nullable|array',
             'booking_items.*.sample_description' => 'nullable|string|max:255',
             'booking_items.*.sample_quality' => 'required|string|max:255',

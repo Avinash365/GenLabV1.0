@@ -5,7 +5,8 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
-
+use League\CommonMark\Extension\CommonMark\Node\Inline\Strong;
+use Illuminate\Support\Facades\Storage;
 
 
 class NewBooking extends Model
@@ -41,6 +42,14 @@ class NewBooking extends Model
         'hold_status' => 'boolean',
     ];
 
+    public function getUploadLetterUrlAttribute()
+    {
+        if (!$this->upload_letter_path) {
+            return null;
+        }
+
+        return config('app.cloudfront_url') . '/' . $this->upload_letter_path;
+    } 
 
     // Inside your NewBooking model
    
@@ -97,5 +106,4 @@ class NewBooking extends Model
         ->withPivot('payment_status')
         ->withTimestamps();
     }
-
 }

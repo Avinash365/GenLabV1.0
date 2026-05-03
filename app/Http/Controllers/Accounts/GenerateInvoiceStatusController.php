@@ -24,7 +24,7 @@ use App\Http\Requests\GenerateInvoiceRequest;
 use App\Models\WhatsappSetting;
 use App\Services\WhatsAppService;
 use App\Jobs\SendMarketingNotificationJob;
-
+use App\Services\FileUploadService; 
 class GenerateInvoiceStatusController extends Controller
 {
     protected $departmentService;
@@ -32,13 +32,18 @@ class GenerateInvoiceStatusController extends Controller
     protected $invoicePdfService;
     protected $numberToWordsService;
 
-    public function __construct(GetUserActiveDepartment $departmentService, BillingService $billingService, InvoicePdfService $invoicePdfService, NumberToWordsService $numberToWordsService)
+    protected FileUploadService $fileUploadService;
+
+    
+
+    public function __construct(GetUserActiveDepartment $departmentService, BillingService $billingService, InvoicePdfService $invoicePdfService, NumberToWordsService $numberToWordsService, FileUploadService $fileUploadService)
     {
         $this->departmentService = $departmentService;
         $this->billingService = $billingService;
         $this->invoicePdfService = $invoicePdfService;
         $this->numberToWordsService = $numberToWordsService;
-
+        $this->fileUploadService = $fileUploadService;
+       
         $this->middleware('permission:invoice.create')->only('index');
         
         // $this->middleware('permission:invoice.create')->only('destroy');
@@ -91,7 +96,6 @@ class GenerateInvoiceStatusController extends Controller
                     ->orWhereHas('items', fn($itemQ) => $itemQ->where('job_order_no', 'like', "{$search}%"));
             });
         }
-
 
         // Determine marketing context
         $authUser = $request->user();
@@ -184,7 +188,7 @@ class GenerateInvoiceStatusController extends Controller
     {
         
         $prefix = "ITLPL-"; 
-
+      
         if ($bookingId == 0) {
             // Empty booking object
             $booking = (object) [
@@ -299,7 +303,7 @@ class GenerateInvoiceStatusController extends Controller
 
         if ($invoiceData['amountMap']->isNotEmpty()) {
                 foreach ($invoiceData['amountMap'] as $jobOrderNo => $amount) {
-                    BookingItem::where('job_order_no', $jobOrderNo)
+                    BookingItem::where('job_order_no', (string)$jobOrderNo)
                         ->update(['amount' => $amount]);
                 }
             }
@@ -313,27 +317,37 @@ class GenerateInvoiceStatusController extends Controller
             
             $invoiceType = $request->input('invoice_type');
             $invoiceData = $this->billingService->generateInvoiceData($request);
-
+            
+            
             $invoiceData['booking_id'] = $request->booking_id;
+        
+            try {
 
-            $invoice = $this->storeInvoiceData($invoiceData, $invoiceType);
+                $invoice = $this->storeInvoiceData($invoiceData, $invoiceType);
 
-            
-            
+            } catch (\Throwable $e) {
+                // dd($e->getMessage(), $e->getTraceAsString());
+                dd('Error storing invoice data: Try Letter'); // Show user-friendly message 
+            }
+                   
             $invoiceData['invoice']['invoiceType'] = strtoupper(str_replace('_', ' ', $invoiceType));
             $invoiceData['invoice']['id'] = $invoice->id;
-
+            
             $html = $request->invoice_html;
-            Storage::put(
-                 "invoices/invoice_{$invoice->id}.html",
-                  $html
-            );
+            $invoicePath = $this->fileUploadService->upload( $html, 'invoices', "invoice_{$invoice->id}.html"); 
+            
+            // Storage::put(
+            //      "invoices/invoice_{$invoice->id}.html",
+            //       $html
+            // );
+            
             // ---------------------------
             // SEND NOTIFICATION TO MARKETING USER
             // --------------------------- 
 
+            // $invoicePath = $this->fileUploadService->upload( $html, 'invoices', "invoice_{$invoice->id}.html");
             $marketingUser = User::with('employee')->where('user_code', $invoice->marketing_user_code)->first();
-
+     
             if ($marketingUser) {
                 SendMarketingNotificationJob::dispatch(
                     $marketingUser,
@@ -432,7 +446,7 @@ class GenerateInvoiceStatusController extends Controller
             'invoice_html' => 'required|string',
         ]); 
 
-
+         
         $invoiceData = json_decode($request->invoice_data, true);
 
         if (!$invoiceData) {
@@ -459,7 +473,7 @@ class GenerateInvoiceStatusController extends Controller
             $invoice = null; // so we can use it after transaction
             $firstBookingId = $bookingIds[0] ?? null;
 
-
+           
             $booking = $firstBookingId
                 ? NewBooking::select('client_id', 'marketing_id')->find($firstBookingId)
                 : null;
@@ -566,16 +580,17 @@ class GenerateInvoiceStatusController extends Controller
             // Update booking items amounts
             if ($amountMap->isNotEmpty()) {
                 foreach ($amountMap as $jobOrderNo => $amount) {
-                    BookingItem::where('job_order_no', $jobOrderNo)
+                    BookingItem::where('job_order_no', (string)$jobOrderNo)
                         ->update(['amount' => $amount]);
                 }
             }
-
+            
             $html = $request->invoice_html;
-            Storage::put(
-                "invoices/invoice_{$invoice->id}.html",
-                $html
-            );
+            // Storage::put(
+            //     "invoices/invoice_{$invoice->id}.html",
+            //     $html
+            // );
+            $invoicePath = $this->fileUploadService->upload( $html, 'invoices', "invoice_{$invoice->id}.html");
 
             // Generate and return PDF
             return $this->invoicePdfService->generateHtml2Pdf($invoice);
@@ -686,7 +701,14 @@ class GenerateInvoiceStatusController extends Controller
     {
         try {
 
-            $html = Storage::get("invoices/invoice_{$InvoiceId}.html");
+            $path = "invoices/invoice_{$InvoiceId}.html"; 
+
+            // $html = Storage::get("invoices/invoice_{$InvoiceId}.html");
+            if (!Storage::disk('s3')->exists($path)) {
+                abort(404, 'Invoice not found.');
+            }  
+            $html = Storage::disk('s3')->get($path); 
+
             $gstinApiUrl = config('services.gstin.url');
             $gstinApiKey = config('services.gstin.key');
 

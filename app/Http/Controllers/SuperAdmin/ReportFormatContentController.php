@@ -24,7 +24,8 @@ class ReportFormatContentController extends Controller
     }
 
     public function edit(ReportFormat $reportFormat)
-    {
+    {   
+       
         // If no HTML stored yet, attempt on-demand conversion from original file
         if((!$reportFormat->body_html || trim($reportFormat->body_html)==='') && $reportFormat->stored_file_name){
             $ext = strtolower(pathinfo($reportFormat->stored_file_name, PATHINFO_EXTENSION));

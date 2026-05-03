@@ -16,6 +16,7 @@ use App\Jobs\SendMarketingNotificationJob;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
+use App\Services\FileUploadService; 
 
 
 use App\Http\Controllers\Transactions\CashPaymentController;
@@ -36,8 +37,10 @@ class InvoiceController extends Controller
     protected $departmentService;
     protected $cashPaymentController;
 
+    protected $fileUploadService;
+
     // Inject BillingService
-    public function __construct(BillingService $billingService, InvoicePdfService $invoicePdfService, GetUserActiveDepartment $departmentService, CashPaymentController $cashPaymentController)
+    public function __construct(BillingService $billingService, InvoicePdfService $invoicePdfService, GetUserActiveDepartment $departmentService, CashPaymentController $cashPaymentController, FileUploadService $fileUploadService)
     {
         $this->middleware('permission:invoice.view')->only('index');
         $this->middleware('permission:invoice.delete')->only('destroy');
@@ -46,6 +49,7 @@ class InvoiceController extends Controller
         $this->billingService = $billingService;
         $this->invoicePdfService = $invoicePdfService;
         $this->cashPaymentController = $cashPaymentController;
+        $this->fileUploadService = $fileUploadService;
 
     }
 
@@ -460,16 +464,18 @@ class InvoiceController extends Controller
             });
 
             /* ===================== UPDATE HTML FILE ===================== */
-            Storage::put(
-                "invoices/invoice_{$invoice->id}.html",
-                $request->invoice_html
-            );
+            // Storage::put(
+            //     "invoices/invoice_{$invoice->id}.html",
+            //     $request->invoice_html
+            // );
+
+            $invoicePath = $this->fileUploadService->upload( $request->invoice_html, 'invoices', "invoice_{$invoice->id}.html");
 
 
 
             if ($amountMap->isNotEmpty()) {
                 foreach ($amountMap as $jobOrderNo => $amount) {
-                    BookingItem::where('job_order_no', $jobOrderNo)
+                    BookingItem::where('job_order_no', (string)$jobOrderNo)
                 ->update(['amount' => $amount]);
                 }
             }
@@ -498,10 +504,12 @@ class InvoiceController extends Controller
     {
         try {
             $html = $request->invoice_html;
-            Storage::put(
-                "invoices/invoice_{$invoice->id}.html",
-                $html
-            );
+            // Storage::put(
+            //     "invoices/invoice_{$invoice->id}.html",
+            //     $html
+            // );
+
+            $invoicePath = $this->fileUploadService->upload( $html, 'invoices', "invoice_{$invoice->id}.html");
 
             // dd($request->all()); 
             // exit; 
@@ -608,7 +616,7 @@ class InvoiceController extends Controller
 
             if ($invoiceData['amountMap']->isNotEmpty()) {
                 foreach ($invoiceData['amountMap'] as $jobOrderNo => $amount) {
-                    BookingItem::where('job_order_no', $jobOrderNo)
+                    BookingItem::where('job_order_no', (string)$jobOrderNo)
                         ->update(['amount' => $amount]);
                 }
             }

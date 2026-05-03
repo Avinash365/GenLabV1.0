@@ -13,6 +13,7 @@ class ReportFormatController extends Controller
 {
     public function index()
     {
+        
         $query = ReportFormat::query()->latest();
         if (request()->wantsJson()) {
             return $query->get()->map(function($f){
@@ -75,6 +76,7 @@ class ReportFormatController extends Controller
 
     public function show(ReportFormat $reportFormat)
     {
+
         // stream file if exists
         $disk = Storage::disk('public');
         $path = 'report-formats/'.$reportFormat->stored_file_name;

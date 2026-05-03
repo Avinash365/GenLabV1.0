@@ -21,6 +21,15 @@ class ImportantLetter extends Model
         'remarks'
     ];
 
+    public function getFilePathUrlAttribute()
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        return config('app.cloudfront_url') . '/' . $this->file_path;
+    }   
+
     // Relation to User
     public function uploader()
     {

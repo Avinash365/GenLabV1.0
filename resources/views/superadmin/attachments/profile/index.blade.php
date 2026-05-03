@@ -48,7 +48,7 @@
                             <td>{{ $profile->description }}</td>
                             <td>
                                 @if($profile->file_path)
-                                    <a href="{{ asset($profile->file_path) }}" class="btn btn-sm btn-outline-primary" target="_blank">view</a>
+                                    <a href="{{ $profile->file_path_url }}" class="btn btn-sm btn-outline-primary" target="_blank">view</a>
                                 @else
                                     <span class="text-muted">No File</span>
                                 @endif

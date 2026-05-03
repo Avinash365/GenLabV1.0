@@ -173,7 +173,7 @@
 
                                 
                                 <?php if(Str::endsWith($booking->upload_letter_path, ['jpg','jpeg','png','gif','webp'])): ?>
-                                    <img src="<?php echo e($booking->upload_letter_path); ?>" 
+                                    <img src="<?php echo e($booking->upload_letter_url); ?>" 
                                         alt="Uploaded Letter" 
                                         class="img-fluid mb-2 border p-1" 
                                         style="max-height: 200px;">
@@ -181,14 +181,15 @@
 
                                 
                                 <?php if(Str::endsWith($booking->upload_letter_path, ['pdf'])): ?>
-                                    <embed src="<?php echo e($booking->upload_letter_path); ?>" 
+                                    <embed src="<?php echo e($booking->upload_letter_url); ?>" 
+                                         alt="Uploaded Letter"
                                         type="application/pdf" 
                                         class="w-100 mb-2" 
                                         style="height: 250px;">
                                 <?php endif; ?>
 
                                 <div class="mb-3">
-                                    <a href="<?php echo e($booking->upload_letter_path); ?>" target="_blank" class="btn btn-sm btn-primary">
+                                    <a href="<?php echo e($booking->upload_letter_url); ?>" target="_blank" class="btn btn-sm btn-primary">
                                         View / Download
                                     </a>
                                 </div>

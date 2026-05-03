@@ -58,6 +58,7 @@ class ReportController extends Controller
 
     public function index(Request $request, $departmentId = null)
     {
+        
         $departments = $this->departmentService->getDepartment();
         $deptParam = $request->query('department', $departmentId);
         $department = $deptParam ? Department::find($deptParam) : null;

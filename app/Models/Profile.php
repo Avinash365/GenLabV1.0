@@ -18,6 +18,15 @@ class Profile extends Model
         'file_path',
         'uploaded_by'
     ];
+    
+    public function getFilePathUrlAttribute()
+    {
+        if (!$this->file_path) {
+            return null;
+        }
+
+        return config('app.cloudfront_url') . '/' . $this->file_path;
+    }
 
     public function uploader()
     {

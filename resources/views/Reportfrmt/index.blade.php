@@ -80,7 +80,7 @@
                             {{-- Load report button --}}
                             <button type="button" class="btn btn-sm btn-outline-primary load-report" 
                                 data-id="{{ $report->id }}"
-                                data-content="{{ Storage::disk('public')->get($report->file_path) }}"
+                                data-content="{{  $report->file_content }}"
                                 data-name="{{ $report->report_no }}"
                                 data-description="{{ $report->report_description }}"
                                 title="Load Report">

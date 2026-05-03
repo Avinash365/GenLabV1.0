@@ -1,0 +1,14 @@
+
+-------New Booking Table ------  
+
+-------------------------------
+
+UPDATE new_bookings
+SET upload_letter_path = REPLACE(
+    upload_letter_path,
+    'http://127.0.0.1:8000/uploads/',
+    ''
+)
+WHERE upload_letter_path LIKE 'http://127.0.0.1:8000/uploads/%';
+
+----------------------------------------
